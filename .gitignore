@@ -1,0 +1,10 @@
+node_modules/
+dist/
+data/*.json
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/public_url.txt
+public/game.js.map
+.env
+npm-debug.log*

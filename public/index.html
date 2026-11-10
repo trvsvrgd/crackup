@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRACKUP: Protocol Eclipse — v2.0 True 3D AAA Architecture</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div id="viewport-3d"></div>
+
+  <!-- Over-the-Shoulder Third-Person Precision Reticle -->
+  <div id="reticle">
+    <div class="reticle-ring"></div>
+    <div class="reticle-dot"></div>
+  </div>
+
+  <!-- Real-Time 3D Physics & Binary Netcode Telemetry HUD -->
+  <header id="telemetry-hud">
+    <div class="hud-brand">CRACKUP: PROTOCOL ECLIPSE <span>v2.0 TRUE 3D</span></div>
+    <div class="hud-row"><strong>DISTRICT:</strong> <span id="hud-district">AEGIS_CITADEL</span></div>
+    <div class="hud-row"><strong>3D POS (Meters):</strong> <span id="hud-pos">X: 0.0m | Y: 0.0m | Z: 0.0m</span></div>
+    <div class="hud-row"><strong>3D VELOCITY:</strong> <span id="hud-vel">H: 0.0 m/s | V: 0.0 m/s | Dashes: 1</span></div>
+    <div class="hud-row"><strong>CONTROLLER:</strong> <span id="hud-state">IDLE (GROUNDED)</span></div>
+    <div class="hud-row"><strong>3D ORB SONAR (HRTF):</strong> <span id="hud-orbs">0/182 Collected | Nearest HRTF Ping: --</span></div>
+    <div class="hud-row"><strong>V.A.T.S. 6-LIMB RIG:</strong> <span id="hud-vats">HOLD [RMB] TO LOCK 6 BONE COLLIDERS</span></div>
+    <div class="hud-row"><strong>COMBAT RESOLVER:</strong> <span id="hud-combat">READY // [LMB] Fire • [V] Warp Melee • [Q] Parry</span></div>
+    <div class="hud-row"><strong>CHASSIS &amp; BUILD:</strong> <span id="hud-build">Titan-Juggernaut (0/20 Skills) | ON FOOT</span></div>
+    <div class="hud-row"><strong>3D RELIC RADAR:</strong> <span id="hud-relic-radar">SCANNING 3D SKYLINE... | [R] 3.0s REWIND READY</span></div>
+    <div class="hud-row"><strong>DISTRICT 3-STAGE LOOP:</strong> <span id="hud-district-loop">STAGE 1/3: Sabotage 3D Terminals (0/2) — [H] Interact</span></div>
+    <div class="hud-row"><strong>90s OMEGA BOUNTY:</strong> <span id="hud-omega-bounty">ACTIVE HVT CONVOY | 90.0s EXTRACTION PATH</span></div>
+    <div class="hud-row"><strong>NEURAL DRIFT &amp; AUDITORS:</strong> <span id="hud-neural-drift">NOMINAL (0 MUTATIONS) | Airships: 0</span></div>
+    <div class="hud-row"><strong>SPRING-ARM CAM:</strong> <span id="hud-camera">Arm: 4.50m | FOV: 68°</span></div>
+    <div class="hud-row"><strong>BINARY NETCODE:</strong> <span id="hud-net">Seq: 0 | Ack: 0 | Err: 0.0cm | Agents: 1/8</span></div>
+    <div class="hud-row accent" id="hud-agility">AGI:1 STR:1 DRV:1 SHT:1 EXP:1 FLY:1 VIG:1 (Keys 1-5 Lv)</div>
+    <div class="hud-controls">
+      <span>[WASD] 3D Move</span>
+      <span>[SPACE] Jump/Hop</span>
+      <span>[H] Terminal / Jetpack</span>
+      <span>[G] 45m Grapple</span>
+      <span>[F] Grab/Throw Prop</span>
+      <span>[E] Drive Vehicle</span>
+      <span>[R] 3s Chrono-Rewind</span>
+      <span>[B] Cycle Build/Skills</span>
+      <span>[RMB+LMB] V.A.T.S.</span>
+      <span>[V/Q] Melee/Parry</span>
+    </div>
+  </header>
+
+  <!-- SQLite WAL Agent Authentication Modal -->
+  <section id="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-badge">AGENCY NEURAL LINK // SQLITE WAL</div>
+      <h1>CRACKUP: PROTOCOL ECLIPSE</h1>
+      <p class="subtitle">True 3D Third-Person Co-op Sandbox • Rapier3D 60Hz • Binary ArrayBuffer Sync</p>
+      <form id="auth-form">
+        <label for="callsign-input">AGENT CALLSIGN</label>
+        <input id="callsign-input" type="text" maxlength="20" value="VANGUARD-01" required autocomplete="off" />
+
+        <label for="pin-input">SECURITY PIN (4-8 DIGITS)</label>
+        <input id="pin-input" type="password" pattern="\d{4,8}" maxlength="8" value="2077" required />
+
+        <button type="submit">DEPLOY INTO NEO-VERIDIA (3D)</button>
+        <div id="auth-error"></div>
+      </form>
+    </div>
+  </section>
+
+  <script type="module" src="/game.js"></script>
+</body>
+</html>

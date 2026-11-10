@@ -1,0 +1,38 @@
+{
+  "name": "crackup-protocol-eclipse",
+  "version": "2.0.0",
+  "description": "CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture) — 8-Player Real-Time Online Co-op Third-Person 3D Open-City Action RPG",
+  "type": "module",
+  "main": "dist/server/index.js",
+  "scripts": {
+    "build:client": "esbuild client/main.ts --bundle --format=esm --target=es2022 --outfile=public/game.js --sourcemap",
+    "build:server": "tsc -p tsconfig.json",
+    "build": "npm run build:server && npm run build:client",
+    "start": "tsx server/index.ts",
+    "dev": "tsx watch server/index.ts",
+    "verify:phase1": "tsx tests/verify-phase1.ts",
+    "verify:phase2": "tsx tests/verify-phase2.ts",
+    "verify:phase3": "tsx tests/verify-phase3.ts",
+    "verify:phase4": "tsx tests/verify-phase4.ts",
+    "verify:phase5": "tsx tests/verify-phase5.ts",
+    "host:online": "node scripts/host_online.js"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.14.0",
+    "better-sqlite3": "^11.5.0",
+    "three": "^0.170.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.9.0",
+    "@types/three": "^0.170.0",
+    "@types/ws": "^8.5.13",
+    "esbuild": "^0.24.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
