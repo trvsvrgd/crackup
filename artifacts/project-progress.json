@@ -1,16 +1,19 @@
 {
   "schemaVersion": 1,
   "project": "CRACKUP: Protocol Eclipse",
-  "updatedAt": "2026-11-11T20:49:51Z",
+  "updatedAt": "2026-11-11T20:57:00Z",
   "delivery": {
     "branch": "feat/section6-progress-checkpoint",
     "base": "main",
     "sourceBaseCommit": "58c42d9e8bbd7f6697891cb5f437976934a96419",
-    "prUrl": null,
+    "prUrl": "https://github.com/trvsvrgd/crackup/pull/1",
     "approval": {
-      "status": "requested",
-      "summary": "Requested by the user; GitHub review will be attempted after the PR is created."
-    }
+      "status": "blocked_by_github_self_review_rule",
+      "summary": "GitHub rejected author self-approval (HTTP 422): authenticated account trvsvrgd is also the PR author. An eligible reviewer must approve PR #1.",
+      "attemptedCommit": "65a06a2f8e9434e487ebe6882da8c31bf35f96de"
+    },
+    "checkpointCommit": "65a06a2f8e9434e487ebe6882da8c31bf35f96de",
+    "ciSummary": "No remote status checks were reported when the PR was created. Validation results in this ledger are local runs and saved browser evidence."
   },
   "stages": [
     {
@@ -206,6 +209,18 @@
     {
       "at": "2026-11-11T20:49:51Z",
       "summary": "Fresh build, full regression and 17-asset verification passed. Created the feature branch and prepared the versioned ledger/evidence before committing."
+    },
+    {
+      "at": "2026-11-11T20:55:58Z",
+      "summary": "Committed the combined checkpoint as 65a06a2 and pushed feat/section6-progress-checkpoint to origin; code, runtime assets, reports and evidence are saved."
+    },
+    {
+      "at": "2026-11-11T20:56:10Z",
+      "summary": "Opened PR #1 against main: https://github.com/trvsvrgd/crackup/pull/1. No merge or production deployment was performed."
+    },
+    {
+      "at": "2026-11-11T20:57:00Z",
+      "summary": "Attempted an APPROVE review; GitHub returned HTTP 422 because the authenticated account is the PR author. Recorded the delivery outcome and reviewer handoff in this artifact."
     }
   ],
   "evidence": [

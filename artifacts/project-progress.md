@@ -1,12 +1,12 @@
 # CRACKUP project progress ledger
 
-Updated: 2026-11-11T20:49:51Z. This is a checkpoint log, not a production-release certificate.
+Updated: 2026-11-11T20:57:00Z. This is a checkpoint log, not a production-release certificate.
 
 **Resume here:** Start Stage 3D WeaponBuilder; then pass the full Stage 3 integration gate before beginning Stage 4.
 
 Branch: feat/section6-progress-checkpoint · Base: main
-PR: Will be linked after the branch is pushed.
-Approval: Requested by the user; GitHub review will be attempted after the PR is created.
+PR: [Open pull request](https://github.com/trvsvrgd/crackup/pull/1)
+Approval: GitHub rejected author self-approval (HTTP 422): authenticated account trvsvrgd is also the PR author. An eligible reviewer must approve PR #1.
 
 ## Stage map
 
@@ -84,6 +84,9 @@ Browser reports below were produced during the implementation runs. Build, regre
 | 2026-11-11T19:55:30Z | Stage 3C completed: detailed relays, vent heat/reboot, approach clearance, three-client replication and live H interaction. |
 | 2026-11-11T20:47:17Z | User requested a branch, commit, push, PR approval and a saved progress/remaining-stage artifact. |
 | 2026-11-11T20:49:51Z | Fresh build, full regression and 17-asset verification passed. Created the feature branch and prepared the versioned ledger/evidence before committing. |
+| 2026-11-11T20:55:58Z | Committed the combined checkpoint as 65a06a2 and pushed feat/section6-progress-checkpoint to origin; code, runtime assets, reports and evidence are saved. |
+| 2026-11-11T20:56:10Z | Opened PR #1 against main: https://github.com/trvsvrgd/crackup/pull/1. No merge or production deployment was performed. |
+| 2026-11-11T20:57:00Z | Attempted an APPROVE review; GitHub returned HTTP 422 because the authenticated account is the PR author. Recorded the delivery outcome and reviewer handoff in this artifact. |
 
 ## Saved evidence
 
