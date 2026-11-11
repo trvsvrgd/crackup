@@ -1,0 +1,363 @@
+{
+  "schemaVersion": 1,
+  "project": "CRACKUP: Protocol Eclipse",
+  "updatedAt": "2026-11-11T20:49:51Z",
+  "delivery": {
+    "branch": "feat/section6-progress-checkpoint",
+    "base": "main",
+    "sourceBaseCommit": "58c42d9e8bbd7f6697891cb5f437976934a96419",
+    "prUrl": null,
+    "approval": {
+      "status": "requested",
+      "summary": "Requested by the user; GitHub review will be attempted after the PR is created."
+    }
+  },
+  "stages": [
+    {
+      "id": "1",
+      "title": "1 - Narrative and visual style",
+      "status": "complete",
+      "dependsOn": [],
+      "summary": "Three-act story bible, wireframe comms, faction PBR and Sobel ink pass."
+    },
+    {
+      "id": "2",
+      "title": "2 - Rigs and physical combat",
+      "status": "complete",
+      "dependsOn": [
+        "1"
+      ],
+      "summary": "Nineteen-joint rigs, nine silhouettes, animation/reactions, disarms and paired counters."
+    },
+    {
+      "id": "3a",
+      "title": "3A - Architecture",
+      "status": "complete",
+      "dependsOn": [
+        "2"
+      ],
+      "summary": "Eighteen detailed buildings, 898 shared ledges, interior mapping, resource/model checks."
+    },
+    {
+      "id": "3b",
+      "title": "3B - Vehicles and destruction",
+      "status": "complete",
+      "dependsOn": [
+        "3a"
+      ],
+      "summary": "Detailed vehicles, wheel suspension/steering, authoritative panel destruction and packet 0x09."
+    },
+    {
+      "id": "3c",
+      "title": "3C - Relays",
+      "status": "complete",
+      "dependsOn": [
+        "3b"
+      ],
+      "summary": "Eight relays, shared hull/lattice colliders, vent heat/shutdown/reboot and packet 0x0A."
+    },
+    {
+      "id": "3d",
+      "title": "3D - WeaponBuilder",
+      "status": "next",
+      "dependsOn": [
+        "3c"
+      ],
+      "summary": "Consolidate socket/disarm weapons, add firearm variants and verify muzzle/socket orientation through every combat pose."
+    },
+    {
+      "id": "3gate",
+      "title": "3 - Integration and performance gate",
+      "status": "blocked",
+      "dependsOn": [
+        "3d"
+      ],
+      "summary": "Verify all four builders together, collision/model contracts, destruction, disposal, browser shots and combined rendering cost."
+    },
+    {
+      "id": "4",
+      "title": "4 - PBR pipeline and Bay Area vista",
+      "status": "blocked",
+      "dependsOn": [
+        "3gate"
+      ],
+      "summary": "Triplanar fallback/external PBR, 10 km Gerstner bay, two suspension bridges, terrain/headlands, fog and dusk/night."
+    },
+    {
+      "id": "5",
+      "title": "5 - Combat effects and spatial audio",
+      "status": "blocked",
+      "dependsOn": [
+        "4"
+      ],
+      "summary": "Pooled tracers/sparks/shockwaves/skid marks and bounded HRTF footsteps/engines/gunfire/counters/orbs."
+    },
+    {
+      "id": "6",
+      "title": "6 - In-engine cinematics",
+      "status": "blocked",
+      "dependsOn": [
+        "5"
+      ],
+      "summary": "Skippable bridge fly-in and boss introductions using finalized upstream assets; restore camera/input/HUD and verify co-op interruption."
+    }
+  ],
+  "resume": {
+    "summary": "Start Stage 3D WeaponBuilder; then pass the full Stage 3 integration gate before beginning Stage 4.",
+    "steps": [
+      "Run npm run build and npm run verify to refresh the baseline.",
+      "Promote createRigFirearm into client/builders/WeaponBuilder.ts and reuse it for equipped, dropped and disarmed weapons.",
+      "Add receiver/barrel/optic/magazine/muzzle variants with named Grip and MuzzleFlashEmitter anchors and a rich procedural fallback.",
+      "Verify right-hand socket alignment through locomotion, aim, all three melee strikes, paired counters and disarms; preserve existing combat timing and progression.",
+      "Run the combined Stage 3 collision, optional-model, destruction, disposal, network and browser/performance gate.",
+      "Update this ledger and SECTION6_PROGRESS_REPORT.md with evidence before moving to Stage 4."
+    ]
+  },
+  "foundation": [
+    {
+      "title": "Gameplay Phases 1-6",
+      "summary": "Shared physics, progression, district loops, pet arenas, Dreadnought, binary packets and SQLite persistence have passing automated suites."
+    },
+    {
+      "title": "Playable alpha",
+      "summary": "HUD, earned upgrades, health/recovery, companion controls, reconnect/input/socket hardening and compiled deployment configuration are included."
+    },
+    {
+      "title": "Asset provisioning",
+      "summary": "HDR, four 2K PBR material sets and Soldier/Xbot GLBs are saved with provenance/hashes and licenses; 17 manifest assets validate. Unsupported combat poses continue to use articulated procedural rigs."
+    }
+  ],
+  "verification": [
+    {
+      "command": "npm run build",
+      "result": "Passed at saving checkpoint",
+      "evidence": "Strict TypeScript compilation and browser bundle."
+    },
+    {
+      "command": "npm run verify",
+      "result": "Passed at saving checkpoint",
+      "evidence": "Phases 1-6, alpha, art stages 1-2 and 3A-3C, including live WebSocket tests."
+    },
+    {
+      "command": "npm run assets:verify",
+      "result": "Passed at saving checkpoint",
+      "evidence": "17 assets; hashes, full image/HDR decode and glTF validation. Six upstream non-fatal GLB warnings remain."
+    },
+    {
+      "command": "npm run verify:art:browser",
+      "result": "Saved implementation-run evidence passed",
+      "evidence": "evidence/art-verification.json; nine rigs, portrait, resize and zero errors."
+    },
+    {
+      "command": "npm run verify:stage3a:browser",
+      "result": "Saved implementation-run evidence passed",
+      "evidence": "evidence/stage3a-browser.json and architecture screenshots."
+    },
+    {
+      "command": "npm run verify:stage3b:browser",
+      "result": "Saved implementation-run evidence passed",
+      "evidence": "evidence/stage3b-browser.json; four vehicles 373 calls / 36,358 triangles."
+    },
+    {
+      "command": "npm run verify:stage3c:browser",
+      "result": "Saved implementation-run evidence passed",
+      "evidence": "evidence/stage3c-browser.json; isolated relay 94 calls, city 2,895 calls / 382,200 triangles."
+    }
+  ],
+  "decisions": [
+    "Keep the Section 6 dependency order. Do not start cinematics until Stages 3-5 pass.",
+    "Preserve legacy world/orb/objective data and established gameplay; maintain rich multipart procedural fallbacks and validated optional GLTF models.",
+    "Vehicles use 1,000 HP: hood below 50%, doors/trunk below 25%; physical debris expires after 12 seconds with a global cap of 64; wrecks reset after 20 seconds.",
+    "Relays have three 120-HP vents. Lost cooling raises heat; shutdown parks dishes and triggers an eight-second automatic repair/reboot. It does not bypass hacking or boss requirements.",
+    "Existing packet layouts remain compatible; presentation and damage extensions use packets 0x08, 0x09 and 0x0A.",
+    "Rendering budgets are controlled-view checks, not hardware-independent FPS guarantees. The combined Stage 3 integration gate and minimum-hardware profiling are still open.",
+    "Save the combined current checkout: Phase 6, alpha, installed assets, art stages through 3C, deployment configuration and progress evidence. Do not merge or deploy as part of this checkpoint.",
+    "Generated local databases, credentials, node_modules, build maps, QA server helpers and caches remain excluded by .gitignore. Runtime asset binaries and the existing tracked public/game.js bundle are saved."
+  ],
+  "releaseGates": [
+    "Complete Stage 3D, the Stage 3 integration gate and ordered Stages 4-6.",
+    "Have five unfamiliar players finish the opening district without coaching.",
+    "Run an eight-player, 30-minute playtest on realistic network conditions and declared minimum hardware.",
+    "Validate frame times, combat balance, accessibility, reconnects and persistence.",
+    "Validate the hosted build, TLS, persistent volumes, backup restoration, monitoring and rollback.",
+    "Perform the final three-act playthrough and record remaining release limitations."
+  ],
+  "log": [
+    {
+      "at": "2026-11-11",
+      "summary": "Stages 1-2 completed and verified: narrative, comms, materials/outlines, articulated rigs and physical combat reactions."
+    },
+    {
+      "at": "2026-11-11",
+      "summary": "Stage 3A completed: citywide architecture, shared ledges, model fallbacks and browser/performance evidence."
+    },
+    {
+      "at": "2026-11-11T19:09:57Z",
+      "summary": "Stage 3B completed: detailed vehicles, authoritative physical panel destruction, three-client replication and browser verification."
+    },
+    {
+      "at": "2026-11-11T19:55:30Z",
+      "summary": "Stage 3C completed: detailed relays, vent heat/reboot, approach clearance, three-client replication and live H interaction."
+    },
+    {
+      "at": "2026-11-11T20:47:17Z",
+      "summary": "User requested a branch, commit, push, PR approval and a saved progress/remaining-stage artifact."
+    },
+    {
+      "at": "2026-11-11T20:49:51Z",
+      "summary": "Fresh build, full regression and 17-asset verification passed. Created the feature branch and prepared the versioned ledger/evidence before committing."
+    }
+  ],
+  "evidence": [
+    {
+      "path": "artifacts/evidence/art-verification.json",
+      "kind": "verification report",
+      "sha256": "0974321b07b72e29959b6824076fd2e1fb8111d49b535f23ec95e1e0f0f59844"
+    },
+    {
+      "path": "artifacts/evidence/stage3a-browser.json",
+      "kind": "verification report",
+      "sha256": "0f8936f544b264cbe3e6a7daebae09dde74d4e72bd012e56cb28fa10e00605f9"
+    },
+    {
+      "path": "artifacts/evidence/stage3b-browser.json",
+      "kind": "verification report",
+      "sha256": "dc5298e50bcbea95da535293bd08d4f63b0c3afbe8915a37e0878c132035c120"
+    },
+    {
+      "path": "artifacts/evidence/stage3c-browser.json",
+      "kind": "verification report",
+      "sha256": "b4baa7075347cfcfd11b56a3d849fb8883d01c18b0bb8dd0209cf62ff45eb98f"
+    },
+    {
+      "path": "artifacts/evidence/stages-1-2.png",
+      "kind": "browser screenshot",
+      "sha256": "14d8c5ad13f1991da29d2bdd0940cd037bdf47bcaccf52085a756a99ae9955d7"
+    },
+    {
+      "path": "artifacts/evidence/live-stages-1-2.png",
+      "kind": "browser screenshot",
+      "sha256": "b765d8dbb41080be53f0bead1928f932107cccfd63f6cdf42968fa70750b06c0"
+    },
+    {
+      "path": "artifacts/evidence/alpha-login.png",
+      "kind": "browser screenshot",
+      "sha256": "f2b60c9f5a3d92c5d6ee85c064a7bd47ad393fa8052e8833c4ec12687a4351ab"
+    },
+    {
+      "path": "artifacts/evidence/alpha-final-hud.png",
+      "kind": "browser screenshot",
+      "sha256": "3cb6b76e73e251f335ee317484a593acb7e925036484f0e2d35d663b76f53885"
+    },
+    {
+      "path": "artifacts/evidence/alpha-field-menu.png",
+      "kind": "browser screenshot",
+      "sha256": "d846b700ed7e45ce01ace6b396875fc5b7e3e050de9ac4dd2d76e2f1fa594b2d"
+    },
+    {
+      "path": "artifacts/evidence/alpha-upgrades.png",
+      "kind": "browser screenshot",
+      "sha256": "f1aed935903f8db371dfbc599a5f65a584097bbfade2d1ca7cd081442a1151cf"
+    },
+    {
+      "path": "artifacts/evidence/prod-assets.png",
+      "kind": "browser screenshot",
+      "sha256": "609162c07da84c6b5fc4c7657abd249a9152d8df0ea0ea71a6fb2db410d43fa1"
+    },
+    {
+      "path": "artifacts/evidence/stage3a-aegis.png",
+      "kind": "browser screenshot",
+      "sha256": "8dc6cb79e903faec2750cdcb66f7631c8e1498bbc07488d28665e87faccff3a9"
+    },
+    {
+      "path": "artifacts/evidence/stage3a-docks.png",
+      "kind": "browser screenshot",
+      "sha256": "c9c112c70498a7435b9c265a1d8c49584ee35da56bbd168784ae7904ba315862"
+    },
+    {
+      "path": "artifacts/evidence/stage3a-facade.png",
+      "kind": "browser screenshot",
+      "sha256": "0fb91d06ebacd9c218b55567430f07b175f43d95570ad70c691ad703d659f1e4"
+    },
+    {
+      "path": "artifacts/evidence/stage3a-foundry.png",
+      "kind": "browser screenshot",
+      "sha256": "743471a13c8eaa43bc9b860c9cf23f244dc327c1087edc27a0206ac124464549"
+    },
+    {
+      "path": "artifacts/evidence/stage3a-helios.png",
+      "kind": "browser screenshot",
+      "sha256": "8bba9edbe47184bdbcfa3550581bc4b8a12ba08578052f22539f0883b8b8b853"
+    },
+    {
+      "path": "artifacts/evidence/stage3a-live.png",
+      "kind": "browser screenshot",
+      "sha256": "6f940089449653d27a2a5750b9cc9c3abafac179914f2ed144850f0f62e4af2a"
+    },
+    {
+      "path": "artifacts/evidence/stage3a-roof.png",
+      "kind": "browser screenshot",
+      "sha256": "404cb2da203457d61927aaff55cc2d897b57bade084529ce3c8407fecc2c3e5f"
+    },
+    {
+      "path": "artifacts/evidence/stage3b-healthy.png",
+      "kind": "browser screenshot",
+      "sha256": "608b9145a9aa868eea5e5421ef76c8cad0f59a8012bc2193934c28c7ecc96893"
+    },
+    {
+      "path": "artifacts/evidence/stage3b-live-mounted.png",
+      "kind": "browser screenshot",
+      "sha256": "5e0c981a326e16eac0c203bb0457af2b6d418ee7cbbdda495ddff268534c729d"
+    },
+    {
+      "path": "artifacts/evidence/stage3b-panels.png",
+      "kind": "browser screenshot",
+      "sha256": "2b0682bdb06a43bebc1d4bd458f490d43a32f1f0682850c3c71b94b227cd709b"
+    },
+    {
+      "path": "artifacts/evidence/stage3b-rear.png",
+      "kind": "browser screenshot",
+      "sha256": "f73b36cd300fca9f56225f31996556fff5d658675e8a3fc40276371706d6b703"
+    },
+    {
+      "path": "artifacts/evidence/stage3b-wreck.png",
+      "kind": "browser screenshot",
+      "sha256": "6e82e43ab69144aec42aec273e4782b6a60e6d8aa669d070a9d8839109457697"
+    },
+    {
+      "path": "artifacts/evidence/stage3c-city.png",
+      "kind": "browser screenshot",
+      "sha256": "5b3372346c927f9754f1b63e7aab3195802eb41b7e0607f3ed453b92de448231"
+    },
+    {
+      "path": "artifacts/evidence/stage3c-console.png",
+      "kind": "browser screenshot",
+      "sha256": "3ef69b392e5f3ea20395a5a43a5ffb278766d341af76b398448192cf99cadff6"
+    },
+    {
+      "path": "artifacts/evidence/stage3c-hacked.png",
+      "kind": "browser screenshot",
+      "sha256": "be27a2702177313677faddf97f66889906c455a9ca069c1f43077a55e4ca57b6"
+    },
+    {
+      "path": "artifacts/evidence/stage3c-live.png",
+      "kind": "browser screenshot",
+      "sha256": "f026a44ceb61b32358e631012ab4bfbc25221a1de6caa16a38082b49d2475a4d"
+    },
+    {
+      "path": "artifacts/evidence/stage3c-online.png",
+      "kind": "browser screenshot",
+      "sha256": "4442e61a3f0aee609ad682adcc7addd856f15445ac5f6dad053d246f86a49608"
+    },
+    {
+      "path": "artifacts/evidence/stage3c-shutdown.png",
+      "kind": "browser screenshot",
+      "sha256": "0e16bd940defb40409f777f93eb1b5529ba897a97300c67286116191d3e2e2a1"
+    },
+    {
+      "path": "artifacts/evidence/asset-verification.json",
+      "kind": "verification report",
+      "sha256": "467822c418bf85f03c20d08a9c5d68122ced17a46b67e28e41f27e826a8d6436"
+    }
+  ]
+}

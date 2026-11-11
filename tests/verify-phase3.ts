@@ -267,6 +267,9 @@ async function runPhase3Verification(): Promise<void> {
   );
   assert.equal(limbDummy.position.y, limbDummy.spawnPosition.y, 'Crippling leg must immediately ground airborne enemy');
 
+  // Section 6 requires a 2.5s knee-drop before the existing 70% chase-speed penalty resumes.
+  assert.equal(limbDummy.presentation.reaction, 2, 'Leg cripple must force a knee-drop');
+  for (let i = 0; i < 151; i++) enemyMgr.stepEnemies([], FIXED_TIMESTEP);
   // Verify 70% chase speed reduction when legsCrippledTimer > 0
   limbDummy.combatState = EnemyCombatState.CHASE;
   enemyMgr.stepEnemies([agent], FIXED_TIMESTEP);
@@ -305,6 +308,8 @@ async function runPhase3Verification(): Promise<void> {
   assert.ok(agent.position.z < -2.0, `Agent capsule must physically translate toward target (Z=${agent.position.z.toFixed(2)}m)`);
 
   // Verify Elite Counter-Stance bounce & counter-throw when striking with basic melee
+  // Advance beyond the new combo cadence before issuing another strike.
+  for (let i = 0; i < 18; i++) enemyMgr.stepEnemies([], FIXED_TIMESTEP);
   const eliteEnemy = enemyMgr.spawnEnemy(103, 'ELITE-CENTURION', { x: 0, y: 0, z: -3.5 }, true);
   eliteEnemy.combatState = EnemyCombatState.COUNTER_STANCE;
   eliteEnemy.stateTimer = 1.5;

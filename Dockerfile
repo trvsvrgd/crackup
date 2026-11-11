@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY package*.json tsconfig.json ./
 
 # Install all dependencies (including build toolchain)
-RUN npm install
+RUN npm ci
 
 # Copy application source across shared, server, client, and public
 COPY shared ./shared

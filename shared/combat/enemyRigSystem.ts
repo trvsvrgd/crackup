@@ -22,6 +22,8 @@ import {
 } from '../constants.js';
 import { AgentPhysicsBody, RAPIER } from '../physics/characterController.js';
 import { EnemyBinarySnapshotState, quatFromYaw, Vec3 } from '../protocol/binaryProtocol.js';
+import { AgentAnimState } from '../constants.js';
+import { createCombatPresentation, EnemyArchetype, HitReaction, WARDEN_RIG_SCALE, type CombatPresentation, type DroppedWeaponState } from './combatPresentation.js';
 
 export interface LimbRuntimeState {
   limbId: EnemyLimbId;
@@ -77,6 +79,9 @@ export interface EnemyPhysicsEntity {
 
   // Lag-compensation history buffer for server-validated Q Counter-Parry
   history: EnemyLagHistoryEntry[];
+  presentation: CombatPresentation;
+  lastAttacker: AgentPhysicsBody | null;
+  capturedByEntityId?: number;
 }
 
 export interface VatsLimbEvaluation {
@@ -97,7 +102,18 @@ export interface CombatEventResult {
     | 'WEAPON_MISS'
     | 'MELEE_HIT'
     | 'COUNTER_BOUNCE_THROW'
-    | 'PARRY_TAKEDOWN';
+    | 'PARRY_TAKEDOWN'
+    | 'VEHICLE_HIT'
+    | 'RELAY_VENT_HIT';
+  targetRelayId?: number;
+  targetVentId?: number;
+  ventHp?: number;
+  targetVehicleId?: number;
+  vehicleHp?: number;
+  detachedPanelMask?: number;
+  reaction?: HitReaction;
+  impulse?: Vec3;
+  comboStep?: number;
   attackerEntityId: number;
   targetEnemyId: number;
   limbId?: EnemyLimbId;
@@ -127,7 +143,8 @@ export function computeBoneWorldPosition(
   enemyYaw: number,
   combatState: EnemyCombatState,
   animPhase: number,
-  limbId: EnemyLimbId
+  limbId: EnemyLimbId,
+  presentation?: CombatPresentation
 ): Vec3 {
   const spec = LIMB_COLLIDER_SPECS[limbId];
   let lx = spec.localOffset.x;
@@ -161,6 +178,18 @@ export function computeBoneWorldPosition(
     }
   }
 
+  if (presentation) {
+    const force = Math.sin(Math.min(1, presentation.flinchSec / 0.18) * Math.PI) * 0.13;
+    if (limbId === EnemyLimbId.HEAD || limbId === EnemyLimbId.TORSO) {
+      lx += (presentation.direction.x * Math.cos(enemyYaw) - presentation.direction.z * Math.sin(enemyYaw)) * force;
+      lz += (presentation.direction.x * Math.sin(enemyYaw) + presentation.direction.z * Math.cos(enemyYaw)) * force;
+    }
+    if (presentation.timer > 0 && [HitReaction.KNEE_DROP, HitReaction.WALL_SPLAT, HitReaction.PAIRED_COUNTER].includes(presentation.reaction)) {
+      if (limbId === EnemyLimbId.HEAD || limbId === EnemyLimbId.TORSO || limbId === EnemyLimbId.LEFT_ARM || limbId === EnemyLimbId.RIGHT_ARM) ly -= 0.37;
+    }
+    const scale = presentation.archetype === EnemyArchetype.SECTOR_WARDEN ? WARDEN_RIG_SCALE : 1;
+    lx *= scale; ly *= scale; lz *= scale;
+  }
   // Rotate local bone offset (lx, ly, lz) by enemyYaw around Y axis (yaw = 0 faces -Z)
   const cosY = Math.cos(enemyYaw);
   const sinY = Math.sin(enemyYaw);
@@ -176,6 +205,105 @@ export function computeBoneWorldPosition(
  * V.A.T.S. Occlusion Raycasts, Motion-Warped Melee, and Q Counter-Parry Shockwaves.
  */
 export class EnemyCombatManager {
+  public readonly weaponObstacleProbes = new Map<string, (agent: AgentPhysicsBody, origin: Vec3, direction: Vec3, maxDistance: number) => { distance: number; resolve: () => CombatEventResult } | null>();
+  public weaponObstacleResolver: ((agent: AgentPhysicsBody, origin: Vec3, direction: Vec3, maxDistance: number) => CombatEventResult | null) | null = null;
+  public extraSolidCollider: ((collider: RAPIER.Collider) => boolean) | null = null;
+  private elapsed = 0;
+  private nextDropId = 1;
+  private readonly drops = new Map<number, { body: RAPIER.RigidBody; life: number }>();
+  private readonly pairs = new Map<number, { agent: AgentPhysicsBody; enemy: EnemyPhysicsEntity; player: Vec3; target: Vec3; yaw: number; remaining: number }>();
+  private readonly combos = new Map<number, { ready: number; step: number }>();
+
+  public getPresentationStates(): CombatPresentation[] { return [...this.enemies.values()].map(e => e.presentation); }
+  public getDroppedWeaponStates(): DroppedWeaponState[] {
+    return [...this.drops].map(([id, d]) => ({ id, position: { ...d.body.translation() }, rotation: { ...d.body.rotation() } }));
+  }
+  public isPaired(agent: AgentPhysicsBody): boolean { return this.pairs.has(agent.entityId); }
+  public releaseAgent(entityId: number): void {
+    this.combos.delete(entityId);
+    const pair = this.pairs.get(entityId);
+    if (pair) {
+      pair.enemy.presentation.pairedAgentId = 0;
+      pair.enemy.presentation.reaction = HitReaction.DISARM; pair.enemy.presentation.timer = 0.35;
+      this.pairs.delete(entityId);
+    }
+    for (const enemy of this.enemies.values()) if (enemy.lastAttacker?.entityId === entityId) enemy.lastAttacker = null;
+  }
+  public lockPairedAgent(agent: AgentPhysicsBody): boolean {
+    const pair = this.pairs.get(agent.entityId); if (!pair) return false;
+    agent.position = { ...pair.player }; agent.velocity = { x: 0, y: 0, z: 0 };
+    agent.facingYaw = pair.yaw; agent.rotation = quatFromYaw(pair.yaw); agent.animState = AgentAnimState.PARRY_TAKEDOWN;
+    return true;
+  }
+  private dropWeapon(enemy: EnemyPhysicsEntity): void {
+    if (enemy.presentation.weaponDropped) return;
+    enemy.presentation.weaponDropped = true;
+    const arm = enemy.limbs[EnemyLimbId.RIGHT_ARM].worldPosition;
+    const scale = enemy.presentation.archetype === EnemyArchetype.SECTOR_WARDEN ? WARDEN_RIG_SCALE : 1;
+    const hand = { x: arm.x, y: arm.y - 0.28 * scale, z: arm.z };
+    const body = this.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(hand.x, hand.y, hand.z).setCcdEnabled(true));
+    this.world.createCollider(RAPIER.ColliderDesc.cuboid(0.07, 0.09, 0.3).setMass(3).setRestitution(0.25), body);
+    body.setLinvel({ x: enemy.presentation.direction.x * 4, y: 4.5, z: enemy.presentation.direction.z * 4 }, true);
+    body.setAngvel({ x: 3, y: 7, z: 4 }, true);
+    this.drops.set(this.nextDropId++, { body, life: 12 });
+  }
+  /** All damage paths enter here; AI movement is suspended while the physical impulse resolves. */
+  public reactToHit(enemy: EnemyPhysicsEntity, origin: Vec3, heavy = false, reaction = HitReaction.FLINCH): void {
+    const r = enemy.presentation, dx = enemy.position.x - origin.x, dz = enemy.position.z - origin.z;
+    const length = Math.hypot(dx, dz);
+    if (r.reaction !== HitReaction.PAIRED_COUNTER) r.direction = length > 0.001 ? { x: dx / length, y: 0, z: dz / length } : { x: Math.sin(enemy.yaw), y: 0, z: Math.cos(enemy.yaw) };
+    r.flinchSec = 0.18; r.flashSec = 0.06; r.hitSequence = (r.hitSequence + 1) & 255;
+    if (r.reaction !== HitReaction.PAIRED_COUNTER) {
+      const persistent = r.timer > 0 && (r.reaction === HitReaction.KNEE_DROP || r.reaction === HitReaction.WALL_SPLAT) && reaction === HitReaction.FLINCH && !heavy;
+      if (!persistent) {
+        r.reaction = reaction !== HitReaction.FLINCH ? reaction : heavy ? HitReaction.KNOCKBACK : reaction;
+        r.timer = reaction === HitReaction.KNEE_DROP ? 2.5 : heavy || reaction === HitReaction.DISARM ? 0.65 : 0.18;
+      }
+      const speed = heavy ? 14 : reaction === HitReaction.KNEE_DROP || persistent ? 0 : 1.6;
+      r.impulse = { x: r.direction.x * speed, y: 0, z: r.direction.z * speed };
+    }
+    if (reaction === HitReaction.DISARM) this.dropWeapon(enemy);
+  }
+  private stepPhysicalReaction(enemy: EnemyPhysicsEntity, dt: number, agents: AgentPhysicsBody[]): boolean {
+    const r = enemy.presentation;
+    r.flinchSec = Math.max(0, r.flinchSec - dt); r.flashSec = Math.max(0, r.flashSec - dt);
+    if (r.reaction === HitReaction.PAIRED_COUNTER && r.pairedAgentId) {
+      const pair = this.pairs.get(r.pairedAgentId);
+      if (pair && pair.agent.hp > 0 && agents.includes(pair.agent)) {
+        pair.remaining = Math.max(0, pair.remaining - dt); r.timer = pair.remaining; r.pairedElapsed = 0.65 - pair.remaining;
+        this.lockPairedAgent(pair.agent); enemy.position = { ...pair.target }; enemy.yaw = pair.yaw + Math.PI;
+        if (pair.remaining > 0) return true;
+      }
+      this.pairs.delete(r.pairedAgentId); r.pairedAgentId = 0;
+      r.reaction = HitReaction.KNOCKBACK; r.timer = 0.35;
+      r.impulse = { x: r.direction.x * 14, y: 0, z: r.direction.z * 14 };
+    }
+    if (r.timer <= 0) { r.reaction = HitReaction.NONE; r.impulse = { x: 0, y: 0, z: 0 }; return false; }
+    r.timer = Math.max(0, r.timer - dt);
+    const speed = Math.hypot(r.impulse.x, r.impulse.z);
+    if (speed > 0.1) {
+      const direction = { x: r.impulse.x / speed, y: 0, z: r.impulse.z / speed };
+      const hit = this.world.castShape({ x: enemy.position.x, y: enemy.position.y + 0.96, z: enemy.position.z },
+        { x: 0, y: 0, z: 0, w: 1 }, direction, new RAPIER.Capsule(0.55, 0.35), 0, speed * dt + 0.02, true,
+        undefined, undefined, undefined, undefined,
+        c => (!c.isSensor() || !!this.extraSolidCollider?.(c)) && !agents.some(a => a.collider.handle === c.handle) && ![...this.drops.values()].some(d => d.body.handle === c.parent()?.handle));
+      const travel = hit ? Math.max(0, hit.time_of_impact - 0.025) : speed * dt;
+      enemy.position.x += direction.x * travel; enemy.position.z += direction.z * travel;
+      if (hit && speed > 8 && Math.abs(hit.normal1.y) < 0.6 && r.reaction !== HitReaction.WALL_SPLAT) {
+        r.reaction = HitReaction.WALL_SPLAT; r.timer = 1.8; r.impulse = { x: 0, y: 0, z: 0 };
+        enemy.hp = Math.max(0, enemy.hp - 35); enemy.staggerTimer = Math.max(enemy.staggerTimer, 1.8);
+        if (enemy.hp <= 0 && enemy.combatState !== EnemyCombatState.DEAD) {
+          enemy.combatState = EnemyCombatState.DEAD; enemy.respawnTimer = 6;
+          if (enemy.lastAttacker) enemy.lastAttacker.telemetry.enemiesDefeated = (enemy.lastAttacker.telemetry.enemiesDefeated ?? 0) + 1;
+        }
+      } else {
+        const decay = Math.exp(-dt * (r.reaction === HitReaction.KNOCKBACK ? 1.8 : 12));
+        r.impulse.x *= decay; r.impulse.z *= decay;
+      }
+      enemy.velocity = { ...r.impulse };
+    } else enemy.velocity = { x: 0, y: 0, z: 0 };
+    return r.timer > 0;
+  }
   public readonly enemies: Map<number, EnemyPhysicsEntity> = new Map();
   public readonly colliderHandleToLimb: Map<
     number,
@@ -353,6 +481,9 @@ export class EnemyCombatManager {
     const rank: EnemyRank = options?.rank ?? (isElite ? 'ELITE' : 'GRUNT');
     const maxHp = options?.maxHp ?? (isElite ? 420 : 240);
     const maxArmor = options?.maxArmor ?? (isElite ? 160 : 80);
+    const archetype = rank === 'KINGPIN' ? EnemyArchetype.SECTOR_WARDEN : faction === FactionId.AEGIS_DIRECTORATE || faction === FactionId.HELIOS_EXECUTIVE_GUARD ? EnemyArchetype.AEGIS_SHOCK_TROOPER : isElite ? EnemyArchetype.CYBER_RONIN : EnemyArchetype.STREET_ENFORCER;
+    const presentation = createCombatPresentation(enemyId, archetype);
+    const rigScale = archetype === EnemyArchetype.SECTOR_WARDEN ? WARDEN_RIG_SCALE : 1;
     const limbs = {} as Record<EnemyLimbId, LimbRuntimeState>;
 
     // Create 6 distinct child physics colliders in Rapier3D attached to bone transforms
@@ -363,7 +494,8 @@ export class EnemyCombatManager {
         0,
         EnemyCombatState.IDLE,
         0,
-        limbId
+        limbId,
+        presentation
       );
 
       const rbDesc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(
@@ -375,8 +507,8 @@ export class EnemyCombatManager {
 
       const colDesc =
         spec.shape === 'sphere'
-          ? RAPIER.ColliderDesc.ball(spec.radius)
-          : RAPIER.ColliderDesc.capsule(spec.halfHeight, spec.radius);
+          ? RAPIER.ColliderDesc.ball(spec.radius * rigScale)
+          : RAPIER.ColliderDesc.capsule(spec.halfHeight * rigScale, spec.radius * rigScale);
 
       // Make limb colliders sensors so they don't obstruct character controller capsule sweeps,
       // while remaining 100% queryable by Rapier3D raycasts and shape intersections!
@@ -425,6 +557,8 @@ export class EnemyCombatManager {
       respawnTimer: 0,
       limbs,
       history: [],
+      presentation,
+      lastAttacker: null,
     };
 
     this.enemies.set(enemyId, entity);
@@ -434,6 +568,7 @@ export class EnemyCombatManager {
   public removeEnemy(enemyId: number): void {
     const enemy = this.enemies.get(enemyId);
     if (!enemy) return;
+    if (enemy.presentation.pairedAgentId) this.pairs.delete(enemy.presentation.pairedAgentId);
     for (const limbId of ALL_LIMB_IDS) {
       const limb = enemy.limbs[limbId];
       if (limb) {
@@ -456,7 +591,8 @@ export class EnemyCombatManager {
         enemy.yaw,
         enemy.combatState,
         enemy.animPhase,
-        limbId
+        limbId,
+        enemy.presentation
       );
       limb.worldPosition = worldPos;
       limb.rigidBody.setTranslation(worldPos, true);
@@ -475,12 +611,18 @@ export class EnemyCombatManager {
     nowMs = Date.now()
   ): void {
     const agentList = Array.from(agents);
+    this.elapsed += dt;
+    for (const [id, drop] of this.drops) {
+      drop.life -= dt; if (drop.life <= 0) { this.world.removeRigidBody(drop.body); this.drops.delete(id); }
+    }
 
     for (const enemy of this.enemies.values()) {
       enemy.animPhase += dt;
+      const reacting = this.stepPhysicalReaction(enemy, dt, agentList);
 
       // Handle Dead & Respawn cycle
       if (enemy.combatState === EnemyCombatState.DEAD) {
+        if (reacting) { this.syncEnemyBoneColliders(enemy); continue; }
         if (!enemy.disableAutoRespawn) {
           enemy.respawnTimer -= dt;
           if (enemy.respawnTimer <= 0) {
@@ -510,6 +652,7 @@ export class EnemyCombatManager {
         }
       }
 
+      if (reacting) { this.syncEnemyBoneColliders(enemy); continue; }
       // Omega Bounty HVT movement is driven by the 90s 3D extraction path in Phase5WorldDirector
       if (enemy.rank === 'OMEGA_HVT') {
         this.syncEnemyBoneColliders(enemy);
@@ -528,6 +671,7 @@ export class EnemyCombatManager {
       let nearestAgent: AgentPhysicsBody | null = null;
       let nearestDist = Infinity;
       for (const a of agentList) {
+        if (a.hp <= 0 || a.spawnProtectionSec > 0) continue;
         const d = Math.hypot(
           a.position.x - enemy.position.x,
           a.position.y - enemy.position.y,
@@ -574,7 +718,7 @@ export class EnemyCombatManager {
         }
 
         if (enemy.combatState === EnemyCombatState.CHASE) {
-          if (nearestDist <= 3.1) {
+          if (nearestDist <= 2.65) {
             // Transition into Windup or Elite Counter Stance
             enemy.attackCycleCount += 1;
             if (enemy.isElite && enemy.attackCycleCount % 2 === 0) {
@@ -666,7 +810,11 @@ export class EnemyCombatManager {
             if (nearestDist <= 2.8) {
               const rawDmg = enemy.isElite ? 40 : 26;
               const effectiveDmg = enemy.armsCrippledTimer > 0 ? rawDmg * 0.5 : rawDmg;
-              void effectiveDmg;
+              const damage = effectiveDmg * (1 - nearestAgent.buildModifiers.incomingDamageReduction);
+              nearestAgent.hp = Math.max(0, nearestAgent.hp - damage);
+              if (nearestAgent.hp === 0) {
+                nearestAgent.telemetry.agentDowns = (nearestAgent.telemetry.agentDowns || 0) + 1;
+              }
             }
           }
         } else if (enemy.combatState === EnemyCombatState.ACTIVE_SWEEP) {
@@ -708,6 +856,8 @@ export class EnemyCombatManager {
     enemy.staggerTimer = 0;
     enemy.armsCrippledTimer = 0;
     enemy.legsCrippledTimer = 0;
+    enemy.presentation = createCombatPresentation(enemy.enemyId, enemy.presentation.archetype);
+    enemy.lastAttacker = null;
     for (const limbId of ALL_LIMB_IDS) {
       enemy.limbs[limbId].hp = enemy.limbs[limbId].maxHp;
     }
@@ -904,6 +1054,14 @@ export class EnemyCombatManager {
       }
     );
 
+    let nearest: { distance: number; resolve: () => CombatEventResult } | null = null;
+    for (const probe of this.weaponObstacleProbes.values()) {
+      const hit = probe(agent, shooterOrigin, rayDir, Math.max(0, bestToi));
+      if (hit && (!nearest || hit.distance < nearest.distance)) nearest = hit;
+    }
+    if (nearest) return nearest.resolve();
+    const obstacle = this.weaponObstacleResolver?.(agent, shooterOrigin, rayDir, Math.max(0, bestToi));
+    if (obstacle) return obstacle;
     if (!hitEnemy) {
       return {
         type: 'WEAPON_MISS',
@@ -976,6 +1134,12 @@ export class EnemyCombatManager {
     const prevLimbHp = limb.hp;
     limb.hp = Math.max(0, limb.hp - totalDamage);
     const newlyCrippled = prevLimbHp > 0 && limb.hp === 0;
+    enemy.lastAttacker = agent;
+    const reaction = newlyCrippled && (limbId === EnemyLimbId.LEFT_LEG || limbId === EnemyLimbId.RIGHT_LEG) ? HitReaction.KNEE_DROP
+      : newlyCrippled && (limbId === EnemyLimbId.LEFT_ARM || limbId === EnemyLimbId.RIGHT_ARM) ? HitReaction.DISARM : HitReaction.FLINCH;
+    this.reactToHit(enemy, agent.position, isBlastOrPropDamage, reaction);
+    if (enemy.rank === 'OMEGA_HVT' && enemy.hp > 0 && !enemy.capturedByEntityId &&
+      enemy.limbs[EnemyLimbId.LEFT_LEG].hp === 0 && enemy.limbs[EnemyLimbId.RIGHT_LEG].hp === 0) enemy.capturedByEntityId = agent.entityId;
 
     if (newlyCrippled) {
       agent.telemetry.limbsCrippled = (agent.telemetry.limbsCrippled || 0) + 1;
@@ -1039,6 +1203,8 @@ export class EnemyCombatManager {
       shockwaveTriggered: false,
       shockwaveHits: 0,
       impactPoint: { ...limb.worldPosition },
+      reaction: enemy.presentation.reaction,
+      impulse: { ...enemy.presentation.impulse },
     };
   }
 
@@ -1050,6 +1216,9 @@ export class EnemyCombatManager {
     agent: AgentPhysicsBody,
     dt: number
   ): CombatEventResult | null {
+    if (agent.hp <= 0 || this.isPaired(agent)) return null;
+    const combo = this.combos.get(agent.entityId);
+    if (combo && this.elapsed < combo.ready) return null;
     const engageRange =
       MELEE_ENGAGE_RANGE_M + (agent.buildModifiers?.meleeEngageRangeBonusM ?? 0);
     let target: EnemyPhysicsEntity | null = null;
@@ -1124,6 +1293,8 @@ export class EnemyCombatManager {
       };
     }
 
+    const comboStep = combo && this.elapsed - combo.ready < 0.75 ? combo.step % 3 + 1 : 1;
+    this.combos.set(agent.entityId, { ready: this.elapsed + 0.28, step: comboStep });
     // Valid melee strike connects cleanly in 3D space
     const { meleeBaseDamage } = getStrengthParams(agent.attributes.strength);
     target.hp = Math.max(0, target.hp - meleeBaseDamage);
@@ -1131,9 +1302,8 @@ export class EnemyCombatManager {
       target.armor = Math.max(0, target.armor - meleeBaseDamage * 0.5);
     }
 
-    // Knockback target slightly
-    target.position.x += dirX * 0.65;
-    target.position.z += dirZ * 0.65;
+    target.lastAttacker = agent;
+    this.reactToHit(target, agent.position, comboStep === 3);
 
     if (target.hp <= 0) {
       target.combatState = EnemyCombatState.DEAD;
@@ -1145,6 +1315,9 @@ export class EnemyCombatManager {
 
     return {
       type: 'MELEE_HIT',
+      comboStep,
+      reaction: target.presentation.reaction,
+      impulse: { ...target.presentation.impulse },
       attackerEntityId: agent.entityId,
       targetEnemyId: target.enemyId,
       damageDealt: meleeBaseDamage,
@@ -1166,6 +1339,7 @@ export class EnemyCombatManager {
     agent: AgentPhysicsBody,
     clientTimestampMs = Date.now()
   ): CombatEventResult | null {
+    if (agent.hp <= 0 || this.isPaired(agent)) return null;
     const vigilanteParams = getVigilanteParams(agent.attributes.vigilante);
     const strengthParams = getStrengthParams(agent.attributes.strength);
     const mods = agent.buildModifiers;
@@ -1177,6 +1351,7 @@ export class EnemyCombatManager {
     let parriedEnemy: EnemyPhysicsEntity | null = null;
     for (const enemy of this.enemies.values()) {
       if (enemy.combatState === EnemyCombatState.DEAD) continue;
+      if (enemy.presentation.pairedAgentId) continue;
       const dist = Math.hypot(
         enemy.position.x - agent.position.x,
         enemy.position.y - agent.position.y,
@@ -1213,10 +1388,23 @@ export class EnemyCombatManager {
     const dirX = dx / len;
     const dirZ = dz / len;
 
+    const obstruction = this.world.castRay(new RAPIER.Ray({ x: agent.position.x, y: agent.position.y + 1, z: agent.position.z },
+      { x: dirX, y: 0, z: dirZ }), len, true, RAPIER.QueryFilterFlags.EXCLUDE_SENSORS, undefined, agent.collider);
+    if (obstruction && obstruction.timeOfImpact < len - 0.2) return null;
+
     agent.position.x = parriedEnemy.position.x - dirX * 1.15;
     agent.position.z = parriedEnemy.position.z - dirZ * 1.15;
     agent.facingYaw = Math.atan2(-dirX, -dirZ);
     agent.rotation = quatFromYaw(agent.facingYaw);
+    parriedEnemy.lastAttacker = agent;
+    this.reactToHit(parriedEnemy, agent.position, false, HitReaction.DISARM);
+    const pair = { agent, enemy: parriedEnemy, player: { ...agent.position }, target: { ...parriedEnemy.position }, yaw: agent.facingYaw, remaining: 0.65 };
+    this.pairs.set(agent.entityId, pair);
+    parriedEnemy.presentation.reaction = HitReaction.PAIRED_COUNTER;
+    parriedEnemy.presentation.timer = 0.65; parriedEnemy.presentation.pairedElapsed = 0;
+    parriedEnemy.presentation.pairedAgentId = agent.entityId;
+    parriedEnemy.presentation.impulse = { x: 0, y: 0, z: 0 };
+    this.lockPairedAgent(agent);
 
     const parryDamage =
       strengthParams.meleeBaseDamage * 1.6 * (mods?.parryDamageMultiplier ?? 1.0);
@@ -1265,8 +1453,8 @@ export class EnemyCombatManager {
 
           // Radial knockback impulse
           const horiz = Math.hypot(sx, sz) || 1;
-          other.position.x += (sx / horiz) * 2.2;
-          other.position.z += (sz / horiz) * 2.2;
+          other.lastAttacker = agent;
+          this.reactToHit(other, agent.position, true);
 
           if (other.hp <= 0) {
             other.respawnTimer = 6.0;

@@ -31,6 +31,22 @@ export class SpatialOrbAudioEngine {
   private readonly camUp = new THREE.Vector3();
   public isInitialized = false;
 
+  public playCombatCue(kind: 'hit' | 'critical' | 'hurt' | 'defeat'): void {
+    if (!this.ctx || !this.masterGain) return;
+    const now = this.ctx.currentTime;
+    const oscillator = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    oscillator.type = kind === 'hurt' ? 'triangle' : 'sine';
+    const frequency = kind === 'hurt' ? 120 : kind === 'critical' ? 980 : kind === 'defeat' ? 660 : 620;
+    oscillator.frequency.setValueAtTime(frequency, now);
+    oscillator.frequency.exponentialRampToValueAtTime(kind === 'hurt' ? 60 : frequency * 0.65, now + 0.09);
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    oscillator.connect(gain); gain.connect(this.masterGain);
+    oscillator.start(now); oscillator.stop(now + 0.13);
+    oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+  }
+
   public unlockAndInit(): void {
     if (this.isInitialized || typeof window === 'undefined') return;
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;

@@ -8,6 +8,10 @@
  */
 
 import * as THREE from 'three';
+import { RelayBuilder, type RelayBuildResult } from '../builders/RelayBuilder.js';
+import { getRelayPlans } from '../../shared/world/relayDefinition.js';
+import { buildNeoVeridiaSector01 } from '../../shared/world/neoVeridiaBlock.js';
+import type { RelayPacket } from '../../shared/protocol/relayProtocol.js';
 import { DistrictId } from '../../shared/constants.js';
 import {
   AuditorAirshipBinaryState,
@@ -35,6 +39,9 @@ interface DistrictLoopVisualGroup {
 
 export class ClientPhase5WorldRenderer {
   public readonly root: THREE.Group;
+  private readonly relayBuilder = new RelayBuilder();
+  private readonly relays = new Map<number, RelayBuildResult>();
+  private lastTime = 0;
   private readonly districtGroups: Map<number, DistrictLoopVisualGroup> = new Map();
   private readonly omegaWaypointsLine: THREE.Line;
   private readonly omegaBeaconGroup: THREE.Group;
@@ -42,18 +49,20 @@ export class ClientPhase5WorldRenderer {
   private readonly airshipMeshes: Map<number, THREE.Group> = new Map();
   private readonly vigilanteAuraMesh: THREE.Mesh;
 
-  constructor(scene: THREE.Scene) {
+  constructor(scene: THREE.Scene, private readonly prepareMaterial: (material: THREE.Material) => void = () => {}) {
     this.root = new THREE.Group();
     this.root.name = 'Phase5WorldRoot';
     scene.add(this.root);
 
+    const plans = getRelayPlans(buildNeoVeridiaSector01());
+    const relay = (id: number) => { const built = this.relayBuilder.build(plans.find(p => p.relayId === id)!); this.relays.set(id, built); return built.root; };
     // 1. Build 4 District Loop 3D Terminal & Core Override Meshes
     for (const spec of DISTRICT_LOOP_SPECS) {
-      const terminalAMesh = this.createTerminalMesh(spec.stage1Terminals[0], 0x00f0ff);
+      const terminalAMesh = relay(spec.districtIndex * 2 + 1);
       const terminalARing = terminalAMesh.getObjectByName('TerminalRing') as THREE.Mesh;
       this.root.add(terminalAMesh);
 
-      const terminalBMesh = this.createTerminalMesh(spec.stage1Terminals[1], 0x00f0ff);
+      const terminalBMesh = relay(spec.districtIndex * 2 + 2);
       const terminalBRing = terminalBMesh.getObjectByName('TerminalRing') as THREE.Mesh;
       this.root.add(terminalBMesh);
 
@@ -128,49 +137,6 @@ export class ClientPhase5WorldRenderer {
     this.vigilanteAuraMesh = new THREE.Mesh(auraGeom, auraMat);
     this.vigilanteAuraMesh.position.y = 0.12;
     this.root.add(this.vigilanteAuraMesh);
-  }
-
-  private createTerminalMesh(pos: Vec3, hexColor: number): THREE.Group {
-    const group = new THREE.Group();
-    group.position.set(pos.x, pos.y, pos.z);
-
-    const baseGeom = new THREE.BoxGeometry(1.1, 2.2, 0.8);
-    const baseMat = new THREE.MeshStandardMaterial({
-      color: 0x1e293b,
-      metalness: 0.75,
-      roughness: 0.25,
-      emissive: hexColor,
-      emissiveIntensity: 0.35,
-    });
-    const baseMesh = new THREE.Mesh(baseGeom, baseMat);
-    baseMesh.position.y = 1.1;
-    baseMesh.castShadow = true;
-    baseMesh.receiveShadow = true;
-    group.add(baseMesh);
-
-    const screenGeom = new THREE.BoxGeometry(0.9, 0.65, 0.1);
-    const screenMat = new THREE.MeshBasicMaterial({
-      color: hexColor,
-    });
-    const screenMesh = new THREE.Mesh(screenGeom, screenMat);
-    screenMesh.position.set(0, 1.55, 0.42);
-    screenMesh.name = 'TerminalScreen';
-    group.add(screenMesh);
-
-    const ringGeom = new THREE.RingGeometry(1.6, 1.95, 28);
-    ringGeom.rotateX(-Math.PI / 2);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: hexColor,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.7,
-    });
-    const ringMesh = new THREE.Mesh(ringGeom, ringMat);
-    ringMesh.position.y = 0.08;
-    ringMesh.name = 'TerminalRing';
-    group.add(ringMesh);
-
-    return group;
   }
 
   private createCoreOverrideMesh(pos: Vec3): THREE.Group {
@@ -270,8 +236,19 @@ export class ClientPhase5WorldRenderer {
     auditorAirships: AuditorAirshipBinaryState[],
     localAgentPos: Vec3,
     vigilanteAuraRadiusM: number,
-    timeSec: number
+    timeSec: number,
+    relayPacket?: RelayPacket
   ): void {
+    const dt = this.lastTime ? Math.max(0, Math.min(0.1, timeSec - this.lastTime)) : 0;
+    this.lastTime = timeSec;
+    for (const [id, relay] of this.relays) {
+      this.relayBuilder.attachModel(relay);
+      relay.materials.forEach(this.prepareMaterial);
+      const state = relayPacket?.relays.find(r => r.relayId === id);
+      relay.root.visible = !relayPacket || !!state;
+      if (state) relay.updateRelay(dt, state, timeSec, new THREE.Vector3(localAgentPos.x, localAgentPos.y, localAgentPos.z));
+      else relay.update(dt);
+    }
     // Update Vigilante 3D Spherical Aura Ring around local Agent
     this.vigilanteAuraMesh.position.set(localAgentPos.x, localAgentPos.y + 0.12, localAgentPos.z);
     this.vigilanteAuraMesh.scale.setScalar(Math.max(8, vigilanteAuraRadiusM));
@@ -282,10 +259,10 @@ export class ClientPhase5WorldRenderer {
       if (!visuals) continue;
 
       const termAColor = loop.terminalsHacked >= 1 || loop.currentStage >= 2 ? 0x22c55e : 0x00f0ff;
-      (visuals.terminalARing.material as THREE.MeshBasicMaterial).color.setHex(termAColor);
+      if (!relayPacket) (visuals.terminalARing.material as THREE.MeshBasicMaterial).color.setHex(termAColor);
 
       const termBColor = loop.terminalsHacked >= 2 || loop.currentStage >= 2 ? 0x22c55e : 0x00f0ff;
-      (visuals.terminalBRing.material as THREE.MeshBasicMaterial).color.setHex(termBColor);
+      if (!relayPacket) (visuals.terminalBRing.material as THREE.MeshBasicMaterial).color.setHex(termBColor);
 
       visuals.coreRingOuter.rotation.y = timeSec * 1.4;
       visuals.coreRingOuter.rotation.x = Math.sin(timeSec * 0.9) * 0.4;
@@ -335,9 +312,18 @@ export class ClientPhase5WorldRenderer {
 
     for (const [id, mesh] of this.airshipMeshes.entries()) {
       if (!activeIds.has(id)) {
-        this.root.remove(mesh);
+        this.releaseObject(mesh);
         this.airshipMeshes.delete(id);
       }
     }
   }
+  private releaseObject(root: THREE.Object3D): void {
+    root.removeFromParent(); const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();
+    root.traverse(o => { if (o instanceof THREE.Mesh || o instanceof THREE.Line) { geometries.add(o.geometry); (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => materials.add(m)); } });
+    geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); root.clear();
+  }
+  public dispose(): void {
+    this.relays.forEach(r => r.dispose()); this.relays.clear(); this.releaseObject(this.root); this.districtGroups.clear(); this.airshipMeshes.clear();
+  }
+
 }

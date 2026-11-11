@@ -5,6 +5,8 @@
  */
 
 import {
+  AgentAttributeXP,
+  computeAttributeLevelFromXP,
   AugmentChassisId,
   DistrictId,
   DistrictLoopRewardId,
@@ -28,6 +30,27 @@ export interface SkillNodeSpec {
   tier: 1 | 2 | 3 | 4;
   name: string;
   description: string;
+}
+
+// Each earned attribute level grants one permanent upgrade point. Client-supplied
+// levels and lists of unlocked items never participate in this calculation.
+export function earnedSkillPoints(xp: AgentAttributeXP): number {
+  return Object.values(xp).reduce((sum, value) => sum + computeAttributeLevelFromXP(value) - 1, 0);
+}
+
+export function availableSkillPoints(xp: AgentAttributeXP, unlocked: Iterable<string>): number {
+  const spent = new Set(Array.from(unlocked).filter((id) => SKILL_NODE_BY_ID.has(id))).size;
+  return Math.max(0, earnedSkillPoints(xp) - spent);
+}
+
+export function skillUnlockError(id: string, xp: AgentAttributeXP, unlocked: Set<string>): string | null {
+  const node = SKILL_NODE_BY_ID.get(id);
+  if (!node) return 'Unknown upgrade.';
+  if (unlocked.has(id)) return 'Upgrade already installed.';
+  if (availableSkillPoints(xp, unlocked) < 1) return 'Earn an attribute level to gain an upgrade point.';
+  const previous = SKILL_TREE_NODES.find((entry) => entry.branch === node.branch && entry.tier === node.tier - 1);
+  if (previous && !unlocked.has(previous.id)) return 'Install the previous upgrade in this branch first.';
+  return null;
 }
 
 export interface PrototypeRelicSpec {

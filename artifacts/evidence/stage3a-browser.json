@@ -1,0 +1,94 @@
+{
+  "status": "passed",
+  "errors": [],
+  "measurements": [
+    {
+      "id": "foundry_stack_01",
+      "mode": "baseline",
+      "calls": 104,
+      "triangles": 4154,
+      "cpuSubmitMs": 1.2999999523162842,
+      "geometries": 52,
+      "textures": 4
+    },
+    {
+      "id": "foundry_stack_01",
+      "mode": "prototype",
+      "calls": 100,
+      "triangles": 7042,
+      "cpuSubmitMs": 1.7000000476837158,
+      "geometries": 62,
+      "textures": 5
+    },
+    {
+      "id": "helios_tower_01",
+      "mode": "baseline",
+      "calls": 134,
+      "triangles": 6682,
+      "cpuSubmitMs": 1.9000000953674316,
+      "geometries": 127,
+      "textures": 5
+    },
+    {
+      "id": "helios_tower_01",
+      "mode": "prototype",
+      "calls": 90,
+      "triangles": 8074,
+      "cpuSubmitMs": 1.5999999046325684,
+      "geometries": 129,
+      "textures": 6
+    },
+    {
+      "id": "aegis_bastion_south",
+      "mode": "baseline",
+      "calls": 204,
+      "triangles": 9762,
+      "cpuSubmitMs": 2.799999952316284,
+      "geometries": 229,
+      "textures": 6
+    },
+    {
+      "id": "aegis_bastion_south",
+      "mode": "prototype",
+      "calls": 100,
+      "triangles": 9962,
+      "cpuSubmitMs": 0.7999999523162842,
+      "geometries": 230,
+      "textures": 7
+    },
+    {
+      "id": "crane_alpha",
+      "mode": "baseline",
+      "calls": 42,
+      "triangles": 1270,
+      "cpuSubmitMs": 0.5,
+      "geometries": 249,
+      "textures": 7
+    },
+    {
+      "id": "crane_alpha",
+      "mode": "prototype",
+      "calls": 98,
+      "triangles": 4378,
+      "cpuSubmitMs": 0.8999998569488525,
+      "geometries": 251,
+      "textures": 8
+    }
+  ],
+  "city": [
+    {
+      "mode": "none",
+      "calls": 1654,
+      "triangles": 74814,
+      "geometries": 790,
+      "buildings": 0
+    },
+    {
+      "mode": "citywide",
+      "calls": 1195,
+      "triangles": 92982,
+      "geometries": 444,
+      "buildings": 18
+    }
+  ]
+}

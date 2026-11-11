@@ -12,6 +12,7 @@ import {
   getDrivingParams,
   getExplosivesParams,
   getStrengthParams,
+  WEAPON_BASE_DAMAGE,
   INPUT_FLAG_JUMP,
   PROP_PICKUP_RANGE_M,
   VEHICLE_INTERACT_RANGE_M,
@@ -28,6 +29,8 @@ import {
   VehicleBinarySnapshotState,
 } from '../protocol/binaryProtocol.js';
 import { AgentPhysicsBody, eulerToQuat, RAPIER } from './characterController.js';
+import { MAX_VEHICLE_DEBRIS, VEHICLE_COLLISION_SHAPES, VEHICLE_DEBRIS_LIFETIME_SEC, VEHICLE_MAX_HP, VEHICLE_PANELS, VEHICLE_RESPAWN_SEC, VEHICLE_WHEEL_MOUNTS, VehiclePanelId, multiplyVehicleQuaternions, rotateVehicleVector } from '../vehicles/vehicleDefinition.js';
+import type { VehicleDamagePacket, VehicleDamageState, VehicleDebrisState } from '../protocol/vehicleDamageProtocol.js';
 
 export interface WheelSuspensionState {
   name: 'FL' | 'FR' | 'RL' | 'RR';
@@ -40,6 +43,17 @@ export interface WheelSuspensionState {
 }
 
 export interface VehiclePhysicsEntity {
+  hp: number;
+  maxHp: number;
+  generation: number;
+  detachedMask: number;
+  destroyed: boolean;
+  respawnSec: number;
+  wheelAngle: number;
+  braking: boolean;
+  collisionDamageCooldown: number;
+  spawnYaw: number;
+  damageColliders: RAPIER.Collider[];
   vehicleId: number;
   name: string;
   isInterceptor: boolean; // True = Agency Interceptor (unlocks Wall-Thruster Hop at Driving Lv 4+)
@@ -133,23 +147,121 @@ export const DYNAMIC_PROP_SPECS: Record<DynamicPropType, PropSpecsDefinition> = 
   },
 };
 
-const WHEEL_MOUNTS: Array<{ name: 'FL' | 'FR' | 'RL' | 'RR'; offset: Vec3 }> = [
-  { name: 'FL', offset: { x: -0.95, y: -0.15, z: -1.55 } },
-  { name: 'FR', offset: { x: 0.95, y: -0.15, z: -1.55 } },
-  { name: 'RL', offset: { x: -0.95, y: -0.15, z: 1.55 } },
-  { name: 'RR', offset: { x: 0.95, y: -0.15, z: 1.55 } },
-];
+const WHEEL_MOUNTS = VEHICLE_WHEEL_MOUNTS;
 
 export class VehicleAndPropManager {
+  public authoritativeDamage = true;
+  public readonly vehicleDebris = new Map<number, { body: RAPIER.RigidBody; state: Omit<VehicleDebrisState, 'position' | 'rotation' | 'velocity'> }>();
+  private nextDebrisId = 1;
+  private readonly mountedAgents = new Map<number, AgentPhysicsBody>();
+  public releaseAgent(entityId: number): void {
+    this.mountedAgents.delete(entityId);
+    for (const vehicle of this.vehicles.values()) if (vehicle.driverEntityId === entityId) vehicle.driverEntityId = 0;
+  }
+  public applyVehicleDamageSnapshot(packet: VehicleDamagePacket): void {
+    if (this.authoritativeDamage) return;
+    for (const state of packet.vehicles) { const vehicle = this.vehicles.get(state.vehicleId); if (vehicle) Object.assign(vehicle, state); }
+    const active = new Set(packet.debris.map(d => d.id));
+    for (const [id, existing] of this.vehicleDebris) if (!active.has(id)) { this.world.removeRigidBody(existing.body); this.vehicleDebris.delete(id); }
+    for (const state of packet.debris) {
+      let existing = this.vehicleDebris.get(state.id);
+      if (existing && existing.state.generation !== state.generation) { this.world.removeRigidBody(existing.body); this.vehicleDebris.delete(state.id); existing = undefined; }
+      if (!existing) {
+        const body = this.world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(state.position.x, state.position.y, state.position.z).setRotation(state.rotation));
+        const half = VEHICLE_PANELS[state.panelId].halfExtents;
+        this.world.createCollider(RAPIER.ColliderDesc.cuboid(half.x, half.y, half.z), body);
+        existing = { body, state: { id: state.id, vehicleId: state.vehicleId, generation: state.generation, panelId: state.panelId, isInterceptor: state.isInterceptor, ageSec: state.ageSec } }; this.vehicleDebris.set(state.id, existing);
+      }
+      existing.body.setTranslation(state.position, true); existing.body.setNextKinematicTranslation(state.position);
+      existing.body.setRotation(state.rotation, true); existing.body.setNextKinematicRotation(state.rotation); existing.state.ageSec = state.ageSec;
+    }
+  }
   public readonly vehicles: Map<number, VehiclePhysicsEntity> = new Map();
   public readonly props: Map<number, DynamicPropEntity> = new Map();
   public readonly colliderHandleToPropId: Map<number, number> = new Map();
   public readonly colliderHandleToVehicleId: Map<number, number> = new Map();
+  public readonly extraExplosionHandlers: ((attacker: AgentPhysicsBody, origin: Vec3, yieldScale: number) => CombatEventResult[])[] = [];
 
   constructor(
     private readonly world: RAPIER.World,
     private readonly combatManager: EnemyCombatManager
-  ) {}
+  ) {
+    this.combatManager.weaponObstacleProbes.set('vehicle', (agent, origin, direction, distance) => this.resolveVehicleWeaponShot(agent, origin, direction, distance));
+    this.combatManager.extraSolidCollider = collider => this.colliderHandleToVehicleId.has(collider.handle);
+  }
+
+  public toVehicleDamagePacket(serverTick: number): VehicleDamagePacket {
+    return { serverTick, vehicles: [...this.vehicles.values()].map(v => ({ vehicleId: v.vehicleId, generation: v.generation, hp: v.hp, maxHp: v.maxHp,
+      detachedMask: v.detachedMask, destroyed: v.destroyed, braking: v.braking, respawnSec: v.respawnSec, wheelAngle: v.wheelAngle })),
+      debris: [...this.vehicleDebris.values()].map(d => ({ ...d.state, position: { ...d.body.translation() }, rotation: { ...d.body.rotation() }, velocity: { ...d.body.linvel() } })) };
+  }
+
+  private removeVehicleDebris(vehicleId?: number): void {
+    for (const [id, debris] of this.vehicleDebris) if (vehicleId === undefined || debris.state.vehicleId === vehicleId) {
+      this.world.removeRigidBody(debris.body); this.vehicleDebris.delete(id);
+    }
+  }
+  private ejectDriver(v: VehiclePhysicsEntity): void {
+    const agent = this.mountedAgents.get(v.driverEntityId);
+    if (agent) {
+      agent.mountedVehicleId = 0; agent.lastDriveThrottle = agent.lastDriveSteer = agent.lastDriveButtons = 0;
+      const offset = rotateVehicleVector({ x: -1.9, y: -0.4, z: 0 }, v.rotation);
+      agent.position = { x: v.position.x + offset.x, y: Math.max(0, v.position.y + offset.y), z: v.position.z + offset.z };
+      agent.velocity = { x: 0, y: 0, z: 0 }; agent.grounded = false;
+      agent.rigidBody.setTranslation({ x: agent.position.x, y: agent.position.y + 0.95, z: agent.position.z }, true);
+      agent.rigidBody.setNextKinematicTranslation({ x: agent.position.x, y: agent.position.y + 0.95, z: agent.position.z });
+    }
+    this.mountedAgents.delete(v.driverEntityId); v.driverEntityId = 0;
+  }
+  private detachPanel(v: VehiclePhysicsEntity, panelId: VehiclePanelId): void {
+    if (v.detachedMask & (1 << panelId)) return;
+    v.detachedMask |= 1 << panelId;
+    if (this.vehicleDebris.size >= MAX_VEHICLE_DEBRIS) {
+      const [id, old] = this.vehicleDebris.entries().next().value!; this.world.removeRigidBody(old.body); this.vehicleDebris.delete(id);
+    }
+    const panel = VEHICLE_PANELS[panelId], offset = rotateVehicleVector(panel.position, v.rotation);
+    const rotation = multiplyVehicleQuaternions(v.rotation, panel.rotation);
+    const body = this.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(v.position.x + offset.x, v.position.y + offset.y, v.position.z + offset.z).setRotation(rotation).setCcdEnabled(true).setLinearDamping(0.15).setAngularDamping(0.3));
+    this.world.createCollider(RAPIER.ColliderDesc.cuboid(panel.halfExtents.x, panel.halfExtents.y, panel.halfExtents.z).setMass(panel.massKg).setRestitution(0.25).setFriction(0.7), body);
+    const outward = rotateVehicleVector({ x: panelId === VehiclePanelId.LEFT_DOOR ? -3 : panelId === VehiclePanelId.RIGHT_DOOR ? 3 : 0,
+      y: panelId === VehiclePanelId.HOOD ? 5 : 3.5, z: panelId === VehiclePanelId.HOOD ? -2 : panelId === VehiclePanelId.TRUNK ? 2 : 0 }, v.rotation);
+    body.setLinvel({ x: v.velocity.x + outward.x, y: v.velocity.y + outward.y, z: v.velocity.z + outward.z }, true);
+    body.setAngvel({ x: 2.5 + panelId, y: panelId % 2 === 0 ? 3 : -3, z: panelId % 2 === 0 ? 2 : -2 }, true);
+    const id = this.nextDebrisId; this.nextDebrisId = (this.nextDebrisId + 1) >>> 0 || 1;
+    this.vehicleDebris.set(id, { body, state: { id, vehicleId: v.vehicleId, generation: v.generation, panelId, isInterceptor: v.isInterceptor, ageSec: 0 } });
+  }
+
+  public damageVehicle(vehicleId: number, amount: number, origin: Vec3, attackerEntityId = 0): CombatEventResult | null {
+    const v = this.vehicles.get(vehicleId);
+    if (!this.authoritativeDamage || !v || v.destroyed || !Number.isFinite(amount) || amount <= 0 || ![origin.x, origin.y, origin.z].every(Number.isFinite)) return null;
+    const damage = Math.min(v.hp, amount), before = v.detachedMask; v.hp -= damage;
+    if (v.hp < v.maxHp * 0.5) this.detachPanel(v, VehiclePanelId.HOOD);
+    if (v.hp < v.maxHp * 0.25) for (const part of [VehiclePanelId.LEFT_DOOR, VehiclePanelId.RIGHT_DOOR, VehiclePanelId.TRUNK]) this.detachPanel(v, part);
+    if (v.hp === 0) { v.destroyed = true; v.respawnSec = VEHICLE_RESPAWN_SEC; v.wallThrusterActive = false; this.ejectDriver(v); }
+    return { type: 'VEHICLE_HIT', attackerEntityId, targetEnemyId: 0, targetVehicleId: vehicleId, vehicleHp: v.hp, detachedPanelMask: v.detachedMask ^ before,
+      damageDealt: damage, armorStripped: 0, isCrit: false, limbCrippled: false, shockwaveTriggered: false, shockwaveHits: 0, impactPoint: { ...v.position } };
+  }
+  private resolveVehicleWeaponShot(agent: AgentPhysicsBody, origin: Vec3, direction: Vec3, maxDistance: number): { distance: number; resolve: () => CombatEventResult } | null {
+    const hit = this.world.castRay(new RAPIER.Ray(origin, direction), maxDistance, true, undefined, undefined, agent.collider, undefined,
+      c => { const id = this.colliderHandleToVehicleId.get(c.handle); return id !== undefined && id !== agent.mountedVehicleId; });
+    if (!hit) return null;
+    const vehicleId = this.colliderHandleToVehicleId.get(hit.collider.handle)!;
+    const impact = { x: origin.x + direction.x * hit.timeOfImpact, y: origin.y + direction.y * hit.timeOfImpact, z: origin.z + direction.z * hit.timeOfImpact };
+    return { distance: hit.timeOfImpact, resolve: () => {
+      const event = this.damageVehicle(vehicleId, WEAPON_BASE_DAMAGE * agent.buildModifiers.weaponDamageMultiplier, impact, agent.entityId);
+      if (event) event.impactPoint = impact;
+      return event ??
+      { type: 'VEHICLE_HIT', attackerEntityId: agent.entityId, targetEnemyId: 0, targetVehicleId: vehicleId, vehicleHp: this.vehicles.get(vehicleId)!.hp,
+        damageDealt: 0, armorStripped: 0, isCrit: false, limbCrippled: false, shockwaveTriggered: false, shockwaveHits: 0, impactPoint: impact };
+    } };
+  }
+  private resetVehicle(v: VehiclePhysicsEntity): void {
+    this.ejectDriver(v); this.removeVehicleDebris(v.vehicleId); v.hp = v.maxHp; v.detachedMask = 0; v.destroyed = false; v.respawnSec = 0;
+    v.generation = v.generation % 65535 + 1; v.position = { ...v.spawnPosition }; v.velocity = { x: 0, y: 0, z: 0 }; v.yaw = v.spawnYaw;
+    v.pitch = v.roll = v.forwardSpeedMps = v.steerAngleRad = v.wheelAngle = v.collisionDamageCooldown = 0; v.braking = false; v.wallThrusterCooldown = 0;
+    v.rotation = quatFromYaw(v.yaw); v.rigidBody.setTranslation(v.position, true); v.rigidBody.setNextKinematicTranslation(v.position);
+    v.rigidBody.setRotation(v.rotation, true); v.rigidBody.setNextKinematicRotation(v.rotation);
+  }
 
   public spawnDefaultVehiclesAndProps(): void {
     // 1. Spawn 4 Agency Interceptors & Syndicate Cruisers around Central Plaza & Districts
@@ -196,7 +308,8 @@ export class VehicleAndPropManager {
   ): VehiclePhysicsEntity {
     const existing = this.vehicles.get(vehicleId);
     if (existing) {
-      this.colliderHandleToVehicleId.delete(existing.collider.handle);
+      this.ejectDriver(existing); this.removeVehicleDebris(vehicleId);
+      for (const collider of existing.damageColliders) this.colliderHandleToVehicleId.delete(collider.handle);
       this.world.removeRigidBody(existing.rigidBody);
       this.vehicles.delete(vehicleId);
     }
@@ -217,6 +330,9 @@ export class VehicleAndPropManager {
     ).setSensor(true);
     const collider = this.world.createCollider(colDesc, rigidBody);
     this.colliderHandleToVehicleId.set(collider.handle, vehicleId);
+    const canopy = VEHICLE_COLLISION_SHAPES[1];
+    const canopyCollider = this.world.createCollider(RAPIER.ColliderDesc.cuboid(canopy.halfExtents.x, canopy.halfExtents.y, canopy.halfExtents.z).setTranslation(canopy.position.x, canopy.position.y, canopy.position.z).setSensor(true), rigidBody);
+    this.colliderHandleToVehicleId.set(canopyCollider.handle, vehicleId);
 
     const wheels = WHEEL_MOUNTS.map((m) => ({
       name: m.name,
@@ -234,6 +350,9 @@ export class VehicleAndPropManager {
     ];
 
     const vehicle: VehiclePhysicsEntity = {
+      hp: VEHICLE_MAX_HP, maxHp: VEHICLE_MAX_HP, generation: existing ? existing.generation % 65535 + 1 : 1, detachedMask: 0, destroyed: false,
+      respawnSec: 0, wheelAngle: 0, braking: false, collisionDamageCooldown: 0, spawnYaw: initialYaw,
+      damageColliders: [collider, canopyCollider],
       vehicleId,
       name,
       isInterceptor,
@@ -332,6 +451,7 @@ export class VehicleAndPropManager {
       const currentVeh = this.vehicles.get(agent.mountedVehicleId);
       agent.mountedVehicleId = 0;
       if (currentVeh) {
+        this.mountedAgents.delete(agent.entityId);
         currentVeh.driverEntityId = 0;
         const cosY = Math.cos(currentVeh.yaw);
         const sinY = Math.sin(currentVeh.yaw);
@@ -350,6 +470,7 @@ export class VehicleAndPropManager {
     let nearest: VehiclePhysicsEntity | null = null;
     let bestDist = Infinity;
     for (const v of this.vehicles.values()) {
+      if (v.destroyed) continue;
       if (v.driverEntityId !== 0) continue;
       const d = Math.hypot(
         v.position.x - agent.position.x,
@@ -375,6 +496,7 @@ export class VehicleAndPropManager {
     agent.grappleActive = false;
 
     nearest.driverEntityId = agent.entityId;
+    this.mountedAgents.set(agent.entityId, agent);
     agent.mountedVehicleId = nearest.vehicleId;
     agent.position = {
       x: nearest.position.x,
@@ -393,10 +515,16 @@ export class VehicleAndPropManager {
     outCombatEvents: CombatEventResult[]
   ): void {
     const maxRayLength = VEHICLE_WHEEL_REST_LENGTH_M + VEHICLE_WHEEL_RADIUS_M;
+    if (this.authoritativeDamage) for (const [id, d] of this.vehicleDebris) {
+      d.state.ageSec += dt; if (d.state.ageSec >= VEHICLE_DEBRIS_LIFETIME_SEC) { this.world.removeRigidBody(d.body); this.vehicleDebris.delete(id); }
+    }
 
     for (const v of this.vehicles.values()) {
+      v.collisionDamageCooldown = Math.max(0, v.collisionDamageCooldown - dt);
+      if (v.destroyed && this.authoritativeDamage) { v.respawnSec = Math.max(0, v.respawnSec - dt); if (v.respawnSec === 0) this.resetVehicle(v); }
       const driver = v.driverEntityId > 0 ? agents.get(v.driverEntityId) : undefined;
-      if (v.driverEntityId > 0 && !driver) {
+      if (v.driverEntityId > 0 && !driver && this.authoritativeDamage) {
+        this.mountedAgents.delete(v.driverEntityId);
         v.driverEntityId = 0;
       }
 
@@ -413,6 +541,7 @@ export class VehicleAndPropManager {
         v.wallThrusterCooldown = Math.max(0, v.wallThrusterCooldown - dt);
       }
       v.wallThrusterActive = false;
+      v.braking = v.destroyed || !!driver && (Math.abs(driver.lastDriveThrottle) < 0.01 && Math.abs(v.forwardSpeedMps) > 1 || driver.lastDriveThrottle * v.forwardSpeedMps < -0.1);
 
       // Forward (-Z at yaw=0) and Right (+X at yaw=0) unit vectors in world XZ plane
       const fwdX = -Math.sin(v.yaw);
@@ -597,6 +726,10 @@ export class VehicleAndPropManager {
           // Slide/bounce off vertical building wall
           const dot = v.velocity.x * bumperHit.normal.x + v.velocity.z * bumperHit.normal.z;
           if (dot < 0) {
+            if (dot < -8 && v.collisionDamageCooldown === 0) {
+              const event = this.damageVehicle(v.vehicleId, (-dot - 8) * 16, v.position, driver?.entityId ?? 0);
+              if (event) outCombatEvents.push(event); v.collisionDamageCooldown = 0.6;
+            }
             v.velocity.x -= 1.35 * dot * bumperHit.normal.x;
             v.velocity.z -= 1.35 * dot * bumperHit.normal.z;
             v.forwardSpeedMps *= 0.4;
@@ -608,6 +741,8 @@ export class VehicleAndPropManager {
       v.position.y = Math.max(0.88, v.position.y + v.velocity.y * dt);
       v.position.z += v.velocity.z * dt;
       v.rotation = eulerToQuat(v.pitch, v.yaw, v.roll);
+      const signedSpeed = v.velocity.x * -Math.sin(v.yaw) + v.velocity.z * -Math.cos(v.yaw);
+      v.wheelAngle = (v.wheelAngle + signedSpeed * dt / VEHICLE_WHEEL_RADIUS_M) % (Math.PI * 2);
 
       v.rigidBody.setTranslation(v.position, true);
       v.rigidBody.setNextKinematicTranslation(v.position);
@@ -615,7 +750,7 @@ export class VehicleAndPropManager {
       v.rigidBody.setNextKinematicRotation(v.rotation);
 
       // Keep mounted driver synchronized to the vehicle's cockpit in 3D space
-      if (driver) {
+      if (driver && !v.destroyed && driver.mountedVehicleId === v.vehicleId) {
         driver.position = {
           x: v.position.x,
           y: v.position.y - 0.35,
@@ -828,9 +963,17 @@ export class VehicleAndPropManager {
       const thrower = p.throwerEntityId > 0 ? agents.get(p.throwerEntityId) : undefined;
       let hitSolidOrGround = false;
       let hitEnemy: EnemyPhysicsEntity | null = null;
+      let hitVehicleId: number | null = null;
+      if (p.isThrownProjectile && thrower && speed > 0.2) {
+        const length = Math.hypot(nextX - p.position.x, nextY - p.position.y, nextZ - p.position.z);
+        const direction = { x: (nextX - p.position.x) / length, y: (nextY - p.position.y) / length, z: (nextZ - p.position.z) / length };
+        const ray = new RAPIER.Ray(p.position, direction);
+        const hit = this.world.castRay(ray, length + Math.max(p.halfExtents.x, p.halfExtents.y, p.halfExtents.z), true, undefined, undefined, undefined, undefined, c => this.colliderHandleToVehicleId.has(c.handle));
+        if (hit && !this.world.castRay(ray, hit.timeOfImpact, true, RAPIER.QueryFilterFlags.ONLY_FIXED | RAPIER.QueryFilterFlags.EXCLUDE_SENSORS)) hitVehicleId = this.colliderHandleToVehicleId.get(hit.collider.handle)!;
+      }
 
       // 1. Check direct 3D collision with any Enemy while hurled
-      if (p.isThrownProjectile) {
+      if (p.isThrownProjectile && hitVehicleId === null) {
         for (const enemy of this.combatManager.enemies.values()) {
           if (enemy.combatState === EnemyCombatState.DEAD) continue;
           const d = Math.hypot(
@@ -876,8 +1019,12 @@ export class VehicleAndPropManager {
       p.rigidBody.setNextKinematicRotation(p.rotation);
 
       // 3. Resolve Kinetic Crush & Explosive Blast on Impact!
-      if (p.isThrownProjectile && (hitEnemy || hitSolidOrGround)) {
+      if (p.isThrownProjectile && (hitEnemy || hitVehicleId !== null || hitSolidOrGround)) {
         p.isThrownProjectile = false;
+        if (hitVehicleId !== null && thrower) {
+          const event = this.damageVehicle(hitVehicleId, Math.round(55 + p.massKg * 0.085 + speed * 1.5), p.position, thrower.entityId);
+          if (event) outCombatEvents.push(event);
+        }
 
         if (hitEnemy && thrower) {
           // Kinetic impact damage scales with thrown prop mass (85kg..3400kg) & speed
@@ -938,6 +1085,7 @@ export class VehicleAndPropManager {
     const shapeRot = { x: 0, y: 0, z: 0, w: 1 };
     const hitEnemyIds = new Set<number>();
     const hitPropIds = new Set<number>();
+    const hitVehicleIds = new Set<number>();
 
     // Query Rapier3D 3D spatial broadphase/narrowphase with a true 3D Sphere shape!
     this.world.intersectionsWithShape(blastOrigin, shapeRot, sphereShape, (collider) => {
@@ -946,6 +1094,7 @@ export class VehicleAndPropManager {
         hitEnemyIds.add(limbMatch.enemyId);
       }
       const propId = this.colliderHandleToPropId.get(collider.handle);
+      const vehicleId = this.colliderHandleToVehicleId.get(collider.handle); if (vehicleId !== undefined) hitVehicleIds.add(vehicleId);
       if (propId !== undefined) {
         hitPropIds.add(propId);
       }
@@ -953,6 +1102,15 @@ export class VehicleAndPropManager {
     });
 
     const events: CombatEventResult[] = [];
+    for (const id of hitVehicleIds) {
+      const vehicle = this.vehicles.get(id)!;
+      const direction = { x: vehicle.position.x - blastOrigin.x, y: vehicle.position.y - blastOrigin.y, z: vehicle.position.z - blastOrigin.z };
+      const distance = Math.hypot(direction.x, direction.y, direction.z);
+      if (distance > 0.01 && this.world.castRay(new RAPIER.Ray(blastOrigin, { x: direction.x / distance, y: direction.y / distance, z: direction.z / distance }), distance, true, RAPIER.QueryFilterFlags.ONLY_FIXED | RAPIER.QueryFilterFlags.EXCLUDE_SENSORS)) continue;
+      const falloff = 1 / (1 + (distance / Math.max(1, blastRadius * 0.55)) ** 2);
+      const event = this.damageVehicle(id, Math.max(18, Math.round(baseBlastDamage * falloff)), blastOrigin, attacker.entityId);
+      if (event) { event.shockwaveTriggered = true; event.shockwaveHits = hitVehicleIds.size; events.push(event); }
+    }
 
     // Apply inverse-square damage falloff & 3D radial impulse vectors to intersected enemies
     for (const enemyId of hitEnemyIds) {
@@ -982,8 +1140,7 @@ export class VehicleAndPropManager {
       // Apply 3D radial impulse vector scaled by maxImpulseNs and inverseSquareFalloff
       const invLen = 1.0 / (dist || 1.0);
       const radialImpulse = (maxImpulseNs / 18.0) * inverseSquareFalloff;
-      enemy.position.x += dx * invLen * radialImpulse * 1.4;
-      enemy.position.z += dz * invLen * radialImpulse * 1.4;
+      this.combatManager.reactToHit(enemy, blastOrigin, true);
       enemy.combatState =
         enemy.hp <= 0 ? EnemyCombatState.DEAD : EnemyCombatState.STAGGER_BLIND;
       enemy.staggerTimer = Math.max(enemy.staggerTimer, 3.0);
@@ -1012,6 +1169,7 @@ export class VehicleAndPropManager {
       prop.velocity.z += (dz / dist) * impulseSpeed;
     }
 
+    for (const handler of this.extraExplosionHandlers) events.push(...handler(attacker, blastOrigin, yieldScale));
     return events;
   }
 

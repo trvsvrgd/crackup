@@ -338,6 +338,7 @@ export enum AgentAnimState {
   CARRYING_PROP = 11,
   CHRONO_REWIND = 12,
   JETPACK_FLIGHT = 13,
+  GROUND_SLAM = 14,
 }
 
 export interface AgentAttributes {
@@ -383,6 +384,7 @@ export interface AgentTelemetry {
   collateralBlastDamageDealt?: number;
   airborneTimeSeconds?: number;
   squadRevivesAndNonLethalCount?: number;
+  nonLethalBountiesCompleted?: number;
   districtLoopsCompleted?: number;
   omegaBountiesCompleted?: number;
   auditorSquadsDefeated?: number;

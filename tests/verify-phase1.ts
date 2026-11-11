@@ -356,6 +356,14 @@ async function runPhase1Verification(): Promise<void> {
 
   const clients: HeadlessTestClient[] = [];
 
+  // Test fixtures seed levels through the database; live clients cannot grant stats.
+  callsigns.forEach((callsign, index) => {
+    const auth = server.db.authenticateOrCreate(callsign, String(1000 + index), { x: index - 4, y: 0, z: 3 });
+    assert.ok(auth.ok);
+    auth.record.attributes.agility = (index % 5) + 1;
+    server.db.saveAgent(auth.record);
+  });
+
   // Connect all 8 clients concurrently
   await Promise.all(
     callsigns.map(
@@ -391,7 +399,7 @@ async function runPhase1Verification(): Promise<void> {
                 : (data as ArrayBuffer);
 
               const pType = new DataView(buf).getUint8(0);
-              if (pType === PacketType.RENEGADE_ORB_SNAPSHOT || pType === PacketType.ENEMY_SNAPSHOT) {
+              if (pType !== PacketType.WORLD_SNAPSHOT) {
                 return;
               }
 
@@ -424,9 +432,6 @@ async function runPhase1Verification(): Promise<void> {
             if (msg.type === 'AUTH_OK') {
               clearTimeout(timeout);
               clientObj.entityId = msg.entityId;
-              // Upgrade Agility level for variety across the 8 agents (1..5)
-              const targetAgility = (index % 5) + 1;
-              ws.send(JSON.stringify({ type: 'SET_ATTRIBUTES', attributes: { agility: targetAgility } }));
               resolve();
             } else if (msg.type === 'AUTH_ERROR') {
               clearTimeout(timeout);

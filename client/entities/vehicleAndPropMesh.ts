@@ -8,6 +8,10 @@
  */
 
 import * as THREE from 'three';
+import { VehicleBuilder, type VehicleBuildResult } from '../builders/VehicleBuilder.js';
+import type { BuilderResult } from '../builders/builderContract.js';
+import type { VehicleDamagePacket } from '../../shared/protocol/vehicleDamageProtocol.js';
+import { productionAssets } from '../assets/productionAssets.js';
 import { DynamicPropType } from '../../shared/constants.js';
 import { PROTOTYPE_RELIC_SPECS } from '../../shared/progression/skillTreeSystem.js';
 import {
@@ -18,14 +22,10 @@ import {
 
 export class ClientVehiclePropRenderer {
   public readonly rootGroup = new THREE.Group();
-  private readonly vehicleGroups: Map<
-    number,
-    {
-      group: THREE.Group;
-      wheelMeshes: [THREE.Object3D, THREE.Object3D, THREE.Object3D, THREE.Object3D];
-      thrusterPlume: THREE.Mesh;
-    }
-  > = new Map();
+  private readonly vehicleBuilder = new VehicleBuilder();
+  private readonly vehicleGroups = new Map<number, VehicleBuildResult>();
+  private readonly debrisGroups = new Map<number, BuilderResult>();
+  private lastVehicleTime = 0;
 
   private readonly propGroups: Map<number, THREE.Group> = new Map();
   private readonly relicGroups: Map<string, THREE.Group> = new Map();
@@ -104,82 +104,7 @@ export class ClientVehiclePropRenderer {
     }
   }
 
-  private createVehicleMesh(isInterceptor: boolean) {
-    const group = new THREE.Group();
-
-    // Main lower chassis body
-    const bodyGeo = new THREE.BoxGeometry(2.1, 0.65, 4.6);
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color: isInterceptor ? 0x101828 : 0x2b1d1d,
-      metalness: 0.85,
-      roughness: 0.25,
-    });
-    const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
-    bodyMesh.castShadow = true;
-    bodyMesh.receiveShadow = true;
-    group.add(bodyMesh);
-
-    // Upper cockpit canopy
-    const canopyGeo = new THREE.BoxGeometry(1.65, 0.48, 2.3);
-    const canopyMat = new THREE.MeshStandardMaterial({
-      color: isInterceptor ? 0x00f2ff : 0xff9d00,
-      emissive: isInterceptor ? 0x005577 : 0x552200,
-      emissiveIntensity: 0.7,
-      metalness: 0.9,
-      roughness: 0.15,
-    });
-    const canopyMesh = new THREE.Mesh(canopyGeo, canopyMat);
-    canopyMesh.position.set(0, 0.52, 0.15);
-    group.add(canopyMesh);
-
-    // Neon trim strips
-    const stripGeo = new THREE.BoxGeometry(2.16, 0.08, 4.65);
-    const stripMat = new THREE.MeshBasicMaterial({
-      color: isInterceptor ? 0x00f2ff : 0xff2a6d,
-    });
-    const stripMesh = new THREE.Mesh(stripGeo, stripMat);
-    stripMesh.position.y = -0.1;
-    group.add(stripMesh);
-
-    // 4 Articulated Suspension Wheels (FL, FR, RL, RR)
-    const wheelOffsets: Array<[number, number, number]> = [
-      [-1.02, -0.45, -1.55],
-      [1.02, -0.45, -1.55],
-      [-1.02, -0.45, 1.55],
-      [1.02, -0.45, 1.55],
-    ];
-    const wheelGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.28, 14);
-    wheelGeo.rotateZ(Math.PI / 2);
-    const wheelMat = new THREE.MeshStandardMaterial({
-      color: 0x111111,
-      metalness: 0.5,
-      roughness: 0.7,
-    });
-
-    const wheelMeshes = wheelOffsets.map(([wx, wy, wz]) => {
-      const wPivot = new THREE.Group();
-      wPivot.position.set(wx, wy, wz);
-      const wMesh = new THREE.Mesh(wheelGeo, wheelMat);
-      wPivot.add(wMesh);
-      group.add(wPivot);
-      return wPivot;
-    }) as unknown as [THREE.Object3D, THREE.Object3D, THREE.Object3D, THREE.Object3D];
-
-    // Underbody Wall-Thruster Hop plasma plume
-    const plumeGeo = new THREE.ConeGeometry(0.85, 1.8, 12);
-    plumeGeo.rotateX(Math.PI);
-    const plumeMat = new THREE.MeshBasicMaterial({
-      color: 0x00f2ff,
-      transparent: true,
-      opacity: 0.85,
-    });
-    const thrusterPlume = new THREE.Mesh(plumeGeo, plumeMat);
-    thrusterPlume.position.set(0, -1.0, 0);
-    thrusterPlume.visible = false;
-    group.add(thrusterPlume);
-
-    return { group, wheelMeshes, thrusterPlume };
-  }
+  private createVehicleMesh(isInterceptor: boolean): VehicleBuildResult { return this.vehicleBuilder.build(isInterceptor); }
 
   private createPropMesh(propType: DynamicPropType): THREE.Group {
     const g = new THREE.Group();
@@ -233,6 +158,16 @@ export class ClientVehiclePropRenderer {
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     g.add(mesh);
+    // Props share the entity fidelity floor: load-bearing body, functional hardware and powered trim.
+    const bounds = new THREE.Box3().setFromObject(mesh), size = bounds.getSize(new THREE.Vector3());
+    const hardware = new THREE.MeshStandardMaterial({ color: 0x273641, roughness: 0.6, metalness: 0.75 });
+    const power = new THREE.MeshStandardMaterial({ color: 0x64e7f2, emissive: 0x32afc3, emissiveIntensity: 0.8 });
+    for (const x of [-1, 1]) {
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(0.06, size.y * 0.9, size.z * 0.95), hardware); rib.position.x = x * size.x * 0.35; g.add(rib);
+    }
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(size.x * 0.94, 0.08, size.z * 0.94), hardware); lid.position.y = size.y / 2; g.add(lid);
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(size.x * 0.35, 0.08, 0.03), power); panel.position.set(0, size.y * 0.15, -size.z / 2 - 0.02); g.add(panel);
+    g.userData.entityKind = 'prop';
     return g;
   }
 
@@ -243,31 +178,34 @@ export class ClientVehiclePropRenderer {
     grappleActive: boolean,
     agentPosition: Vec3,
     grappleAnchor: Vec3,
-    timeSec: number
+    timeSec: number,
+    damage?: VehicleDamagePacket
   ): void {
+    const dt = this.lastVehicleTime ? Math.min(0.1, Math.max(0, timeSec - this.lastVehicleTime)) : 0;
+    this.lastVehicleTime = timeSec;
+    const activeVehicles = new Set(vehicles.map(v => v.vehicleId));
+    for (const [id, entry] of this.vehicleGroups) if (!activeVehicles.has(id)) { entry.dispose(); this.vehicleGroups.delete(id); }
     // 1. Update 4-Wheel Suspension Vehicles
     for (const v of vehicles) {
       let entry = this.vehicleGroups.get(v.vehicleId);
       if (!entry) {
         entry = this.createVehicleMesh(v.isInterceptor);
         this.vehicleGroups.set(v.vehicleId, entry);
-        this.rootGroup.add(entry.group);
+        this.rootGroup.add(entry.root);
       }
 
-      entry.group.position.set(v.position.x, v.position.y, v.position.z);
-      entry.group.quaternion.set(v.rotation.x, v.rotation.y, v.rotation.z, v.rotation.w);
-      entry.thrusterPlume.visible = v.wallThrusterActive;
-
-      // Animate all 4 wheels with real-time suspension compression & front steering angle
-      const baseWheelY = -0.48;
-      for (let i = 0; i < 4; i++) {
-        const wObj = entry.wheelMeshes[i]!;
-        const comp = v.wheelCompressionRatio[i] ?? 0.25;
-        wObj.position.y = baseWheelY + comp * 0.32;
-        if (i < 2) {
-          wObj.rotation.y = v.steerAngleRad;
-        }
-      }
+      const state = damage?.vehicles.find(d => d.vehicleId === v.vehicleId);
+      entry.root.visible = !damage || !!state;
+      this.vehicleBuilder.attachModel(entry, v.isInterceptor);
+      entry.updateVehicle(v, state, dt);
+    }
+    const activeDebris = new Set(damage?.debris.map(d => d.id) ?? []);
+    for (const [id, entry] of this.debrisGroups) if (!activeDebris.has(id)) { entry.dispose(); this.debrisGroups.delete(id); }
+    for (const state of damage?.debris ?? []) {
+      let entry = this.debrisGroups.get(state.id);
+      if (!entry) { entry = this.vehicleBuilder.buildDetachedPanel(state.panelId, state.isInterceptor, this.vehicleGroups.get(state.vehicleId)); this.debrisGroups.set(state.id, entry); this.rootGroup.add(entry.root); }
+      entry.root.position.set(state.position.x, state.position.y, state.position.z);
+      entry.root.quaternion.set(state.rotation.x, state.rotation.y, state.rotation.z, state.rotation.w);
     }
 
     // 2. Update Dynamic 3D Physics Props
@@ -318,5 +256,13 @@ export class ClientVehiclePropRenderer {
       this.grappleLine.visible = false;
       this.grappleAnchorSphere.visible = false;
     }
+  }
+  public dispose(): void {
+    for (const entry of [...this.vehicleGroups.values(), ...this.debrisGroups.values()]) entry.dispose();
+    this.vehicleGroups.clear(); this.debrisGroups.clear();
+    const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();
+    this.rootGroup.traverse(o => { if (o instanceof THREE.Mesh || o instanceof THREE.Line) { geometries.add(o.geometry); (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => materials.add(m)); } });
+    geometries.forEach(g => g.dispose()); materials.forEach(m => { if (m instanceof THREE.MeshStandardMaterial) productionAssets.releaseMaterial(m); m.dispose(); });
+    this.propGroups.clear(); this.relicGroups.clear(); this.rootGroup.removeFromParent(); this.rootGroup.clear();
   }
 }
