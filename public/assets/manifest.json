@@ -1,0 +1,324 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-11T13:49:44.825Z",
+  "environment": {
+    "assetId": "belfast_sunset_puresky",
+    "url": "/assets/env/bay_dusk.hdr",
+    "sourcePage": "https://polyhaven.com/a/belfast_sunset_puresky"
+  },
+  "materials": {
+    "concrete_layers_02": {
+      "assetId": "concrete_layers_02",
+      "provider": "Poly Haven",
+      "sourcePage": "https://polyhaven.com/a/concrete_layers_02",
+      "maps": {
+        "diffuse": "/assets/textures/concrete_layers_02/diffuse.jpg",
+        "roughness": "/assets/textures/concrete_layers_02/roughness.jpg",
+        "normal": "/assets/textures/concrete_layers_02/normal.png"
+      }
+    },
+    "asphalt_02": {
+      "assetId": "asphalt_02",
+      "provider": "Poly Haven",
+      "sourcePage": "https://polyhaven.com/a/asphalt_02",
+      "maps": {
+        "diffuse": "/assets/textures/asphalt_02/diffuse.jpg",
+        "roughness": "/assets/textures/asphalt_02/roughness.jpg",
+        "normal": "/assets/textures/asphalt_02/normal.png"
+      }
+    },
+    "corrugated_iron_02": {
+      "assetId": "corrugated_iron_02",
+      "provider": "Poly Haven",
+      "sourcePage": "https://polyhaven.com/a/corrugated_iron_02",
+      "maps": {
+        "diffuse": "/assets/textures/corrugated_iron_02/diffuse.jpg",
+        "roughness": "/assets/textures/corrugated_iron_02/roughness.jpg",
+        "normal": "/assets/textures/corrugated_iron_02/normal.png",
+        "metalness": "/assets/textures/corrugated_iron_02/metalness.jpg"
+      }
+    },
+    "carbon_fiber": {
+      "assetId": "Fabric004",
+      "provider": "ambientCG",
+      "sourcePage": "https://ambientcg.com/view?id=Fabric004",
+      "maps": {
+        "diffuse": "/assets/textures/carbon_fiber/diffuse.png",
+        "roughness": "/assets/textures/carbon_fiber/roughness.png",
+        "normal": "/assets/textures/carbon_fiber/normal.png"
+      }
+    }
+  },
+  "characters": {
+    "Soldier": {
+      "url": "/assets/models/characters/Soldier.glb",
+      "clips": [
+        "Idle",
+        "Run",
+        "TPose",
+        "Walk"
+      ],
+      "skins": 2,
+      "bones": 51
+    },
+    "Xbot": {
+      "url": "/assets/models/characters/Xbot.glb",
+      "clips": [
+        "agree",
+        "headShake",
+        "idle",
+        "run",
+        "sad_pose",
+        "sneak_pose",
+        "walk"
+      ],
+      "skins": 1,
+      "bones": 67
+    }
+  },
+  "files": [
+    {
+      "path": "/assets/env/bay_dusk.hdr",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/belfast_sunset_puresky_2k.hdr",
+      "sourceMd5": "4bb56d6163ef1c7ec762e4a7ef8ede81",
+      "provider": "Poly Haven",
+      "assetId": "belfast_sunset_puresky",
+      "license": "CC0-1.0",
+      "kind": "hdr",
+      "resolution": "2k",
+      "bytes": 4563204,
+      "sha256": "273003109ca1cfb798ce6b96e09ac8440f763d0ef0c376bbe77492613540b4a3",
+      "md5": "4bb56d6163ef1c7ec762e4a7ef8ede81"
+    },
+    {
+      "path": "/assets/textures/concrete_layers_02/diffuse.jpg",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/concrete_layers_02/concrete_layers_02_diff_2k.jpg",
+      "sourceMd5": "f98d5155e8d298931320879be082d136",
+      "provider": "Poly Haven",
+      "assetId": "concrete_layers_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "diffuse",
+      "resolution": "2k",
+      "bytes": 2555097,
+      "sha256": "f70070187573ad05457c65c3efe7fb25fe1e071a5490c760e5b90f845aab9b91",
+      "md5": "f98d5155e8d298931320879be082d136"
+    },
+    {
+      "path": "/assets/textures/concrete_layers_02/roughness.jpg",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/concrete_layers_02/concrete_layers_02_rough_2k.jpg",
+      "sourceMd5": "7d43a4200b6d7719e9f3278d929f5f5f",
+      "provider": "Poly Haven",
+      "assetId": "concrete_layers_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "roughness",
+      "resolution": "2k",
+      "bytes": 1920563,
+      "sha256": "d90cfb52d690c4ac843e29e05ffc3d67f510f6a5aa1ef0f0f467d693d7d958b7",
+      "md5": "7d43a4200b6d7719e9f3278d929f5f5f"
+    },
+    {
+      "path": "/assets/textures/concrete_layers_02/normal.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/concrete_layers_02/concrete_layers_02_nor_gl_2k.png",
+      "sourceMd5": "54c44757a61cb5e6ac727825f098a346",
+      "provider": "Poly Haven",
+      "assetId": "concrete_layers_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "normal",
+      "resolution": "2k",
+      "bytes": 24800490,
+      "sha256": "7652237cbe4cfc00201dbf8509620906600737fdd36f267628d4c5b2df9c58a2",
+      "md5": "54c44757a61cb5e6ac727825f098a346"
+    },
+    {
+      "path": "/assets/textures/asphalt_02/diffuse.jpg",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_diff_2k.jpg",
+      "sourceMd5": "336af399fd98a39ab986d8b3bf73b4ff",
+      "provider": "Poly Haven",
+      "assetId": "asphalt_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "diffuse",
+      "resolution": "2k",
+      "bytes": 3075676,
+      "sha256": "28f5ba8690553f192c0e5e1a5ff40f34765b4b93f4cc7059b1a3e9c795b6c28c",
+      "md5": "336af399fd98a39ab986d8b3bf73b4ff"
+    },
+    {
+      "path": "/assets/textures/asphalt_02/roughness.jpg",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_rough_2k.jpg",
+      "sourceMd5": "6fe669ab38640ef2009d6a28d1ad5ee9",
+      "provider": "Poly Haven",
+      "assetId": "asphalt_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "roughness",
+      "resolution": "2k",
+      "bytes": 2230457,
+      "sha256": "b9a516b61b7040a9245ac206642d5f767ad9589a0169c4a1668221429e8a998c",
+      "md5": "6fe669ab38640ef2009d6a28d1ad5ee9"
+    },
+    {
+      "path": "/assets/textures/asphalt_02/normal.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/asphalt_02/asphalt_02_nor_gl_2k.png",
+      "sourceMd5": "5e1dc171185794b1ffcf8f48864467dd",
+      "provider": "Poly Haven",
+      "assetId": "asphalt_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "normal",
+      "resolution": "2k",
+      "bytes": 9122344,
+      "sha256": "f96c0a1664e556d233b3f76e8f70ab08af5b1c342786efb99b72b8854563440e",
+      "md5": "5e1dc171185794b1ffcf8f48864467dd"
+    },
+    {
+      "path": "/assets/textures/corrugated_iron_02/diffuse.jpg",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/corrugated_iron_02/corrugated_iron_02_diff_2k.jpg",
+      "sourceMd5": "88f0ec0310e41f408dd0092c8c53db58",
+      "provider": "Poly Haven",
+      "assetId": "corrugated_iron_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "diffuse",
+      "resolution": "2k",
+      "bytes": 2325335,
+      "sha256": "1bd2b9900e066d7e6cbacc5093aa4204db71c1bbe13b42a3d8ad23d04fa8075a",
+      "md5": "88f0ec0310e41f408dd0092c8c53db58"
+    },
+    {
+      "path": "/assets/textures/corrugated_iron_02/roughness.jpg",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/corrugated_iron_02/corrugated_iron_02_rough_2k.jpg",
+      "sourceMd5": "cd1a30895816c7a72e1baf780fcbc2e8",
+      "provider": "Poly Haven",
+      "assetId": "corrugated_iron_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "roughness",
+      "resolution": "2k",
+      "bytes": 3492646,
+      "sha256": "926d883052ad9f07e3110f3ce09157d9968872d1f7dafc7da70460f3158f4b4b",
+      "md5": "cd1a30895816c7a72e1baf780fcbc2e8"
+    },
+    {
+      "path": "/assets/textures/corrugated_iron_02/normal.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/corrugated_iron_02/corrugated_iron_02_nor_gl_2k.png",
+      "sourceMd5": "cf38408159183b730624ecdf76fa6b5b",
+      "provider": "Poly Haven",
+      "assetId": "corrugated_iron_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "normal",
+      "resolution": "2k",
+      "bytes": 20397959,
+      "sha256": "57966705714a10b718efc31368879c75fbf24ee3d3295106eada9094513f9cbc",
+      "md5": "cf38408159183b730624ecdf76fa6b5b"
+    },
+    {
+      "path": "/assets/textures/corrugated_iron_02/metalness.jpg",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/corrugated_iron_02/corrugated_iron_02_metal_2k.jpg",
+      "sourceMd5": "89bb9b04d3d146ba01060dd5611d1805",
+      "provider": "Poly Haven",
+      "assetId": "corrugated_iron_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "metalness",
+      "resolution": "2k",
+      "bytes": 542030,
+      "sha256": "01d675c00567aa12abf71019320436f6e5bfdfd9924a0e84ca1a16920f75f758",
+      "md5": "89bb9b04d3d146ba01060dd5611d1805"
+    },
+    {
+      "path": "/assets/textures/carbon_fiber/diffuse.png",
+      "sourceUrl": "https://ambientcg.com/get?file=Fabric004_2K-PNG.zip",
+      "sourceArchiveEntry": "Fabric004_2K-PNG_Color.png",
+      "sourceArchiveSha256": "1a41636dbd762ba7da4888c72ebfe0ff026c0cf0ba8da50ee2203b78e435b19d",
+      "provider": "ambientCG",
+      "assetId": "Fabric004",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "diffuse",
+      "resolution": "2k",
+      "bytes": 77203,
+      "sha256": "95e606278cda5073c446db7e679a6f2dfd14bd7b619f218de73b12114bbcdc9d",
+      "md5": "a194e640277acd9d2842c1d6b1baf0f4"
+    },
+    {
+      "path": "/assets/textures/carbon_fiber/roughness.png",
+      "sourceUrl": "https://ambientcg.com/get?file=Fabric004_2K-PNG.zip",
+      "sourceArchiveEntry": "Fabric004_2K-PNG_Roughness.png",
+      "sourceArchiveSha256": "1a41636dbd762ba7da4888c72ebfe0ff026c0cf0ba8da50ee2203b78e435b19d",
+      "provider": "ambientCG",
+      "assetId": "Fabric004",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "roughness",
+      "resolution": "2k",
+      "bytes": 666296,
+      "sha256": "ea2ba08023de5a7f45ff931178adc365c447bb4395e39e6e279c57f3df84a940",
+      "md5": "894ae6737cb7c522796292c0f13f488e"
+    },
+    {
+      "path": "/assets/textures/carbon_fiber/normal.png",
+      "sourceUrl": "https://ambientcg.com/get?file=Fabric004_2K-PNG.zip",
+      "sourceArchiveEntry": "Fabric004_2K-PNG_NormalGL.png",
+      "sourceArchiveSha256": "1a41636dbd762ba7da4888c72ebfe0ff026c0cf0ba8da50ee2203b78e435b19d",
+      "provider": "ambientCG",
+      "assetId": "Fabric004",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "normal",
+      "resolution": "2k",
+      "bytes": 1384198,
+      "sha256": "e4451dca0cc11239e69027f6ac743e1415198edf2afc079ec5fc07db7e67574f",
+      "md5": "49f72ca5ebbb6ce57d58245474b2aa7d"
+    },
+    {
+      "path": "/assets/models/characters/Soldier.glb",
+      "sourceUrl": "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/Soldier.glb",
+      "sourceSha256": "dfb230fc1f942f259dd00281a1186953ad602fc5d69067ce63e24b2aa439736b",
+      "provider": "three.js examples",
+      "assetId": "Soldier",
+      "kind": "glb",
+      "processing": "Lossless glTF Transform repack; normalize skin weights",
+      "bytes": 1892908,
+      "sha256": "a4877fd4f451a5ff159831bbed58b2dec256d9a6c331ec93b985bcf43cbc396c",
+      "md5": "dd334c4a084e4eba893d634262531304"
+    },
+    {
+      "path": "/assets/models/characters/Xbot.glb",
+      "sourceUrl": "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/Xbot.glb",
+      "sourceSha256": "002f8d269de68e5dce3d25195caf390d1aa359bbfaae3fcf4c8dc78ec36c3ba5",
+      "provider": "three.js examples",
+      "assetId": "Xbot",
+      "kind": "glb",
+      "processing": "Lossless glTF Transform repack; normalize skin weights",
+      "bytes": 2880472,
+      "sha256": "c38155bfcdac66461c4b6fa17e6ff25510a9570c1d714d093ad13601103ea970",
+      "md5": "e6a02fc6fd0e2d543a8a403b73765fa7"
+    },
+    {
+      "path": "/assets/licenses/threejs-LICENSE.txt",
+      "sourceUrl": "https://raw.githubusercontent.com/mrdoob/three.js/dev/LICENSE",
+      "kind": "license",
+      "provider": "three.js",
+      "bytes": 1081,
+      "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc",
+      "md5": "b3fc5f5e1fb66bb4c7e45d1a905627e5"
+    }
+  ],
+  "substitutions": [
+    {
+      "requested": "san_francisco_4",
+      "actual": "belfast_sunset_puresky",
+      "reason": "Requested API asset unavailable; user-approved HDR alternative."
+    },
+    {
+      "requested": "Poly Haven carbon_fiber",
+      "actual": "ambientCG Fabric004",
+      "reason": "Poly Haven returns 404; real CC0 carbon-fiber PBR material obtained from ambientCG public API."
+    }
+  ]
+}

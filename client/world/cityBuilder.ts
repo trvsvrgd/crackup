@@ -19,6 +19,13 @@ import {
   WorldBoxStructure,
 } from '../../shared/world/neoVeridiaBlock.js';
 import { WorldOrbInstance } from '../../shared/world/orbSystem.js';
+import { productionAssets } from '../assets/productionAssets.js';
+import { InkOutlinePass } from '../shaders/inkOutlinePass.js';
+import { stylizePBR } from '../shaders/factionPalette.js';
+import { buildStructureFallback } from '../builders/structureFallback.js';
+import { ARCHITECTURE_ROLLOUT, getArchitecturePlans, type ArchitecturePlan, type ArchitectureRollout } from '../../shared/world/architecture.js';
+import { ArchBuilder } from '../builders/ArchBuilder.js';
+import type { BuilderResult } from '../builders/builderContract.js';
 
 function createProceduralGridTexture(
   bgColor: string,
@@ -70,22 +77,30 @@ export class NeoVeridiaSceneEnvironment {
   public readonly composer: EffectComposer;
   public readonly bloomPass: UnrealBloomPass;
   public readonly ssaoPass: SSAOPass;
+  public readonly inkPass: InkOutlinePass;
 
   private readonly orbMeshes: Map<number, THREE.Group> = new Map();
   private readonly updraftRings: THREE.Mesh[] = [];
+  private cityMaterials: Partial<Record<StructureMaterialType, THREE.MeshStandardMaterial>> = {};
   private animClock = 0;
+  private readonly archBuilder = new ArchBuilder();
+  private readonly architecture: { plan: ArchitecturePlan; built: BuilderResult }[] = [];
+  private readonly csmMaterials = new WeakSet<THREE.Material>();
+  private readonly camera: THREE.PerspectiveCamera;
 
   constructor(
     renderer: THREE.WebGLRenderer,
     camera: THREE.PerspectiveCamera,
-    orbs: WorldOrbInstance[] = []
+    orbs: WorldOrbInstance[] = [],
+    private readonly architectureRollout: ArchitectureRollout | 'none' = ARCHITECTURE_ROLLOUT
   ) {
+    this.camera = camera;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x050811);
     this.scene.fog = new THREE.FogExp2(0x060b16, 0.0018);
 
     // 1. Physical Sky Dome & Ambient Hemisphere Illumination
-    const hemiLight = new THREE.HemisphereLight(0x4a78b8, 0x101420, 0.9);
+    const hemiLight = new THREE.HemisphereLight(0x9db9d5, 0x344854, 1.4);
     hemiLight.position.set(0, 320, 0);
     this.scene.add(hemiLight);
 
@@ -98,7 +113,7 @@ export class NeoVeridiaSceneEnvironment {
       shadowMapSize: 2048,
       lightDirection: new THREE.Vector3(-0.45, -0.82, -0.35).normalize(),
       camera,
-      lightIntensity: 1.65,
+      lightIntensity: 2.1,
     });
 
     // 3. Build 3D Neo-Veridia 4-District Metropolis Structures (1:1 with SharedPhysicsWorld)
@@ -125,11 +140,14 @@ export class NeoVeridiaSceneEnvironment {
 
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(width, height),
-      0.58, // strength
-      0.35, // radius
-      0.76 // threshold
+      0.22, // restrained glow keeps characters and attack cues readable
+      0.25,
+      1.1
     );
     this.composer.addPass(this.bloomPass);
+
+    this.inkPass = new InkOutlinePass(this.scene, camera);
+    this.composer.addPass(this.inkPass);
 
     const outputPass = new OutputPass();
     this.composer.addPass(outputPass);
@@ -221,11 +239,23 @@ export class NeoVeridiaSceneEnvironment {
 
     const cityGroup = new THREE.Group();
     cityGroup.name = 'NeoVeridia_4Districts';
+    const handled = new Set<string>();
+    for (const plan of this.architectureRollout === 'none' ? [] : getArchitecturePlans(structures, this.architectureRollout)) {
+      const built = this.archBuilder.build(plan); this.architecture.push({ plan, built }); cityGroup.add(built.root);
+      for (const part of [...plan.members, ...plan.additions]) handled.add(part.id);
+      for (const mat of built.materials) this.setupArchitectureMaterial(mat);
+    }
 
     for (const s of structures) {
+      if (handled.has(s.id)) continue;
+      if (this.architectureRollout === 'none' && s.excludeOrbPlacement) continue;
       const width = s.halfExtents.x * 2;
       const height = s.halfExtents.y * 2;
       const depth = s.halfExtents.z * 2;
+      if ((height > 2 || s.material === 'shipping_container') && !s.isSensorOnly && !['harbor_water', 'plaza_asphalt', 'forcefield_energy'].includes(s.material)) {
+        cityGroup.add(buildStructureFallback(s, materials[s.material], trimColors[s.emissiveTrim ?? 'cyan']));
+        continue;
+      }
 
       const geo = new THREE.BoxGeometry(width, height, depth);
       const mat = materials[s.material] || materials.brutalist_concrete;
@@ -248,7 +278,27 @@ export class NeoVeridiaSceneEnvironment {
       }
     }
 
+    this.cityMaterials = materials;
     this.scene.add(cityGroup);
+  }
+
+  public applyProductionMaterials(): void {
+    for (const { plan, built } of this.architecture) {
+      this.archBuilder.attachModel(built, plan);
+      built.root.traverse(object => { if (object instanceof THREE.Mesh) for (const material of Array.isArray(object.material) ? object.material : [object.material]) this.setupArchitectureMaterial(material); });
+    }
+    for (const [type, name, repeat] of [
+      ['plaza_asphalt', 'asphalt_02', [240, 240]],
+      ['brutalist_concrete', 'concrete_layers_02', [4, 8]],
+      ['obsidian_steel', 'corrugated_iron_02', [3, 6]],
+      ['ledge_trim', 'corrugated_iron_02', [2, 1]],
+    ] as const) {
+      const material = this.cityMaterials[type];
+      if (material) {
+        productionAssets.applyMaterial(material, name, [...repeat]);
+        material.color.set(0xffffff);
+      }
+    }
   }
 
   private buildThermalUpdraftColumns(): void {
@@ -390,7 +440,42 @@ export class NeoVeridiaSceneEnvironment {
   }
 
   public render(): void {
+    const dt = Math.max(0, Math.min(0.1, (performance.now() - this.lastArchitectureFrame) / 1000));
+    this.lastArchitectureFrame = performance.now();
+    for (const { built } of this.architecture) built.update(dt, this.camera.position);
+    this.scene.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+        if (material instanceof THREE.MeshStandardMaterial) stylizePBR(material);
+      }
+    });
     this.csm.update();
     this.composer.render();
+  }
+  private lastArchitectureFrame = performance.now();
+  public prepareArtMaterial(material: THREE.Material): void { this.setupArchitectureMaterial(material); }
+  private setupArchitectureMaterial(material: THREE.Material): void {
+    if (!(material instanceof THREE.MeshStandardMaterial) || this.csmMaterials.has(material)) return;
+    const customize = material.onBeforeCompile;
+    this.csm.setupMaterial(material);
+    const shadows = material.onBeforeCompile;
+    material.onBeforeCompile = (shader, renderer) => { shadows.call(material, shader, renderer); customize.call(material, shader, renderer); };
+    this.csmMaterials.add(material); material.needsUpdate = true;
+  }
+  public dispose(): void {
+    this.architecture.forEach(({ built }) => built.dispose()); this.architecture.length = 0;
+    this.csm.dispose();
+    const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>(), textures = new Set<THREE.Texture>();
+    this.scene.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      geometries.add(object.geometry);
+      for (const material of Array.isArray(object.material) ? object.material : [object.material]) materials.add(material);
+    });
+    for (const material of materials) {
+      for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value);
+      material.dispose();
+    }
+    geometries.forEach(g => g.dispose()); textures.forEach(t => t.dispose());
+    for (const pass of this.composer.passes) pass.dispose(); this.composer.dispose(); this.scene.clear();
   }
 }

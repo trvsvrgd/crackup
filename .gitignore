@@ -8,3 +8,6 @@ data/public_url.txt
 public/game.js.map
 .env
 npm-debug.log*
+.playwright-cli/
+output/playwright/
+.cache/prod-assets/

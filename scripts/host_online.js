@@ -4,10 +4,14 @@
  * HTTPS/WSS Public Internet Tunnel (using Windows built-in OpenSSH -> localhost.run / Pinggy)
  * so up to 8 friends across the country can join immediately in their browsers!
  */
-const { spawn } = require('node:child_process');
-const fs = require('node:fs');
-const path = require('node:path');
-const { httpServer } = require('../server/index');
+import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { CrackupAuthoritativeServer } from '../dist/server/gameServer.js';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const server = new CrackupAuthoritativeServer();
+let tunnel = null;
 
 const PORT = Number(process.env.PORT || 3000);
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
@@ -48,6 +52,7 @@ function startSshTunnel(provider = 'localhost.run') {
         ];
 
   const proc = spawn('ssh', sshArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+  tunnel = proc;
   let foundUrl = false;
 
   const inspectChunk = (chunk) => {
@@ -63,7 +68,7 @@ function startSshTunnel(provider = 'localhost.run') {
       console.log(`👉 Send this URL to up to 7 friends anywhere in the country:`);
       console.log(`\n   ${publicUrl}\n`);
       console.log(`   (Supports both HTTPS and real-time Secure WebSockets wss://)`);
-      console.log(`   You can also click [🌐 INVITE FRIENDS] inside the game HUD to copy it!`);
+      console.log(`   Copy the link above to invite your squad.`);
       console.log(`========================================================================\n`);
     }
   };
@@ -84,11 +89,19 @@ function startSshTunnel(provider = 'localhost.run') {
   });
 }
 
-httpServer.listen(PORT, '0.0.0.0', () => {
+server.start().then(() => {
   console.log(`\n========================================================================`);
   console.log(`🚀 [CRACKUP: Protocol Eclipse] 8-Player Authoritative Server Listening!`);
   console.log(`   Host Local URL : http://localhost:${PORT}`);
   console.log(`========================================================================`);
   startSshTunnel('localhost.run');
-});
+}).catch((error) => { console.error('Unable to start the game server:', error); process.exitCode = 1; });
+
+async function shutdown() {
+  tunnel?.kill();
+  await server.stop();
+  process.exit(0);
+}
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 

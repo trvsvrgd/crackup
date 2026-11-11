@@ -7,15 +7,18 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { WebSocket, WebSocketServer } from 'ws';
+import { encodeCombatPresentation } from '../shared/combat/combatPresentation.js';
+import { encodeVehicleDamage } from '../shared/protocol/vehicleDamageProtocol.js';
+import { encodeRelays } from '../shared/protocol/relayProtocol.js';
 import {
   AgentAttributes,
   AugmentChassisId,
-  clampAttributeLevel,
   computeAttributeLevelFromXP,
   FIXED_TIMESTEP,
   FIXED_TIMESTEP_MS,
   MAX_PLAYERS,
   OrbType,
+  PetMode,
   TOTAL_AGILITY_ORBS,
   TOTAL_ORBS,
   TOTAL_RENEGADE_ORBS,
@@ -30,7 +33,8 @@ import {
   AUGMENT_CHASSIS_CATALOG,
   checkAgentRelicIntersection,
   PROTOTYPE_RELIC_SPECS,
-  SKILL_NODE_BY_ID,
+  availableSkillPoints,
+  skillUnlockError,
 } from '../shared/progression/skillTreeSystem.js';
 import {
   ClientInputPacket,
@@ -40,6 +44,7 @@ import {
   encodeVehiclePropSnapshot,
   encodeWorldEventsSnapshot,
   encodeWorldSnapshot,
+  encodePhase6Snapshot,
   EntitySnapshotState,
   RenegadeOrbBinaryState,
   Vec3,
@@ -52,6 +57,7 @@ import {
 } from '../shared/world/orbSystem.js';
 import { computeNeuralDriftRatios } from '../shared/world/phase5Systems.js';
 import { AgentDatabase, PersistentAgentRecord } from './db.js';
+import { isValidPetSpecies } from '../shared/world/cyberPetArena.js';
 
 interface ConnectedClientSession {
   ws: WebSocket;
@@ -63,6 +69,8 @@ interface ConnectedClientSession {
   inputQueue: ClientInputPacket[];
   lastInput: ClientInputPacket;
   authenticated: boolean;
+  lastInputAt: number;
+  downedAt: number;
 }
 
 export interface ServerConfig {
@@ -81,6 +89,8 @@ const MIME_TYPES: Record<string, string> = {
   '.wasm': 'application/wasm',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.glb': 'model/gltf-binary',
+  '.hdr': 'application/octet-stream',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
 };
@@ -97,6 +107,8 @@ export class CrackupAuthoritativeServer {
   private nextEntityId = 1;
   private physicsInterval: NodeJS.Timeout | null = null;
   private autosaveInterval: NodeJS.Timeout | null = null;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private readonly authAttempts = new Map<string, { count: number; since: number }>();
   private startTimeMs = Date.now();
   private readonly publicDir: string;
   private port: number;
@@ -114,9 +126,30 @@ export class CrackupAuthoritativeServer {
     this.startTimeMs = Date.now();
 
     this.httpServer = http.createServer((req, res) => this.handleHttpRequest(req, res));
-    this.wss = new WebSocketServer({ server: this.httpServer, path: '/ws' });
-
-    this.wss.on('connection', (ws) => this.handleSocketConnection(ws));
+    this.wss = new WebSocketServer({ noServer: true, maxPayload: 16 * 1024 });
+    this.httpServer.on('upgrade', (req, socket, head) => {
+      let allowedOrigin = !req.headers.origin;
+      try {
+        const origin = req.headers.origin;
+        const configured = process.env.ALLOWED_ORIGINS?.split(',').map((s) => s.trim());
+        allowedOrigin ||= Boolean(origin && (configured ? configured.includes(origin) : new URL(origin).host === req.headers.host));
+      } catch { allowedOrigin = false; }
+      if (req.url !== '/ws' || !allowedOrigin || this.wss.clients.size >= 32) {
+        socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+        return;
+      }
+      this.wss.handleUpgrade(req, socket, head, (ws) => this.wss.emit('connection', ws, req));
+    });
+    this.wss.on('connection', (ws, req) => this.handleSocketConnection(ws, req.socket.remoteAddress || 'unknown'));
+    this.heartbeatInterval = setInterval(() => {
+      for (const ws of this.wss.clients) {
+        if (!this.liveSockets.delete(ws)) { ws.terminate(); continue; }
+        ws.ping();
+      }
+      for (const [ip, attempt] of this.authAttempts) {
+        if (Date.now() - attempt.since > 60_000) this.authAttempts.delete(ip);
+      }
+    }, 30_000);
 
     await new Promise<void>((resolve, reject) => {
       this.httpServer.once('error', reject);
@@ -130,9 +163,17 @@ export class CrackupAuthoritativeServer {
     });
 
     // Authoritative 60Hz deterministic physics loop + 30Hz binary snapshot broadcast
+    let previousTime = performance.now();
+    let accumulatedMs = 0;
     this.physicsInterval = setInterval(() => {
-      this.tickAuthoritativeSimulation();
-    }, FIXED_TIMESTEP_MS);
+      const now = performance.now();
+      accumulatedMs = Math.min(accumulatedMs + now - previousTime, FIXED_TIMESTEP_MS * 4);
+      previousTime = now;
+      while (accumulatedMs >= FIXED_TIMESTEP_MS) {
+        this.tickAuthoritativeSimulation();
+        accumulatedMs -= FIXED_TIMESTEP_MS;
+      }
+    }, FIXED_TIMESTEP_MS / 2);
 
     // Periodic 5-second SQLite WAL autosave for all active agents
     this.autosaveInterval = setInterval(() => {
@@ -151,6 +192,7 @@ export class CrackupAuthoritativeServer {
   }
 
   public async stop(): Promise<void> {
+    if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
     if (this.physicsInterval) {
       clearInterval(this.physicsInterval);
       this.physicsInterval = null;
@@ -174,6 +216,7 @@ export class CrackupAuthoritativeServer {
     this.clientsByCallsign.clear();
 
     if (this.wss) {
+      for (const ws of this.wss.clients) ws.terminate();
       await new Promise<void>((resolve) => this.wss.close(() => resolve()));
     }
     if (this.httpServer) {
@@ -280,6 +323,11 @@ export class CrackupAuthoritativeServer {
     }
 
     if (pathname === '/api/auth' && req.method === 'POST') {
+      if (!this.allowAuthAttempt(req.socket.remoteAddress || 'unknown')) {
+        res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '60' });
+        res.end(JSON.stringify({ ok: false, error: 'Too many login attempts. Try again in a minute.' }));
+        return;
+      }
       let body = '';
       req.on('data', (chunk) => {
         body += chunk;
@@ -334,16 +382,34 @@ export class CrackupAuthoritativeServer {
     const angle = ((slot - 3.5) / MAX_PLAYERS) * Math.PI * 0.65;
     const radius = 3.5;
     return {
-      x: Number((Math.sin(angle) * radius).toFixed(2)),
+      x: Number((-12 + Math.sin(angle) * radius).toFixed(2)),
       y: 0.0,
-      z: Number((2.0 + Math.cos(angle) * 1.5).toFixed(2)),
+      z: Number((12.0 + Math.cos(angle) * 1.5).toFixed(2)),
     };
   }
 
-  private handleSocketConnection(ws: WebSocket): void {
+  private readonly liveSockets = new Set<WebSocket>();
+
+  private allowAuthAttempt(ip: string): boolean {
+    const now = Date.now();
+    const attempt = this.authAttempts.get(ip);
+    if (!attempt || now - attempt.since >= 60_000) {
+      this.authAttempts.set(ip, { count: 1, since: now });
+      return true;
+    }
+    return ++attempt.count <= 20;
+  }
+
+  private handleSocketConnection(ws: WebSocket, ip: string): void {
     let activeSession: ConnectedClientSession | null = null;
+    let windowStart = Date.now(), inputs = 0, controls = 0, lastSeq = -1;
+    this.liveSockets.add(ws);
+    ws.on('pong', () => this.liveSockets.add(ws));
+    const authTimeout = setTimeout(() => { if (!activeSession) ws.close(4003, 'Login timed out'); }, 10_000);
 
     ws.on('message', (data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean) => {
+      if (Date.now() - windowStart >= 1000) { windowStart = Date.now(); inputs = controls = 0; }
+      if ((isBinary ? ++inputs > 120 : ++controls > 20)) { ws.close(4008, 'Message rate exceeded'); return; }
       if (isBinary) {
         if (!activeSession || !activeSession.authenticated) {
           return;
@@ -359,14 +425,16 @@ export class CrackupAuthoritativeServer {
         }
 
         const inputPacket = decodeClientInput(buf);
-        if (!inputPacket) {
+        if (!inputPacket || inputPacket.seq <= lastSeq) {
           return;
         }
 
-        if (activeSession.inputQueue.length < 32) {
+        lastSeq = inputPacket.seq;
+        if (activeSession.inputQueue.length < 8) {
           activeSession.inputQueue.push(inputPacket);
         }
         activeSession.lastInput = inputPacket;
+        activeSession.lastInputAt = Date.now();
         return;
       }
 
@@ -374,8 +442,14 @@ export class CrackupAuthoritativeServer {
       try {
         const text = typeof data === 'string' ? data : data.toString('utf8');
         const msg = JSON.parse(text);
+        if (!msg || typeof msg !== 'object' || typeof msg.type !== 'string') return;
 
         if (msg.type === 'AUTH') {
+          if (activeSession) return;
+          if (!this.allowAuthAttempt(ip)) {
+            ws.send(JSON.stringify({ type: 'AUTH_ERROR', error: 'Too many login attempts. Try again in a minute.' }));
+            return;
+          }
           if (
             this.clientsByEntityId.size >= MAX_PLAYERS &&
             !this.clientsByCallsign.has(String(msg.callsign || '').trim().toUpperCase())
@@ -403,6 +477,9 @@ export class CrackupAuthoritativeServer {
           const prevSession = this.clientsByCallsign.get(authRes.record.callsign);
           if (prevSession) {
             this.cleanupSession(prevSession);
+            // Replacement must use the just-saved state, including health and upgrades.
+            const latest = this.db.getAgent(authRes.record.callsign);
+            if (latest) authRes.record = latest;
             try {
               prevSession.ws.close(4001, 'Replaced by newer session');
             } catch {
@@ -428,6 +505,7 @@ export class CrackupAuthoritativeServer {
             authRes.record.unlockedDistrictRewards,
             authRes.record.activeNeuralDrifts
           );
+          if (typeof authRes.record.hp === 'number') agentBody.hp = Math.min(agentBody.maxHp, authRes.record.hp);
 
           activeSession = {
             ws,
@@ -447,10 +525,17 @@ export class CrackupAuthoritativeServer {
               dt: FIXED_TIMESTEP,
             },
             authenticated: true,
+            lastInputAt: Date.now(),
+            downedAt: agentBody.hp <= 0 ? Date.now() : 0,
           };
 
           this.clientsByEntityId.set(entityId, activeSession);
+          clearTimeout(authTimeout);
+          agentBody.spawnProtectionSec = 15;
           this.clientsByCallsign.set(activeSession.callsign, activeSession);
+          if (authRes.record.pet) {
+            this.physicsWorld.cyberPetArenaManager.adoptPet(agentBody, authRes.record.pet.species, authRes.record.pet);
+          }
 
           ws.send(
             JSON.stringify({
@@ -464,57 +549,88 @@ export class CrackupAuthoritativeServer {
           );
 
           this.broadcastRoster();
+          this.sendPlayerState(activeSession);
           return;
         }
 
-        if (msg.type === 'SET_ATTRIBUTES' && activeSession) {
-          const attrs: Partial<AgentAttributes> = msg.attributes || {};
-          if (attrs.agility !== undefined)
-            activeSession.agent.attributes.agility = clampAttributeLevel(attrs.agility);
-          if (attrs.strength !== undefined)
-            activeSession.agent.attributes.strength = clampAttributeLevel(attrs.strength);
-          if (attrs.driving !== undefined)
-            activeSession.agent.attributes.driving = clampAttributeLevel(attrs.driving);
-          if (attrs.shooting !== undefined)
-            activeSession.agent.attributes.shooting = clampAttributeLevel(attrs.shooting);
-          if (attrs.explosives !== undefined)
-            activeSession.agent.attributes.explosives = clampAttributeLevel(attrs.explosives);
-          if (attrs.flying !== undefined)
-            activeSession.agent.attributes.flying = clampAttributeLevel(attrs.flying);
-          if (attrs.vigilante !== undefined)
-            activeSession.agent.attributes.vigilante = clampAttributeLevel(attrs.vigilante);
-
-          this.physicsWorld.recomputeAgentBuild(activeSession.agent);
-          this.persistSession(activeSession);
-          this.broadcastRoster();
+        if (activeSession && ['PET_ADOPT', 'PET_DERBY_JOIN', 'PET_DERBY_LEAVE', 'PET_CLASH_JOIN', 'PET_CLASH_LEAVE', 'PET_ARENA_LEAVE'].includes(msg.type)) {
+          const manager = this.physicsWorld.cyberPetArenaManager;
+          const agent = activeSession.agent;
+          let result: { ok: boolean; error?: string };
+          if (msg.type === 'PET_ADOPT') {
+            const existing = manager.getPetForOwner(agent.entityId);
+            if (!isValidPetSpecies(msg.species)) {
+              result = { ok: false, error: 'Unknown Cyber-Pet species.' };
+            } else if (existing && existing.mode !== PetMode.FOLLOW) {
+              result = { ok: false, error: 'Leave the pet arena before adopting.' };
+            } else {
+              const stats = manager.getPersistedStats(agent.entityId);
+              manager.adoptPet(agent, msg.species, {
+                derbyWins: stats?.derbyWins ?? 0, clashWins: stats?.clashWins ?? 0,
+                name: typeof msg.name === 'string' ? msg.name.trim().slice(0, 32) : undefined,
+              });
+              result = { ok: true };
+            }
+          } else if (msg.type.endsWith('_JOIN')) {
+            result = agent.hp <= 0 || agent.mountedVehicleId > 0 || agent.heldPropId > 0
+              ? { ok: false, error: 'Enter on foot, alive, with empty hands.' }
+              : msg.type === 'PET_DERBY_JOIN' ? manager.joinDerby(agent) : manager.joinClash(agent);
+          } else {
+            const pet = manager.getPetForOwner(agent.entityId);
+            const matches = msg.type === 'PET_ARENA_LEAVE' ||
+              (msg.type === 'PET_DERBY_LEAVE' && pet?.mode === PetMode.DERBY) ||
+              (msg.type === 'PET_CLASH_LEAVE' && pet?.mode === PetMode.CLASH);
+            result = matches && manager.leaveArena(agent) ? { ok: true } : { ok: false, error: 'Agent is not in that arena.' };
+          }
+          if (result.ok) this.persistSession(activeSession);
+          ws.send(JSON.stringify({ type: 'PHASE6_CONTROL_RESULT', requestType: msg.type, ...result,
+            pet: manager.getPersistedStats(agent.entityId) }));
           return;
         }
 
-        if (msg.type === 'SET_BUILD' && activeSession) {
-          if (
-            msg.augmentChassis &&
-            AUGMENT_CHASSIS_CATALOG[msg.augmentChassis as AugmentChassisId]
-          ) {
+        if (['SET_ATTRIBUTES', 'SET_BUILD'].includes(msg.type) && activeSession) {
+          ws.send(JSON.stringify({ type: 'CONTROL_ERROR', error: 'Progression is earned through play. Use the upgrade menu.' }));
+          return;
+        }
+
+        if (msg.type === 'RESPAWN' && activeSession) {
+          const session = activeSession;
+          if (session.agent.hp > 0 || !session.downedAt || Date.now() - session.downedAt < 3000) return;
+          this.persistSession(session);
+          const old = session.agent;
+          this.physicsWorld.removeAgent(session.entityId);
+          session.agent = this.physicsWorld.createAgent(session.entityId, session.callsign,
+            this.computeDefaultSpawn(0), { x: 0, y: 0, z: 0, w: 1 }, old.attributes, old.telemetry,
+            old.augmentChassis, [...old.unlockedSkills], [...old.unlockedRelics], [...old.unlockedDistrictRewards], [...old.activeNeuralDrifts]);
+          session.agent.spawnProtectionSec = 15;
+          session.inputQueue.length = 0;
+          session.lastInput = { ...session.lastInput, buttons: 0, moveX: 0, moveZ: 0 };
+          session.downedAt = 0;
+          if (session.record.pet) this.physicsWorld.cyberPetArenaManager.adoptPet(session.agent, session.record.pet.species, session.record.pet);
+          this.persistSession(session);
+          ws.send(JSON.stringify({ type: 'RESPAWNED', position: session.agent.position }));
+          this.sendPlayerState(session);
+          return;
+        }
+
+        if (['SELECT_CHASSIS', 'UNLOCK_SKILL'].includes(msg.type) && activeSession) {
+          if (activeSession.agent.hp <= 0) return;
+          if (msg.type === 'SELECT_CHASSIS') {
+            if (!Object.hasOwn(AUGMENT_CHASSIS_CATALOG, msg.augmentChassis)) return;
             activeSession.agent.augmentChassis = msg.augmentChassis as AugmentChassisId;
-          }
-          if (Array.isArray(msg.unlockedSkills)) {
-            activeSession.agent.unlockedSkills.clear();
-            for (const sId of msg.unlockedSkills) {
-              if (SKILL_NODE_BY_ID.has(String(sId))) {
-                activeSession.agent.unlockedSkills.add(String(sId));
-              }
+          } else {
+            const error = skillUnlockError(String(msg.skillId), activeSession.record.xp, activeSession.agent.unlockedSkills);
+            if (error) {
+              ws.send(JSON.stringify({ type: 'CONTROL_ERROR', error }));
+              return;
             }
-          }
-          if (Array.isArray(msg.unlockedRelics)) {
-            for (const rId of msg.unlockedRelics) {
-              if (PROTOTYPE_RELIC_SPECS.some((r) => r.id === String(rId))) {
-                activeSession.agent.unlockedRelics.add(String(rId));
-              }
-            }
+            activeSession.agent.unlockedSkills.add(String(msg.skillId));
           }
 
           this.physicsWorld.recomputeAgentBuild(activeSession.agent);
           this.persistSession(activeSession);
+          this.sendPlayerState(activeSession);
+          this.broadcastRoster();
 
           if (activeSession.ws.readyState === WebSocket.OPEN) {
             activeSession.ws.send(
@@ -535,6 +651,8 @@ export class CrackupAuthoritativeServer {
     });
 
     ws.on('close', () => {
+      clearTimeout(authTimeout);
+      this.liveSockets.delete(ws);
       if (activeSession) {
         this.cleanupSession(activeSession);
         activeSession = null;
@@ -550,6 +668,17 @@ export class CrackupAuthoritativeServer {
     });
   }
 
+  private sendPlayerState(session: ConnectedClientSession): void {
+    if (session.ws.readyState !== WebSocket.OPEN) return;
+    const a = session.agent;
+    session.ws.send(JSON.stringify({ type: 'PLAYER_STATE', hp: a.hp, maxHp: a.maxHp,
+      fuel: a.jetpackFuelSec, maxFuel: a.maxJetpackFuelSec, protectionSec: a.spawnProtectionSec,
+      attributes: a.attributes, xp: session.record.xp, skillPoints: availableSkillPoints(session.record.xp, a.unlockedSkills),
+      unlockedSkills: [...a.unlockedSkills], unlockedRelics: [...a.unlockedRelics],
+      narrativeProgress: { whisperOrbs: a.telemetry.whisperOrbsCollected ?? 0, nonLethalBounties: a.telemetry.nonLethalBountiesCompleted ?? 0 },
+      respawnIn: a.hp <= 0 ? Math.max(0, 3 - (Date.now() - session.downedAt) / 1000) : 0 }));
+  }
+
   private cleanupSession(session: ConnectedClientSession): void {
     if (!this.clientsByEntityId.has(session.entityId)) {
       return;
@@ -563,7 +692,9 @@ export class CrackupAuthoritativeServer {
   }
 
   private persistSession(session: ConnectedClientSession): void {
-    session.record.position = { ...session.agent.position };
+    session.record.hp = session.agent.hp;
+    session.record.position = { ...(this.physicsWorld.cyberPetArenaManager.agentReturnPositions.get(session.entityId) ?? session.agent.position) };
+    session.record.pet = this.physicsWorld.cyberPetArenaManager.getPersistedStats(session.entityId);
     session.record.rotation = { ...session.agent.rotation };
     session.record.attributes = { ...session.agent.attributes };
     session.record.telemetry = { ...session.agent.telemetry };
@@ -609,13 +740,15 @@ export class CrackupAuthoritativeServer {
 
     for (const session of this.clientsByEntityId.values()) {
       if (session.inputQueue.length > 0) {
-        const toProcess = session.inputQueue.splice(0, 4);
+        const toProcess = session.inputQueue.splice(0, 1);
         for (const input of toProcess) {
           this.physicsWorld.applyAgentInput(session.agent, input);
         }
       } else {
         const idleContinue: ClientInputPacket = {
           ...session.lastInput,
+          moveX: Date.now() - session.lastInputAt < 250 ? session.lastInput.moveX : 0,
+          moveZ: Date.now() - session.lastInputAt < 250 ? session.lastInput.moveZ : 0,
           buttons:
             session.lastInput.buttons &
             ~(
@@ -635,12 +768,18 @@ export class CrackupAuthoritativeServer {
     }
 
     this.physicsWorld.stepWorld();
+    for (const session of this.clientsByEntityId.values()) {
+      if (session.agent.hp <= 0 && !session.downedAt) session.downedAt = Date.now();
+      if (session.agent.hp > 0) session.downedAt = 0;
+      if (this.physicsWorld.tickCount % 6 === 0) this.sendPlayerState(session);
+    }
 
     // Process 3D Combat Events (V.A.T.S. Bone-Collider Shots, Motion-Warped Melee, Q Counter-Parry Shockwaves)
     this.processPendingCombatEvents();
 
     // Process Phase 5 Events (District Loops, 90s Omega Bounty, Secret Neural Drift & Aegis Auditor Airships)
     this.processPendingPhase5Events();
+    this.processPendingPhase6Events();
 
     // Step 3D Renegade Orb Flee + Rooftop Waypoint Steering (PRD 4.5)
     stepRenegadeOrbSteering(this.orbs, agentPositions, FIXED_TIMESTEP);
@@ -674,6 +813,9 @@ export class CrackupAuthoritativeServer {
       session.record.xp.flying += 150;
       session.record.xp.vigilante += 150;
 
+      for (const key of Object.keys(session.agent.attributes) as (keyof AgentAttributes)[]) {
+        session.agent.attributes[key] = Math.max(session.agent.attributes[key], computeAttributeLevelFromXP(session.record.xp[key]));
+      }
       this.physicsWorld.recomputeAgentBuild(session.agent);
       this.persistSession(session);
 
@@ -759,6 +901,7 @@ export class CrackupAuthoritativeServer {
     }
 
     if (anyLevelUp) {
+      this.physicsWorld.recomputeAgentBuild(session.agent);
       this.broadcastRoster();
     }
   }
@@ -796,6 +939,7 @@ export class CrackupAuthoritativeServer {
             anyLevelUp = true;
           }
         }
+        this.physicsWorld.recomputeAgentBuild(session.agent);
         this.persistSession(session);
       }
 
@@ -835,6 +979,18 @@ export class CrackupAuthoritativeServer {
     }
   }
 
+  private processPendingPhase6Events(): void {
+    const notifications = this.physicsWorld.pendingPhase6Events.splice(0);
+    if (notifications.length === 0) return;
+    this.persistAllConnectedAgents();
+    for (const notification of notifications) {
+      const payload = JSON.stringify({ type: 'PHASE6_EVENT', notification });
+      for (const session of this.clientsByEntityId.values()) {
+        if (session.ws.readyState === WebSocket.OPEN) session.ws.send(payload);
+      }
+    }
+  }
+
   private broadcastBinaryWorldSnapshots(): void {
     const entities: EntitySnapshotState[] = [];
     for (const session of this.clientsByEntityId.values()) {
@@ -857,18 +1013,25 @@ export class CrackupAuthoritativeServer {
     const renegadeBuffer = encodeRenegadeOrbSnapshot(serverTick, renegadeStates);
     const enemyStates = this.physicsWorld.combatManager.toBinarySnapshots();
     const enemyBuffer = encodeEnemySnapshot(serverTick, enemyStates);
+    const presentationBuffer = encodeCombatPresentation(serverTick, this.physicsWorld.combatManager.getPresentationStates(), this.physicsWorld.combatManager.getDroppedWeaponStates());
     const vehicleStates = this.physicsWorld.vehiclePropManager.toBinaryVehicleSnapshots();
     const propStates = this.physicsWorld.vehiclePropManager.toBinaryPropSnapshots();
     const vehiclePropBuffer = encodeVehiclePropSnapshot(serverTick, vehicleStates, propStates);
+    const vehicleDamageBuffer = encodeVehicleDamage(this.physicsWorld.vehiclePropManager.toVehicleDamagePacket(serverTick));
+    const relayBuffer = encodeRelays(this.physicsWorld.relaySystem.snapshot(serverTick));
     const worldEventsBuffer = encodeWorldEventsSnapshot(
       serverTick,
       this.physicsWorld.phase5Director.toBinaryOmegaBountySnapshot(),
       this.physicsWorld.phase5Director.toBinaryDistrictLoopSnapshots(),
       this.physicsWorld.phase5Director.toBinaryAuditorAirshipSnapshots()
     );
+    const pets = this.physicsWorld.cyberPetArenaManager;
+    const phase6Buffer = encodePhase6Snapshot(serverTick, pets.toBinaryPetStates(), pets.toBinaryArenaHeader(),
+      pets.toBinaryDerbyRacers(), pets.toBinaryClashFighters(), this.physicsWorld.dreadnoughtDirector.toBinarySnapshot());
 
     for (const session of this.clientsByEntityId.values()) {
       if (session.ws.readyState !== WebSocket.OPEN) continue;
+      if (session.ws.bufferedAmount > 1024 * 1024) { session.ws.close(4008, 'Connection too slow'); continue; }
 
       const snapshotBuffer = encodeWorldSnapshot({
         recipientEntityId: session.entityId,
@@ -881,8 +1044,12 @@ export class CrackupAuthoritativeServer {
       session.ws.send(snapshotBuffer, { binary: true });
       session.ws.send(renegadeBuffer, { binary: true });
       session.ws.send(enemyBuffer, { binary: true });
+      session.ws.send(presentationBuffer, { binary: true });
       session.ws.send(vehiclePropBuffer, { binary: true });
+      session.ws.send(vehicleDamageBuffer, { binary: true });
+      session.ws.send(relayBuffer, { binary: true });
       session.ws.send(worldEventsBuffer, { binary: true });
+      session.ws.send(phase6Buffer, { binary: true });
     }
   }
 }

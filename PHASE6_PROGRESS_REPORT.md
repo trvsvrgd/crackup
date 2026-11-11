@@ -1,7 +1,7 @@
 # CRACKUP Protocol Eclipse (v2.0 True 3D AAA Architecture)
 ## Phase 6 Implementation & Handover Report
 
-> **Status:** Phase 1–5 fully completed and verified. Phase 6 is in active development with core shared arena physics established. This report captures all working state, architectural decisions, and an exact step-by-step breadcrumb trail for immediate resumption.
+> **Current checkpoint (2026-11-11):** Phase 6 shared/server and alpha client integration are implemented and automated verification passes. Section 6 art work is complete through Stage 3C; Stage 3D and later art stages remain open. Earlier planning/status sections below are historical. Use [the project progress ledger](artifacts/project-progress.md) for the current resume checklist and saved evidence.
 
 ---
 
@@ -38,7 +38,7 @@ Phase 6 addresses **3D Cyber-Pets, Live Skybox Pet Arena, Narrative Act III Drea
 
 ---
 
-### 3. Immediate Breadcrumb Trail to Resume
+### 3. Original Implementation Breadcrumb Trail
 
 When resuming with fresh quota, follow these exact execution steps:
 
@@ -104,3 +104,48 @@ When resuming with fresh quota, follow these exact execution steps:
 * Add `"verify:phase6": "tsx tests/verify-phase6.ts"` to `package.json`.
 * Run `npm run build` and `npm run verify:phase6` with `BypassSandbox: false`.
 
+---
+
+### 4. Shared/Server Implementation Verified (2026-11-10)
+
+The four requested implementation steps are complete:
+
+1. `shared/world/dreadnoughtBoss.ts`: seven independently destructible Rapier colliders, 500 HP engine nacelles, optional 350 HP flak turrets, and an 1800 HP shielded core. All four engines must be destroyed to expose the core; strictly below 40% core HP triggers the enraged Eclipse Lance. The ship orbits at radius 70m / initial altitude 150m, descends after shield loss, deploys Auditor reinforcements, awards participant telemetry, and resets after a 300-second defeat cooldown. Automatic Act III deployment requires all four district loops to be complete.
+2. `shared/protocol/binaryProtocol.ts`: additive packet `PHASE6_SNAPSHOT = 0x07`, typed pet/arena/racer/fighter/boss state, and versioned little-endian encode/decode functions. The codec preserves full uint32 server ticks and rejects malformed lengths, offsets, counts, versions, IDs, and non-finite state. Existing packet layouts are unchanged.
+3. `SharedPhysicsWorld`, `gameServer.ts`, and `db.ts`: shared skybox colliders, 60Hz manager stepping, boss weapon-hit routing with cover occlusion, 30Hz authoritative snapshots, authenticated pet controls, Phase 6 event notifications, pet cleanup/reconnect restoration, and an idempotent `pet_json` SQLite migration. Arena spectators persist their pre-arena position so reconnects return to the city.
+4. `tests/verify-phase6.ts` and `npm run verify:phase6`: seven suites covering actual companion steering, a physical two-lap race, knockback and ring-out resolution, all boss phases and attacks, WAL migration/reopen, packet integrity and malformed input, and live WebSocket control/snapshot/reconnect behavior.
+
+Control messages use the existing JSON WebSocket control channel:
+
+```json
+{ "type": "PET_ADOPT", "species": 0, "name": "Photon" }
+{ "type": "PET_DERBY_JOIN" }
+{ "type": "PET_DERBY_LEAVE" }
+{ "type": "PET_CLASH_JOIN" }
+{ "type": "PET_CLASH_LEAVE" }
+{ "type": "PET_ARENA_LEAVE" }
+```
+
+Species IDs are 0=Neon Fox, 1=Grid Hound, 2=Aero-Raven Drone, 3=Titan Beetle. Replies use `PHASE6_CONTROL_RESULT` with `requestType`, `ok`, optional `error`, and persisted pet stats; notifications use `PHASE6_EVENT`. Adoption during an arena and arena entry while downed, mounted, or carrying a prop are rejected.
+
+Verification results:
+
+| Command | Result |
+| --- | --- |
+| `npm run build` | Exit 0 (server TypeScript and client bundle) |
+| `npm run verify:phase6` | Exit 0; all 7 suites passed |
+| `npm run verify:phase2` through `verify:phase5` | All exit 0; original suites unchanged |
+| `npm run verify:phase1` | Existing packet-dispatch assertion fails at line 399; reproduced against untouched `HEAD` in an isolated temporary baseline |
+
+The Phase 1 test ignores packet types 0x03 and 0x04 but attempts to decode the existing 0x05 and 0x06 packets as world snapshots. Its first five suites pass. No Phase 1-5 mechanics or tests were rewritten to address this older test assumption.
+
+The report's client meshes/HUD/hotkeys, production deployment, and deployment load-validation work remain outside this four-step implementation scope. Phase 6 is not yet a complete player-facing release.
+
+### Subsequent alpha gameplay pass — November 10, 2026
+
+The later alpha pass adds client decoding/rendering for phase-six snapshots, companion adoption and arena controls, arena/raid status, a player HUD, earned upgrade purchases, authoritative health and recovery, and fixes the compiled deployment entrypoints. This supersedes the earlier client-integration gap above. Art remains procedural and the real hosted eight-player endurance/performance validation is still outstanding. See `ALPHA_RELEASE_NOTES.md` for the implemented behavior and remaining release gates.
+
+
+### Saving checkpoint - November 11, 2026
+
+Fresh npm run build, npm run verify and npm run assets:verify checks pass. The full verifier includes Phase 1, whose packet-dispatch coverage was corrected in the subsequent alpha pass; the older reproduced failure above is historical. Runtime assets and selected browser evidence are included in the saving branch. See artifacts/project-progress.md for the branch/PR delivery status and remaining stages. No production deployment is part of this checkpoint.

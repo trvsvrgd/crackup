@@ -19,8 +19,10 @@ import {
 } from '../shared/constants.js';
 import { normalizeQuat, Quat4, Vec3 } from '../shared/protocol/binaryProtocol.js';
 import { computeNeuralDriftRatios, NeuralDriftRatios } from '../shared/world/phase5Systems.js';
+import { isValidPetSpecies, type PersistedPetStats } from '../shared/world/cyberPetArena.js';
 
 export interface PersistentAgentRecord {
+  hp?: number;
   callsign: string;
   position: Vec3;
   rotation: Quat4;
@@ -34,11 +36,13 @@ export interface PersistentAgentRecord {
   unlockedDistrictRewards: string[];
   activeNeuralDrifts: string[];
   neuralDriftRatios: NeuralDriftRatios;
+  pet: PersistedPetStats | null;
   createdAt: number;
   updatedAt: number;
 }
 
 interface RawAgentRow {
+  hp?: number | null;
   callsign: string;
   pin_hash: string;
   pos_x: number;
@@ -63,16 +67,33 @@ interface RawAgentRow {
   unlocked_relics_json?: string;
   unlocked_district_rewards_json?: string;
   neural_drift_json?: string;
+  pet_json?: string;
   created_at: number;
   updated_at: number;
 }
 
-function hashPin(callsign: string, pin: string): string {
+function legacyHashPin(callsign: string, pin: string): string {
   const normalizedCallsign = callsign.trim().toUpperCase();
   return crypto
     .createHash('sha256')
     .update(`CRACKUP_V2_SALT:${normalizedCallsign}:${pin}`)
     .digest('hex');
+}
+
+function hashPin(pin: string): string {
+  const salt = crypto.randomBytes(16).toString('hex');
+  return `scrypt$${salt}$${crypto.scryptSync(pin, salt, 32).toString('hex')}`;
+}
+
+function verifyPin(callsign: string, pin: string, stored: string): boolean {
+  if (!stored.startsWith('scrypt$')) {
+    const candidate = Buffer.from(legacyHashPin(callsign, pin), 'hex');
+    const expected = Buffer.from(stored, 'hex');
+    return candidate.length === expected.length && crypto.timingSafeEqual(candidate, expected);
+  }
+  const [, salt, encoded] = stored.split('$');
+  if (!/^[a-f0-9]{32}$/.test(salt || '') || !/^[a-f0-9]{64}$/.test(encoded || '')) return false;
+  return crypto.timingSafeEqual(crypto.scryptSync(pin, salt, 32), Buffer.from(encoded, 'hex'));
 }
 
 export class AgentDatabase {
@@ -119,7 +140,7 @@ export class AgentDatabase {
         explosives_level, flying_level, vigilante_level,
         xp_json, telemetry_json, collected_orbs_json,
         augment_chassis, unlocked_skills_json, unlocked_relics_json,
-        unlocked_district_rewards_json, neural_drift_json,
+        unlocked_district_rewards_json, neural_drift_json, pet_json,
         created_at, updated_at
       ) VALUES (
         @callsign, @pin_hash,
@@ -129,13 +150,14 @@ export class AgentDatabase {
         @explosives_level, @flying_level, @vigilante_level,
         @xp_json, @telemetry_json, @collected_orbs_json,
         @augment_chassis, @unlocked_skills_json, @unlocked_relics_json,
-        @unlocked_district_rewards_json, @neural_drift_json,
+        @unlocked_district_rewards_json, @neural_drift_json, @pet_json,
         @created_at, @updated_at
       )
     `);
 
     this.stmtUpdateState = this.db.prepare(`
       UPDATE agents SET
+        hp = @hp,
         pos_x = @pos_x,
         pos_y = @pos_y,
         pos_z = @pos_z,
@@ -158,6 +180,7 @@ export class AgentDatabase {
         unlocked_relics_json = @unlocked_relics_json,
         unlocked_district_rewards_json = @unlocked_district_rewards_json,
         neural_drift_json = @neural_drift_json,
+        pet_json = @pet_json,
         updated_at = @updated_at
       WHERE callsign = @callsign
     `);
@@ -194,6 +217,7 @@ export class AgentDatabase {
         unlocked_relics_json TEXT NOT NULL DEFAULT '[]',
         unlocked_district_rewards_json TEXT NOT NULL DEFAULT '[]',
         neural_drift_json TEXT NOT NULL DEFAULT '{}',
+        pet_json TEXT NOT NULL DEFAULT 'null',
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       );
@@ -201,6 +225,7 @@ export class AgentDatabase {
 
     // Ensure seamless migration if table was created during Phase 1..4
     const cols = this.db.pragma('table_info(agents)') as Array<{ name: string }>;
+    if (!cols.some((c) => c.name === 'hp')) this.db.exec('ALTER TABLE agents ADD COLUMN hp REAL');
     if (!cols.some((c) => c.name === 'collected_orbs_json')) {
       this.db.exec(`ALTER TABLE agents ADD COLUMN collected_orbs_json TEXT NOT NULL DEFAULT '[]'`);
     }
@@ -220,6 +245,9 @@ export class AgentDatabase {
     }
     if (!cols.some((c) => c.name === 'neural_drift_json')) {
       this.db.exec(`ALTER TABLE agents ADD COLUMN neural_drift_json TEXT NOT NULL DEFAULT '{}'`);
+    }
+    if (!cols.some((c) => c.name === 'pet_json')) {
+      this.db.exec(`ALTER TABLE agents ADD COLUMN pet_json TEXT NOT NULL DEFAULT 'null'`);
     }
   }
 
@@ -254,13 +282,13 @@ export class AgentDatabase {
       return { ok: false, error: 'PIN must be 4 to 8 digits.' };
     }
 
-    const expectedHash = hashPin(callsign, pin);
     const existing = this.stmtGetAgent.get(callsign);
 
     if (existing) {
-      if (existing.pin_hash !== expectedHash) {
+      if (!verifyPin(callsign, pin, existing.pin_hash)) {
         return { ok: false, error: 'Invalid Security PIN for this Agent Callsign.' };
       }
+      if (!existing.pin_hash.startsWith('scrypt$')) this.db.prepare('UPDATE agents SET pin_hash = ? WHERE callsign = ?').run(hashPin(pin), callsign);
       return {
         ok: true,
         record: this.rowToRecord(existing),
@@ -285,13 +313,14 @@ export class AgentDatabase {
       unlockedDistrictRewards: [],
       activeNeuralDrifts: [],
       neuralDriftRatios: initialRatios,
+      pet: null,
       createdAt: now,
       updatedAt: now,
     };
 
     this.stmtInsertAgent.run({
       callsign: newRecord.callsign,
-      pin_hash: expectedHash,
+      pin_hash: hashPin(pin),
       pos_x: newRecord.position.x,
       pos_y: newRecord.position.y,
       pos_z: newRecord.position.z,
@@ -308,6 +337,7 @@ export class AgentDatabase {
       vigilante_level: newRecord.attributes.vigilante,
       xp_json: JSON.stringify(newRecord.xp),
       telemetry_json: JSON.stringify(newRecord.telemetry),
+      pet_json: JSON.stringify(newRecord.pet),
       collected_orbs_json: JSON.stringify(newRecord.collectedOrbs),
       augment_chassis: newRecord.augmentChassis,
       unlocked_skills_json: JSON.stringify(newRecord.unlockedSkills),
@@ -341,6 +371,7 @@ export class AgentDatabase {
     const computedRatios = record.neuralDriftRatios || computeNeuralDriftRatios(record.telemetry);
 
     this.stmtUpdateState.run({
+      hp: Number.isFinite(record.hp) ? Math.max(0, record.hp!) : null,
       callsign: record.callsign.trim().toUpperCase(),
       pos_x: safePos.x,
       pos_y: safePos.y,
@@ -358,6 +389,7 @@ export class AgentDatabase {
       vigilante_level: clampAttributeLevel(record.attributes.vigilante),
       xp_json: JSON.stringify(record.xp),
       telemetry_json: JSON.stringify(record.telemetry),
+      pet_json: JSON.stringify(record.pet ?? null),
       collected_orbs_json: JSON.stringify(record.collectedOrbs || []),
       augment_chassis: record.augmentChassis || AugmentChassisId.TITAN_JUGGERNAUT,
       unlocked_skills_json: JSON.stringify(record.unlockedSkills || []),
@@ -456,8 +488,22 @@ export class AgentDatabase {
       // Fallback
     }
 
+    let pet: PersistedPetStats | null = null;
+    try {
+      const parsed = JSON.parse(row.pet_json || 'null');
+      if (parsed && isValidPetSpecies(parsed.species) && typeof parsed.name === 'string') {
+        const wins = (value: unknown) => typeof value === 'number' && Number.isFinite(value)
+          ? Math.max(0, Math.floor(value)) : 0;
+        pet = { species: parsed.species, name: parsed.name.slice(0, 32),
+          derbyWins: wins(parsed.derbyWins), clashWins: wins(parsed.clashWins) };
+      }
+    } catch {
+      // Legacy or damaged pet data leaves the Agent unbonded.
+    }
+
     return {
       callsign: row.callsign,
+      hp: typeof row.hp === 'number' && Number.isFinite(row.hp) ? Math.max(0, row.hp) : undefined,
       position: {
         x: Number.isFinite(row.pos_x) ? row.pos_x : 0,
         y: Number.isFinite(row.pos_y) ? row.pos_y : 0,
@@ -487,6 +533,7 @@ export class AgentDatabase {
       unlockedDistrictRewards,
       activeNeuralDrifts,
       neuralDriftRatios,
+      pet,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };

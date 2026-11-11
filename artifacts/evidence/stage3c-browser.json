@@ -1,0 +1,77 @@
+{
+  "status": "passed",
+  "errors": [],
+  "motion": true,
+  "states": true,
+  "cleanup": true,
+  "measurements": [
+    {
+      "district": 0,
+      "mode": "baseline",
+      "calls": 13,
+      "triangles": 202,
+      "cpuSubmitMs": 0.7000000476837158
+    },
+    {
+      "district": 0,
+      "mode": "prototype",
+      "calls": 94,
+      "triangles": 17876,
+      "cpuSubmitMs": 1.1000001430511475
+    },
+    {
+      "district": 1,
+      "mode": "baseline",
+      "calls": 13,
+      "triangles": 202,
+      "cpuSubmitMs": 0.5
+    },
+    {
+      "district": 1,
+      "mode": "prototype",
+      "calls": 94,
+      "triangles": 17876,
+      "cpuSubmitMs": 1
+    },
+    {
+      "district": 2,
+      "mode": "baseline",
+      "calls": 13,
+      "triangles": 202,
+      "cpuSubmitMs": 0.5
+    },
+    {
+      "district": 2,
+      "mode": "prototype",
+      "calls": 94,
+      "triangles": 17876,
+      "cpuSubmitMs": 0.9000000953674316
+    },
+    {
+      "district": 3,
+      "mode": "baseline",
+      "calls": 13,
+      "triangles": 202,
+      "cpuSubmitMs": 0.5
+    },
+    {
+      "district": 3,
+      "mode": "prototype",
+      "calls": 94,
+      "triangles": 17876,
+      "cpuSubmitMs": 0.8000001907348633
+    }
+  ],
+  "city": [
+    {
+      "mode": "baseline",
+      "calls": 1885,
+      "triangles": 163020
+    },
+    {
+      "mode": "prototype",
+      "calls": 2895,
+      "triangles": 382200
+    }
+  ]
+}
