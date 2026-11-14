@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "checkedAt": "2026-11-13T13:47:08.902Z",
+  "packetKinds": 8,
+  "recordBytes": 64,
+  "stressSeconds": 120,
+  "poolLimits": {
+    "tracer": 64,
+    "spark": 384,
+    "wave": 12,
+    "mark": 256
+  },
+  "dedup": true,
+  "staleAndReconnect": true,
+  "geometryNormals": true,
+  "oneBlastPerOrigin": true
+}

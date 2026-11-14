@@ -1,0 +1,54 @@
+{
+    "checkedAt":  "2026-11-14T15:43:23.954Z",
+    "hidden":  {
+                   "hidden":  false,
+                   "focused":  true
+               },
+    "first":  {
+                  "status":  "ok",
+                  "product":  "crackup-protocol-eclipse",
+                  "mode":  "solo",
+                  "soloPaused":  false,
+                  "version":  "2.0.0",
+                  "architecture":  "True-3D-Rapier3D-BinaryNetcode",
+                  "journalMode":  "wal",
+                  "activeAgents":  1,
+                  "maxPlayers":  1,
+                  "tickCount":  71,
+                  "serverTimeSec":  427.562,
+                  "registeredAccounts":  2,
+                  "totalOrbs":  182
+              },
+    "second":  {
+                   "status":  "ok",
+                   "product":  "crackup-protocol-eclipse",
+                   "mode":  "solo",
+                   "soloPaused":  false,
+                   "version":  "2.0.0",
+                   "architecture":  "True-3D-Rapier3D-BinaryNetcode",
+                   "journalMode":  "wal",
+                   "activeAgents":  1,
+                   "maxPlayers":  1,
+                   "tickCount":  102,
+                   "serverTimeSec":  428.066,
+                   "registeredAccounts":  2,
+                   "totalOrbs":  182
+               },
+    "resumed":  {
+                    "status":  "ok",
+                    "product":  "crackup-protocol-eclipse",
+                    "mode":  "solo",
+                    "soloPaused":  false,
+                    "version":  "2.0.0",
+                    "architecture":  "True-3D-Rapier3D-BinaryNetcode",
+                    "journalMode":  "wal",
+                    "activeAgents":  1,
+                    "maxPlayers":  1,
+                    "tickCount":  127,
+                    "serverTimeSec":  428.482,
+                    "registeredAccounts":  2,
+                    "totalOrbs":  182
+                },
+    "verified":  false,
+    "method":  "Actual second automation tab and bringToFront; no visibility property overrides. Not native OS minimize qualification."
+}

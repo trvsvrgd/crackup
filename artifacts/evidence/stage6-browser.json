@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "checkedAt": "2026-11-13T19:04:16.305Z",
+  "errors": [],
+  "warnings": [],
+  "views": [
+    "bridge",
+    "city",
+    "vehicle",
+    "agent",
+    "lieutenant",
+    "kingpin",
+    "dreadnought"
+  ],
+  "cameraRestore": true,
+  "overlayCleanup": true,
+  "gpuStable": true,
+  "skipEveryShot": true,
+  "hardwareFpsCertified": false
+}

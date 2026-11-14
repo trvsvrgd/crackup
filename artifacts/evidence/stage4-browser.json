@@ -1,0 +1,120 @@
+{
+  "status": "passed",
+  "checkedAt": "2026-11-13T03:43:38.850Z",
+  "errors": [],
+  "warnings": [],
+  "views": [
+    {
+      "view": "Street",
+      "samples": [
+        {
+          "vista": false,
+          "calls": 46,
+          "triangles": 2898,
+          "cpuSubmitMs": 2.3999999910593033
+        },
+        {
+          "vista": true,
+          "calls": 66,
+          "triangles": 237930,
+          "cpuSubmitMs": 2.6000000089406967
+        }
+      ]
+    },
+    {
+      "view": "Roof",
+      "samples": [
+        {
+          "vista": false,
+          "calls": 749,
+          "triangles": 66358,
+          "cpuSubmitMs": 6.9000000059604645
+        },
+        {
+          "vista": true,
+          "calls": 779,
+          "triangles": 315558,
+          "cpuSubmitMs": 7.700000002980232
+        }
+      ]
+    },
+    {
+      "view": "Bridge",
+      "samples": [
+        {
+          "vista": false,
+          "calls": 23,
+          "triangles": 114,
+          "cpuSubmitMs": 2
+        },
+        {
+          "vista": true,
+          "calls": 43,
+          "triangles": 235146,
+          "cpuSubmitMs": 2.3999999910593033
+        }
+      ]
+    },
+    {
+      "view": "Coast",
+      "samples": [
+        {
+          "vista": false,
+          "calls": 692,
+          "triangles": 62130,
+          "cpuSubmitMs": 6.100000008940697
+        },
+        {
+          "vista": true,
+          "calls": 724,
+          "triangles": 311354,
+          "cpuSubmitMs": 6.200000002980232
+        }
+      ]
+    },
+    {
+      "view": "Night",
+      "samples": [
+        {
+          "vista": false,
+          "calls": 749,
+          "triangles": 66358,
+          "cpuSubmitMs": 6.5999999940395355
+        },
+        {
+          "vista": true,
+          "calls": 779,
+          "triangles": 315558,
+          "cpuSubmitMs": 6.5999999940395355
+        }
+      ]
+    },
+    {
+      "view": "City",
+      "samples": [
+        {
+          "vista": false,
+          "calls": 1161,
+          "triangles": 107126,
+          "cpuSubmitMs": 8
+        },
+        {
+          "vista": true,
+          "calls": 1181,
+          "triangles": 342158,
+          "cpuSubmitMs": 8.700000002980232
+        }
+      ]
+    }
+  ],
+  "webp": true,
+  "ktx2": true,
+  "invalidPackRetained": true,
+  "worldScalePixelError": 0,
+  "cleanup": true,
+  "hardwareFpsCertified": false,
+  "budgets": {
+    "vistaCalls": 120,
+    "vistaTriangles": 250000
+  }
+}

@@ -1,243 +1,73 @@
-/**
- * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
- * 3D Articulated Enemy Rig, 6 V.A.T.S. World-Space Wireframe Limb Bounding Boxes,
- * Amber Windup Telegraph Arc, Crimson Elite Counter-Shield & 6.0m Parry Shockwave Ring
- */
-
 import * as THREE from 'three';
-import {
-  EnemyCombatState,
-  EnemyLimbId,
-  LIMB_COLLIDER_SPECS,
-  PARRY_SHOCKWAVE_RADIUS_M,
-} from '../../shared/constants.js';
-import {
-  computeBoneWorldPosition,
-  VatsLimbEvaluation,
-} from '../../shared/combat/enemyRigSystem.js';
-import { EnemyBinarySnapshotState, Vec3 } from '../../shared/protocol/binaryProtocol.js';
-
-const ALL_LIMB_IDS: EnemyLimbId[] = [
-  EnemyLimbId.HEAD,
-  EnemyLimbId.TORSO,
-  EnemyLimbId.LEFT_ARM,
-  EnemyLimbId.RIGHT_ARM,
-  EnemyLimbId.LEFT_LEG,
-  EnemyLimbId.RIGHT_LEG,
-];
+import { EnemyCombatState, EnemyLimbId, LIMB_COLLIDER_SPECS, PARRY_SHOCKWAVE_RADIUS_M, AgentAnimState } from '../../shared/constants.js';
+import { computeBoneWorldPosition, type VatsLimbEvaluation } from '../../shared/combat/enemyRigSystem.js';
+import { EnemyArchetype, HitReaction, WARDEN_RIG_SCALE, type CombatPresentation } from '../../shared/combat/combatPresentation.js';
+import type { EnemyBinarySnapshotState, Vec3 } from '../../shared/protocol/binaryProtocol.js';
+import { HumanoidRig } from '../animation/humanoidRig.js';
+import { SkeletalAnimator } from '../animation/skeletalAnimator.js';
 
 export class ArticulatedEnemyRigMesh {
-  public readonly root: THREE.Group;
-  public readonly boneMeshes: Record<EnemyLimbId, THREE.Mesh>;
-  public readonly vatsWireframeBoxes: Record<EnemyLimbId, THREE.LineSegments>;
-  public readonly windupArcMesh: THREE.Mesh;
-  public readonly counterShieldMesh: THREE.Mesh;
-
-  private readonly armorMat: THREE.MeshStandardMaterial;
-  private animPhase = 0;
-
-  constructor(public readonly enemyId: number, public readonly isElite: boolean) {
-    this.root = new THREE.Group();
-    this.root.name = `EnemyRig_${enemyId}`;
-
-    this.armorMat = new THREE.MeshStandardMaterial({
-      color: isElite ? 0x2c1424 : 0x1d2432,
-      emissive: isElite ? 0x3a0818 : 0x08101c,
-      emissiveIntensity: 0.6,
-      roughness: 0.35,
-      metalness: 0.78,
-    });
-
-    this.boneMeshes = {} as Record<EnemyLimbId, THREE.Mesh>;
-    this.vatsWireframeBoxes = {} as Record<EnemyLimbId, THREE.LineSegments>;
-
-    // Build 6 articulated bone meshes + 6 world-space V.A.T.S. wireframe bounding boxes
-    for (const limbId of ALL_LIMB_IDS) {
-      const spec = LIMB_COLLIDER_SPECS[limbId];
-      const w = spec.radius * 2;
-      const h = (spec.halfHeight + spec.radius) * 2;
-      const d = spec.radius * 2;
-
-      const meshGeo =
-        spec.shape === 'sphere'
-          ? new THREE.SphereGeometry(spec.radius, 12, 12)
-          : new THREE.BoxGeometry(w * 0.88, h * 0.92, d * 0.88);
-
-      const mesh = new THREE.Mesh(meshGeo, this.armorMat);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      this.boneMeshes[limbId] = mesh;
-      this.root.add(mesh);
-
-      // 3D World-Space V.A.T.S. Sub-Collider Wireframe Bounding Box (PRD Section 4.2)
-      const boxGeo = new THREE.BoxGeometry(w * 1.18, h * 1.12, d * 1.18);
-      const edgesGeo = new THREE.EdgesGeometry(boxGeo);
-      const wireMat = new THREE.LineBasicMaterial({
-        color: 0x00ff88,
-        transparent: true,
-        opacity: 0.92,
-      });
-      const wireBox = new THREE.LineSegments(edgesGeo, wireMat);
-      wireBox.visible = false;
-      this.vatsWireframeBoxes[limbId] = wireBox;
-      this.root.add(wireBox);
+  public readonly root = new THREE.Group();
+  public readonly humanoid: HumanoidRig;
+  public readonly animator: SkeletalAnimator;
+  public readonly vatsWireframeBoxes = {} as Record<EnemyLimbId, THREE.LineSegments>;
+  private readonly windupArc: THREE.Mesh;
+  private readonly shield: THREE.Mesh;
+  private readonly splat: THREE.Mesh;
+  private phase = 0;
+  private lastPosition: Vec3 | null = null;
+  private lastSplat = false;
+  private speed = 0;
+  constructor(public readonly enemyId: number, public readonly isElite: boolean, archetype = isElite ? EnemyArchetype.CYBER_RONIN : EnemyArchetype.STREET_ENFORCER) {
+    this.root.name = `EnemyRig_${enemyId}`; this.humanoid = new HumanoidRig(archetype, true); this.animator = new SkeletalAnimator(this.humanoid); this.root.add(this.humanoid.root);
+    for (const limb of [0, 1, 2, 3, 4, 5] as EnemyLimbId[]) {
+      const s = LIMB_COLLIDER_SPECS[limb], geo = new THREE.BoxGeometry(s.radius * 2.36, (s.halfHeight + s.radius) * 2.24, s.radius * 2.36);
+      const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0x40ffac })); geo.dispose();
+      wire.visible = false; this.vatsWireframeBoxes[limb] = wire; this.root.add(wire);
+      if (archetype === EnemyArchetype.SECTOR_WARDEN) wire.scale.setScalar(WARDEN_RIG_SCALE);
     }
-
-    // Overhead Amber Telegraph Arc Indicator for Enemy WINDUP (PRD Section 4.3)
-    const arcGeo = new THREE.TorusGeometry(0.62, 0.045, 8, 24, Math.PI * 1.25);
-    const arcMat = new THREE.MeshBasicMaterial({
-      color: 0xffaa00,
-      transparent: true,
-      opacity: 0.0,
-    });
-    this.windupArcMesh = new THREE.Mesh(arcGeo, arcMat);
-    this.windupArcMesh.rotation.x = Math.PI * 0.5;
-    this.windupArcMesh.position.set(0, 2.25, 0);
-    this.root.add(this.windupArcMesh);
-
-    // Elite Crimson Counter-Stance Energy Shield Mesh (PRD Section 4.3)
-    const shieldGeo = new THREE.IcosahedronGeometry(1.18, 1);
-    const shieldMat = new THREE.MeshStandardMaterial({
-      color: 0xff1144,
-      emissive: 0xff0033,
-      emissiveIntensity: 2.8,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.0,
-    });
-    this.counterShieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
-    this.counterShieldMesh.position.set(0, 1.1, 0);
-    this.root.add(this.counterShieldMesh);
+    this.windupArc = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.04, 8, 24, Math.PI * 1.25), new THREE.MeshBasicMaterial({ color: 0xffaa00 }));
+    this.windupArc.rotation.x = Math.PI / 2; this.windupArc.position.y = 2.2; this.root.add(this.windupArc);
+    this.shield = new THREE.Mesh(new THREE.IcosahedronGeometry(1.18, 1), new THREE.MeshBasicMaterial({ color: 0xff1144, wireframe: true, transparent: true, opacity: 0.65 }));
+    this.shield.position.y = 1.05; this.root.add(this.shield);
+    this.splat = new THREE.Mesh(new THREE.RingGeometry(0.14, 0.65, 12), new THREE.MeshBasicMaterial({ color: 0x18232b, side: THREE.DoubleSide, transparent: true, opacity: 0.7, depthWrite: false })); this.splat.visible = false;
   }
-
-  public update(
-    state: EnemyBinarySnapshotState,
-    isVatsActive: boolean,
-    selectedLimbId: EnemyLimbId,
-    vatsEvaluations: VatsLimbEvaluation[] | null,
-    dt: number
-  ): void {
-    this.animPhase += dt;
-
-    if (state.combatState === EnemyCombatState.DEAD) {
-      this.root.visible = false;
-      return;
+  public update(state: EnemyBinarySnapshotState, vats: boolean, selected: EnemyLimbId, evaluations: VatsLimbEvaluation[] | null, dt: number, reaction?: CombatPresentation): void {
+    this.phase += dt; this.root.visible = state.combatState !== EnemyCombatState.DEAD || (reaction?.timer ?? 0) > 0;
+    this.root.position.set(state.position.x, state.position.y, state.position.z); this.root.rotation.y = state.yaw;
+    if (this.lastPosition && dt > 0) { const measured = Math.hypot(state.position.x - this.lastPosition.x, state.position.z - this.lastPosition.z) / dt; this.speed += (measured - this.speed) * Math.min(1, dt * 8); }
+    this.lastPosition = { ...state.position };
+    const windup = state.combatState === EnemyCombatState.WINDUP; this.windupArc.visible = windup; this.windupArc.rotation.z = this.phase * 6;
+    this.shield.visible = state.combatState === EnemyCombatState.COUNTER_STANCE;
+    this.animator.update(dt, { speed: this.speed, verticalSpeed: 0, reaction, aim: windup ? 0.6 : 0,
+      state: windup ? 'Windup' : state.combatState === EnemyCombatState.STAGGER_BLIND ? 'BlindStagger' : undefined,
+      animState: state.combatState === EnemyCombatState.ACTIVE_SWEEP ? AgentAnimState.MELEE_STRIKE : undefined });
+    if (windup && !reaction?.flashSec) { this.humanoid.materials.armor.emissive.setHex(0xff9900); this.humanoid.materials.armor.emissiveIntensity = 0.65; }
+    const splatted = reaction?.reaction === HitReaction.WALL_SPLAT && reaction.timer > 0;
+    if (splatted && !this.lastSplat) {
+      this.root.parent?.add(this.splat); this.splat.position.set(state.position.x + reaction.direction.x * 0.32, state.position.y + 1, state.position.z + reaction.direction.z * 0.32);
+      this.splat.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(-reaction.direction.x, 0, -reaction.direction.z));
     }
-    this.root.visible = true;
-
-    // 1. Update Amber 3D Shader Rim-Light & Overhead Arc Indicator during WINDUP
-    const arcMat = this.windupArcMesh.material as THREE.MeshBasicMaterial;
-    if (state.combatState === EnemyCombatState.WINDUP) {
-      this.armorMat.emissive.setHex(0xff9900);
-      this.armorMat.emissiveIntensity = 2.2;
-      arcMat.opacity = 0.95;
-      this.windupArcMesh.position.set(state.position.x, state.position.y + 2.25, state.position.z);
-      this.windupArcMesh.rotation.z = this.animPhase * 6.0;
-    } else if (state.combatState === EnemyCombatState.STAGGER_BLIND) {
-      this.armorMat.emissive.setHex(0x00ccff);
-      this.armorMat.emissiveIntensity = 1.6;
-      arcMat.opacity = 0.0;
-    } else {
-      this.armorMat.emissive.setHex(this.isElite ? 0x3a0818 : 0x08101c);
-      this.armorMat.emissiveIntensity = 0.6;
-      arcMat.opacity = 0.0;
+    this.splat.visible = splatted; this.lastSplat = splatted; this.root.updateMatrixWorld(true);
+    for (const limb of [0, 1, 2, 3, 4, 5] as EnemyLimbId[]) {
+      const world = computeBoneWorldPosition(state.position, state.yaw, state.combatState, this.phase, limb, reaction);
+      const wire = this.vatsWireframeBoxes[limb]; wire.position.copy(this.root.worldToLocal(new THREE.Vector3(world.x, world.y, world.z))); wire.visible = vats;
+      const evaluation = evaluations?.find(e => e.limbId === limb);
+      (wire.material as THREE.LineBasicMaterial).color.setHex(evaluation?.occluded ? 0xff2244 : selected === limb ? 0x00f0ff : 0x40ffac);
     }
-
-    // 2. Update Elite Crimson Energy Shield during COUNTER_STANCE
-    const shieldMat = this.counterShieldMesh.material as THREE.MeshStandardMaterial;
-    if (state.combatState === EnemyCombatState.COUNTER_STANCE) {
-      shieldMat.opacity = 0.78;
-      this.counterShieldMesh.position.set(
-        state.position.x,
-        state.position.y + 1.05,
-        state.position.z
-      );
-      this.counterShieldMesh.rotation.y += dt * 3.5;
-    } else {
-      shieldMat.opacity = 0.0;
-    }
-
-    // 3. Position all 6 Bone Colliders & 3D World-Space V.A.T.S. Wireframe Bounding Boxes
-    for (const limbId of ALL_LIMB_IDS) {
-      const worldPos = computeBoneWorldPosition(
-        state.position,
-        state.yaw,
-        state.combatState,
-        this.animPhase,
-        limbId
-      );
-
-      const mesh = this.boneMeshes[limbId];
-      mesh.position.set(worldPos.x, worldPos.y, worldPos.z);
-      mesh.rotation.set(0, state.yaw, 0);
-
-      const wireBox = this.vatsWireframeBoxes[limbId];
-      wireBox.position.set(worldPos.x, worldPos.y, worldPos.z);
-      wireBox.rotation.set(0, state.yaw, 0);
-
-      if (isVatsActive && vatsEvaluations) {
-        wireBox.visible = true;
-        const evalEntry = vatsEvaluations.find((e) => e.limbId === limbId);
-        const wireMat = wireBox.material as THREE.LineBasicMaterial;
-        if (evalEntry?.occluded) {
-          wireMat.color.setHex(0xff2244); // Blocked by cover -> 0% hit probability
-          wireMat.opacity = 0.45;
-        } else if (limbId === selectedLimbId) {
-          wireMat.color.setHex(0x00f0ff); // Targeted bone collider
-          wireMat.opacity = 1.0;
-        } else {
-          wireMat.color.setHex(0x00ff88); // Clear line-of-sight bone collider
-          wireMat.opacity = 0.75;
-        }
-      } else {
-        wireBox.visible = false;
-      }
-    }
+  }
+  public dispose(): void {
+    this.humanoid.dispose(); this.splat.removeFromParent();
+    for (const mesh of [this.windupArc, this.shield, this.splat, ...Object.values(this.vatsWireframeBoxes)]) { mesh.geometry.dispose(); (mesh.material as THREE.Material).dispose(); }
   }
 }
-
-/**
- * 3D Radial Kinetic Shockwave Visualizer (6.0m radius on Strength Lv 3+ Q Counter-Parry)
- */
 export class KineticShockwaveEffect {
-  public readonly mesh: THREE.Mesh;
-  private timer = 0;
-  private active = false;
-
+  public readonly mesh: THREE.Mesh; private timer = 1;
   constructor(scene: THREE.Scene) {
-    const geo = new THREE.RingGeometry(0.3, 1.0, 32);
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0x00f0ff,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.0,
-    });
-    this.mesh = new THREE.Mesh(geo, mat);
-    this.mesh.rotation.x = Math.PI * 0.5;
-    this.mesh.visible = false;
-    scene.add(this.mesh);
+    this.mesh = new THREE.Mesh(new THREE.RingGeometry(0.3, 1, 48), new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0 }));
+    this.mesh.rotation.x = Math.PI / 2; this.mesh.visible = false; scene.add(this.mesh);
   }
-
-  public trigger(origin: Vec3): void {
-    this.active = true;
-    this.timer = 0;
-    this.mesh.visible = true;
-    this.mesh.position.set(origin.x, origin.y + 0.18, origin.z);
-    this.mesh.scale.set(0.2, 0.2, 1);
-    (this.mesh.material as THREE.MeshBasicMaterial).opacity = 0.92;
-  }
-
-  public update(dt: number): void {
-    if (!this.active) return;
-    this.timer += dt;
-    const duration = 0.45;
-    const t = Math.min(1.0, this.timer / duration);
-    const radius = 0.3 + t * PARRY_SHOCKWAVE_RADIUS_M;
-    this.mesh.scale.set(radius, radius, 1);
-    (this.mesh.material as THREE.MeshBasicMaterial).opacity = (1 - t) * 0.9;
-    if (t >= 1.0) {
-      this.active = false;
-      this.mesh.visible = false;
-    }
-  }
+  public trigger(origin: Vec3): void { this.timer = 0; this.mesh.visible = true; this.mesh.position.set(origin.x, origin.y + 0.18, origin.z); }
+  public update(dt: number): void { this.timer += dt; const t = Math.min(1, this.timer / 0.45); this.mesh.visible = t < 1;
+    this.mesh.scale.setScalar(0.3 + t * PARRY_SHOCKWAVE_RADIUS_M); (this.mesh.material as THREE.MeshBasicMaterial).opacity = (1 - t) * 0.9; }
 }

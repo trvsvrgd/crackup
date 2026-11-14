@@ -1,0 +1,372 @@
+{
+  "schemaVersion": 1,
+  "result": "passed",
+  "package": "C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\output\\solo\\CRACKUP-Solo-20261114174506200",
+  "packageFilesVerified": 495,
+  "created": {
+    "checkedAt": "2026-11-14T17:45:34.969Z",
+    "method": "Normal packaged UI controls with external HTTP blocked",
+    "errors": [],
+    "failedRequests": [],
+    "saves": [
+      {
+        "type": "SOLO_STATE",
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1794678337304,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 0,
+        "recap": ""
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1794678337340,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 1,
+        "recap": ""
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1794678337352,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 2,
+        "recap": ""
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1794678337352,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 2,
+        "recap": ""
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1794678337360,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 3,
+        "recap": "Your deployment briefing is in progress."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1794678337970,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 4,
+        "recap": "Your deployment briefing is in progress."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1794678337974,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 5,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1794678338544,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 6,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1794678343551,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 7,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1794678344272,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 8,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1794678348558,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 9,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1794678348562,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 10,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1794678348851,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 11,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678348921,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 12,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678348921,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 12,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678349244,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 13,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678349530,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 14,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678349657,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 15,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678349853,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 16,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678350004,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 17,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678350179,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 18,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678350312,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 19,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678350451,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 20,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678350597,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 21,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678350734,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 22,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678351010,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 23,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678351255,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 24,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678351255,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 24,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678351955,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 25,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678351955,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 25,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      },
+      {
+        "type": "SOLO_STATE",
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1794678351956,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+        "revision": 26,
+        "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+      }
+    ],
+    "ui": {
+      "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving.",
+      "checkpoint": "Saved 11:45:51 AM \u00b7 Neon Docks Smuggler Grid: relays 0/2",
+      "sensitivity": "7",
+      "quality": "performance",
+      "audio": false,
+      "intros": false,
+      "bloom": false,
+      "comms": "Comms audio off"
+    },
+    "storageCleared": true
+  },
+  "restoredAfterServiceRestart": {
+    "checkedAt": "2026-11-14T20:37:00.924Z",
+    "errors": [],
+    "failedRequests": [],
+    "auth": {
+      "story": {
+        "completed": [],
+        "active": {
+          "beat": "deployment",
+          "node": "move"
+        },
+        "choices": [
+          {
+            "beat": "deployment",
+            "node": "dispatch",
+            "index": 1
+          }
+        ],
+        "heard": []
+      },
+      "cinematics": {
+        "opening-v1": "skipped"
+      },
+      "settings": {
+        "sensitivity": 7,
+        "quality": "performance",
+        "bloom": false,
+        "cinematicIntros": false,
+        "audioMuted": true,
+        "commsMuted": true
+      }
+    },
+    "saved": {
+      "type": "SOLO_STATE",
+      "paused": true,
+      "saveError": false,
+      "savedAt": 1794688626047,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+      "revision": 30,
+      "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving."
+    },
+    "checks": [
+      "No browser story or cinematic history exists before reload",
+      "Saved active dialogue node restored from database",
+      "Selected response restored from database",
+      "Opening cinematic history restored from database",
+      "All six settings restored to UI",
+      "No opening replay or save error",
+      "No page errors or failed requests during restored session"
+    ],
+    "ui": {
+      "recap": "Your deployment briefing is in progress. Continue: Welcome to Neo-Veridia. Last response: Understood. Moving.",
+      "sensitivity": "7",
+      "quality": "performance",
+      "audio": false,
+      "intros": false,
+      "bloom": false,
+      "comms": "Comms audio off",
+      "cinematicVisible": false
+    }
+  },
+  "method": "Bundled Windows Node runtime, private SQLite directory, normal UI dialogue/settings controls, all non-loopback HTTP blocked and initial HTTP cache disabled. Cleared browser localStorage, stopped process, restarted same package and authenticated again. No gameplay-state injection.",
+  "limits": [
+    "Package ran in its repository output folder; outside-repository launch remains the previous checkpoint evidence, not repeated for this build.",
+    "Automatic approval review blocked the temporary-copy/background launch command with only a generic blocked-by-policy reason; managed terminal used instead.",
+    "UI helper initially needed a selector correction; a later run began on about:blank and was navigated to the local game before the retained successful restore.",
+    "No OS-level internet-disconnection, clean-machine, native focus, reference-hardware or human-playtest qualification."
+  ]
+}

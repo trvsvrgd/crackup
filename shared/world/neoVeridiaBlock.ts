@@ -11,6 +11,7 @@
 import { CITY_HALF_EXTENT, DistrictId, getDistrictForPosition } from '../constants.js';
 import { Vec3 } from '../protocol/binaryProtocol.js';
 import { WorldSpatialOctree } from './spatialOctree.js';
+import { ARCHITECTURE_ROLLOUT, getArchitecturePlans } from './architecture.js';
 
 export type StructureMaterialType =
   | 'plaza_asphalt'
@@ -41,6 +42,8 @@ export interface WorldBoxStructure {
   district?: DistrictId;
   /** Whether this structure is a non-solid visual/sensor surface */
   isSensorOnly?: boolean;
+  /** Additive art/traversal geometry must not reshuffle persisted deterministic orb placements. */
+  excludeOrbPlacement?: boolean;
 }
 
 export interface ThermalUpdraftVolume {
@@ -865,6 +868,8 @@ export function buildNeoVeridiaSector01(): WorldBoxStructure[] {
     }
   }
 
+  const architecture = getArchitecturePlans(structures, ARCHITECTURE_ROLLOUT);
+  structures.push(...architecture.flatMap(plan => plan.additions));
   cachedCityStructures = structures;
   return structures;
 }
@@ -900,7 +905,7 @@ export interface LedgePlacementSurface {
 export function getElevatedOrbSurfaces(): LedgePlacementSurface[] {
   const surfaces: LedgePlacementSurface[] = [];
   for (const s of buildNeoVeridiaSector01()) {
-    if (s.id.startsWith('perimeter_wall_') || s.id === 'ground_plaza_main') continue;
+    if (s.excludeOrbPlacement || s.id.startsWith('perimeter_wall_') || s.id === 'ground_plaza_main') continue;
     const topY = s.center.y + s.halfExtents.y;
     if (topY >= 10.0 && topY <= 310.0 && s.halfExtents.x >= 1.8 && s.halfExtents.z >= 1.8) {
       surfaces.push({

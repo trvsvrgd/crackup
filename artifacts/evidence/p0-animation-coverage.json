@@ -1,0 +1,226 @@
+{
+  "method": "Static audit of the visible armor animator and installed asset manifest. This is implementation mapping, not experience acceptance.",
+  "animatorSource": "client/animation/skeletalAnimator.ts",
+  "retargetSource": "client/animation/mixamoMotion.ts",
+  "states": [
+    {
+      "state": "IdleBreathing",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "DrivingSeated",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "Walk",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "TacticalSprint",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "AirborneRise",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "AirborneApex",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "FallLoop",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "HardLandingRoll",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "LedgeHang",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "LedgeMantleClimb",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "AirDash",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "MeleeCombo1_Jab",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "MeleeCombo2_Cross",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "MeleeCombo3_SpinningKick",
+      "implementation": "Imported armada retarget plus procedural blending",
+      "integratedImportedClip": "armada",
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "AirborneGroundSlam",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "DropToKneeStagger",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "WeaponDropRecoil",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "WallSplatStun",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "PairedCounter",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "CounterVictim",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "KnockbackTumble",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "BlindStagger",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    },
+    {
+      "state": "Windup",
+      "implementation": "Procedural pose/state implementation",
+      "integratedImportedClip": null,
+      "v3Acceptance": "unverified"
+    }
+  ],
+  "declaredStates": 23,
+  "statesSelectingAnImportedMotion": 1,
+  "availableSourceLibraries": {
+    "Soldier": {
+      "clipCount": 4,
+      "clips": [
+        "Idle",
+        "Run",
+        "TPose",
+        "Walk"
+      ]
+    },
+    "Xbot": {
+      "clipCount": 7,
+      "clips": [
+        "agree",
+        "headShake",
+        "idle",
+        "run",
+        "sad_pose",
+        "sneak_pose",
+        "walk"
+      ]
+    },
+    "capoeira_ybot": {
+      "clipCount": 39,
+      "clips": [
+        "armada to esquiva",
+        "armada",
+        "au to role",
+        "au",
+        "bencao",
+        "capoeira (2)",
+        "capoeira (3)",
+        "capoeira",
+        "chapa 2",
+        "chapa giratoria 2",
+        "chapa-giratoria",
+        "chapaeu de couro",
+        "esquiva 1",
+        "esquiva 2",
+        "esquiva 3",
+        "esquiva 4",
+        "esquiva 5",
+        "ginga backward",
+        "ginga forward",
+        "ginga sideways 1",
+        "ginga sideways 2",
+        "ginga sideways to au",
+        "ginga variation 1",
+        "ginga variation 2",
+        "ginga variation 3",
+        "macaco side",
+        "martelo 2",
+        "martelo 3",
+        "martelo do chau sem mao",
+        "martelo do chau",
+        "meia lua de compasso back",
+        "meia lua de compasso",
+        "meia lua de frente",
+        "pontera",
+        "queshada 1",
+        "queshada 2",
+        "rasteira 1",
+        "rasteira 2",
+        "troca 1"
+      ]
+    }
+  },
+  "coverageGapsForDesignReview": [
+    "Directional strafing, gait starts/stops and turns",
+    "Aim/recoil layers: existing overlays need full movement/contact review",
+    "Reload/weapon switching: define the gameplay contract before asset acquisition",
+    "Vehicle enter/exit transitions",
+    "Pickup/carry/throw and companion interaction",
+    "Grapple/jetpack sustained motion and transitions",
+    "Death/downed/revive performance",
+    "Close-up gaze/face/lip performance",
+    "Foot contacts and slope/stair adaptation across movement tiers"
+  ],
+  "note": "Absence of a distinct named state is a coverage/design gap for review, not proof that no procedural handling exists elsewhere. Imported motion is not inherently required if the procedural result meets the quality rubric."
+}

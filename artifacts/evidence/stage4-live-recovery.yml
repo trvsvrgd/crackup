@@ -1,0 +1,65 @@
+- generic [active] [ref=e1]:
+  - generic "Game world" [ref=e2]
+  - generic:
+    - banner:
+      - generic:
+        - text: CRACKUP
+        - generic: PROTOCOL ECLIPSE
+      - generic:
+        - generic: Neon Docks
+        - generic: ALPHA
+    - generic "Camera heading": SW 233°
+    - region "Tracked mission":
+      - generic:
+        - text: DISTRICT OPERATION
+        - generic: 01 / 03
+      - heading "Break the smuggler grid" [level=2]
+      - paragraph: Sabotage the relay network (0/2). Press H near each relay.
+      - generic:
+        - generic: 12m · Relay
+        - generic: REWARD · GRAPPLE OVERDRIVE
+    - generic:
+      - generic: ◇
+      - generic: RELAY · 12m
+    - generic [aria-hidden]:
+      - generic: ×
+    - region "Combat target":
+      - generic:
+        - generic: HOSTILE
+        - generic: 240 / 240
+      - progressbar "Target health"
+      - paragraph: RMB aim · V melee
+    - status: Recovered at the agency drop point. Progress preserved.
+    - region "Agent status":
+      - generic:
+        - generic: VISTAQA
+        - generic: DROP SHIELD 15s
+      - generic:
+        - generic: VITALS
+        - strong: 230 / 230
+      - progressbar "Health"
+      - generic:
+        - generic: Titan Juggernaut
+        - generic: 0 ORBS
+    - region "Field guidance":
+      - text: FIELD BRIEFING
+      - paragraph: Click the city to look around. Press Esc to open your field kit.
+      - text: Esc · Full controls and mission briefing
+    - region "Abilities":
+      - generic:
+        - generic: SPACE
+        - generic: Jump
+        - generic: CTRL
+        - generic: Dash · 1
+      - generic:
+        - generic: J
+        - generic: Fuel · 3.0s
+        - generic: R
+        - generic: Relic locked
+      - generic:
+        - generic:
+          - generic: B
+          - text: Upgrades
+        - generic:
+          - generic: ESC
+          - text: Field menu

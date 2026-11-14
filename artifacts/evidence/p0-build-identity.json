@@ -1,0 +1,504 @@
+{
+  "branch": "feat/section6-progress-checkpoint",
+  "head": "4af95ab1d82d2089cf886858e50cc85af40f6b58",
+  "hasUncommittedChanges": true,
+  "gameInputAndRuntimeDigest": "ebeeb4237355687080fb0af269aac51e7a8fb2e1460520e27e121f15bacf31bc",
+  "files": [
+    {
+      "path": "client/animation/combatDebris.ts",
+      "size": 1388,
+      "sha256": "eb1212ba74a833b5d2eefc3f4130f5c9ac69f473fec75b7225eb77cd0006d0a2"
+    },
+    {
+      "path": "client/animation/combatEffects.ts",
+      "size": 10174,
+      "sha256": "71a1acd287bb0276e0e6f60a14f469f32baabe5a90ef819338dcf764d2d69950"
+    },
+    {
+      "path": "client/animation/humanoidRig.ts",
+      "size": 7132,
+      "sha256": "b491cbd87fc5f0d9a0bb3cbf2b9a78e67f8f4acdb176dc3ded53ca3daf725115"
+    },
+    {
+      "path": "client/animation/mixamoMotion.ts",
+      "size": 6345,
+      "sha256": "752ba69ca5e48d548b9b622c42bcb69819c7878aedd5680777e4f9c00b17ec4e"
+    },
+    {
+      "path": "client/animation/presentationQueue.ts",
+      "size": 1979,
+      "sha256": "32dadfa7088978b0892b7b2a7d9f21314c4582bf7383361d572def843330196b"
+    },
+    {
+      "path": "client/animation/skeletalAnimator.ts",
+      "size": 13459,
+      "sha256": "c1a3bca316b87d8820d791f26878a08b5622c18ce0726424503edbe96256ab16"
+    },
+    {
+      "path": "client/assets/pbrTextureLibrary.ts",
+      "size": 8487,
+      "sha256": "79db8597e32f5ba174f7c2a7791434c2c340620544a9eada345eacfc0500df3c"
+    },
+    {
+      "path": "client/assets/productionAssets.ts",
+      "size": 7246,
+      "sha256": "65884d1cf25d681566636ac26f2acd0800b6432e6b85b4d6d5c74160cf977bf7"
+    },
+    {
+      "path": "client/audio/spatialGameAudio.ts",
+      "size": 14858,
+      "sha256": "681ad10f057b052656b3fe89453574fd9b0e8aeffc1dda85e32dfcaff577025a"
+    },
+    {
+      "path": "client/audio/spatialOrbAudio.ts",
+      "size": 64,
+      "sha256": "58a0a4d6e22f59141295ec17914cb86c1069b42d0c50c00a1c0b95f4b1db0c25"
+    },
+    {
+      "path": "client/builders/ArchBuilder.ts",
+      "size": 20573,
+      "sha256": "e9192a030cd0e37832d044e8f2f0054726afa5619fdb9fdfa9564573bf97ec51"
+    },
+    {
+      "path": "client/builders/builderContract.ts",
+      "size": 2135,
+      "sha256": "1b886dc074bb7a43d66793fab0acff887f5281cf41a04cb7c9cb33c9ec5ad671"
+    },
+    {
+      "path": "client/builders/RelayBuilder.ts",
+      "size": 21577,
+      "sha256": "7254dffcf7d9c9c82cf35b5ce276bf6c33f6390ac9f837b2aa0436e10e2a56e4"
+    },
+    {
+      "path": "client/builders/structureFallback.ts",
+      "size": 4188,
+      "sha256": "3c71d5b0e38331c099c2fb660c4d76cfdadee0b8ae0838265eab4a48175ca36d"
+    },
+    {
+      "path": "client/builders/VehicleBuilder.ts",
+      "size": 23778,
+      "sha256": "af516768f7c4e3614618aa8d4c2a3b479b8cfff681532fac5f01b6a80f143ee9"
+    },
+    {
+      "path": "client/builders/WeaponBuilder.ts",
+      "size": 9713,
+      "sha256": "5bb41160891b4d6e31a2087a0c105f0d3e4129c85c027ae481c290b084638fd1"
+    },
+    {
+      "path": "client/camera/springArmCamera.ts",
+      "size": 5365,
+      "sha256": "1af6107645a62bb86179cc989de034b20706334671b6d02c34a0a308eea5f9b2"
+    },
+    {
+      "path": "client/entities/agentMesh.ts",
+      "size": 5340,
+      "sha256": "6672f2ffccf7d28dcc7734d0a4b8464160a466fcdefa8fa408a4909bd0d6e48c"
+    },
+    {
+      "path": "client/entities/enemyRigMesh.ts",
+      "size": 6312,
+      "sha256": "a466d2fb4093b38a8d884472abd6af751f10fd62efda63f62d9b9e5f83b841e4"
+    },
+    {
+      "path": "client/entities/phase5WorldMesh.ts",
+      "size": 12900,
+      "sha256": "eb33cf30c8e54de879914ff1f0424197197de8ba6a21cef037bee1960a6e428e"
+    },
+    {
+      "path": "client/entities/phase6WorldMesh.ts",
+      "size": 8291,
+      "sha256": "b4750ddb5a2389a38142beb8e76b732a2f8b482f4739f333f64bd60b992d836d"
+    },
+    {
+      "path": "client/entities/vehicleAndPropMesh.ts",
+      "size": 11439,
+      "sha256": "4c99ec0f95a20a1b96c38c7b47838d0acf5caf64a1de07eb60a8e6058ee6b23f"
+    },
+    {
+      "path": "client/main.ts",
+      "size": 40063,
+      "sha256": "b9f366b651de02dcde4135c9f32f808f5fe583017670dcd5e09e53c2ed7b52a4"
+    },
+    {
+      "path": "client/narrative/cinematicDirector.ts",
+      "size": 4870,
+      "sha256": "0d8a4b409cb89fc0af2de0a708d6a4c46f2ca0c0b22f86f31ae426883fd0ab5a"
+    },
+    {
+      "path": "client/narrative/cinematicOverlay.ts",
+      "size": 4635,
+      "sha256": "6135f5e98f9be7a97bca8797dbb99b6fea7b75369a54a9d94a0b3b0f178b8651"
+    },
+    {
+      "path": "client/narrative/cinematicTracks.ts",
+      "size": 6938,
+      "sha256": "2a2e5344b9829f1a2fd4d60dff9290a49c60061dfce119891b0dfa891e8a4455"
+    },
+    {
+      "path": "client/narrative/tacticalComms.ts",
+      "size": 9808,
+      "sha256": "28d3a23b98abf78491110925f33a3060ccf5cdc1e560d9f257b9413f15f5b089"
+    },
+    {
+      "path": "client/net/netcodeClient.ts",
+      "size": 29469,
+      "sha256": "8e52e27b7629dc7d9d1bbf22a1d4c0592a109f0a201aaa14baaacb50bd91a51a"
+    },
+    {
+      "path": "client/playerHUD.ts",
+      "size": 24557,
+      "sha256": "a7419f4b38ebccf3321494f1a064062fa84d339f1d153d870e73bcdea4c25b33"
+    },
+    {
+      "path": "client/shaders/factionPalette.ts",
+      "size": 2381,
+      "sha256": "8b84701635f11a5165a370110464958777c5d69381adbb85d7327739254fd146"
+    },
+    {
+      "path": "client/shaders/inkOutlinePass.ts",
+      "size": 5226,
+      "sha256": "67a49e2b698a283486df16b8fd5cca66f2c77bf5ed6ace83b8741a001bc517f7"
+    },
+    {
+      "path": "client/shaders/interiorMapping.ts",
+      "size": 3368,
+      "sha256": "d38e7a15a9d5e7110ed13de343a3c882c0566cd73b5915f9bdffc80ec88d3fbb"
+    },
+    {
+      "path": "client/shaders/opaqueSSAOPass.ts",
+      "size": 1415,
+      "sha256": "3d0b36871ea70e2b502984d03cab6745942539c49919ef6bd37ca6fc13128cd0"
+    },
+    {
+      "path": "client/shaders/worldSurface.ts",
+      "size": 5889,
+      "sha256": "578d13aff0a5c1b6841da92c871432db970503c66d31b4090051f000536f1f34"
+    },
+    {
+      "path": "client/world/bayVista.ts",
+      "size": 16657,
+      "sha256": "1a5ae11f1278d9752e00b8b218602fc2716e2480bd7982297c0934dc04ab69ff"
+    },
+    {
+      "path": "client/world/cityBuilder.ts",
+      "size": 19496,
+      "sha256": "3eba19f4c9ab70b02ba130e548c103d04aa69755197d73c58cc1a7cc20e12148"
+    },
+    {
+      "path": "shared/combat/combatPresentation.ts",
+      "size": 4710,
+      "sha256": "322875ad7d196ea865d9e5a50fbab7569e10f430c219d30167faae714c17ed40"
+    },
+    {
+      "path": "shared/combat/enemyRigSystem.ts",
+      "size": 61173,
+      "sha256": "822e080ebca7b51f964be4c1039069bf1db882b789e5161596328f188086cfb1"
+    },
+    {
+      "path": "shared/combat/presentationEvents.ts",
+      "size": 3921,
+      "sha256": "0b735f5140eee6570c46a64642dc41c9b8cfdcc13a3fc178f475da17e5d0b495"
+    },
+    {
+      "path": "shared/combat/weaponPresentation.ts",
+      "size": 898,
+      "sha256": "5c25cff0cee18d36836ce941df3f2f06007ccbdc273b18ce409518d960f44b0c"
+    },
+    {
+      "path": "shared/constants.ts",
+      "size": 21733,
+      "sha256": "46231bcc3db262a185d7c5c07247a24cf44f5bace2fdaf9a8bd23b7b5ac6b275"
+    },
+    {
+      "path": "shared/narrative/storyBible.ts",
+      "size": 9956,
+      "sha256": "cd60564fd49b8533f0eba65e28e00890028c312926c1e899374ae5ebbd1ab604"
+    },
+    {
+      "path": "shared/physics/characterController.ts",
+      "size": 47236,
+      "sha256": "025b8f3d53b1e4b8e9f949615a37348e1a92dd128a534bdc9e474f3b3ad85977"
+    },
+    {
+      "path": "shared/physics/vehicleAndPropSystem.ts",
+      "size": 55443,
+      "sha256": "f105c4790758631605d9a0b0c97ffe5a0d440995d0f8f0a852894e723f819678"
+    },
+    {
+      "path": "shared/progression/skillTreeSystem.ts",
+      "size": 22260,
+      "sha256": "5383bbe804d155e259606a9419f53cbdc7318a4b34101a20c667264d2bef2440"
+    },
+    {
+      "path": "shared/protocol/binaryProtocol.ts",
+      "size": 46892,
+      "sha256": "68889d0311f19a7831850d5d2e7a3ddc1d621fea17a89583548f363238ba184e"
+    },
+    {
+      "path": "shared/protocol/presentationProtocol.ts",
+      "size": 4200,
+      "sha256": "d977d0ab664d6196ffa15b0e8ff8316d9fa1f28c1849f18055993ffe45654986"
+    },
+    {
+      "path": "shared/protocol/relayProtocol.ts",
+      "size": 3332,
+      "sha256": "c8a51b74961dad8b89a61a12cc158b06cb209afc7205dcffaca6acbba372a9ca"
+    },
+    {
+      "path": "shared/protocol/vehicleDamageProtocol.ts",
+      "size": 6199,
+      "sha256": "c68d22559dc457054731625b5c8248664c176817109a4beb1621e5a101ca674e"
+    },
+    {
+      "path": "shared/vehicles/vehicleDefinition.ts",
+      "size": 2413,
+      "sha256": "3b9b5843ebde3d12dbe80919f480b4a966de90e10f7bacbb47f9f774c3083cea"
+    },
+    {
+      "path": "shared/world/architecture.ts",
+      "size": 7464,
+      "sha256": "a0bb06253626e6a12bb1e038c822980a2d90c45ecf1a30ea4c25478148304200"
+    },
+    {
+      "path": "shared/world/bayVista.ts",
+      "size": 4065,
+      "sha256": "2c4ffdc7b3eb14bc3910c3a5ad1ce43b9486ef836ec9ef184c86c0a6e4a61684"
+    },
+    {
+      "path": "shared/world/cyberPetArena.ts",
+      "size": 44715,
+      "sha256": "1264e1c5aec78d6fd3ed04c49f36fad3279bc3f15e711321de3f4ad55ea31225"
+    },
+    {
+      "path": "shared/world/dreadnoughtBoss.ts",
+      "size": 14314,
+      "sha256": "07385135c58d7a15d98e75a2b1cc9711aa22296358eef2420e1775ee76a576aa"
+    },
+    {
+      "path": "shared/world/neoVeridiaBlock.ts",
+      "size": 29254,
+      "sha256": "01b786eef03ee73854c63556e5f9867304ada746bd55d86d8f05f777bc6c1ab7"
+    },
+    {
+      "path": "shared/world/orbSystem.ts",
+      "size": 12368,
+      "sha256": "5c26e22fcf96318e8f5bb082efecf991095f400e9d9d98e001a3df0322ec8476"
+    },
+    {
+      "path": "shared/world/phase5Systems.ts",
+      "size": 28303,
+      "sha256": "48821f385605eb188a4f9f595e8ee5baadb7fe9a720f3a4d658d9d888d3984af"
+    },
+    {
+      "path": "shared/world/relayDefinition.ts",
+      "size": 5034,
+      "sha256": "ce8664ca35ed27daa42829b14b04e1df0eb6b94f95a655e12526b6027a2d6758"
+    },
+    {
+      "path": "shared/world/relaySystem.ts",
+      "size": 7389,
+      "sha256": "170eeb0fce0e4e88e3c9abbe859478623da58f73332988c54c3fe085bb28a4ce"
+    },
+    {
+      "path": "shared/world/spatialOctree.ts",
+      "size": 5696,
+      "sha256": "942f179748a5e98d0b0241173b25c7ff884618be37803510ea35717a9cee0d2a"
+    },
+    {
+      "path": "server/db.ts",
+      "size": 19704,
+      "sha256": "a58b08a7199a7d4ecb90072c04163fc658b70ceb0c838bc1aabde2f6ea66d228"
+    },
+    {
+      "path": "server/gameServer.ts",
+      "size": 42162,
+      "sha256": "34e14af5a675ee7f94d29b317f770b5b8b622a26cf4550ce837d3c9b42c4e367"
+    },
+    {
+      "path": "server/index.js",
+      "size": 82133,
+      "sha256": "92b4229e3cd80d645f925a2b36e8e35dad146375df279956bd2147d4f76d7080"
+    },
+    {
+      "path": "server/index.ts",
+      "size": 834,
+      "sha256": "50a27231d1231f51c3f1ea8aa72f835fc58645aae18849dd3a4036b93c5ded97"
+    },
+    {
+      "path": "server/persistence.js",
+      "size": 6650,
+      "sha256": "a62aec7e94d355d9027e22f5bcfd8c9813cdd5d675496238cddaa24883f85102"
+    },
+    {
+      "path": "server/world_data.js",
+      "size": 31385,
+      "sha256": "7a06c5c1625e7e673e57194c8ccdeb08352250520465f7d0fb6ea3a334c7dc41"
+    },
+    {
+      "path": "server/ws_server.js",
+      "size": 4864,
+      "sha256": "36c4a52c46d6747e71d629aecbea26d3f1f0fe27cca9635258ffb9749ee88e01"
+    },
+    {
+      "path": "public/assets/env/bay_dusk.hdr",
+      "size": 4563204,
+      "sha256": "273003109ca1cfb798ce6b96e09ac8440f763d0ef0c376bbe77492613540b4a3"
+    },
+    {
+      "path": "public/assets/licenses/Mixamo.md",
+      "size": 880,
+      "sha256": "ac4af441f7cce14474c72f4841d2cb5b8ec79b14aee373ae92200f3921f0a7af"
+    },
+    {
+      "path": "public/assets/licenses/threejs-LICENSE.txt",
+      "size": 1081,
+      "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc"
+    },
+    {
+      "path": "public/assets/manifest.json",
+      "size": 24268,
+      "sha256": "207862dc81e306c6774d72d0c5978cad50433d80b43bbd74c4f9d0e6d3af0492"
+    },
+    {
+      "path": "public/assets/models/characters/capoeira_ybot.glb",
+      "size": 5642328,
+      "sha256": "ca7f9e617d3f75796132add53515ffc30c7d3a3f592f00cf44f6fb8bfc061e98"
+    },
+    {
+      "path": "public/assets/models/characters/Soldier.glb",
+      "size": 1892908,
+      "sha256": "a4877fd4f451a5ff159831bbed58b2dec256d9a6c331ec93b985bcf43cbc396c"
+    },
+    {
+      "path": "public/assets/models/characters/Xbot.glb",
+      "size": 2880472,
+      "sha256": "c38155bfcdac66461c4b6fa17e6ff25510a9570c1d714d093ad13601103ea970"
+    },
+    {
+      "path": "public/assets/README.md",
+      "size": 8141,
+      "sha256": "10150f0fb845cb0863f6cc76f24b6257a47f088c65b87d2e6ab71623bf8c8f42"
+    },
+    {
+      "path": "public/assets/textures/asphalt_02/diffuse.jpg",
+      "size": 3075676,
+      "sha256": "28f5ba8690553f192c0e5e1a5ff40f34765b4b93f4cc7059b1a3e9c795b6c28c"
+    },
+    {
+      "path": "public/assets/textures/asphalt_02/normal.png",
+      "size": 9122344,
+      "sha256": "f96c0a1664e556d233b3f76e8f70ab08af5b1c342786efb99b72b8854563440e"
+    },
+    {
+      "path": "public/assets/textures/asphalt_02/roughness.jpg",
+      "size": 2230457,
+      "sha256": "b9a516b61b7040a9245ac206642d5f767ad9589a0169c4a1668221429e8a998c"
+    },
+    {
+      "path": "public/assets/textures/carbon_fiber/diffuse.png",
+      "size": 77203,
+      "sha256": "95e606278cda5073c446db7e679a6f2dfd14bd7b619f218de73b12114bbcdc9d"
+    },
+    {
+      "path": "public/assets/textures/carbon_fiber/normal.png",
+      "size": 1384198,
+      "sha256": "e4451dca0cc11239e69027f6ac743e1415198edf2afc079ec5fc07db7e67574f"
+    },
+    {
+      "path": "public/assets/textures/carbon_fiber/roughness.png",
+      "size": 666296,
+      "sha256": "ea2ba08023de5a7f45ff931178adc365c447bb4395e39e6e279c57f3df84a940"
+    },
+    {
+      "path": "public/assets/textures/concrete_layers_02/diffuse.jpg",
+      "size": 2555097,
+      "sha256": "f70070187573ad05457c65c3efe7fb25fe1e071a5490c760e5b90f845aab9b91"
+    },
+    {
+      "path": "public/assets/textures/concrete_layers_02/normal.png",
+      "size": 24800490,
+      "sha256": "7652237cbe4cfc00201dbf8509620906600737fdd36f267628d4c5b2df9c58a2"
+    },
+    {
+      "path": "public/assets/textures/concrete_layers_02/roughness.jpg",
+      "size": 1920563,
+      "sha256": "d90cfb52d690c4ac843e29e05ffc3d67f510f6a5aa1ef0f0f467d693d7d958b7"
+    },
+    {
+      "path": "public/assets/textures/corrugated_iron_02/diffuse.jpg",
+      "size": 2325335,
+      "sha256": "1bd2b9900e066d7e6cbacc5093aa4204db71c1bbe13b42a3d8ad23d04fa8075a"
+    },
+    {
+      "path": "public/assets/textures/corrugated_iron_02/metalness.jpg",
+      "size": 542030,
+      "sha256": "01d675c00567aa12abf71019320436f6e5bfdfd9924a0e84ca1a16920f75f758"
+    },
+    {
+      "path": "public/assets/textures/corrugated_iron_02/normal.png",
+      "size": 20397959,
+      "sha256": "57966705714a10b718efc31368879c75fbf24ee3d3295106eada9094513f9cbc"
+    },
+    {
+      "path": "public/assets/textures/corrugated_iron_02/roughness.jpg",
+      "size": 3492646,
+      "sha256": "926d883052ad9f07e3110f3ce09157d9968872d1f7dafc7da70460f3158f4b4b"
+    },
+    {
+      "path": "public/assets/transcoders/basis_transcoder.js",
+      "size": 57529,
+      "sha256": "8478b5b6d6b74e7d3082b89f6417321d8d1dc0307f2b30d4484bb11b441696a1"
+    },
+    {
+      "path": "public/assets/transcoders/basis_transcoder.wasm",
+      "size": 527333,
+      "sha256": "6cf17dc889352c42e9acf8897107978d127005fe3386c36a0e3845e27967630a"
+    },
+    {
+      "path": "public/assets/transcoders/LICENSE",
+      "size": 11347,
+      "sha256": "065fcf48d6af21c0b75e23be5ed5753aee75c892e1c2cf178fa6736305614a5c"
+    },
+    {
+      "path": "public/assets/transcoders/provenance.json",
+      "size": 549,
+      "sha256": "17d2312802baddaf1b68ff5496feddb3aa48e9de5940a27b7f5c474bb9b67cd5"
+    },
+    {
+      "path": "public/assets/transcoders/README.md",
+      "size": 1448,
+      "sha256": "930b11bbbb742b2525491b0964f0462d63d8b21383c0623ec4c98c43d53723c6"
+    },
+    {
+      "path": "public/game.js",
+      "size": 4053108,
+      "sha256": "bfc27fec41f1871db9a328f75a9367236ed474d20e882b6c6abb4f9ae0c9d544"
+    },
+    {
+      "path": "public/index.html",
+      "size": 13242,
+      "sha256": "42b86d46ff33953886701dac0c33d445f05eb69f831cb5c5f2d25c4fa8f32725"
+    },
+    {
+      "path": "public/style.css",
+      "size": 15495,
+      "sha256": "59098ad6cd450f9b835781cf2aa50ca70667bbd0f396390202c683ada5e487dd"
+    },
+    {
+      "path": "package.json",
+      "size": 4090,
+      "sha256": "306bdf0981f13bbd840944305d79c5c502280c9127ea776c847a5b0fcd6186ce"
+    },
+    {
+      "path": "package-lock.json",
+      "size": 145877,
+      "sha256": "186d7fe2e6e81fe9901b4e4d9a258cc6c026343c75827420bf3f280364bb4783"
+    },
+    {
+      "path": "tsconfig.json",
+      "size": 576,
+      "sha256": "22491bfe581b9de53846fca65546e5adb433133822574635dccc8df77005ec40"
+    }
+  ],
+  "build": "npm run build passed after requirements planning; no game source was edited by this task"
+}

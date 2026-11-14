@@ -1,0 +1,704 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-11T13:49:44.825Z",
+  "environment": {
+    "assetId": "belfast_sunset_puresky",
+    "url": "/assets/env/bay_dusk.hdr",
+    "sourcePage": "https://polyhaven.com/a/belfast_sunset_puresky"
+  },
+  "materials": {
+    "concrete_layers_02": {
+      "assetId": "concrete_layers_02",
+      "provider": "Poly Haven",
+      "sourcePage": "https://polyhaven.com/a/concrete_layers_02",
+      "maps": {
+        "diffuse": "/assets/textures/concrete_layers_02/diffuse.jpg",
+        "roughness": "/assets/textures/concrete_layers_02/roughness.jpg",
+        "normal": "/assets/textures/concrete_layers_02/normal.png"
+      }
+    },
+    "asphalt_02": {
+      "assetId": "asphalt_02",
+      "provider": "Poly Haven",
+      "sourcePage": "https://polyhaven.com/a/asphalt_02",
+      "maps": {
+        "diffuse": "/assets/textures/asphalt_02/diffuse.jpg",
+        "roughness": "/assets/textures/asphalt_02/roughness.jpg",
+        "normal": "/assets/textures/asphalt_02/normal.png"
+      }
+    },
+    "corrugated_iron_02": {
+      "assetId": "corrugated_iron_02",
+      "provider": "Poly Haven",
+      "sourcePage": "https://polyhaven.com/a/corrugated_iron_02",
+      "maps": {
+        "diffuse": "/assets/textures/corrugated_iron_02/diffuse.jpg",
+        "roughness": "/assets/textures/corrugated_iron_02/roughness.jpg",
+        "normal": "/assets/textures/corrugated_iron_02/normal.png",
+        "metalness": "/assets/textures/corrugated_iron_02/metalness.jpg"
+      }
+    },
+    "carbon_fiber": {
+      "assetId": "Fabric004",
+      "provider": "ambientCG",
+      "sourcePage": "https://ambientcg.com/view?id=Fabric004",
+      "maps": {
+        "diffuse": "/assets/textures/carbon_fiber/diffuse.png",
+        "roughness": "/assets/textures/carbon_fiber/roughness.png",
+        "normal": "/assets/textures/carbon_fiber/normal.png"
+      }
+    }
+  },
+  "characters": {
+    "Soldier": {
+      "url": "/assets/models/characters/Soldier.glb",
+      "clips": [
+        "Idle",
+        "Run",
+        "TPose",
+        "Walk"
+      ],
+      "skins": 2,
+      "bones": 51
+    },
+    "Xbot": {
+      "url": "/assets/models/characters/Xbot.glb",
+      "clips": [
+        "agree",
+        "headShake",
+        "idle",
+        "run",
+        "sad_pose",
+        "sneak_pose",
+        "walk"
+      ],
+      "skins": 1,
+      "bones": 67
+    },
+    "capoeira_ybot": {
+      "url": "/assets/models/characters/capoeira_ybot.glb",
+      "optional": true,
+      "clips": [
+        "armada to esquiva",
+        "armada",
+        "au to role",
+        "au",
+        "bencao",
+        "capoeira (2)",
+        "capoeira (3)",
+        "capoeira",
+        "chapa 2",
+        "chapa giratoria 2",
+        "chapa-giratoria",
+        "chapaeu de couro",
+        "esquiva 1",
+        "esquiva 2",
+        "esquiva 3",
+        "esquiva 4",
+        "esquiva 5",
+        "ginga backward",
+        "ginga forward",
+        "ginga sideways 1",
+        "ginga sideways 2",
+        "ginga sideways to au",
+        "ginga variation 1",
+        "ginga variation 2",
+        "ginga variation 3",
+        "macaco side",
+        "martelo 2",
+        "martelo 3",
+        "martelo do chau sem mao",
+        "martelo do chau",
+        "meia lua de compasso back",
+        "meia lua de compasso",
+        "meia lua de frente",
+        "pontera",
+        "queshada 1",
+        "queshada 2",
+        "rasteira 1",
+        "rasteira 2",
+        "troca 1"
+      ],
+      "skins": 1,
+      "purpose": "Capoeira motion source; retargeted onto game armor"
+    }
+  },
+  "files": [
+    {
+      "path": "/assets/env/bay_dusk.hdr",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/belfast_sunset_puresky_2k.hdr",
+      "sourceMd5": "4bb56d6163ef1c7ec762e4a7ef8ede81",
+      "provider": "Poly Haven",
+      "assetId": "belfast_sunset_puresky",
+      "license": "CC0-1.0",
+      "kind": "hdr",
+      "resolution": "2k",
+      "bytes": 4563204,
+      "sha256": "273003109ca1cfb798ce6b96e09ac8440f763d0ef0c376bbe77492613540b4a3",
+      "md5": "4bb56d6163ef1c7ec762e4a7ef8ede81"
+    },
+    {
+      "path": "/assets/textures/concrete_layers_02/diffuse.jpg",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/concrete_layers_02/concrete_layers_02_diff_2k.jpg",
+      "sourceMd5": "f98d5155e8d298931320879be082d136",
+      "provider": "Poly Haven",
+      "assetId": "concrete_layers_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "diffuse",
+      "resolution": "2k",
+      "bytes": 2555097,
+      "sha256": "f70070187573ad05457c65c3efe7fb25fe1e071a5490c760e5b90f845aab9b91",
+      "md5": "f98d5155e8d298931320879be082d136"
+    },
+    {
+      "path": "/assets/textures/concrete_layers_02/roughness.jpg",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/concrete_layers_02/concrete_layers_02_rough_2k.jpg",
+      "sourceMd5": "7d43a4200b6d7719e9f3278d929f5f5f",
+      "provider": "Poly Haven",
+      "assetId": "concrete_layers_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "roughness",
+      "resolution": "2k",
+      "bytes": 1920563,
+      "sha256": "d90cfb52d690c4ac843e29e05ffc3d67f510f6a5aa1ef0f0f467d693d7d958b7",
+      "md5": "7d43a4200b6d7719e9f3278d929f5f5f"
+    },
+    {
+      "path": "/assets/textures/concrete_layers_02/normal.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/concrete_layers_02/concrete_layers_02_nor_gl_2k.png",
+      "sourceMd5": "54c44757a61cb5e6ac727825f098a346",
+      "provider": "Poly Haven",
+      "assetId": "concrete_layers_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "normal",
+      "resolution": "2k",
+      "bytes": 24800490,
+      "sha256": "7652237cbe4cfc00201dbf8509620906600737fdd36f267628d4c5b2df9c58a2",
+      "md5": "54c44757a61cb5e6ac727825f098a346"
+    },
+    {
+      "path": "/assets/textures/asphalt_02/diffuse.jpg",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_diff_2k.jpg",
+      "sourceMd5": "336af399fd98a39ab986d8b3bf73b4ff",
+      "provider": "Poly Haven",
+      "assetId": "asphalt_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "diffuse",
+      "resolution": "2k",
+      "bytes": 3075676,
+      "sha256": "28f5ba8690553f192c0e5e1a5ff40f34765b4b93f4cc7059b1a3e9c795b6c28c",
+      "md5": "336af399fd98a39ab986d8b3bf73b4ff"
+    },
+    {
+      "path": "/assets/textures/asphalt_02/roughness.jpg",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_rough_2k.jpg",
+      "sourceMd5": "6fe669ab38640ef2009d6a28d1ad5ee9",
+      "provider": "Poly Haven",
+      "assetId": "asphalt_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "roughness",
+      "resolution": "2k",
+      "bytes": 2230457,
+      "sha256": "b9a516b61b7040a9245ac206642d5f767ad9589a0169c4a1668221429e8a998c",
+      "md5": "6fe669ab38640ef2009d6a28d1ad5ee9"
+    },
+    {
+      "path": "/assets/textures/asphalt_02/normal.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/asphalt_02/asphalt_02_nor_gl_2k.png",
+      "sourceMd5": "5e1dc171185794b1ffcf8f48864467dd",
+      "provider": "Poly Haven",
+      "assetId": "asphalt_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "normal",
+      "resolution": "2k",
+      "bytes": 9122344,
+      "sha256": "f96c0a1664e556d233b3f76e8f70ab08af5b1c342786efb99b72b8854563440e",
+      "md5": "5e1dc171185794b1ffcf8f48864467dd"
+    },
+    {
+      "path": "/assets/textures/corrugated_iron_02/diffuse.jpg",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/corrugated_iron_02/corrugated_iron_02_diff_2k.jpg",
+      "sourceMd5": "88f0ec0310e41f408dd0092c8c53db58",
+      "provider": "Poly Haven",
+      "assetId": "corrugated_iron_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "diffuse",
+      "resolution": "2k",
+      "bytes": 2325335,
+      "sha256": "1bd2b9900e066d7e6cbacc5093aa4204db71c1bbe13b42a3d8ad23d04fa8075a",
+      "md5": "88f0ec0310e41f408dd0092c8c53db58"
+    },
+    {
+      "path": "/assets/textures/corrugated_iron_02/roughness.jpg",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/corrugated_iron_02/corrugated_iron_02_rough_2k.jpg",
+      "sourceMd5": "cd1a30895816c7a72e1baf780fcbc2e8",
+      "provider": "Poly Haven",
+      "assetId": "corrugated_iron_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "roughness",
+      "resolution": "2k",
+      "bytes": 3492646,
+      "sha256": "926d883052ad9f07e3110f3ce09157d9968872d1f7dafc7da70460f3158f4b4b",
+      "md5": "cd1a30895816c7a72e1baf780fcbc2e8"
+    },
+    {
+      "path": "/assets/textures/corrugated_iron_02/normal.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/corrugated_iron_02/corrugated_iron_02_nor_gl_2k.png",
+      "sourceMd5": "cf38408159183b730624ecdf76fa6b5b",
+      "provider": "Poly Haven",
+      "assetId": "corrugated_iron_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "normal",
+      "resolution": "2k",
+      "bytes": 20397959,
+      "sha256": "57966705714a10b718efc31368879c75fbf24ee3d3295106eada9094513f9cbc",
+      "md5": "cf38408159183b730624ecdf76fa6b5b"
+    },
+    {
+      "path": "/assets/textures/corrugated_iron_02/metalness.jpg",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/corrugated_iron_02/corrugated_iron_02_metal_2k.jpg",
+      "sourceMd5": "89bb9b04d3d146ba01060dd5611d1805",
+      "provider": "Poly Haven",
+      "assetId": "corrugated_iron_02",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "metalness",
+      "resolution": "2k",
+      "bytes": 542030,
+      "sha256": "01d675c00567aa12abf71019320436f6e5bfdfd9924a0e84ca1a16920f75f758",
+      "md5": "89bb9b04d3d146ba01060dd5611d1805"
+    },
+    {
+      "path": "/assets/textures/carbon_fiber/diffuse.png",
+      "sourceUrl": "https://ambientcg.com/get?file=Fabric004_2K-PNG.zip",
+      "sourceArchiveEntry": "Fabric004_2K-PNG_Color.png",
+      "sourceArchiveSha256": "1a41636dbd762ba7da4888c72ebfe0ff026c0cf0ba8da50ee2203b78e435b19d",
+      "provider": "ambientCG",
+      "assetId": "Fabric004",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "diffuse",
+      "resolution": "2k",
+      "bytes": 77203,
+      "sha256": "95e606278cda5073c446db7e679a6f2dfd14bd7b619f218de73b12114bbcdc9d",
+      "md5": "a194e640277acd9d2842c1d6b1baf0f4"
+    },
+    {
+      "path": "/assets/textures/carbon_fiber/roughness.png",
+      "sourceUrl": "https://ambientcg.com/get?file=Fabric004_2K-PNG.zip",
+      "sourceArchiveEntry": "Fabric004_2K-PNG_Roughness.png",
+      "sourceArchiveSha256": "1a41636dbd762ba7da4888c72ebfe0ff026c0cf0ba8da50ee2203b78e435b19d",
+      "provider": "ambientCG",
+      "assetId": "Fabric004",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "roughness",
+      "resolution": "2k",
+      "bytes": 666296,
+      "sha256": "ea2ba08023de5a7f45ff931178adc365c447bb4395e39e6e279c57f3df84a940",
+      "md5": "894ae6737cb7c522796292c0f13f488e"
+    },
+    {
+      "path": "/assets/textures/carbon_fiber/normal.png",
+      "sourceUrl": "https://ambientcg.com/get?file=Fabric004_2K-PNG.zip",
+      "sourceArchiveEntry": "Fabric004_2K-PNG_NormalGL.png",
+      "sourceArchiveSha256": "1a41636dbd762ba7da4888c72ebfe0ff026c0cf0ba8da50ee2203b78e435b19d",
+      "provider": "ambientCG",
+      "assetId": "Fabric004",
+      "license": "CC0-1.0",
+      "kind": "texture",
+      "channel": "normal",
+      "resolution": "2k",
+      "bytes": 1384198,
+      "sha256": "e4451dca0cc11239e69027f6ac743e1415198edf2afc079ec5fc07db7e67574f",
+      "md5": "49f72ca5ebbb6ce57d58245474b2aa7d"
+    },
+    {
+      "path": "/assets/models/characters/Soldier.glb",
+      "sourceUrl": "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/Soldier.glb",
+      "sourceSha256": "dfb230fc1f942f259dd00281a1186953ad602fc5d69067ce63e24b2aa439736b",
+      "provider": "three.js examples",
+      "assetId": "Soldier",
+      "kind": "glb",
+      "processing": "Lossless glTF Transform repack; normalize skin weights",
+      "bytes": 1892908,
+      "sha256": "a4877fd4f451a5ff159831bbed58b2dec256d9a6c331ec93b985bcf43cbc396c",
+      "md5": "dd334c4a084e4eba893d634262531304"
+    },
+    {
+      "path": "/assets/models/characters/Xbot.glb",
+      "sourceUrl": "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/Xbot.glb",
+      "sourceSha256": "002f8d269de68e5dce3d25195caf390d1aa359bbfaae3fcf4c8dc78ec36c3ba5",
+      "provider": "three.js examples",
+      "assetId": "Xbot",
+      "kind": "glb",
+      "processing": "Lossless glTF Transform repack; normalize skin weights",
+      "bytes": 2880472,
+      "sha256": "c38155bfcdac66461c4b6fa17e6ff25510a9570c1d714d093ad13601103ea970",
+      "md5": "e6a02fc6fd0e2d543a8a403b73765fa7"
+    },
+    {
+      "path": "/assets/licenses/threejs-LICENSE.txt",
+      "sourceUrl": "https://raw.githubusercontent.com/mrdoob/three.js/dev/LICENSE",
+      "kind": "license",
+      "provider": "three.js",
+      "bytes": 1081,
+      "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc",
+      "md5": "b3fc5f5e1fb66bb4c7e45d1a905627e5"
+    },
+    {
+      "path": "/assets/models/characters/capoeira_ybot.glb",
+      "kind": "glb",
+      "provider": "Adobe Mixamo",
+      "assetId": "capoeira_ybot",
+      "sourceUrl": "https://www.mixamo.com/",
+      "license": "Adobe Mixamo terms; incorporated game asset",
+      "sources": [
+        {
+          "file": "Y Bot.fbx",
+          "sha256": "ba45e7b1003712fdaa62b286cf978f81c6ed7dbd10c95de53e879b4d2aea2cb7",
+          "bytes": 1982369,
+          "role": "skinned-base",
+          "bakedFps": 30
+        },
+        {
+          "file": "armada to esquiva.fbx",
+          "sha256": "4b25229419f8f3c013ad718839c837fc6702a8d895b2228d452c22d86dbdaf5d",
+          "bytes": 693137,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "armada.fbx",
+          "sha256": "60a2bdb6b3d8e67edc31069dc753566aa9d39f5de60d20aebc841df6cd76af1e",
+          "bytes": 443441,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "au to role.fbx",
+          "sha256": "4875fa16bfd5700537674f3a0f13d6409232cc138cc17aa61b5159e07e104c84",
+          "bytes": 689905,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "au.fbx",
+          "sha256": "08f3a329c1dac5ae25464df511026754739bd1aeab0a8bfd13fa04d665e24fcb",
+          "bytes": 572817,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "bencao.fbx",
+          "sha256": "bddee6e869991d0dc24f455ea9f1ebfb0d7e6bb9d72e686a8e3988323dc2aa17",
+          "bytes": 418929,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "capoeira (2).fbx",
+          "sha256": "4674a6f4b20723cc8d42b1830b20ad54868d784c491e78a5193306cbb0d76c35",
+          "bytes": 1693921,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "capoeira (3).fbx",
+          "sha256": "30e1ae3c5fc59c745f9805fce620d11a9f1f2a5b9a8f0ae76978e7a4cd0d8a13",
+          "bytes": 715841,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "capoeira.fbx",
+          "sha256": "4b4d28e3b8b493b9ce8d17f81760790abb0727e149ab774585e02d3d7d314778",
+          "bytes": 634209,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "chapa 2.fbx",
+          "sha256": "f30e1b35a6c61bd37875dbe6458f826779799960dd3884aeef90ecc1833f11ee",
+          "bytes": 415105,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "chapa giratoria 2.fbx",
+          "sha256": "9d5f75fb3b5eb7da380d592bc40440c387617d3e2a8e608a53e2fff2f115fb0c",
+          "bytes": 520881,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "chapa-giratoria.fbx",
+          "sha256": "61f6af189419b50db81da2e98f847752dfb98acb5c0b139a0fbb53b1a3b99bce",
+          "bytes": 581169,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "chapaeu de couro.fbx",
+          "sha256": "b4aef20ca2541bb98dc08c6d0dfb3823f333f6c64535d5dd8ad87f4314096377",
+          "bytes": 632017,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "esquiva 1.fbx",
+          "sha256": "ad7ff009533ee722c3e9507cb5bafbefc70b2333dd6715d7ef9aa94c1375b9dd",
+          "bytes": 694897,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "esquiva 2.fbx",
+          "sha256": "cd5daf68e95c29abc31dc399355f8fd8963b8929df70b8731a966a97a02c6851",
+          "bytes": 509649,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "esquiva 3.fbx",
+          "sha256": "39dcd0bd32bc711c6ad3f2aaffd5428ab4e932023602491d7289794babd500ff",
+          "bytes": 490561,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "esquiva 4.fbx",
+          "sha256": "c0f7d2bfa2c1439be85dbec49eb86e7735555972fe2c3953d1108b5bf4f4852e",
+          "bytes": 552849,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "esquiva 5.fbx",
+          "sha256": "2be51b02d6b47bcb83a72137e1ee75f207d87c049a98006c079307b4ef5e087a",
+          "bytes": 489089,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga backward.fbx",
+          "sha256": "3164e92d5a35acafc6f7d9fc12afeabc36fe7b41fe8ea68a0a75094dbfaaa056",
+          "bytes": 392465,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga forward.fbx",
+          "sha256": "e1604abc580deeb244dc00db633ee2dca26260db2f573138c120cb814fcfdf64",
+          "bytes": 399985,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga sideways 1.fbx",
+          "sha256": "4d9e7a6f895b01731e92b606de834614fcadee774692c441f4b189407ab6a7e1",
+          "bytes": 447217,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga sideways 2.fbx",
+          "sha256": "a8d3fb946d48212c40e974b5ce6ba03eb81f605122bbc9f8c4c55f3ee1920ea8",
+          "bytes": 503809,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga sideways to au.fbx",
+          "sha256": "fe08678c7d2bbf9809e8bade0ac4b1ffd308d30bd1ac722c840b22b2c279916b",
+          "bytes": 653521,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga variation 1.fbx",
+          "sha256": "7288dd864c91f862cc0b0e3107906c4ef9fd5982635e7ced0576c1ab5f85013c",
+          "bytes": 637009,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga variation 2.fbx",
+          "sha256": "d5323d4f30cc8772fd4288ad88a94e78a5ffb08c6156f265a03b3d425c5058dc",
+          "bytes": 671937,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga variation 3.fbx",
+          "sha256": "aa216642ccfcfb0e5edb044bfc6f51a02fc3277edfc6adc3ee50df75ea61df91",
+          "bytes": 567313,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "macaco side.fbx",
+          "sha256": "c3638f101e3d4ad023af146438c46b4098df64f3379c863d8456284718883b68",
+          "bytes": 619745,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "martelo 2.fbx",
+          "sha256": "c1b521e808f09b9a16f532054dada67ecfd2ec85335bd592c68ec6fe1b03a245",
+          "bytes": 409457,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "martelo 3.fbx",
+          "sha256": "0d73c2251efd118c957362612213df38b7b6dd87903f9ec61eafbc294a9c9b83",
+          "bytes": 477425,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "martelo do chau sem mao.fbx",
+          "sha256": "18acadfdd1b0145d46782bf02ffa18795bbbab643cccc96a8b3aa600d89140d2",
+          "bytes": 597489,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "martelo do chau.fbx",
+          "sha256": "d0f49e5c468dd84214e46dde6e4adb5593c72d0e6d17dfcf20e77093c86c96b1",
+          "bytes": 582145,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "meia lua de compasso back.fbx",
+          "sha256": "6c852baa18fe49e45905897e57590907448989f5258608d21624521e2b259a3d",
+          "bytes": 507697,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "meia lua de compasso.fbx",
+          "sha256": "f4e31aed4302db916bd486023db8aeccb1fda145fdcc19e1bd8ebd862370e59e",
+          "bytes": 453121,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "meia lua de frente.fbx",
+          "sha256": "1be0fe4b70495f89ed6ab3c3a406f9b9d007bbf085aef7deac08ca353836e7e1",
+          "bytes": 536033,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "pontera.fbx",
+          "sha256": "8913cb6c837810cb3b4ca32a24a076fabc29fd109ceaacb0bb7620d56a5fd8c3",
+          "bytes": 410673,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "queshada 1.fbx",
+          "sha256": "0692961b2323842a6c5757a766fd0455b97cb27c4ae4a2a158ab2efbae3e9151",
+          "bytes": 547329,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "queshada 2.fbx",
+          "sha256": "a578f20c71d3327bb32540400cbe742e891025bdbb3f287641e62735d60779ff",
+          "bytes": 485025,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "rasteira 1.fbx",
+          "sha256": "4c4f2bdb42fb8af246854a8a533dfaf539192670c7c5dd71de76593a391e24af",
+          "bytes": 467489,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "rasteira 2.fbx",
+          "sha256": "aa615f974644b51ebded3f65f48a3612945a8a756e949129cca9e21ac3791d2a",
+          "bytes": 524577,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "troca 1.fbx",
+          "sha256": "28be732c585da91caa7ba9d3f0dc91517a5feb1e8b74c5f799576448ed9be67a",
+          "bytes": 691809,
+          "role": "motion",
+          "bakedFps": 30
+        }
+      ],
+      "requiredClips": [
+        "armada to esquiva",
+        "armada",
+        "au to role",
+        "au",
+        "bencao",
+        "capoeira (2)",
+        "capoeira (3)",
+        "capoeira",
+        "chapa 2",
+        "chapa giratoria 2",
+        "chapa-giratoria",
+        "chapaeu de couro",
+        "esquiva 1",
+        "esquiva 2",
+        "esquiva 3",
+        "esquiva 4",
+        "esquiva 5",
+        "ginga backward",
+        "ginga forward",
+        "ginga sideways 1",
+        "ginga sideways 2",
+        "ginga sideways to au",
+        "ginga variation 1",
+        "ginga variation 2",
+        "ginga variation 3",
+        "macaco side",
+        "martelo 2",
+        "martelo 3",
+        "martelo do chau sem mao",
+        "martelo do chau",
+        "meia lua de compasso back",
+        "meia lua de compasso",
+        "meia lua de frente",
+        "pontera",
+        "queshada 1",
+        "queshada 2",
+        "rasteira 1",
+        "rasteira 2",
+        "troca 1"
+      ],
+      "bytes": 5642328,
+      "sha256": "ca7f9e617d3f75796132add53515ffc30c7d3a3f592f00cf44f6fb8bfc061e98"
+    }
+  ],
+  "substitutions": [
+    {
+      "requested": "san_francisco_4",
+      "actual": "belfast_sunset_puresky",
+      "reason": "Requested API asset unavailable; user-approved HDR alternative."
+    },
+    {
+      "requested": "Poly Haven carbon_fiber",
+      "actual": "ambientCG Fabric004",
+      "reason": "Poly Haven returns 404; real CC0 carbon-fiber PBR material obtained from ambientCG public API."
+    }
+  ]
+}

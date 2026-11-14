@@ -1,0 +1,4 @@
+# Preserve exact hashes for downloaded runtime assets and saved verification evidence.
+/public/assets/** -text
+/artifacts/evidence/** -text
+/public/assets/README.md text eol=lf

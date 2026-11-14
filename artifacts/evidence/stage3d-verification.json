@@ -1,0 +1,207 @@
+{
+  "status": "passed",
+  "checkedAt": "2026-11-12T20:50:24.020Z",
+  "variants": 3,
+  "poses": 12,
+  "silhouettes": 9,
+  "clips": [
+    {
+      "name": "armada to esquiva",
+      "duration": 4.0333333015441895,
+      "frames": 122
+    },
+    {
+      "name": "armada",
+      "duration": 1.600000023841858,
+      "frames": 50
+    },
+    {
+      "name": "au to role",
+      "duration": 4,
+      "frames": 121
+    },
+    {
+      "name": "au",
+      "duration": 2.9000000953674316,
+      "frames": 89
+    },
+    {
+      "name": "bencao",
+      "duration": 1.3666666746139526,
+      "frames": 43
+    },
+    {
+      "name": "capoeira (2)",
+      "duration": 17.700000762939453,
+      "frames": 533
+    },
+    {
+      "name": "capoeira (3)",
+      "duration": 4.800000190734863,
+      "frames": 146
+    },
+    {
+      "name": "capoeira",
+      "duration": 3.433333396911621,
+      "frames": 105
+    },
+    {
+      "name": "chapa 2",
+      "duration": 1.2333333492279053,
+      "frames": 39
+    },
+    {
+      "name": "chapa giratoria 2",
+      "duration": 2.366666555404663,
+      "frames": 72
+    },
+    {
+      "name": "chapa-giratoria",
+      "duration": 3,
+      "frames": 91
+    },
+    {
+      "name": "chapaeu de couro",
+      "duration": 3.433333396911621,
+      "frames": 105
+    },
+    {
+      "name": "esquiva 1",
+      "duration": 4.599999904632568,
+      "frames": 139
+    },
+    {
+      "name": "esquiva 2",
+      "duration": 2.2333333492279053,
+      "frames": 69
+    },
+    {
+      "name": "esquiva 3",
+      "duration": 2.1666667461395264,
+      "frames": 67
+    },
+    {
+      "name": "esquiva 4",
+      "duration": 2.799999952316284,
+      "frames": 85
+    },
+    {
+      "name": "esquiva 5",
+      "duration": 2.1666667461395264,
+      "frames": 67
+    },
+    {
+      "name": "ginga backward",
+      "duration": 1.1333333253860474,
+      "frames": 35
+    },
+    {
+      "name": "ginga forward",
+      "duration": 1.2333333492279053,
+      "frames": 39
+    },
+    {
+      "name": "ginga sideways 1",
+      "duration": 1.600000023841858,
+      "frames": 50
+    },
+    {
+      "name": "ginga sideways 2",
+      "duration": 2.133333444595337,
+      "frames": 66
+    },
+    {
+      "name": "ginga sideways to au",
+      "duration": 3.7666666507720947,
+      "frames": 114
+    },
+    {
+      "name": "ginga variation 1",
+      "duration": 3.5333333015441895,
+      "frames": 107
+    },
+    {
+      "name": "ginga variation 2",
+      "duration": 3.8333332538604736,
+      "frames": 116
+    },
+    {
+      "name": "ginga variation 3",
+      "duration": 2.866666555404663,
+      "frames": 87
+    },
+    {
+      "name": "macaco side",
+      "duration": 3.2666666507720947,
+      "frames": 99
+    },
+    {
+      "name": "martelo 2",
+      "duration": 1.2999999523162842,
+      "frames": 40
+    },
+    {
+      "name": "martelo 3",
+      "duration": 1.9666666984558105,
+      "frames": 61
+    },
+    {
+      "name": "martelo do chau sem mao",
+      "duration": 3.066666603088379,
+      "frames": 93
+    },
+    {
+      "name": "martelo do chau",
+      "duration": 3,
+      "frames": 91
+    },
+    {
+      "name": "meia lua de compasso back",
+      "duration": 2.200000047683716,
+      "frames": 68
+    },
+    {
+      "name": "meia lua de compasso",
+      "duration": 1.600000023841858,
+      "frames": 50
+    },
+    {
+      "name": "meia lua de frente",
+      "duration": 2.4666666984558105,
+      "frames": 76
+    },
+    {
+      "name": "pontera",
+      "duration": 1.2666666507720947,
+      "frames": 39
+    },
+    {
+      "name": "queshada 1",
+      "duration": 2.566666603088379,
+      "frames": 78
+    },
+    {
+      "name": "queshada 2",
+      "duration": 2,
+      "frames": 61
+    },
+    {
+      "name": "rasteira 1",
+      "duration": 1.8666666746139526,
+      "frames": 58
+    },
+    {
+      "name": "rasteira 2",
+      "duration": 2.433333396911621,
+      "frames": 75
+    },
+    {
+      "name": "troca 1",
+      "duration": 5.166666507720947,
+      "frames": 156
+    }
+  ],
+  "rootMotion": "XZ remains authoritative",
+  "networkVersion": 2,
+  "legacyVersionAccepted": 1
+}

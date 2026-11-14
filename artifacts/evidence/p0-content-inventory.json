@@ -1,0 +1,385 @@
+{
+  "method": "Actual shared data and freshly instantiated world; counts establish implementation inventory, not content quality or accepted requirements.",
+  "world": {
+    "structures": 1663,
+    "architecturePlans": 18,
+    "buildings": [
+      {
+        "id": "helios_alpha",
+        "district": "AEGIS_CITADEL",
+        "height": 67
+      },
+      {
+        "id": "aegis_citadel",
+        "district": "HELIOS_SPIRE",
+        "height": 76
+      },
+      {
+        "id": "foundry_stack_01",
+        "district": "FOUNDRY_SLUMS",
+        "height": 76
+      },
+      {
+        "id": "foundry_stack_02",
+        "district": "FOUNDRY_SLUMS",
+        "height": 96
+      },
+      {
+        "id": "foundry_stack_03",
+        "district": "FOUNDRY_SLUMS",
+        "height": 118
+      },
+      {
+        "id": "foundry_apex_furnace",
+        "district": "FOUNDRY_SLUMS",
+        "height": 140
+      },
+      {
+        "id": "helios_tower_01",
+        "district": "HELIOS_SPIRE",
+        "height": 112
+      },
+      {
+        "id": "helios_tower_02",
+        "district": "HELIOS_SPIRE",
+        "height": 156
+      },
+      {
+        "id": "helios_tower_03",
+        "district": "HELIOS_SPIRE",
+        "height": 198
+      },
+      {
+        "id": "helios_financial_apex_spire",
+        "district": "HELIOS_SPIRE",
+        "height": 260
+      },
+      {
+        "id": "aegis_bastion_south",
+        "district": "AEGIS_CITADEL",
+        "height": 148
+      },
+      {
+        "id": "aegis_bastion_east",
+        "district": "AEGIS_CITADEL",
+        "height": 210
+      },
+      {
+        "id": "aegis_bastion_west",
+        "district": "AEGIS_CITADEL",
+        "height": 235
+      },
+      {
+        "id": "aegis_citadel_monolith_apex",
+        "district": "AEGIS_CITADEL",
+        "height": 320
+      },
+      {
+        "id": "crane_alpha",
+        "district": "NEON_DOCKS",
+        "height": 56
+      },
+      {
+        "id": "crane_beta",
+        "district": "NEON_DOCKS",
+        "height": 68
+      },
+      {
+        "id": "crane_gamma",
+        "district": "NEON_DOCKS",
+        "height": 78
+      },
+      {
+        "id": "crane_apex",
+        "district": "NEON_DOCKS",
+        "height": 85
+      }
+    ],
+    "structureMaterials": {
+      "plaza_asphalt": 1,
+      "brutalist_concrete": 182,
+      "ledge_trim": 1138,
+      "obsidian_steel": 81,
+      "industrial_grate": 215,
+      "helios_glass": 11,
+      "harbor_water": 1,
+      "shipping_container": 29,
+      "neon_amber": 4,
+      "forcefield_energy": 1
+    },
+    "structuresByDistrict": {
+      "FOUNDRY_SLUMS": 289,
+      "HELIOS_SPIRE": 550,
+      "NEON_DOCKS": 198,
+      "AEGIS_CITADEL": 626
+    },
+    "orbs": 182,
+    "orbTypes": {
+      "0": 150,
+      "1": 20,
+      "2": 12
+    }
+  },
+  "campaign": {
+    "districtOperations": [
+      {
+        "district": "NEON_DOCKS",
+        "name": "Neon Docks Smuggler Grid",
+        "terminals": [
+          {
+            "x": -24,
+            "y": 0,
+            "z": 20
+          },
+          {
+            "x": -34,
+            "y": 0,
+            "z": 26
+          }
+        ],
+        "lieutenant": "SYNDICATE-LT-VEX",
+        "kingpin": "KINGPIN-KRAKEN",
+        "core": {
+          "x": -38,
+          "y": 0,
+          "z": 32
+        }
+      },
+      {
+        "district": "FOUNDRY_SLUMS",
+        "name": "Foundry Slums Thermobaric Core",
+        "terminals": [
+          {
+            "x": 24,
+            "y": 0,
+            "z": 20
+          },
+          {
+            "x": 34,
+            "y": 0,
+            "z": 26
+          }
+        ],
+        "lieutenant": "IRONCLAD-LT-VULCAN",
+        "kingpin": "KINGPIN-SLAG",
+        "core": {
+          "x": 38,
+          "y": 0,
+          "z": 32
+        }
+      },
+      {
+        "district": "HELIOS_SPIRE",
+        "name": "Helios Spire Orbital Telemetry",
+        "terminals": [
+          {
+            "x": 24,
+            "y": 0,
+            "z": -20
+          },
+          {
+            "x": 34,
+            "y": 0,
+            "z": -26
+          }
+        ],
+        "lieutenant": "HELIOS-LT-SOLARIS",
+        "kingpin": "KINGPIN-HELIO",
+        "core": {
+          "x": 38,
+          "y": 0,
+          "z": -32
+        }
+      },
+      {
+        "district": "AEGIS_CITADEL",
+        "name": "Aegis Citadel Eclipse Bastion",
+        "terminals": [
+          {
+            "x": -24,
+            "y": 0,
+            "z": -20
+          },
+          {
+            "x": -34,
+            "y": 0,
+            "z": -26
+          }
+        ],
+        "lieutenant": "AEGIS-LT-PRAETOR",
+        "kingpin": "COMMANDER-KRONOS",
+        "core": {
+          "x": -38,
+          "y": 0,
+          "z": -32
+        }
+      }
+    ],
+    "acts": [
+      {
+        "act": 1,
+        "title": "The Safety Mandate",
+        "districts": [
+          0,
+          1
+        ],
+        "objective": "Disrupt the relays Vance calls terrorist infrastructure."
+      },
+      {
+        "act": 2,
+        "title": "Voices Beneath the Signal",
+        "districts": [
+          1,
+          2
+        ],
+        "objective": "Expose the neural dampeners and protect the decrypted evidence."
+      },
+      {
+        "act": 3,
+        "title": "Protocol Eclipse",
+        "districts": [
+          3
+        ],
+        "objective": "Survive the kill-switch, free the squad, and bring down the Dreadnought."
+      }
+    ],
+    "storyBeats": [
+      {
+        "id": "deployment",
+        "act": 1,
+        "nodes": 4
+      },
+      {
+        "id": "mandate",
+        "act": 1,
+        "nodes": 2
+      },
+      {
+        "id": "evidence",
+        "act": 2,
+        "nodes": 4
+      },
+      {
+        "id": "revelation",
+        "act": 2,
+        "nodes": 4
+      },
+      {
+        "id": "killswitch",
+        "act": 3,
+        "nodes": 4
+      },
+      {
+        "id": "dawn",
+        "act": 3,
+        "nodes": 2
+      }
+    ],
+    "note": "The four operations share terminal/lieutenant/kingpin/core structure. These do not establish 24 authored missions or 12-18 hours of content."
+  },
+  "progression": {
+    "skills": 20,
+    "chassis": 5
+  },
+  "weapons": {
+    "visualProfiles": [
+      "carbine",
+      "marksman",
+      "heavy"
+    ],
+    "note": "Presentation-only variants explicitly do not alter damage/fire rate/progression in weaponPresentation.ts."
+  },
+  "actors": {
+    "initialEnemies": 9,
+    "enemies": [
+      {
+        "id": 1,
+        "rank": "GRUNT",
+        "faction": "AEGIS_DIRECTORATE",
+        "archetype": 2
+      },
+      {
+        "id": 2,
+        "rank": "ELITE",
+        "faction": "AEGIS_DIRECTORATE",
+        "archetype": 2
+      },
+      {
+        "id": 3,
+        "rank": "GRUNT",
+        "faction": "AEGIS_DIRECTORATE",
+        "archetype": 2
+      },
+      {
+        "id": 4,
+        "rank": "GRUNT",
+        "faction": "AEGIS_DIRECTORATE",
+        "archetype": 2
+      },
+      {
+        "id": 5,
+        "rank": "GRUNT",
+        "faction": "HELIOS_EXECUTIVE_GUARD",
+        "archetype": 2
+      },
+      {
+        "id": 6,
+        "rank": "ELITE",
+        "faction": "HELIOS_EXECUTIVE_GUARD",
+        "archetype": 2
+      },
+      {
+        "id": 7,
+        "rank": "GRUNT",
+        "faction": "NEON_SYNDICATE",
+        "archetype": 0
+      },
+      {
+        "id": 8,
+        "rank": "ELITE",
+        "faction": "FOUNDRY_IRONCLAD",
+        "archetype": 1
+      },
+      {
+        "id": 800,
+        "rank": "OMEGA_HVT",
+        "faction": "AEGIS_DIRECTORATE",
+        "archetype": 2
+      }
+    ],
+    "vehicles": [
+      {
+        "id": 1,
+        "name": "AGENCY-INTERCEPTOR-01",
+        "isInterceptor": true
+      },
+      {
+        "id": 2,
+        "name": "AGENCY-INTERCEPTOR-02",
+        "isInterceptor": true
+      },
+      {
+        "id": 3,
+        "name": "SYNDICATE-BRUISER-01",
+        "isInterceptor": false
+      },
+      {
+        "id": 4,
+        "name": "AGENCY-INTERCEPTOR-03",
+        "isInterceptor": true
+      }
+    ],
+    "dynamicProps": 12
+  },
+  "unverifiedOrMissing": [
+    "Authored enterable interior inventory",
+    "Civilians and ambient traffic population",
+    "Distinct ranged weapon handling roles",
+    "Complete authored campaign and side arcs",
+    "Controller/remapping and full accessibility",
+    "Persistent personal campaign/world-state schema",
+    "Full actor-specific integrated animation coverage",
+    "Recorded final voice/music/audio identity",
+    "Reference RTX 4070 and 16 GB qualification"
+  ]
+}

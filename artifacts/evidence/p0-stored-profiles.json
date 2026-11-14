@@ -1,0 +1,43 @@
+{
+  "scope": "Only task-created profiles in the isolated audit database; no user game database or credential fields read.",
+  "quickCheck": [
+    {
+      "quick_check": "ok"
+    }
+  ],
+  "profiles": [
+    {
+      "callsign": "P0-AUDIT",
+      "hp": 150,
+      "pos_x": 0.22151811227085463,
+      "pos_y": 10.02006958246202,
+      "pos_z": -33.60672426513149,
+      "collected_orbs_json": "[1]",
+      "unlocked_skills_json": "[]",
+      "unlocked_district_rewards_json": "[]"
+    },
+    {
+      "callsign": "P0-BENCH",
+      "hp": 0,
+      "pos_x": -20.360393548725224,
+      "pos_y": 0.009971657091227826,
+      "pos_z": 29.3578727757067,
+      "collected_orbs_json": "[]",
+      "unlocked_skills_json": "[]",
+      "unlocked_district_rewards_json": "[]"
+    },
+    {
+      "callsign": "P0-BENCH2",
+      "hp": 0,
+      "pos_x": -20.45364129428522,
+      "pos_y": 0.005617519578663632,
+      "pos_z": 29.12855143487832,
+      "collected_orbs_json": "[]",
+      "unlocked_skills_json": "[]",
+      "unlocked_district_rewards_json": "[]"
+    }
+  ],
+  "limits": [
+    "This proves stored individual records exist after process termination. It is not a full UI resume, checkpoint, campaign/world restart, corruption recovery or durable reward qualification."
+  ]
+}

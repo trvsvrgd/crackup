@@ -5,6 +5,7 @@
  */
 
 import { AgentAnimState, DynamicPropType, EnemyCombatState, EnemyLimbId } from '../constants.js';
+import type { CyberPetSpecies, DreadnoughtPartId, DreadnoughtPhase, PetArenaState, PetMode } from '../constants.js';
 
 export enum PacketType {
   CLIENT_INPUT = 0x01,
@@ -13,6 +14,7 @@ export enum PacketType {
   ENEMY_SNAPSHOT = 0x04,
   VEHICLE_PROP_SNAPSHOT = 0x05,
   WORLD_EVENTS_SNAPSHOT = 0x06,
+  PHASE6_SNAPSHOT = 0x07,
 }
 
 export const CLIENT_INPUT_BYTE_LENGTH = 29;
@@ -29,6 +31,74 @@ export const WORLD_EVENTS_HEADER_BYTE_LENGTH = 4;
 export const OMEGA_BOUNTY_BYTE_LENGTH = 36;
 export const DISTRICT_LOOP_RECORD_BYTE_LENGTH = 16;
 export const AUDITOR_AIRSHIP_RECORD_BYTE_LENGTH = 24;
+
+export interface CyberPetBinaryState {
+  petId: number;
+  ownerEntityId: number;
+  species: CyberPetSpecies;
+  mode: PetMode;
+  hpPct: number;
+  grounded: boolean;
+  eliminated: boolean;
+  finished: boolean;
+  position: Vec3;
+  yaw: number;
+}
+
+export interface PetArenaBinaryHeader {
+  derbyState: PetArenaState;
+  derbyTimerSec: number;
+  derbyWinnerPetId: number;
+  derbyLaps: number;
+  clashState: PetArenaState;
+  clashTimerSec: number;
+  clashWinnerPetId: number;
+}
+
+export interface DerbyRacerBinaryState {
+  petId: number;
+  lap: number;
+  nextNode: number;
+  place: number;
+  finished: boolean;
+  finishTimeSec: number;
+}
+
+export interface ClashFighterBinaryState {
+  petId: number;
+  hpPct: number;
+  eliminated: boolean;
+}
+
+export interface DreadnoughtBinaryState {
+  phase: DreadnoughtPhase;
+  shielded: boolean;
+  position: Vec3;
+  yaw: number;
+  parts: Array<{ partId: DreadnoughtPartId; hp: number; maxHp: number; destroyed: boolean }>;
+  lanceTarget: Vec3;
+  lanceChargeSec: number;
+  lanceActiveSec: number;
+  respawnTimerSec: number;
+}
+
+export interface Phase6SnapshotPacket {
+  serverTick: number;
+  arena: PetArenaBinaryHeader;
+  pets: CyberPetBinaryState[];
+  racers: DerbyRacerBinaryState[];
+  fighters: ClashFighterBinaryState[];
+  dreadnought: DreadnoughtBinaryState;
+}
+
+// v1: 12B packet header, 16B arena, 44B boss, then variable records. All values little-endian.
+export const PHASE6_HEADER_BYTE_LENGTH = 12;
+export const PET_ARENA_HEADER_BYTE_LENGTH = 16;
+export const CYBER_PET_RECORD_BYTE_LENGTH = 24;
+export const DERBY_RACER_RECORD_BYTE_LENGTH = 12;
+export const CLASH_FIGHTER_RECORD_BYTE_LENGTH = 4;
+export const DREADNOUGHT_HEADER_BYTE_LENGTH = 44;
+export const DREADNOUGHT_PART_RECORD_BYTE_LENGTH = 12;
 
 export interface OmegaBountyBinaryState {
   active: boolean;
@@ -1096,6 +1166,162 @@ export function decodeWorldEventsSnapshot(
   }
 
   return { serverTickLow8, omega, districts, airships };
+}
+
+function writePhase6Vec(view: DataView, offset: number, p: Vec3): void {
+  view.setFloat32(offset, p.x, true);
+  view.setFloat32(offset + 4, p.y, true);
+  view.setFloat32(offset + 8, p.z, true);
+}
+
+function readPhase6Vec(view: DataView, offset: number): Vec3 {
+  return { x: view.getFloat32(offset, true), y: view.getFloat32(offset + 4, true), z: view.getFloat32(offset + 8, true) };
+}
+
+export function encodePhase6Snapshot(
+  serverTick: number,
+  pets: CyberPetBinaryState[],
+  arena: PetArenaBinaryHeader,
+  racers: DerbyRacerBinaryState[],
+  fighters: ClashFighterBinaryState[],
+  dreadnought: DreadnoughtBinaryState,
+): ArrayBuffer {
+  if (pets.length > 8 || racers.length > 8 || fighters.length > 8 || dreadnought.parts.length !== 7) {
+    throw new RangeError('Phase 6 snapshot requires at most 8 pets/racers/fighters and exactly 7 boss parts');
+  }
+  const buffer = new ArrayBuffer(PHASE6_HEADER_BYTE_LENGTH + PET_ARENA_HEADER_BYTE_LENGTH + DREADNOUGHT_HEADER_BYTE_LENGTH +
+    pets.length * CYBER_PET_RECORD_BYTE_LENGTH + racers.length * DERBY_RACER_RECORD_BYTE_LENGTH +
+    fighters.length * CLASH_FIGHTER_RECORD_BYTE_LENGTH + dreadnought.parts.length * DREADNOUGHT_PART_RECORD_BYTE_LENGTH);
+  const v = new DataView(buffer);
+  v.setUint8(0, PacketType.PHASE6_SNAPSHOT);
+  v.setUint8(1, 1); // layout version
+  v.setUint8(2, pets.length);
+  v.setUint8(3, racers.length);
+  v.setUint8(4, fighters.length);
+  v.setUint8(5, dreadnought.parts.length);
+  v.setUint32(8, serverTick >>> 0, true);
+  let o = PHASE6_HEADER_BYTE_LENGTH;
+  v.setUint8(o, arena.derbyState);
+  v.setUint8(o + 1, arena.clashState);
+  v.setUint8(o + 2, arena.derbyLaps);
+  v.setUint16(o + 4, arena.derbyWinnerPetId, true);
+  v.setUint16(o + 6, arena.clashWinnerPetId, true);
+  v.setFloat32(o + 8, arena.derbyTimerSec, true);
+  v.setFloat32(o + 12, arena.clashTimerSec, true);
+  o += PET_ARENA_HEADER_BYTE_LENGTH;
+  v.setUint8(o, dreadnought.phase);
+  v.setUint8(o + 1, dreadnought.shielded ? 1 : 0);
+  writePhase6Vec(v, o + 4, dreadnought.position);
+  v.setFloat32(o + 16, dreadnought.yaw, true);
+  writePhase6Vec(v, o + 20, dreadnought.lanceTarget);
+  v.setFloat32(o + 32, dreadnought.lanceChargeSec, true);
+  v.setFloat32(o + 36, dreadnought.lanceActiveSec, true);
+  v.setFloat32(o + 40, dreadnought.respawnTimerSec, true);
+  o += DREADNOUGHT_HEADER_BYTE_LENGTH;
+  for (const p of dreadnought.parts) {
+    v.setUint8(o, p.partId);
+    v.setUint8(o + 1, p.destroyed ? 1 : 0);
+    v.setFloat32(o + 4, p.hp, true);
+    v.setFloat32(o + 8, p.maxHp, true);
+    o += DREADNOUGHT_PART_RECORD_BYTE_LENGTH;
+  }
+  for (const p of pets) {
+    v.setUint16(o, p.petId, true);
+    v.setUint16(o + 2, p.ownerEntityId, true);
+    v.setUint8(o + 4, p.species);
+    v.setUint8(o + 5, p.mode);
+    v.setUint8(o + 6, Math.max(0, Math.min(100, Math.round(p.hpPct))));
+    v.setUint8(o + 7, (p.grounded ? 1 : 0) | (p.eliminated ? 2 : 0) | (p.finished ? 4 : 0));
+    writePhase6Vec(v, o + 8, p.position);
+    v.setFloat32(o + 20, p.yaw, true);
+    o += CYBER_PET_RECORD_BYTE_LENGTH;
+  }
+  for (const r of racers) {
+    v.setUint16(o, r.petId, true);
+    v.setUint8(o + 2, r.lap);
+    v.setUint8(o + 3, r.nextNode);
+    v.setUint8(o + 4, r.place);
+    v.setUint8(o + 5, r.finished ? 1 : 0);
+    v.setFloat32(o + 8, r.finishTimeSec, true);
+    o += DERBY_RACER_RECORD_BYTE_LENGTH;
+  }
+  for (const f of fighters) {
+    v.setUint16(o, f.petId, true);
+    v.setUint8(o + 2, Math.max(0, Math.min(100, Math.round(f.hpPct))));
+    v.setUint8(o + 3, f.eliminated ? 1 : 0);
+    o += CLASH_FIGHTER_RECORD_BYTE_LENGTH;
+  }
+  return buffer;
+}
+
+/** Invalid offsets, counts, versions, truncated records and non-finite transforms are rejected. */
+export function decodePhase6Snapshot(buffer: ArrayBufferLike, byteOffset = 0, byteLength?: number): Phase6SnapshotPacket | null {
+  const len = byteLength ?? buffer.byteLength - byteOffset;
+  if (!Number.isInteger(byteOffset) || !Number.isInteger(len) || byteOffset < 0 || len < 72 || byteOffset + len > buffer.byteLength) return null;
+  const v = new DataView(buffer, byteOffset, len);
+  if (v.getUint8(0) !== PacketType.PHASE6_SNAPSHOT || v.getUint8(1) !== 1) return null;
+  const pc = v.getUint8(2), rc = v.getUint8(3), fc = v.getUint8(4), dc = v.getUint8(5);
+  if (pc > 8 || rc > 8 || fc > 8 || dc !== 7 || len !== 72 + dc * 12 + pc * 24 + rc * 12 + fc * 4) return null;
+  let o = PHASE6_HEADER_BYTE_LENGTH;
+  const arena: PetArenaBinaryHeader = {
+    derbyState: v.getUint8(o), clashState: v.getUint8(o + 1), derbyLaps: v.getUint8(o + 2),
+    derbyWinnerPetId: v.getUint16(o + 4, true), clashWinnerPetId: v.getUint16(o + 6, true),
+    derbyTimerSec: v.getFloat32(o + 8, true), clashTimerSec: v.getFloat32(o + 12, true),
+  };
+  const nonnegative = (n: number) => Number.isFinite(n) && n >= 0;
+  const finiteVec = (p: Vec3) => [p.x, p.y, p.z].every(Number.isFinite);
+  if (arena.derbyState > 3 || arena.clashState > 3 || arena.derbyLaps !== 2 ||
+    !nonnegative(arena.derbyTimerSec) || !nonnegative(arena.clashTimerSec)) return null;
+  o += PET_ARENA_HEADER_BYTE_LENGTH;
+  const dreadnought: DreadnoughtBinaryState = {
+    phase: v.getUint8(o), shielded: v.getUint8(o + 1) !== 0,
+    position: readPhase6Vec(v, o + 4), yaw: v.getFloat32(o + 16, true),
+    lanceTarget: readPhase6Vec(v, o + 20), lanceChargeSec: v.getFloat32(o + 32, true),
+    lanceActiveSec: v.getFloat32(o + 36, true), respawnTimerSec: v.getFloat32(o + 40, true), parts: [],
+  };
+  if (dreadnought.phase > 4 || v.getUint8(o + 1) > 1 || dreadnought.shielded !== (dreadnought.phase === 1) ||
+    !finiteVec(dreadnought.position) || !finiteVec(dreadnought.lanceTarget) || !Number.isFinite(dreadnought.yaw) ||
+    ![dreadnought.lanceChargeSec, dreadnought.lanceActiveSec, dreadnought.respawnTimerSec].every(nonnegative)) return null;
+  o += DREADNOUGHT_HEADER_BYTE_LENGTH;
+  const partIds = new Set<number>();
+  for (let i = 0; i < dc; i++, o += DREADNOUGHT_PART_RECORD_BYTE_LENGTH) {
+    const partId = v.getUint8(o), hp = v.getFloat32(o + 4, true), maxHp = v.getFloat32(o + 8, true);
+    const flag = v.getUint8(o + 1);
+    if (partId > 6 || partIds.has(partId) || !nonnegative(hp) || !Number.isFinite(maxHp) || maxHp <= 0 || hp > maxHp ||
+      flag > 1 || (flag === 1) !== (hp === 0)) return null;
+    partIds.add(partId);
+    dreadnought.parts.push({ partId, hp, maxHp, destroyed: flag === 1 });
+  }
+  const pets: CyberPetBinaryState[] = [];
+  const petIds = new Set<number>(), owners = new Set<number>();
+  for (let i = 0; i < pc; i++, o += CYBER_PET_RECORD_BYTE_LENGTH) {
+    const flags = v.getUint8(o + 7);
+    const p: CyberPetBinaryState = {
+      petId: v.getUint16(o, true), ownerEntityId: v.getUint16(o + 2, true), species: v.getUint8(o + 4),
+      mode: v.getUint8(o + 5), hpPct: v.getUint8(o + 6), grounded: (flags & 1) !== 0,
+      eliminated: (flags & 2) !== 0, finished: (flags & 4) !== 0,
+      position: readPhase6Vec(v, o + 8), yaw: v.getFloat32(o + 20, true),
+    };
+    if (!p.petId || !p.ownerEntityId || petIds.has(p.petId) || owners.has(p.ownerEntityId) || p.species > 3 ||
+      p.mode > 2 || p.hpPct > 100 || flags > 7 || !finiteVec(p.position) || !Number.isFinite(p.yaw)) return null;
+    petIds.add(p.petId); owners.add(p.ownerEntityId); pets.push(p);
+  }
+  const racers: DerbyRacerBinaryState[] = [];
+  const entrants = new Set<number>();
+  for (let i = 0; i < rc; i++, o += DERBY_RACER_RECORD_BYTE_LENGTH) {
+    const r: DerbyRacerBinaryState = { petId: v.getUint16(o, true), lap: v.getUint8(o + 2), nextNode: v.getUint8(o + 3),
+      place: v.getUint8(o + 4), finished: v.getUint8(o + 5) === 1, finishTimeSec: v.getFloat32(o + 8, true) };
+    if (!petIds.has(r.petId) || entrants.has(r.petId) || r.lap > 2 || r.nextNode > 15 || r.place > 8 ||
+      v.getUint8(o + 5) > 1 || !nonnegative(r.finishTimeSec)) return null;
+    entrants.add(r.petId); racers.push(r);
+  }
+  const fighters: ClashFighterBinaryState[] = [];
+  for (let i = 0; i < fc; i++, o += CLASH_FIGHTER_RECORD_BYTE_LENGTH) {
+    const f = { petId: v.getUint16(o, true), hpPct: v.getUint8(o + 2), eliminated: v.getUint8(o + 3) === 1 };
+    if (!petIds.has(f.petId) || entrants.has(f.petId) || f.hpPct > 100 || v.getUint8(o + 3) > 1) return null;
+    entrants.add(f.petId); fighters.push(f);
+  }
+  return { serverTick: v.getUint32(8, true), arena, pets, racers, fighters, dreadnought };
 }
 
 

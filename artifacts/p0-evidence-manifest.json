@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "evidenceScope": "Initial P0 audit, not accepted product or reference-machine qualification",
+  "files": [
+    {
+      "path": "artifacts/evidence/p0-animation-coverage.json",
+      "bytes": 6967,
+      "sha256": "2e299247aad6ea67f3d52c12883889e4f63f3806cd908f3ce14c673a9ba68153"
+    },
+    {
+      "path": "artifacts/evidence/p0-build-identity.json",
+      "bytes": 17456,
+      "sha256": "e367004c37c9af94863200d3b1c409c835fb5e287e524fe2f5fe8eefdcb8eb78"
+    },
+    {
+      "path": "artifacts/evidence/p0-content-inventory.json",
+      "bytes": 8434,
+      "sha256": "ed1383e5d4b906c8947c83c2ddd7276cbf4b312a1b9376569d4fff918f3df52a"
+    },
+    {
+      "path": "artifacts/evidence/p0-field-menu.png",
+      "bytes": 231109,
+      "sha256": "97b2c4e366c4c14ead513f3c1394daeed0ed8fed6be41246ef35cafd287cd95e"
+    },
+    {
+      "path": "artifacts/evidence/p0-final-snapshot.txt",
+      "bytes": 2937,
+      "sha256": "49c2a22f91d3651903aa1cba4ea606d37ae3fc86d46f59b97e05bbb17b81a544"
+    },
+    {
+      "path": "artifacts/evidence/p0-hardware.json",
+      "bytes": 958,
+      "sha256": "3730afb200345891fdc60d2fd6b55c0aad867e0a7a9db53e8440f261529435ea"
+    },
+    {
+      "path": "artifacts/evidence/p0-opening-combat.png",
+      "bytes": 1468420,
+      "sha256": "e26225f4745aacd06f8d7918374df56f2ad0b57dddcd5ce9e1cf44f9270b0392"
+    },
+    {
+      "path": "artifacts/evidence/p0-runtime-observation.json",
+      "bytes": 25832,
+      "sha256": "234292e2df71e08d82aaffd6d14d640a9f97bf5c57d0b7e1615b7992ac1b60f2"
+    },
+    {
+      "path": "artifacts/evidence/p0-stored-profiles.json",
+      "bytes": 1262,
+      "sha256": "31197c336ed3f14471dca39c499ff79fdc69f4953edf1e5b5e91eb9d699dcafa"
+    }
+  ]
+}

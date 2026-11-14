@@ -1,12 +1,18 @@
+import { parseCampaignPresentation, type CampaignPresentation } from '../../shared/campaign/presentation.js';
+import { decodeEffects, type EffectPacket } from '../../shared/protocol/presentationProtocol.js';
 /**
  * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
  * Client-Side Prediction (128-Tick Ring Buffer + Rapier3D Replay)
  * & Remote Entity Interpolation (100ms Buffered Quaternion SLERP + Position LERP)
  */
 
+import { decodeCombatPresentation, type CombatPresentation, type DroppedWeaponState } from '../../shared/combat/combatPresentation.js';
+import { decodeVehicleDamage, type VehicleDamagePacket } from '../../shared/protocol/vehicleDamageProtocol.js';
+import { decodeRelays, type RelayPacket } from '../../shared/protocol/relayProtocol.js';
 import {
   AgentAnimState,
   AgentAttributes,
+  AgentAttributeXP,
   AugmentChassisId,
   DEFAULT_ATTRIBUTES,
   FIXED_TIMESTEP,
@@ -20,6 +26,8 @@ import {
   AuditorAirshipBinaryState,
   ClientInputPacket,
   decodeEnemySnapshot,
+  decodePhase6Snapshot,
+  Phase6SnapshotPacket,
   decodeRenegadeOrbSnapshot,
   decodeVehiclePropSnapshot,
   decodeWorldEventsSnapshot,
@@ -49,6 +57,13 @@ export interface PredictionRingSlot {
   mantling: boolean;
 }
 
+export interface PlayerStatus {
+  hp: number; maxHp: number; fuel: number; maxFuel: number; protectionSec: number;
+  attributes: AgentAttributes; xp: AgentAttributeXP; skillPoints: number;
+  unlockedSkills: string[]; unlockedRelics: string[]; respawnIn: number;
+  narrativeProgress?: { whisperOrbs: number; nonLethalBounties: number };
+}
+
 export interface RemoteBufferedSnapshot {
   receiveTimeMs: number;
   serverTimeSec: number;
@@ -64,22 +79,29 @@ export interface InterpolatedRemoteEntity {
   animState: AgentAnimState;
   mantleProgress: number;
   agilityLevel: number;
+  augmentChassis?: AugmentChassisId;
 }
 
 export class PredictionAndInterpolationManager {
   public readonly ringBuffer: (PredictionRingSlot | null)[] = new Array(PREDICTION_BUFFER_SIZE).fill(null);
   public readonly remoteBuffers: Map<number, RemoteBufferedSnapshot[]> = new Map();
-  public readonly rosterCallsigns: Map<number, { callsign: string; attributes: AgentAttributes }> = new Map();
+  public readonly rosterCallsigns: Map<number, { callsign: string; attributes: AgentAttributes; augmentChassis?: AugmentChassisId }> = new Map();
   public readonly orbs: WorldOrbInstance[] = generateNeoVeridiaOrbs();
   public readonly orbsById: Map<number, WorldOrbInstance> = new Map();
   public readonly collectedOrbIds: Set<number> = new Set();
   public readonly enemySnapshots: Map<number, EnemyBinarySnapshotState> = new Map();
+  public readonly combatPresentations = new Map<number, CombatPresentation>();
+  public droppedWeapons: DroppedWeaponState[] = [];
   public vehicleSnapshots: VehicleBinarySnapshotState[] = [];
+  public vehicleDamageSnapshot: VehicleDamagePacket = { serverTick: 0, vehicles: [], debris: [] };
+  public relaySnapshot: RelayPacket = { serverTick: 0, relays: [] };
   public propSnapshots: DynamicPropBinarySnapshotState[] = [];
   public omegaBountySnapshot: OmegaBountyBinaryState | null = null;
   public districtLoopSnapshots: DistrictLoopBinaryState[] = [];
   public auditorAirshipSnapshots: AuditorAirshipBinaryState[] = [];
   public onOrbCollectedCallback: ((orbId: number, orbType: OrbType) => void) | null = null;
+  public onEffects: ((packet: EffectPacket) => void) | null = null;
+  public onPresentationReset: (() => void) | null = null;
   public onCombatEventCallback: ((event: CombatEventResult) => void) | null = null;
   public onRelicCollectedCallback: ((relicId: string, name: string) => void) | null = null;
   public onPhase5EventCallback: ((notification: Phase5EventNotification) => void) | null = null;
@@ -94,8 +116,22 @@ export class PredictionAndInterpolationManager {
 
   private ws: WebSocket | null = null;
   public connected = false;
+  public mode: 'shared' | 'solo' | 'campaign' = 'shared';
+  public campaignJoin: { campaignRole: 'host' | 'guest'; campaignOwner: string; inviteCode: string } | null = null;
+  public campaignPresentation: CampaignPresentation | null = null;
+  public soloState: { owner?: string; role?: 'host' | 'guest'; inviteCode?: string; members?: string[]; recap: string; revision: number; paused: boolean; saveError: boolean; savedAt: number; checkpoint: string } | null = null;
+  public onSoloState: (() => void) | null = null;
+  public playerStatus: PlayerStatus | null = null;
+  public phase6Snapshot: Phase6SnapshotPacket | null = null;
+  public onConnectionChanged: ((state: string, message: string) => void) | null = null;
+  public onNotice: ((message: string) => void) | null = null;
+  private reconnectAttempts = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private readonly physicsWorld: SharedPhysicsWorld) {
+    this.physicsWorld.effects.enabled = false;
+    this.physicsWorld.vehiclePropManager.authoritativeDamage = false;
+    this.physicsWorld.relaySystem.authoritative = false;
     for (const o of this.orbs) {
       this.orbsById.set(o.orbId, o);
     }
@@ -106,8 +142,11 @@ export class PredictionAndInterpolationManager {
     callsign: string,
     pin: string,
     onAuthenticated: (entityId: number, callsign: string, attributes: AgentAttributes) => void,
-    onAuthError: (err: string) => void
+    onAuthError: (err: string) => void,
+    retry = false
   ): void {
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    if (!retry) this.reconnectAttempts = 0;
     if (this.ws) {
       this.ws.close();
     }
@@ -115,11 +154,21 @@ export class PredictionAndInterpolationManager {
     const socket = new WebSocket(wsUrl);
     socket.binaryType = 'arraybuffer';
     this.ws = socket;
+    this.connected = false;
+    this.soloState = null;
+    this.playerStatus = null;
+    this.phase6Snapshot = null;
+    this.districtLoopSnapshots = [];
+    this.onPresentationReset?.();
+    let authFailed = false;
+    const connectTimeout = setTimeout(() => { if (!this.connected && this.ws === socket) socket.close(); }, 8000);
+    this.onConnectionChanged?.('connecting', retry ? 'Reconnecting to your squad…' : 'Connecting…');
 
     socket.onopen = () => {
       socket.send(
         JSON.stringify({
           type: 'AUTH',
+          ...this.campaignJoin,
           callsign,
           pin,
         })
@@ -127,7 +176,10 @@ export class PredictionAndInterpolationManager {
     };
 
     socket.onmessage = (event) => {
+      if (this.ws !== socket) return;
       if (event.data instanceof ArrayBuffer) {
+        const effects = decodeEffects(event.data);
+        if (effects) { this.onEffects?.(effects); return; }
         const snapshot = decodeWorldSnapshot(event.data);
         if (snapshot) {
           this.onWorldSnapshot(snapshot);
@@ -144,8 +196,31 @@ export class PredictionAndInterpolationManager {
           }
           return;
         }
+        const relays = decodeRelays(event.data);
+        if (relays) { this.relaySnapshot = relays; this.physicsWorld.relaySystem.applySnapshot(relays); return; }
+        const vehicleDamage = decodeVehicleDamage(event.data);
+        if (vehicleDamage) {
+          this.vehicleDamageSnapshot = vehicleDamage;
+          this.physicsWorld.vehiclePropManager.applyVehicleDamageSnapshot(vehicleDamage);
+          return;
+        }
+        const presentation = decodeCombatPresentation(event.data);
+        if (presentation) {
+          this.combatPresentations.clear();
+          for (const state of presentation.states) {
+            this.combatPresentations.set(state.enemyId, state);
+            const enemy = this.physicsWorld.combatManager.enemies.get(state.enemyId);
+            if (enemy) enemy.presentation = { ...state, direction: { ...state.direction }, impulse: { ...state.impulse } };
+          }
+          this.droppedWeapons = presentation.drops;
+          return;
+        }
         const enemySnap = decodeEnemySnapshot(event.data);
         if (enemySnap) {
+          const active = new Set(enemySnap.enemies.map(e => e.enemyId));
+          for (const id of this.enemySnapshots.keys()) if (!active.has(id)) {
+            this.enemySnapshots.delete(id); this.physicsWorld.combatManager.removeEnemy(id);
+          }
           for (const eState of enemySnap.enemies) {
             this.enemySnapshots.set(eState.enemyId, eState);
             const localEnemy = this.physicsWorld.combatManager.enemies.get(eState.enemyId);
@@ -165,6 +240,15 @@ export class PredictionAndInterpolationManager {
         if (vehPropSnap) {
           this.vehicleSnapshots = vehPropSnap.vehicles;
           this.propSnapshots = vehPropSnap.props;
+          for (const state of vehPropSnap.vehicles) {
+            const vehicle = this.physicsWorld.vehiclePropManager.vehicles.get(state.vehicleId);
+            if (!vehicle) continue;
+            vehicle.position = { ...state.position }; vehicle.rotation = { ...state.rotation }; vehicle.forwardSpeedMps = state.speedMps; vehicle.driverEntityId = state.driverEntityId;
+            vehicle.yaw = Math.atan2(2 * (state.rotation.w * state.rotation.y + state.rotation.x * state.rotation.z), 1 - 2 * (state.rotation.y ** 2 + state.rotation.z ** 2));
+            vehicle.rigidBody.setTranslation(vehicle.position, true); vehicle.rigidBody.setNextKinematicTranslation(vehicle.position); vehicle.rigidBody.setRotation(vehicle.rotation, true); vehicle.rigidBody.setNextKinematicRotation(vehicle.rotation);
+          }
+          const local = this.getLocalAgent(), mounted = vehPropSnap.vehicles.find(v => v.driverEntityId === this.localEntityId);
+          if (local) local.mountedVehicleId = mounted?.vehicleId ?? 0;
           return;
         }
         const worldEventsSnap = decodeWorldEventsSnapshot(event.data);
@@ -174,6 +258,8 @@ export class PredictionAndInterpolationManager {
           this.auditorAirshipSnapshots = worldEventsSnap.airships;
           return;
         }
+        const phase6 = decodePhase6Snapshot(event.data);
+        if (phase6) this.phase6Snapshot = phase6;
         return;
       }
 
@@ -181,6 +267,19 @@ export class PredictionAndInterpolationManager {
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === 'AUTH_OK') {
+            this.mode = msg.mode === 'solo' || msg.mode === 'campaign' ? msg.mode : 'shared';
+            this.campaignPresentation = this.mode !== 'shared' && msg.presentation ? parseCampaignPresentation(msg.presentation) : null;
+            clearTimeout(connectTimeout);
+            for (const id of [...this.physicsWorld.agents.keys()]) this.physicsWorld.removeAgent(id);
+            this.ringBuffer.fill(null);
+            this.remoteBuffers.clear();
+            this.enemySnapshots.clear();
+            this.vehicleSnapshots = []; this.propSnapshots = [];
+            this.relaySnapshot = { serverTick: 0, relays: [] };
+            this.vehicleDamageSnapshot = { serverTick: 0, vehicles: [], debris: [] };
+            this.physicsWorld.vehiclePropManager.applyVehicleDamageSnapshot(this.vehicleDamageSnapshot);
+            this.currentSeq = this.lastReconciledSeq = 0;
+            this.reconnectAttempts = 0;
             this.localEntityId = msg.entityId;
             this.localCallsign = msg.callsign;
             this.connected = true;
@@ -207,6 +306,47 @@ export class PredictionAndInterpolationManager {
               record?.activeNeuralDrifts || []
             );
             onAuthenticated(this.localEntityId, this.localCallsign, attributes);
+            this.onConnectionChanged?.('connected', 'Connected');
+          } else if ((msg.type === 'SOLO_STATE' && this.mode === 'solo') || (msg.type === 'CAMPAIGN_STATE' && this.mode === 'campaign')) {
+            const pauseChanged = this.soloState?.paused !== Boolean(msg.paused);
+            this.soloState = { owner: msg.owner, role: msg.role, inviteCode: msg.inviteCode, members: msg.members, paused: Boolean(msg.paused), saveError: Boolean(msg.saveError),
+              recap: String(msg.recap ?? ''), revision: Number(msg.revision), savedAt: Number(msg.savedAt), checkpoint: String(msg.checkpoint) };
+            if (pauseChanged) this.ringBuffer.fill(null);
+            this.onSoloState?.();
+          } else if (msg.type === 'SOLO_PRESENTATION_ERROR') {
+            this.onNotice?.(String(msg.error));
+          } else if ((msg.type === 'SOLO_LEFT' && this.mode === 'solo') || (msg.type === 'CAMPAIGN_LEFT' && this.mode === 'campaign')) {
+            authFailed = true; this.connected = false;
+            window.location.reload();
+          } else if (msg.type === 'PLAYER_STATE') {
+            this.playerStatus = msg as PlayerStatus;
+            const agent = this.getLocalAgent();
+            if (agent) {
+              agent.attributes = { ...msg.attributes };
+              agent.unlockedSkills = new Set(msg.unlockedSkills);
+              agent.unlockedRelics = new Set(msg.unlockedRelics);
+              this.physicsWorld.recomputeAgentBuild(agent);
+              agent.hp = msg.hp;
+              agent.spawnProtectionSec = msg.protectionSec;
+            }
+          } else if (msg.type === 'RESPAWNED') {
+            const agent = this.getLocalAgent();
+            if (agent) {
+              agent.position = { ...msg.position };
+              agent.velocity = { x: 0, y: 0, z: 0 };
+              agent.mantling = agent.grappleActive = false;
+              agent.mountedVehicleId = agent.heldPropId = 0;
+              agent.chronoHistory.length = 0;
+              this.ringBuffer.fill(null);
+              this.physicsWorld.syncAgentKinematicTransform(agent);
+            }
+            this.onNotice?.('Recovered at the agency drop point. Progress preserved.');
+          } else if (msg.type === 'CONTROL_ERROR') {
+            this.onNotice?.(String(msg.error));
+          } else if (msg.type === 'PHASE6_CONTROL_RESULT') {
+            this.onNotice?.(msg.ok ? 'Companion link updated.' : String(msg.error));
+          } else if (msg.type === 'PHASE6_EVENT' && msg.notification) {
+            this.onNotice?.(String(msg.notification.message));
           } else if (msg.type === 'PHASE5_EVENT' && msg.notification) {
             const note = msg.notification as Phase5EventNotification;
             const localAgent = this.getLocalAgent();
@@ -264,13 +404,17 @@ export class PredictionAndInterpolationManager {
               this.onCombatEventCallback(msg.event as CombatEventResult);
             }
           } else if (msg.type === 'AUTH_ERROR') {
+            authFailed = true;
+            clearTimeout(connectTimeout);
             onAuthError(String(msg.error || 'Authentication failed'));
+            socket.close();
           } else if (msg.type === 'ROSTER_UPDATE' && Array.isArray(msg.roster)) {
             this.rosterCallsigns.clear();
             for (const entry of msg.roster) {
               this.rosterCallsigns.set(Number(entry.entityId), {
                 callsign: String(entry.callsign),
                 attributes: entry.attributes || { ...DEFAULT_ATTRIBUTES },
+                augmentChassis: entry.augmentChassis,
               });
             }
             const localRoster = this.rosterCallsigns.get(this.localEntityId);
@@ -285,8 +429,20 @@ export class PredictionAndInterpolationManager {
       }
     };
 
-    socket.onclose = () => {
+    socket.onerror = () => { this.onConnectionChanged?.('connecting', 'Unable to reach the server. Retrying…'); };
+    socket.onclose = (event) => {
+      if (this.ws === socket) this.onPresentationReset?.();
+      clearTimeout(connectTimeout);
+      if (this.ws !== socket) return;
       this.connected = false;
+      if (authFailed) return; // Preserve the specific PIN/callsign error and allow resubmission.
+      if (event.code === 4001 || event.code === 4008 || this.reconnectAttempts >= 5) {
+        this.onConnectionChanged?.('offline', event.code === 4001 ? 'This agent signed in elsewhere. Reload to sign in.' : 'Connection closed. Reload to try again.');
+        return;
+      }
+      const delay = Math.min(10_000, 1000 * 2 ** this.reconnectAttempts++);
+      this.onConnectionChanged?.('reconnecting', `Connection lost. Reconnecting in ${delay / 1000}s…`);
+      this.reconnectTimer = setTimeout(() => this.connect(wsUrl, callsign, pin, onAuthenticated, onAuthError, true), delay);
     };
   }
 
@@ -294,25 +450,9 @@ export class PredictionAndInterpolationManager {
     return this.physicsWorld.agents.get(this.localEntityId);
   }
 
-  public sendAttributeUpdate(attributes: Partial<AgentAttributes>): void {
+  public sendControl(type: string, fields: Record<string, unknown> = {}): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-    this.ws.send(JSON.stringify({ type: 'SET_ATTRIBUTES', attributes }));
-  }
-
-  public sendBuildUpdate(
-    augmentChassis: AugmentChassisId,
-    unlockedSkills: string[],
-    unlockedRelics?: string[]
-  ): void {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-    this.ws.send(
-      JSON.stringify({
-        type: 'SET_BUILD',
-        augmentChassis,
-        unlockedSkills,
-        unlockedRelics,
-      })
-    );
+    this.ws.send(JSON.stringify({ ...fields, type }));
   }
 
   /**
@@ -325,6 +465,7 @@ export class PredictionAndInterpolationManager {
     pitch: number,
     buttons: number
   ): void {
+    if (this.mode !== 'shared' && this.soloState?.paused) return;
     const localAgent = this.getLocalAgent();
     if (!localAgent) return;
 
@@ -340,7 +481,9 @@ export class PredictionAndInterpolationManager {
     };
 
     // 1. Immediately apply input to local Rapier3D world (Client-Side Prediction)
-    this.physicsWorld.applyAgentInput(localAgent, input);
+    if ([...this.combatPresentations.values()].some(r => r.pairedAgentId === localAgent.entityId)) {
+      localAgent.velocity = { x: 0, y: 0, z: 0 }; localAgent.animState = AgentAnimState.PARRY_TAKEDOWN;
+    } else this.physicsWorld.applyAgentInput(localAgent, input);
     this.physicsWorld.stepWorld();
 
     // 2. Store in 128-tick Ring Buffer
@@ -416,6 +559,10 @@ export class PredictionAndInterpolationManager {
 
     this.lastReconciledSeq = lastProcessedSeq;
     localAgent.attributes.agility = authoritative.agilityLevel;
+    if ([...this.combatPresentations.values()].some(r => r.pairedAgentId === localAgent.entityId)) {
+      localAgent.position = { ...authoritative.position }; localAgent.rotation = { ...authoritative.rotation };
+      localAgent.velocity = { x: 0, y: 0, z: 0 }; this.physicsWorld.syncAgentKinematicTransform(localAgent); return;
+    }
 
     if (lastProcessedSeq === 0) {
       return;
@@ -486,6 +633,7 @@ export class PredictionAndInterpolationManager {
         result.push({
           entityId,
           callsign,
+          augmentChassis: meta?.augmentChassis,
           position: { ...s.position },
           rotation: { ...s.rotation },
           velocity: { ...s.velocity },
@@ -502,6 +650,7 @@ export class PredictionAndInterpolationManager {
         result.push({
           entityId,
           callsign,
+          augmentChassis: meta?.augmentChassis,
           position: { ...s.position },
           rotation: { ...s.rotation },
           velocity: { ...s.velocity },
@@ -544,6 +693,7 @@ export class PredictionAndInterpolationManager {
       result.push({
         entityId,
         callsign,
+        augmentChassis: meta?.augmentChassis,
         position: pos,
         rotation: rot,
         velocity: vel,

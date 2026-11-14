@@ -1,0 +1,133 @@
+{
+  "status": "passed",
+  "textures": [
+    {
+      "name": "concrete_layers_02",
+      "maps": [
+        "diffuse",
+        "roughness",
+        "normal"
+      ],
+      "resolution": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "name": "asphalt_02",
+      "maps": [
+        "diffuse",
+        "roughness",
+        "normal"
+      ],
+      "resolution": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "name": "corrugated_iron_02",
+      "maps": [
+        "diffuse",
+        "roughness",
+        "normal",
+        "metalness"
+      ],
+      "resolution": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "name": "carbon_fiber",
+      "maps": [
+        "diffuse",
+        "roughness",
+        "normal"
+      ],
+      "resolution": [
+        2048,
+        2048
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "name": "Soldier",
+      "skinnedMeshes": 2,
+      "joints": 49,
+      "clips": [
+        "Idle",
+        "Run",
+        "TPose",
+        "Walk"
+      ],
+      "independentSkeletons": true
+    },
+    {
+      "name": "Xbot",
+      "skinnedMeshes": 2,
+      "joints": 67,
+      "clips": [
+        "agree",
+        "headShake",
+        "idle",
+        "run",
+        "sad_pose",
+        "sneak_pose",
+        "walk"
+      ],
+      "independentSkeletons": true
+    },
+    {
+      "name": "capoeira_ybot",
+      "skinnedMeshes": 2,
+      "joints": 52,
+      "clips": [
+        "armada to esquiva",
+        "armada",
+        "au to role",
+        "au",
+        "bencao",
+        "capoeira (2)",
+        "capoeira (3)",
+        "capoeira",
+        "chapa 2",
+        "chapa giratoria 2",
+        "chapa-giratoria",
+        "chapaeu de couro",
+        "esquiva 1",
+        "esquiva 2",
+        "esquiva 3",
+        "esquiva 4",
+        "esquiva 5",
+        "ginga backward",
+        "ginga forward",
+        "ginga sideways 1",
+        "ginga sideways 2",
+        "ginga sideways to au",
+        "ginga variation 1",
+        "ginga variation 2",
+        "ginga variation 3",
+        "macaco side",
+        "martelo 2",
+        "martelo 3",
+        "martelo do chau sem mao",
+        "martelo do chau",
+        "meia lua de compasso back",
+        "meia lua de compasso",
+        "meia lua de frente",
+        "pontera",
+        "queshada 1",
+        "queshada 2",
+        "rasteira 1",
+        "rasteira 2",
+        "troca 1"
+      ],
+      "independentSkeletons": true
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "rendered": true
+}

@@ -1,0 +1,140 @@
+{
+  "checkedAt": "2026-11-11T20:49:06.560Z",
+  "files": [
+    {
+      "path": "/assets/env/bay_dusk.hdr",
+      "bytes": 4563204,
+      "sha256": "273003109ca1cfb798ce6b96e09ac8440f763d0ef0c376bbe77492613540b4a3",
+      "width": 2048,
+      "height": 1024
+    },
+    {
+      "path": "/assets/textures/concrete_layers_02/diffuse.jpg",
+      "bytes": 2555097,
+      "sha256": "f70070187573ad05457c65c3efe7fb25fe1e071a5490c760e5b90f845aab9b91",
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "path": "/assets/textures/concrete_layers_02/roughness.jpg",
+      "bytes": 1920563,
+      "sha256": "d90cfb52d690c4ac843e29e05ffc3d67f510f6a5aa1ef0f0f467d693d7d958b7",
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "path": "/assets/textures/concrete_layers_02/normal.png",
+      "bytes": 24800490,
+      "sha256": "7652237cbe4cfc00201dbf8509620906600737fdd36f267628d4c5b2df9c58a2",
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "path": "/assets/textures/asphalt_02/diffuse.jpg",
+      "bytes": 3075676,
+      "sha256": "28f5ba8690553f192c0e5e1a5ff40f34765b4b93f4cc7059b1a3e9c795b6c28c",
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "path": "/assets/textures/asphalt_02/roughness.jpg",
+      "bytes": 2230457,
+      "sha256": "b9a516b61b7040a9245ac206642d5f767ad9589a0169c4a1668221429e8a998c",
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "path": "/assets/textures/asphalt_02/normal.png",
+      "bytes": 9122344,
+      "sha256": "f96c0a1664e556d233b3f76e8f70ab08af5b1c342786efb99b72b8854563440e",
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "path": "/assets/textures/corrugated_iron_02/diffuse.jpg",
+      "bytes": 2325335,
+      "sha256": "1bd2b9900e066d7e6cbacc5093aa4204db71c1bbe13b42a3d8ad23d04fa8075a",
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "path": "/assets/textures/corrugated_iron_02/roughness.jpg",
+      "bytes": 3492646,
+      "sha256": "926d883052ad9f07e3110f3ce09157d9968872d1f7dafc7da70460f3158f4b4b",
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "path": "/assets/textures/corrugated_iron_02/normal.png",
+      "bytes": 20397959,
+      "sha256": "57966705714a10b718efc31368879c75fbf24ee3d3295106eada9094513f9cbc",
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "path": "/assets/textures/corrugated_iron_02/metalness.jpg",
+      "bytes": 542030,
+      "sha256": "01d675c00567aa12abf71019320436f6e5bfdfd9924a0e84ca1a16920f75f758",
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "path": "/assets/textures/carbon_fiber/diffuse.png",
+      "bytes": 77203,
+      "sha256": "95e606278cda5073c446db7e679a6f2dfd14bd7b619f218de73b12114bbcdc9d",
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "path": "/assets/textures/carbon_fiber/roughness.png",
+      "bytes": 666296,
+      "sha256": "ea2ba08023de5a7f45ff931178adc365c447bb4395e39e6e279c57f3df84a940",
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "path": "/assets/textures/carbon_fiber/normal.png",
+      "bytes": 1384198,
+      "sha256": "e4451dca0cc11239e69027f6ac743e1415198edf2afc079ec5fc07db7e67574f",
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "path": "/assets/models/characters/Soldier.glb",
+      "bytes": 1892908,
+      "sha256": "a4877fd4f451a5ff159831bbed58b2dec256d9a6c331ec93b985bcf43cbc396c",
+      "validationErrors": 0,
+      "validationWarnings": 4,
+      "clips": [
+        "Idle",
+        "Run",
+        "TPose",
+        "Walk"
+      ],
+      "skins": 2
+    },
+    {
+      "path": "/assets/models/characters/Xbot.glb",
+      "bytes": 2880472,
+      "sha256": "c38155bfcdac66461c4b6fa17e6ff25510a9570c1d714d093ad13601103ea970",
+      "validationErrors": 0,
+      "validationWarnings": 2,
+      "clips": [
+        "agree",
+        "headShake",
+        "idle",
+        "run",
+        "sad_pose",
+        "sneak_pose",
+        "walk"
+      ],
+      "skins": 1
+    },
+    {
+      "path": "/assets/licenses/threejs-LICENSE.txt",
+      "bytes": 1081,
+      "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc"
+    }
+  ],
+  "browser": "Run --serve, then open the printed URL for real WebGL/Three.js checks."
+}

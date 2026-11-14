@@ -1,0 +1,80 @@
+{
+  "status": "passed",
+  "checkedAt": "2026-11-12T20:55:03.398Z",
+  "errors": [],
+  "warnings": [],
+  "clips": 39,
+  "skinMotion": true,
+  "runtimeRetarget": true,
+  "cleanup": true,
+  "isolated": [
+    {
+      "variant": 0,
+      "calls": 2,
+      "triangles": 192
+    },
+    {
+      "variant": 1,
+      "calls": 2,
+      "triangles": 192
+    },
+    {
+      "variant": 2,
+      "calls": 2,
+      "triangles": 204
+    }
+  ],
+  "city": [
+    {
+      "view": "roof",
+      "weapons": false,
+      "calls": 3295,
+      "triangles": 349026,
+      "cpuSubmitMs": 16.69999998807907
+    },
+    {
+      "view": "roof",
+      "weapons": true,
+      "calls": 3375,
+      "triangles": 356826,
+      "cpuSubmitMs": 16.200000002980232
+    },
+    {
+      "view": "street",
+      "weapons": false,
+      "calls": 3097,
+      "triangles": 296018,
+      "cpuSubmitMs": 14.600000008940697
+    },
+    {
+      "view": "street",
+      "weapons": true,
+      "calls": 3177,
+      "triangles": 303818,
+      "cpuSubmitMs": 14.600000008940697
+    }
+  ],
+  "pipeline": [
+    {
+      "sharedNormals": false,
+      "calls": 5987,
+      "triangles": 615872,
+      "cpuSubmitMs": 31.299999997019768
+    },
+    {
+      "sharedNormals": true,
+      "calls": 3379,
+      "triangles": 357002,
+      "cpuSubmitMs": 18.80000001192093
+    }
+  ],
+  "pixelMeanDifference": 0.002554253472222222,
+  "invisibleEffectsExcluded": true,
+  "budgets": {
+    "weaponCalls": 2,
+    "weaponTriangles": 1200,
+    "cityWeaponCallIncrease": 160,
+    "cityWeaponTriangleIncrease": 16000
+  },
+  "hardwareFpsCertified": false
+}

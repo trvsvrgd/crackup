@@ -1,0 +1,33 @@
+{
+  "checkedAt": "2026-11-14T21:02:13.948Z",
+  "errors": [],
+  "failedRequests": [],
+  "checks": [
+    "Host sees campaign ownership and private session code",
+    "Host field menu leaves co-op simulation running",
+    "Wrong invite gives an actionable error and permits retry",
+    "Guest sees correct owner and roster without host invite disclosure",
+    "Sensitivity drag completes without a control-rate disconnect",
+    "Dragged sensitivity persists for this campaign visit",
+    "Guest visit setting restores after leaving and joining again",
+    "Ending the party returns both clients to profiles",
+    "No browser page errors"
+  ],
+  "hostPolicy": "Only the host's world advances. Connected players keep district unlocks once per character; joining after completion grants no past unlocks. Guest dialogue and settings save for this host's campaign; their own world stays unchanged. No automatic catch-up or host migration.",
+  "menuTicks": [
+    83,
+    102
+  ],
+  "guestParty": "Visiting UI-HOST2's campaign | Party 2/8: UI-HOST2, UI-GUEST2",
+  "result": "passed",
+  "method": "Normal UI controls in two live browser pages; invalid invite/retry, menu live-tick sample, leave/rejoin, 40-step range drag and end-party. Private loopback SQLite database, no gameplay-state injection.",
+  "finalStyleCheck": {
+    "sessionCodeUserSelect": "text",
+    "method": "Fresh navigation and computed style read after final copyability adjustment."
+  },
+  "limits": [
+    "Two local browser pages, not real WAN or eight human players.",
+    "No clean-machine, native focus or reference-hardware qualification."
+  ],
+  "buildSha256": "69466423476cd3eadcf8ac9f26996969ad53aa732ffb476e622284b94a86e17e"
+}

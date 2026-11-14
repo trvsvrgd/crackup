@@ -1,0 +1,42 @@
+{
+  "status": "passed",
+  "checkedAt": "2026-11-13T19:18:27.109948Z",
+  "actualBrowserHistories": {
+    "CINEMA-SKIP": {
+      "opening-v1": "skipped",
+      "enemy-501": "completed",
+      "enemy-511": "skipped",
+      "dreadnought-v1": "disconnected"
+    },
+    "CINEMA-DAMAGE2": {
+      "opening-v1": "damage",
+      "enemy-511": "completed"
+    },
+    "CINEMA-DEATH": {
+      "opening-v1": "death"
+    },
+    "CINEMA-LOCK": {
+      "opening-v1": "skipped",
+      "dreadnought-v1": "completed",
+      "enemy-511": "completed"
+    },
+    "CINEMA-PAGEHIDE": {
+      "opening-v1": "hidden"
+    }
+  },
+  "escapeAndSpaceSkip": true,
+  "movementCancelsAndMovesPlayer": true,
+  "settingsPersist": true,
+  "reloginNoReplay": true,
+  "deathRecoveryVisible": true,
+  "damageRestoresHud": true,
+  "pageHideAborts": true,
+  "pointerLockBeforeAndAfter": true,
+  "fieldMenuRemainsClosedAfterPointerRestore": true,
+  "startupDeployWaitsForInitialization": true,
+  "nativeTabVisibilityQualified": false,
+  "limitations": [
+    "Automation tabs remained visible even after focus switching; native background/minimize qualification remains a target-browser release check.",
+    "QA mission transitions and HP changes used an isolated in-memory server fixture; these are integration checks, not an uncoached playthrough."
+  ]
+}

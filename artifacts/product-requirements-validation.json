@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 2,
+  "checkedAt": "2026-11-14T21:06:16.614Z",
+  "scope": "Document structure, local links, requirement traceability and authored opening brief only. No gameplay or human acceptance is implied.",
+  "result": "passed",
+  "requirements": {
+    "total": 96,
+    "functional": 69,
+    "nonFunctional": 27,
+    "statuses": {
+      "Unverified": 91,
+      "In progress": 5,
+      "Needs work": 0,
+      "Accepted": 0
+    }
+  },
+  "milestones": {
+    "count": 9,
+    "accepted": 0
+  },
+  "opening": {
+    "beats": 6,
+    "plannedMinutes": [
+      30,
+      45
+    ],
+    "scenarios": 10,
+    "p1Packages": 5
+  },
+  "localLinks": {
+    "checked": 131,
+    "missing": []
+  },
+  "crossReferences": {
+    "unknownRequirementIds": []
+  },
+  "files": [
+    {
+      "path": "docs/PRODUCT_REQUIREMENTS_V3.md",
+      "sha256": "6560e165469b85de856f6a0c9450b1816c9637134ece94706ba0d7b356288669"
+    },
+    {
+      "path": "docs/PRODUCTION_DELIVERY_PLAN.md",
+      "sha256": "ac5e45fe8f63fe2603af5914bc83f3f18517af58e878df9178dd6238d32b254e"
+    },
+    {
+      "path": "docs/PRODUCT_BASELINE_DECISIONS.md",
+      "sha256": "c454cd694b6a3446b78c43e68e522867cc525a5cc56183cf3da0c032680b6e97"
+    },
+    {
+      "path": "docs/OPENING_OPERATION_SPEC.md",
+      "sha256": "9bddfce1ac605a9be6bfe3bd8981dadb5361934ca9cbe93e718452402fefaa1b"
+    },
+    {
+      "path": "artifacts/product-delivery-status.md",
+      "sha256": "845f29b4139bd413c41addb4587082e03a6fb23d905d15cbe971374f0b77bd5c"
+    },
+    {
+      "path": "artifacts/product-baseline-audit.md",
+      "sha256": "0c1351a65d928926135fea1c23b4b6e68a0849cdcbf9031a6c90ec0ae7f3fabd"
+    },
+    {
+      "path": "artifacts/product-p0-continuation.md",
+      "sha256": "2de4944d77250ce72b6dada0c0076aca8753c18e25a1f5b1ceefdbcde312552b"
+    },
+    {
+      "path": "artifacts/product-p1-save.md",
+      "sha256": "3b2945ac59546705973988708f67f11b46fd0ad95c37f23118ac7683cda17bed"
+    },
+    {
+      "path": "artifacts/product-p1-presentation.md",
+      "sha256": "1dfa7b7671ffacc229f4a35745367594f57a8246cc8d2d6bbab65bcede2ebab5"
+    },
+    {
+      "path": "artifacts/product-p1-campaign.md",
+      "sha256": "98a97a4581543138f5f182e8f14252af8996ffeb8e5825f8534da0447e1658b7"
+    },
+    {
+      "path": "docs/CAMPAIGN_COOP_POLICY.md",
+      "sha256": "39560e730a0862a85b44b00bb2c628caabdd8379a3a29829592039c9c3990041"
+    },
+    {
+      "path": "PRD.md",
+      "sha256": "5fb917056b41f11107f40ad25b7eb4a0782692c9b36f9696345863a4f6bb02c0"
+    },
+    {
+      "path": "README.md",
+      "sha256": "7e1990ef81446c70b6e0c3c437fcd9f51869e1e3cdba114bcf2b41b07cec88bd"
+    }
+  ],
+  "errors": []
+}

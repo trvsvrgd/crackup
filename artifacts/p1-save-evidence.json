@@ -1,0 +1,489 @@
+{
+    "schemaVersion":  1,
+    "recordedAt":  "2026-11-14T15:45:09.6427170Z",
+    "scope":  "Focused P1-SAVE implementation; product quality gates remain open.",
+    "head":  "4af95ab1d82d2089cf886858e50cc85af40f6b58",
+    "workingTreeHasUncommittedChanges":  true,
+    "checks":  [
+                   {
+                       "command":  "npm run build",
+                       "result":  "passed"
+                   },
+                   {
+                       "command":  "npm run verify",
+                       "result":  "All existing Phase 1-6, alpha and Section 6 Stage 1-6 suites passed"
+                   },
+                   {
+                       "command":  "npm run verify:solo",
+                       "result":  "9 scenarios passed"
+                   },
+                   {
+                       "command":  "npm run progress:check",
+                       "result":  "10 checkpoints and 85 evidence files verified"
+                   },
+                   {
+                       "command":  "Portable VBS launcher and normal-input browser sample",
+                       "result":  "passed from isolated folder; one relay persisted; menu pause/resume verified"
+                   },
+                   {
+                       "command":  "Native focus observation",
+                       "result":  "not qualified; automation did not expose a focus/visibility transition"
+                   }
+               ],
+    "portablePackageFilesVerified":  494,
+    "portableRuntimeMatchesFinalBuild":  true,
+    "files":  [
+                  {
+                      "path":  "artifacts/evidence/p1-solo-browser.json",
+                      "sha256":  "b0621a838b62b8a8d3e5acaad5de0d20d41a2e3613bdc2ff6361ef014b98aaaa"
+                  },
+                  {
+                      "path":  "artifacts/evidence/p1-solo-focus-observation.json",
+                      "sha256":  "82ef6af4bb5a2a10239b88088b2b88b941013a905c50450d49f911c52645dadc"
+                  },
+                  {
+                      "path":  "artifacts/evidence/p1-solo-menu.png",
+                      "sha256":  "9a379e9f08f468f4959cee01e2495f2b6758d9ef74516cf07735b24b6694feaa"
+                  },
+                  {
+                      "path":  "artifacts/evidence/p1-solo-package.json",
+                      "sha256":  "2eed419cc3b09af54b9b80c3c65ced1f5f52714e3a94bfc1f4e0e5266927e088"
+                  },
+                  {
+                      "path":  "artifacts/evidence/p1-solo-verification.json",
+                      "sha256":  "a0face73172e663a14eae56ce48f0e9ece63eb9117d2abac344b5fe0d2d10f2d"
+                  },
+                  {
+                      "path":  "artifacts/product-delivery-status.md",
+                      "sha256":  "81d7b6e8ccf91c92bdbcd02741b79036425756e870f1558623aa9150791c4f5a"
+                  },
+                  {
+                      "path":  "artifacts/product-p1-save.md",
+                      "sha256":  "9f3edc20cf8dba43bfb3bff33bb1fa9f888c2c185e6859cf2d8d76621ab06f92"
+                  },
+                  {
+                      "path":  "client/animation/combatDebris.ts",
+                      "sha256":  "eb1212ba74a833b5d2eefc3f4130f5c9ac69f473fec75b7225eb77cd0006d0a2"
+                  },
+                  {
+                      "path":  "client/animation/combatEffects.ts",
+                      "sha256":  "71a1acd287bb0276e0e6f60a14f469f32baabe5a90ef819338dcf764d2d69950"
+                  },
+                  {
+                      "path":  "client/animation/humanoidRig.ts",
+                      "sha256":  "b491cbd87fc5f0d9a0bb3cbf2b9a78e67f8f4acdb176dc3ded53ca3daf725115"
+                  },
+                  {
+                      "path":  "client/animation/mixamoMotion.ts",
+                      "sha256":  "752ba69ca5e48d548b9b622c42bcb69819c7878aedd5680777e4f9c00b17ec4e"
+                  },
+                  {
+                      "path":  "client/animation/presentationQueue.ts",
+                      "sha256":  "32dadfa7088978b0892b7b2a7d9f21314c4582bf7383361d572def843330196b"
+                  },
+                  {
+                      "path":  "client/animation/skeletalAnimator.ts",
+                      "sha256":  "c1a3bca316b87d8820d791f26878a08b5622c18ce0726424503edbe96256ab16"
+                  },
+                  {
+                      "path":  "client/assets/pbrTextureLibrary.ts",
+                      "sha256":  "79db8597e32f5ba174f7c2a7791434c2c340620544a9eada345eacfc0500df3c"
+                  },
+                  {
+                      "path":  "client/assets/productionAssets.ts",
+                      "sha256":  "65884d1cf25d681566636ac26f2acd0800b6432e6b85b4d6d5c74160cf977bf7"
+                  },
+                  {
+                      "path":  "client/audio/spatialGameAudio.ts",
+                      "sha256":  "681ad10f057b052656b3fe89453574fd9b0e8aeffc1dda85e32dfcaff577025a"
+                  },
+                  {
+                      "path":  "client/audio/spatialOrbAudio.ts",
+                      "sha256":  "58a0a4d6e22f59141295ec17914cb86c1069b42d0c50c00a1c0b95f4b1db0c25"
+                  },
+                  {
+                      "path":  "client/builders/ArchBuilder.ts",
+                      "sha256":  "e9192a030cd0e37832d044e8f2f0054726afa5619fdb9fdfa9564573bf97ec51"
+                  },
+                  {
+                      "path":  "client/builders/builderContract.ts",
+                      "sha256":  "1b886dc074bb7a43d66793fab0acff887f5281cf41a04cb7c9cb33c9ec5ad671"
+                  },
+                  {
+                      "path":  "client/builders/RelayBuilder.ts",
+                      "sha256":  "7254dffcf7d9c9c82cf35b5ce276bf6c33f6390ac9f837b2aa0436e10e2a56e4"
+                  },
+                  {
+                      "path":  "client/builders/structureFallback.ts",
+                      "sha256":  "3c71d5b0e38331c099c2fb660c4d76cfdadee0b8ae0838265eab4a48175ca36d"
+                  },
+                  {
+                      "path":  "client/builders/VehicleBuilder.ts",
+                      "sha256":  "af516768f7c4e3614618aa8d4c2a3b479b8cfff681532fac5f01b6a80f143ee9"
+                  },
+                  {
+                      "path":  "client/builders/WeaponBuilder.ts",
+                      "sha256":  "5bb41160891b4d6e31a2087a0c105f0d3e4129c85c027ae481c290b084638fd1"
+                  },
+                  {
+                      "path":  "client/camera/springArmCamera.ts",
+                      "sha256":  "1af6107645a62bb86179cc989de034b20706334671b6d02c34a0a308eea5f9b2"
+                  },
+                  {
+                      "path":  "client/entities/agentMesh.ts",
+                      "sha256":  "6672f2ffccf7d28dcc7734d0a4b8464160a466fcdefa8fa408a4909bd0d6e48c"
+                  },
+                  {
+                      "path":  "client/entities/enemyRigMesh.ts",
+                      "sha256":  "a466d2fb4093b38a8d884472abd6af751f10fd62efda63f62d9b9e5f83b841e4"
+                  },
+                  {
+                      "path":  "client/entities/phase5WorldMesh.ts",
+                      "sha256":  "eb33cf30c8e54de879914ff1f0424197197de8ba6a21cef037bee1960a6e428e"
+                  },
+                  {
+                      "path":  "client/entities/phase6WorldMesh.ts",
+                      "sha256":  "b4750ddb5a2389a38142beb8e76b732a2f8b482f4739f333f64bd60b992d836d"
+                  },
+                  {
+                      "path":  "client/entities/vehicleAndPropMesh.ts",
+                      "sha256":  "4c99ec0f95a20a1b96c38c7b47838d0acf5caf64a1de07eb60a8e6058ee6b23f"
+                  },
+                  {
+                      "path":  "client/main.ts",
+                      "sha256":  "7e069d12d035487ce57598f2b7576cbf3f27976af291585c3d369686f5299a5b"
+                  },
+                  {
+                      "path":  "client/narrative/cinematicDirector.ts",
+                      "sha256":  "0d8a4b409cb89fc0af2de0a708d6a4c46f2ca0c0b22f86f31ae426883fd0ab5a"
+                  },
+                  {
+                      "path":  "client/narrative/cinematicOverlay.ts",
+                      "sha256":  "6135f5e98f9be7a97bca8797dbb99b6fea7b75369a54a9d94a0b3b0f178b8651"
+                  },
+                  {
+                      "path":  "client/narrative/cinematicTracks.ts",
+                      "sha256":  "2a2e5344b9829f1a2fd4d60dff9290a49c60061dfce119891b0dfa891e8a4455"
+                  },
+                  {
+                      "path":  "client/narrative/tacticalComms.ts",
+                      "sha256":  "28d3a23b98abf78491110925f33a3060ccf5cdc1e560d9f257b9413f15f5b089"
+                  },
+                  {
+                      "path":  "client/net/netcodeClient.ts",
+                      "sha256":  "6bb02ca15685fd3473fd1a0bcc276f98e34329596c78b1f708b440ebea2447eb"
+                  },
+                  {
+                      "path":  "client/playerHUD.ts",
+                      "sha256":  "deba7434333026b71fbbf55309d6214cf22faeb9b6fc03fa3d98e9d4136ed80a"
+                  },
+                  {
+                      "path":  "client/shaders/factionPalette.ts",
+                      "sha256":  "8b84701635f11a5165a370110464958777c5d69381adbb85d7327739254fd146"
+                  },
+                  {
+                      "path":  "client/shaders/inkOutlinePass.ts",
+                      "sha256":  "67a49e2b698a283486df16b8fd5cca66f2c77bf5ed6ace83b8741a001bc517f7"
+                  },
+                  {
+                      "path":  "client/shaders/interiorMapping.ts",
+                      "sha256":  "d38e7a15a9d5e7110ed13de343a3c882c0566cd73b5915f9bdffc80ec88d3fbb"
+                  },
+                  {
+                      "path":  "client/shaders/opaqueSSAOPass.ts",
+                      "sha256":  "3d0b36871ea70e2b502984d03cab6745942539c49919ef6bd37ca6fc13128cd0"
+                  },
+                  {
+                      "path":  "client/shaders/worldSurface.ts",
+                      "sha256":  "578d13aff0a5c1b6841da92c871432db970503c66d31b4090051f000536f1f34"
+                  },
+                  {
+                      "path":  "client/world/bayVista.ts",
+                      "sha256":  "1a5ae11f1278d9752e00b8b218602fc2716e2480bd7982297c0934dc04ab69ff"
+                  },
+                  {
+                      "path":  "client/world/cityBuilder.ts",
+                      "sha256":  "3eba19f4c9ab70b02ba130e548c103d04aa69755197d73c58cc1a7cc20e12148"
+                  },
+                  {
+                      "path":  "docs/PRODUCT_BASELINE_DECISIONS.md",
+                      "sha256":  "c454cd694b6a3446b78c43e68e522867cc525a5cc56183cf3da0c032680b6e97"
+                  },
+                  {
+                      "path":  "package.json",
+                      "sha256":  "578dd36814fe08517bc8077f9b1c79e073f0bc26e8e807f04174ae9d21b41d3e"
+                  },
+                  {
+                      "path":  "package-lock.json",
+                      "sha256":  "186d7fe2e6e81fe9901b4e4d9a258cc6c026343c75827420bf3f280364bb4783"
+                  },
+                  {
+                      "path":  "README.md",
+                      "sha256":  "74af94ef277d1858452777941c68de4e244e22d96fa91b92c8fb0727ef05b3c8"
+                  },
+                  {
+                      "path":  "scripts/package-solo.mjs",
+                      "sha256":  "3a520604d0f21f86e9313004f5aaf98d3354423a9c7cee6e676fa8e908732388"
+                  },
+                  {
+                      "path":  "scripts/verify-product-requirements.mjs",
+                      "sha256":  "fe7b8b4a22795ac2be648db7437e8be3997d829fcd69db4b53305d2cf7f706ca"
+                  },
+                  {
+                      "path":  "server/campaignStore.ts",
+                      "sha256":  "a72c165d50a6b9620af386e27f4fc28c8ffb07ea82665a83c7f8d8fd6e8c90f2"
+                  },
+                  {
+                      "path":  "server/db.ts",
+                      "sha256":  "ba30f99b97136037b259484c0227ba5cf9f6cb79657512e95148d7c9f5a9f3bc"
+                  },
+                  {
+                      "path":  "server/gameServer.ts",
+                      "sha256":  "a38586472615462c51c0baa04fb6b805cb703b2241dbf7d2bb25479d1e9317d2"
+                  },
+                  {
+                      "path":  "server/index.ts",
+                      "sha256":  "50a27231d1231f51c3f1ea8aa72f835fc58645aae18849dd3a4036b93c5ded97"
+                  },
+                  {
+                      "path":  "server/solo.ts",
+                      "sha256":  "6f59b4aa435d88f1579ee8ba3980669d6101e9540877bcadfc284ef41715f9e6"
+                  },
+                  {
+                      "path":  "server/soloWorldCheckpoint.ts",
+                      "sha256":  "0eed74164801470d1e1a25ee5dcaff554100713bd16797a92b5104f4c6936d23"
+                  },
+                  {
+                      "path":  "shared/campaign/soloCampaign.ts",
+                      "sha256":  "b2ba9cb35817a2a77e906bdc3630bf3adebbf24d34de40a13c6eb1d1bc872bbe"
+                  },
+                  {
+                      "path":  "shared/combat/combatPresentation.ts",
+                      "sha256":  "322875ad7d196ea865d9e5a50fbab7569e10f430c219d30167faae714c17ed40"
+                  },
+                  {
+                      "path":  "shared/combat/enemyRigSystem.ts",
+                      "sha256":  "822e080ebca7b51f964be4c1039069bf1db882b789e5161596328f188086cfb1"
+                  },
+                  {
+                      "path":  "shared/combat/presentationEvents.ts",
+                      "sha256":  "0b735f5140eee6570c46a64642dc41c9b8cfdcc13a3fc178f475da17e5d0b495"
+                  },
+                  {
+                      "path":  "shared/combat/weaponPresentation.ts",
+                      "sha256":  "5c25cff0cee18d36836ce941df3f2f06007ccbdc273b18ce409518d960f44b0c"
+                  },
+                  {
+                      "path":  "shared/constants.ts",
+                      "sha256":  "46231bcc3db262a185d7c5c07247a24cf44f5bace2fdaf9a8bd23b7b5ac6b275"
+                  },
+                  {
+                      "path":  "shared/narrative/storyBible.ts",
+                      "sha256":  "cd60564fd49b8533f0eba65e28e00890028c312926c1e899374ae5ebbd1ab604"
+                  },
+                  {
+                      "path":  "shared/physics/characterController.ts",
+                      "sha256":  "025b8f3d53b1e4b8e9f949615a37348e1a92dd128a534bdc9e474f3b3ad85977"
+                  },
+                  {
+                      "path":  "shared/physics/vehicleAndPropSystem.ts",
+                      "sha256":  "f105c4790758631605d9a0b0c97ffe5a0d440995d0f8f0a852894e723f819678"
+                  },
+                  {
+                      "path":  "shared/progression/skillTreeSystem.ts",
+                      "sha256":  "5383bbe804d155e259606a9419f53cbdc7318a4b34101a20c667264d2bef2440"
+                  },
+                  {
+                      "path":  "shared/protocol/binaryProtocol.ts",
+                      "sha256":  "68889d0311f19a7831850d5d2e7a3ddc1d621fea17a89583548f363238ba184e"
+                  },
+                  {
+                      "path":  "shared/protocol/presentationProtocol.ts",
+                      "sha256":  "d977d0ab664d6196ffa15b0e8ff8316d9fa1f28c1849f18055993ffe45654986"
+                  },
+                  {
+                      "path":  "shared/protocol/relayProtocol.ts",
+                      "sha256":  "c8a51b74961dad8b89a61a12cc158b06cb209afc7205dcffaca6acbba372a9ca"
+                  },
+                  {
+                      "path":  "shared/protocol/vehicleDamageProtocol.ts",
+                      "sha256":  "c68d22559dc457054731625b5c8248664c176817109a4beb1621e5a101ca674e"
+                  },
+                  {
+                      "path":  "shared/vehicles/vehicleDefinition.ts",
+                      "sha256":  "3b9b5843ebde3d12dbe80919f480b4a966de90e10f7bacbb47f9f774c3083cea"
+                  },
+                  {
+                      "path":  "shared/world/architecture.ts",
+                      "sha256":  "a0bb06253626e6a12bb1e038c822980a2d90c45ecf1a30ea4c25478148304200"
+                  },
+                  {
+                      "path":  "shared/world/bayVista.ts",
+                      "sha256":  "2c4ffdc7b3eb14bc3910c3a5ad1ce43b9486ef836ec9ef184c86c0a6e4a61684"
+                  },
+                  {
+                      "path":  "shared/world/cyberPetArena.ts",
+                      "sha256":  "1264e1c5aec78d6fd3ed04c49f36fad3279bc3f15e711321de3f4ad55ea31225"
+                  },
+                  {
+                      "path":  "shared/world/dreadnoughtBoss.ts",
+                      "sha256":  "5d9ab1dbc9eff42e10ce44ff2d8bdab69407e462d5b439044fc44179a6819336"
+                  },
+                  {
+                      "path":  "shared/world/neoVeridiaBlock.ts",
+                      "sha256":  "01b786eef03ee73854c63556e5f9867304ada746bd55d86d8f05f777bc6c1ab7"
+                  },
+                  {
+                      "path":  "shared/world/orbSystem.ts",
+                      "sha256":  "5c26e22fcf96318e8f5bb082efecf991095f400e9d9d98e001a3df0322ec8476"
+                  },
+                  {
+                      "path":  "shared/world/phase5Systems.ts",
+                      "sha256":  "48821f385605eb188a4f9f595e8ee5baadb7fe9a720f3a4d658d9d888d3984af"
+                  },
+                  {
+                      "path":  "shared/world/relayDefinition.ts",
+                      "sha256":  "ce8664ca35ed27daa42829b14b04e1df0eb6b94f95a655e12526b6027a2d6758"
+                  },
+                  {
+                      "path":  "shared/world/relaySystem.ts",
+                      "sha256":  "170eeb0fce0e4e88e3c9abbe859478623da58f73332988c54c3fe085bb28a4ce"
+                  },
+                  {
+                      "path":  "shared/world/spatialOctree.ts",
+                      "sha256":  "942f179748a5e98d0b0241173b25c7ff884618be37803510ea35717a9cee0d2a"
+                  },
+                  {
+                      "path":  "tests/audit-product-baseline.ts",
+                      "sha256":  "b123cac34441e7fc80940c17a20b2279eff3d1fc205e6a35d47eb882d64fdd77"
+                  },
+                  {
+                      "path":  "tests/helpers/baselineRelayMesh.ts",
+                      "sha256":  "b35e5ebf4f989a1745d74195d97aed961289de1a339f50d6ef43cc036cbdf134"
+                  },
+                  {
+                      "path":  "tests/helpers/baselineVehicleMesh.ts",
+                      "sha256":  "a7514eee515c59db12435fe9209797beafdf4148d6e7b66080335eebac6c5e94"
+                  },
+                  {
+                      "path":  "tests/verify-alpha.ts",
+                      "sha256":  "ef4cf4fa46607aecd5c0a11fa40142fa09b31b020cc1471ae7029a501a207098"
+                  },
+                  {
+                      "path":  "tests/verify-art-browser.ts",
+                      "sha256":  "3c9e181d36fb5e936849b6639944b05c90df251a0be21cadbb8a8433249149d3"
+                  },
+                  {
+                      "path":  "tests/verify-phase1.ts",
+                      "sha256":  "6945367f61c29e34af09e9205d6a0d9f5567f0d086fffc61f1f9def23f366cb7"
+                  },
+                  {
+                      "path":  "tests/verify-phase2.ts",
+                      "sha256":  "e50db0e53bab01f091545854dccaa3a97541d38a528a5f266294f92bb9214dd5"
+                  },
+                  {
+                      "path":  "tests/verify-phase3.ts",
+                      "sha256":  "8f221d7209b2f847a94d311f48a62e9dc99bcc1e6b43dc5f451d98adafa4c13a"
+                  },
+                  {
+                      "path":  "tests/verify-phase4.ts",
+                      "sha256":  "a8558858ba7664c7af2f4177c10aa4db3e87c1baab8082dd325690d626f16ce2"
+                  },
+                  {
+                      "path":  "tests/verify-phase5.ts",
+                      "sha256":  "3bf5f5173be7794ec5e8d3c1917033d8231c2c90dc0f4debe3c5bcd3283d5841"
+                  },
+                  {
+                      "path":  "tests/verify-phase6.ts",
+                      "sha256":  "45e219bef9d7abff8ebc40a308f7cc61d816299df72ca866423b9697db4ffba7"
+                  },
+                  {
+                      "path":  "tests/verify-solo.ts",
+                      "sha256":  "e5485e846e435cc92e2d1af791af8cacac2502aabc61730da19a602704e171bb"
+                  },
+                  {
+                      "path":  "tests/verify-stage1.ts",
+                      "sha256":  "78c925269802a584feb5c0ea22cd1923f7267a0e22f0d59a1b5ba983c1588c00"
+                  },
+                  {
+                      "path":  "tests/verify-stage2.ts",
+                      "sha256":  "3ce44c0943b5e04c5d68ba17e7404305051df143ebe9170a336eaad5558174d9"
+                  },
+                  {
+                      "path":  "tests/verify-stage2-network.ts",
+                      "sha256":  "8b405ca28b236b0cdbe2943006e6a004477940b75812fb7b2fb0c72c0136a807"
+                  },
+                  {
+                      "path":  "tests/verify-stage3a.ts",
+                      "sha256":  "180ef60d79b6582010f99239e2e4607ece39622dbb2689c42f18dd6d94084317"
+                  },
+                  {
+                      "path":  "tests/verify-stage3a-browser.ts",
+                      "sha256":  "407cb95cb11c0806ddee211829ae35bd040baa53e9cce79755e0365002a2a46a"
+                  },
+                  {
+                      "path":  "tests/verify-stage3b.ts",
+                      "sha256":  "f0e728b3921eeb4c6b96732ca1317d942d9fad479eb5359eb30b844f287c96f5"
+                  },
+                  {
+                      "path":  "tests/verify-stage3b-browser.ts",
+                      "sha256":  "c1bb4f9be1f68a2f616b9b87b3fa88fb80f89671430e57c31197aa13ff991627"
+                  },
+                  {
+                      "path":  "tests/verify-stage3b-network.ts",
+                      "sha256":  "dd377a6f516d4b1bca09e135ff7b602a54df8ecabebea24a2bcbe86cc85354ee"
+                  },
+                  {
+                      "path":  "tests/verify-stage3c.ts",
+                      "sha256":  "616faf9149d01b5d84b4d8a49766c54d27a2fcffdb304f6e8c13f3ac83a3dd7e"
+                  },
+                  {
+                      "path":  "tests/verify-stage3c-browser.ts",
+                      "sha256":  "6b0badf347984a7643d6cc577d183f3f76850f3bf8e6f9c82c876f9ae61a92ff"
+                  },
+                  {
+                      "path":  "tests/verify-stage3c-network.ts",
+                      "sha256":  "0c717cec4905d63bf935efdf818bc870b9ea6bbcb09c98ed8f3dbe2488f52f84"
+                  },
+                  {
+                      "path":  "tests/verify-stage3d.ts",
+                      "sha256":  "4ec54c3f9b2646b47b2b601cba1ae220e058366224c3cb5adde7453c4716149d"
+                  },
+                  {
+                      "path":  "tests/verify-stage3d-browser.ts",
+                      "sha256":  "7ab3e741d5b829e3b97cd67547bd5361f2fb6b4b3811108a47f79bd0c000e11a"
+                  },
+                  {
+                      "path":  "tests/verify-stage4.ts",
+                      "sha256":  "0c1a6a0c040aaecdd3a7d00e98286b45782b826781fa036da3b22251f3359bd1"
+                  },
+                  {
+                      "path":  "tests/verify-stage4-browser.ts",
+                      "sha256":  "5058aa36a71003b2dc5fa03559fca08b7cffe18538f88a61004a02ba67d7b770"
+                  },
+                  {
+                      "path":  "tests/verify-stage5.ts",
+                      "sha256":  "fd1ce34b92d04dc43693b08dfd6836cc05bbbf67cf934a48dce96c7a5164faab"
+                  },
+                  {
+                      "path":  "tests/verify-stage5-browser.ts",
+                      "sha256":  "d6076c24779e145ce7c42959071ac467b5373efe14998fb395f92653e7db20aa"
+                  },
+                  {
+                      "path":  "tests/verify-stage5-network.ts",
+                      "sha256":  "38e1f760bfae4d826740055fac2ca42ee5244fc2e0d5c77e32b47549f7582d0c"
+                  },
+                  {
+                      "path":  "tests/verify-stage6.ts",
+                      "sha256":  "f91f1183235e7de4b5be2e5627719dfe924d52afc2e6f08d6dddb023523cc56b"
+                  },
+                  {
+                      "path":  "tests/verify-stage6-browser.ts",
+                      "sha256":  "9bdea8dd569e21db3f8f0c54f64b2335671389bdc563e911ed14072117b30ddb"
+                  },
+                  {
+                      "path":  "tests/verify-stage6-network.ts",
+                      "sha256":  "1035aad1f49d9acaa9fbe85e8256bb9c71d9ba6b3926bcace6b03150fbbe2e67"
+                  }
+              ]
+}

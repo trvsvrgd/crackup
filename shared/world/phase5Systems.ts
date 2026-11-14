@@ -385,7 +385,8 @@ export class Phase5WorldDirector {
           spec.coreOverridePos.y - agent.position.y,
           spec.coreOverridePos.z - agent.position.z
         );
-        if (dCore <= DISTRICT_OBJECTIVE_INTERACT_RADIUS_M) {
+        const kingpin = this.combatManager.enemies.get(spec.kingpinEnemyId);
+        if (dCore <= DISTRICT_OBJECTIVE_INTERACT_RADIUS_M && kingpin?.combatState === EnemyCombatState.DEAD) {
           this.completeDistrictLoop(loop, agent, allAgents);
           interacted = true;
         }
@@ -624,8 +625,7 @@ export class Phase5WorldDirector {
       } else if (loop.currentStage === 3) {
         const kp = this.combatManager.enemies.get(loop.spec.kingpinEnemyId);
         if (kp && kp.combatState === EnemyCombatState.DEAD) {
-          const firstAgent = agents.values().next().value as AgentPhysicsBody | undefined;
-          this.completeDistrictLoop(loop, firstAgent, agents);
+          loop.kingpinDefeated = true;
         }
       }
     }
@@ -635,7 +635,7 @@ export class Phase5WorldDirector {
       const hvt = this.combatManager.enemies.get(this.omegaBounty.enemyId);
       this.omegaBounty.timeRemainingSec = Math.max(0, this.omegaBounty.timeRemainingSec - dt);
 
-      if (!hvt || hvt.combatState === EnemyCombatState.DEAD || hvt.hp <= 0) {
+      if (!hvt || hvt.combatState === EnemyCombatState.DEAD || hvt.hp <= 0 || hvt.capturedByEntityId) {
         this.omegaBounty.active = false;
         this.omegaBounty.completed = true;
         this.omegaBounty.hp = 0;
@@ -643,11 +643,13 @@ export class Phase5WorldDirector {
 
         for (const a of agents.values()) {
           a.telemetry.omegaBountiesCompleted = (a.telemetry.omegaBountiesCompleted || 0) + 1;
+          if (hvt?.capturedByEntityId === a.entityId) a.telemetry.nonLethalBountiesCompleted = (a.telemetry.nonLethalBountiesCompleted ?? 0) + 1;
         }
         this.pendingNotifications.push({
           type: 'OMEGA_BOUNTY_COMPLETED',
-          message: 'OMEGA BOUNTY ELIMINATED! Extraction Convoy destroyed in 3D space!',
+          message: hvt?.capturedByEntityId ? 'OMEGA BOUNTY CAPTURED! Non-lethal extraction confirmed. Encrypted witness testimony recovered.' : 'OMEGA BOUNTY ELIMINATED! Extraction Convoy destroyed in 3D space!',
         });
+        if (hvt?.capturedByEntityId) this.combatManager.removeEnemy(hvt.enemyId);
       } else if (this.omegaBounty.timeRemainingSec <= 0) {
         this.omegaBounty.active = false;
         this.omegaBounty.escaped = true;
@@ -682,7 +684,7 @@ export class Phase5WorldDirector {
               message: 'OMEGA BOUNTY ESCAPED! Reached final Aegis Extraction Pad.',
             });
           }
-        } else if (hvt.staggerTimer <= 0) {
+        } else if (hvt.staggerTimer <= 0 && hvt.presentation.timer <= 0) {
           const baseConvoySpeed = 7.2;
           const speed = hvt.legsCrippledTimer > 0 ? baseConvoySpeed * 0.30 : baseConvoySpeed;
           hvt.yaw = Math.atan2(-dx, -dz);

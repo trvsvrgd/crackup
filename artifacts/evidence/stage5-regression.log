@@ -1,0 +1,213 @@
+
+> crackup-protocol-eclipse@2.0.0 verify
+> npm run verify:phase1 && npm run verify:phase2 && npm run verify:phase3 && npm run verify:phase4 && npm run verify:phase5 && npm run verify:phase6 && npm run verify:alpha && npm run verify:stage1 && npm run verify:stage2 && npm run verify:stage3a && npm run verify:stage3b && npm run verify:stage3c && npm run verify:stage3d && npm run verify:stage4 && npm run verify:stage5
+
+
+> crackup-protocol-eclipse@2.0.0 verify:phase1
+> tsx tests/verify-phase1.ts
+
+================================================================================
+ CRACKUP: PROTOCOL ECLIPSE (v2.0) — PHASE 1 AUTOMATED VERIFICATION SUITE
+================================================================================
+
+[1/6] Verifying Binary ArrayBuffer / DataView Protocol Serialization...
+  ✓ Binary ClientInput (29B) & WorldSnapshot (16B + 40B*N) verified.
+
+[2/6] Initializing Shared @dimforge/rapier3d-compat Physics Engine...
+  ✓ Rapier3D Jump Curves (Lv1=3.10m, Lv5=14.32m) & Auto-Step (2.82m) verified.
+
+[3/6] Verifying Dual-Raycast 3D Ledge Mantling & 0.35s Vault Trajectory...
+  ✓ Ledge Mantling verified: vaulted onto terrace top Y=1.50m, Z=-7.98m.
+
+[4/6] Verifying Third-Person Spring-Arm Camera & Wall-Occlusion Whiskers...
+  ✓ Spring-Arm Camera occlusion avoidance pulled arm from 4.50m -> 0.45m.
+
+[5/6] Verifying 128-Tick Client Prediction Replay & 100ms Remote SLERP...
+  ✓ Client-Side Prediction ring buffer replay & Remote SLERP verified.
+
+[6/6] Launching Authoritative Server & Connecting 8 Concurrent Headless Clients...
+  ✓ 8/8 Concurrent Headless WebSocket Agents authenticated via SQLite WAL.
+  ✓ 30Hz Binary World Snapshots (336 bytes/frame for 8 agents) & 3D movement verified.
+  ✓ Zero server memory/collider leaks & 100% SQLite WAL persistence on disconnect verified.
+
+================================================================================
+ ALL PHASE 1 VERIFICATION GATES PASSED SUCCESSFULLY (ZERO WARNINGS / ZERO ERRORS)
+================================================================================
+
+> crackup-protocol-eclipse@2.0.0 verify:phase2
+> tsx tests/verify-phase2.ts
+
+================================================================================
+ CRACKUP: PROTOCOL ECLIPSE (v2.0) — PHASE 2 AUTOMATED VERIFICATION SUITE
+================================================================================
+
+[1/6] Verifying 1200m x 1200m x 320m 4-District City & 3D Spatial Octree...
+  ✓ 4 Districts verified (1663 modular structures; elevations: Docks=86m, Foundry=141m, Helios=261m, Aegis=323m).
+
+[2/6] Verifying Foundry Slums Thermal Updraft Lift & Agility Lv 5 Mantle Reach...
+  ✓ Thermal Updraft Lift (reached Y=29.6m) & Agility Lv 5 1.8m Mantle Reach verified.
+
+[3/6] Verifying 7-Attribute Mathematical Scaling Curves (PRD Section 4.1)...
+  ✓ All 7 Attribute Lv 1..5 continuous curves match PRD Section 4.1 specifications.
+
+[4/6] Verifying 182 3D Orbs across 4 Districts (Y = 10m to 310m)...
+  ✓ 182 3D Orbs verified (150 Agility, 20 Renegade, 12 Whisper; District split: {"NEON_DOCKS":44,"FOUNDRY_SLUMS":46,"HELIOS_SPIRE":45,"AEGIS_CITADEL":47}).
+
+[5/6] Verifying Renegade Orb 18m 3D Flee Steering & Binary Protocol (0x03)...
+  ✓ Renegade Orb 18m Flee Steering (dist 5.83m -> 12.09m at 14.5 m/s) & 324B Binary Snapshot verified.
+
+[6/6] Verifying Live Authoritative Orb Collection, XP Level-Up & SQLite WAL Persistence...
+  ✓ Live Orb #1 Collection -> XP (60->110) -> Auto Level-Up (Agility Lv 2) & SQLite WAL Persistence verified.
+
+================================================================================
+ ALL PHASE 2 VERIFICATION GATES PASSED SUCCESSFULLY (ZERO WARNINGS / ZERO ERRORS)
+================================================================================
+
+> crackup-protocol-eclipse@2.0.0 verify:phase3
+> tsx tests/verify-phase3.ts
+
+================================================================
+CRACKUP: Protocol Eclipse - Phase 3 Automated Verification Suite
+================================================================
+
+[Test 1] Verifying 6 Bone-Attached Rapier3D Colliders per Enemy & Binary ENEMY_SNAPSHOT...
+  -> Passed: 9 enemies (54 Rapier3D bone colliders) & 36B/enemy binary snapshot verified.
+
+[Test 2] Verifying V.A.T.S. Sub-Collider Occlusion Raycasts & Cover Blocking...
+  -> Passed: Clear LOS Lv1 Head=16% -> Lv5 Head=83%; Partial Cover Head=27% vs Legs=0% (OCCLUDED).
+
+[Test 3] Verifying Bone-Collider Raycast Multipliers & Limb Cripple Debuffs...
+  -> Passed: Head 2.2x Crit+Stagger, Torso 1.3x Armor Strip, Arm 8.0s Cripple, Leg 8.0s 70% Slow + Grounding verified.
+
+[Test 4] Verifying Motion-Warped Melee (4.5m range, 18 m/s warp) & Elite Counter-Stance Bounce...
+  -> Passed: 18 m/s root-motion melee warp & Elite COUNTER_STANCE bounce/throw impulse verified.
+
+[Test 5] Verifying Lag-Compensated Q Counter-Parry & 6.0m Radial Kinetic Shockwave (Strength Lv 3+)...
+  -> Passed: Lag-compensated Q Counter-Parry takedown snap & 6.0m Radial Kinetic Shockwave verified.
+
+[Test 6] Verifying Live Authoritative Server + WebSocket Binary Combat Sync & SQLite Persistence...
+  -> Passed: Live 30Hz binary ENEMY_SNAPSHOT (16 frames), V.A.T.S. Headshot, Melee Warp, Parry Shockwave & SQLite persistence verified.
+
+================================================================
+ALL PHASE 3 VERIFICATION CHECKS PASSED WITH ZERO ERRORS!
+================================================================
+
+> crackup-protocol-eclipse@2.0.0 verify:phase4
+> tsx tests/verify-phase4.ts
+
+================================================================================
+ CRACKUP: PROTOCOL ECLIPSE — PHASE 4 AUTOMATED VERIFICATION SUITE
+================================================================================
+
+[1/5] Verifying Raycast 4-Wheel Suspension Vehicles & Wall-Thruster Hops...
+  ✓ 4-Wheel Suspension Vehicle verified: drivenDist=5.51m, wheelCompression=[0.23, 0.23, 0.23, 0.23], Wall-Thruster Hop peak Y=3.55m
+
+[2/5] Verifying Strength-Based 3D Prop Throwing (150kg -> 4000kg) & Spherical Blast Falloff...
+  ✓ Strength 3D Prop Throwing & Spherical Blast verified: 3400kg APC thrown at 44.5 m/s, Ball(12.0m) innerDmg=240.0 > outerDmg=118.0
+
+[3/5] Verifying 45m 3D Grapple-Hook Physical Tether & Pendulum Swing...
+  ✓ 3D Grapple-Hook Tether verified: anchor=(0.0, 6.5, -22.5), elevated Agent Y from 0.00m -> 4.72m
+
+[4/5] Verifying 5 Augment Chassis, 20-Node Skill Tree, Supersonic Dive-Bomb & SQLite WAL...
+  ✓ 5 Augment Chassis & 20 Skill Tree Nodes verified: Supersonic Dive-Bomb dealt 240 shockwave dmg, SQLite WAL persisted 20/20 skills & 4/4 relics
+
+[5/5] Verifying 4 Prototype Relics, 3D Radar Ping, 3.0s (180-tick) Chrono-Shift Rewind & Binary Protocol 0x05...
+  ✓ Prototype Relics, 3.0s Chrono-Rewind (err=4.0cm, HP restored to 180), & Binary Packet 0x05 (468 bytes for 4 vehicles + 12 props) verified!
+
+================================================================================
+ PHASE 4 VERIFICATION COMPLETE — ALL 5/5 SUITES PASSED WITH ZERO ERRORS
+================================================================================
+
+> crackup-protocol-eclipse@2.0.0 verify:phase5
+> tsx tests/verify-phase5.ts
+
+================================================================================
+CRACKUP: Protocol Eclipse — Phase 5 Automated Verification Suite
+================================================================================
+
+[SUITE 1/5] Verifying AI Factions, 3D Waypoint Steering, Jetpack Flight & Vigilante Co-op Sphere...
+  -> PASS: 4 AI Factions active, Flying Lv5 Jetpack reached y=11.33m (fuel 11.42s/12s), Vigilante 45m Co-op Sphere healed ally to 65.4 HP.
+
+[SUITE 2/5] Verifying all 4 District 3-Stage Operational Loops (Terminals -> Lieutenant -> Kingpin + Core Override)...
+  -> PASS: All 4 District 3-Stage Loops completed (NEON_DOCKS, FOUNDRY_SLUMS, HELIOS_SPIRE, AEGIS_CITADEL) & all 4 signature rewards active.
+
+[SUITE 3/5] Verifying 90-Second Omega Bounty 3D Waypoint Extraction Convoy & 70% Leg-Cripple Slowdown...
+  -> PASS: Omega Bounty 90s extraction verified (Normal 0.5s dist=3.60m -> Leg-Crippled dist=1.08m [-70% speed]) & HVT intercepted.
+
+[SUITE 4/5] Verifying Secret Neural Drift Engine (4 Mutations), 3D Aegis Auditor Airships & SQLite WAL Persistence...
+  -> PASS: All 4 Secret Neural Drift mutations triggered, 4 3D Auditor Airships + 8 Auditor Enforcers spawned, and persisted in SQLite WAL.
+
+[SUITE 5/5] Verifying Binary PacketType.WORLD_EVENTS_SNAPSHOT (0x06) Serialization Integrity...
+  -> PASS: Binary PacketType.WORLD_EVENTS_SNAPSHOT (200 bytes) round-trip verified with zero NaN values.
+
+================================================================================
+ALL 5/5 PHASE 5 VERIFICATION SUITES PASSED WITH ZERO ERRORS.
+================================================================================
+
+> crackup-protocol-eclipse@2.0.0 verify:phase6
+> tsx tests/verify-phase6.ts
+
+[1/7] Companion boids, static whiskers, hover and leash
+[2/7] Physical two-lap derby, finish ordering, fall penalty and owner return
+[3/7] Clash damage, escalating knockback, ring-out and single victory award
+[4/7] Boss colliders, cover, phase gates, flak, lance and raid rewards
+[5/7] SQLite WAL, upgrade migration, pet and telemetry reopen
+[6/7] Packet 0x07 round trip, offsets and malformed packet rejection
+[7/7] Live control validation, 30Hz snapshots, disconnect cleanup and reconnect
+ALL 7/7 PHASE 6 VERIFICATION SUITES PASSED.
+
+> crackup-protocol-eclipse@2.0.0 verify:alpha
+> tsx tests/verify-alpha.ts
+
+[1/6] Real enemy damage, downed input lock, relic ownership and district completion
+[2/6] Salted PIN storage, legacy migration and health persistence
+[3/6] Progression forgery rejected, skill cost and branch prerequisites enforced
+[4/6] Authoritative health, timed recovery, saved skills and reconnect
+[5/6] Duplicate inputs ignored, stale movement stopped, floods bounded
+[6/6] Cross-origin upgrades and oversized frames rejected
+ALL 6/6 ALPHA VERIFICATION SUITES PASSED.
+
+> crackup-protocol-eclipse@2.0.0 verify:stage1
+> tsx tests/verify-stage1.ts
+
+Stage 1 passed: dialogue graph/branches, ordered milestones, transcript catalog, faction PBR, depth+normal ink resources.
+
+> crackup-protocol-eclipse@2.0.0 verify:stage2
+> tsx tests/verify-stage2.ts && tsx tests/verify-stage2-network.ts
+
+Stage 2 passed: 19 joints, 9 silhouettes, animation/cross-fades, 60 Hz determinism, aim, flinch/flash, knee drop, disarm, 14m/s wall splat, paired lock, 3-hit cadence, ground slam, non-lethal capture, packets and multipart entities.
+Stage 2/3D network passed: authoritative reactions, scaled heavy disarms and v2 presentation broadcast to two observers and a late joiner.
+
+> crackup-protocol-eclipse@2.0.0 verify:stage3a
+> tsx tests/verify-stage3a.ts
+
+Verified 898 actual ledges at agility Lv1/3/5 with Rapier.
+Stage 3A passed: legacy layout/orbs/missions, four district buildings, semantic features, instancing, LOD, resources, colliders/mantles and model fallback.
+
+> crackup-protocol-eclipse@2.0.0 verify:stage3b
+> tsx tests/verify-stage3b.ts && tsx tests/verify-stage3b-network.ts
+
+Stage 3B passed: strict thresholds, one-time panels, CCD/floor motion, lifetime/cap, ejection/respawn, roof/cover/enemy rays, blast/prop/impact damage, protocol validation, prediction proxies, mesh animation/model fallback and disposal.
+Stage 3B network passed: actual client shot, both thresholds, identical debris transforms, late join, forged-message rejection, expiry and respawn across three WebSocket clients.
+
+> crackup-protocol-eclipse@2.0.0 verify:stage3c
+> tsx tests/verify-stage3c.ts && tsx tests/verify-stage3c-network.ts
+
+Stage 3C passed: 8 relays, shared octagon/lattice colliders, clear mission/orb approaches, vent damage/heat/shutdown/reboot, rays/cover/blast, packet validation, prediction, all four district loops, animation, GLTF fallback and resource cleanup.
+Stage 3C network passed: client fire, independent vent HP, heat/shutdown, three observers, late join, identical ticks, forged state rejection, B-first hacking and automatic reboot without mission bypass.
+
+> crackup-protocol-eclipse@2.0.0 verify:stage3d
+> tsx tests/verify-stage3d.ts
+
+Stage 3D passed: three batched weapons, all sockets/aim/reactions, valid and invalid imports, pooled cleanup, scaled disarms, v1/v2 packet validation and 39 genuine Mixamo clips retargeted onto 19 joints.
+
+> crackup-protocol-eclipse@2.0.0 verify:stage4
+> tsx tests/verify-stage4.ts
+
+Stage 4 passed: deterministic five-channel PBR, atomic pack swap/failure/races/disposal, two complete collision-matched bridges and bay/terrain bounds.
+
+> crackup-protocol-eclipse@2.0.0 verify:stage5
+> tsx tests/verify-stage5.ts && tsx tests/verify-stage5-network.ts
+
+Stage 5 passed: validated effects protocol, authoritative origins/normals, delayed contact, duplicate/stale rejection, prediction suppression, footsteps and bounded two-minute effect pools.
+Stage 5 network passed: real input, three observers, identical authoritative effects, forged packets rejected, late join, delayed duplicate and disconnect cleanup.

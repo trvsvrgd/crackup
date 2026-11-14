@@ -1,0 +1,79 @@
+﻿### Page
+- Page URL: http://127.0.0.1:3217/
+- Page Title: CRACKUP — Protocol Eclipse · Alpha
+### Snapshot
+```yaml
+- generic [active] [ref=f1e1]:
+  - generic "Game world" [ref=f1e2]
+  - generic:
+    - banner:
+      - generic:
+        - text: CRACKUP
+        - generic: PROTOCOL ECLIPSE
+      - generic:
+        - generic: Neon Docks
+        - generic: ALPHA
+    - generic "Camera heading": SW 233°
+    - region "Tracked mission":
+      - generic:
+        - text: DISTRICT OPERATION
+        - generic: 01 / 03
+      - heading "Break the smuggler grid" [level=2]
+      - paragraph: Sabotage the relay network (1/2). Press H near each relay.
+      - generic:
+        - generic: 14m · Relay
+        - generic: REWARD · GRAPPLE OVERDRIVE
+    - generic [aria-hidden]:
+      - generic: ×
+    - status: LIMB DISABLED — Enemy weakened
+    - region "Agent status":
+      - generic: P0-BENCH2
+      - generic:
+        - generic: VITALS
+        - strong: 0 / 230
+      - progressbar "Health"
+      - generic:
+        - generic: Titan Juggernaut
+        - generic: 0 ORBS
+    - region "Abilities":
+      - generic:
+        - generic: SPACE
+        - generic: Jump
+        - generic: CTRL
+        - generic: Dash · 1
+      - generic:
+        - generic: J
+        - generic: Fuel · 3.0s
+        - generic: R
+        - generic: Relic locked
+      - generic:
+        - generic:
+          - generic: B
+          - text: Upgrades
+        - generic:
+          - generic: ESC
+          - text: Field menu
+  - complementary "Developer telemetry":
+    - generic: TELEMETRY · F3 TO HIDE
+    - generic: NEON_DOCKS
+    - generic: "X: -20.5m | Y: 0.0m | Z: 29.2m"
+    - generic: "H: 0.0 m/s | V: 0.0 m/s | Fuel: 3.0s | Dashes: 1"
+    - generic: IDLE (GROUNDED)
+    - generic: "Seq: 9092 | Ack: 9083 | Err: 4.0cm | Agents: 1/8"
+    - generic: "Arm: 4.50m | FOV: 68°"
+    - generic: AGI:1 STR:1 DRV:1 SHT:1 EXP:1 FLY:1 VIG:1
+    - generic: "0/182 Collected | Nearest HRTF Ping: 65.5m"
+    - generic: "Nearest Enemy #7 (28.4m, IDLE) | Target Limb: HEAD"
+    - generic: "V.A.T.S. [HEAD] HIT: 92 DMG [2.2x CRIT STAGGER] [LIMB CRIPPLED!]"
+    - generic: Titan Juggernaut Exo-Frame (0/20 Skills) | ON FOOT
+    - generic: "Hyperion Arc Coil: 14.8m (101° / +0m Y) | CHRONO RELIC REQUIRED"
+    - generic: "STAGE 1/3: Sabotage 3D Terminals (1/2) — Press [H] near Terminal"
+    - generic: OMEGA CONVOY INTERCEPTED // NEXT HVT DEPLOYING SOON
+    - generic: "NOMINAL (0 MUTATIONS) | Airships: 0 | Blast:0% Limb:100% Air:4%"
+  - dialog "Agent down." [ref=f1e4]:
+    - generic [ref=f1e5]:
+      - text: NEURAL LINK CRITICAL
+      - heading "Agent down." [level=2] [ref=f1e6]
+      - paragraph [ref=f1e7]: A squadmate can revive you with H. Recover at the agency drop point to continue with your progress intact.
+      - button "Recover at drop point" [ref=f1e8] [cursor=pointer]
+```

@@ -1,0 +1,44 @@
+{
+  "status": "passed",
+  "errors": [],
+  "measurements": [
+    {
+      "mode": "Baseline",
+      "calls": 19,
+      "triangles": 526,
+      "cpuSubmitMs": 0.5
+    },
+    {
+      "mode": "Healthy",
+      "calls": 97,
+      "triangles": 9094,
+      "cpuSubmitMs": 1.0999999046325684
+    },
+    {
+      "mode": "Panels off",
+      "calls": 103,
+      "triangles": 9262,
+      "cpuSubmitMs": 1.0999999046325684
+    },
+    {
+      "mode": "Wreck",
+      "calls": 97,
+      "triangles": 9318,
+      "cpuSubmitMs": 0.8999998569488525
+    },
+    {
+      "mode": "Driving",
+      "calls": 97,
+      "triangles": 9094,
+      "cpuSubmitMs": 0.7999999523162842
+    },
+    {
+      "mode": "Four vehicles",
+      "calls": 373,
+      "triangles": 36358,
+      "cpuSubmitMs": 3
+    }
+  ],
+  "motion": true,
+  "cleanup": true
+}
