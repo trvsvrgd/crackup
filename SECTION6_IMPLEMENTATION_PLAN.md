@@ -1,6 +1,6 @@
 # Section 6: next implementation steps
 
-Plan prepared November 11, 2026 from the current source, PRD-Addendum.md and SECTION6_PROGRESS_REPORT.md. Stages 1-2 and Stages 3A-3C architecture/vehicles/relays are now complete and verified. Stage 3D weapon consolidation and the Stage 3 integration gate are the next implementation batch; the remainder of Stages 3-6 remains open.
+Plan prepared November 11, 2026 and updated November 13 from the current source, PRD-Addendum.md and SECTION6_PROGRESS_REPORT.md. Stages 1-6, including WeaponBuilder, PBR/vista, combat effects/spatial audio, in-engine cinematics and the controlled integration/render-overhead gate, pass their implementation gates. Release qualification is next. Minimum-hardware frame-time qualification remains open for release.
 
 ## Execution rules
 
@@ -62,7 +62,7 @@ Completed: eight relay assemblies, shared hull/lattice colliders, optional autho
 
 **Checkpoint 3C: passed.** All district loops remain completable; relays are recognizable from approach distance; dishes/plasma/vents animate; vent state is consistent across clients.
 
-### 3D. WeaponBuilder and Stage 3 integration gate
+### 3D. WeaponBuilder and Stage 3 integration gate (complete)
 
 - Promote the existing `createRigFirearm` implementation into the shared client weapon builder used by equipment sockets and dropped weapons.
 - Add weapon-specific receiver, barrel/shroud, optic, magazine, muzzle brake and charge-strip variants with a consistent muzzle emitter socket.
@@ -106,4 +106,4 @@ Execute only after Stages 3-5 pass and the script, character designs and world v
 
 ## Recommended next work order
 
-Continue with Stage 3D weapon consolidation: establish a fresh build/test baseline, promote createRigFirearm into WeaponBuilder, and use it for hand sockets and dropped/disarmed weapons. Preserve the existing combat timing, hit reactions, counters, disarms and progression. Verify receiver/barrel/optic/magazine variants, muzzle anchors and socket orientation across locomotion, aim, melee and paired counters. Then run the full Stage 3 integration gate across architecture, vehicles, relays and weapons, including browser/resource/performance checks. No Stage 4-6 work should begin until that gate passes.
+Run release qualification against the completed Stage 1-6 implementation. Keep the scripted three-act route separate from an uncoached full playthrough. Recruit five unfamiliar players for the opening district, run an eight-player 30-minute network/persistence session, and record frame times on declared minimum hardware. Check native tab/minimize and pointer-lock behavior in target browsers. Complete final bespoke character/boss art, recorded sound and Mixamo locomotion/reaction refinements as appropriate. Validate the hosted build, storage/backup/rollback and full three-act playthrough before a production release. Preserve the existing gameplay and all checked-in stage evidence.

@@ -1,0 +1,675 @@
+{
+  "checkedAt": "2026-11-12T14:42:15.618Z",
+  "source": "https://www.mixamo.com/",
+  "base": "Y Bot.fbx",
+  "sources": [
+    {
+      "file": "Y Bot.fbx",
+      "sha256": "ba45e7b1003712fdaa62b286cf978f81c6ed7dbd10c95de53e879b4d2aea2cb7",
+      "bytes": 1982369,
+      "role": "skinned-base",
+      "bakedFps": 30
+    },
+    {
+      "file": "armada to esquiva.fbx",
+      "sha256": "4b25229419f8f3c013ad718839c837fc6702a8d895b2228d452c22d86dbdaf5d",
+      "bytes": 693137,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "armada.fbx",
+      "sha256": "60a2bdb6b3d8e67edc31069dc753566aa9d39f5de60d20aebc841df6cd76af1e",
+      "bytes": 443441,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "au to role.fbx",
+      "sha256": "4875fa16bfd5700537674f3a0f13d6409232cc138cc17aa61b5159e07e104c84",
+      "bytes": 689905,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "au.fbx",
+      "sha256": "08f3a329c1dac5ae25464df511026754739bd1aeab0a8bfd13fa04d665e24fcb",
+      "bytes": 572817,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "bencao.fbx",
+      "sha256": "bddee6e869991d0dc24f455ea9f1ebfb0d7e6bb9d72e686a8e3988323dc2aa17",
+      "bytes": 418929,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "capoeira (2).fbx",
+      "sha256": "4674a6f4b20723cc8d42b1830b20ad54868d784c491e78a5193306cbb0d76c35",
+      "bytes": 1693921,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "capoeira (3).fbx",
+      "sha256": "30e1ae3c5fc59c745f9805fce620d11a9f1f2a5b9a8f0ae76978e7a4cd0d8a13",
+      "bytes": 715841,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "capoeira.fbx",
+      "sha256": "4b4d28e3b8b493b9ce8d17f81760790abb0727e149ab774585e02d3d7d314778",
+      "bytes": 634209,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "chapa 2.fbx",
+      "sha256": "f30e1b35a6c61bd37875dbe6458f826779799960dd3884aeef90ecc1833f11ee",
+      "bytes": 415105,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "chapa giratoria 2.fbx",
+      "sha256": "9d5f75fb3b5eb7da380d592bc40440c387617d3e2a8e608a53e2fff2f115fb0c",
+      "bytes": 520881,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "chapa-giratoria.fbx",
+      "sha256": "61f6af189419b50db81da2e98f847752dfb98acb5c0b139a0fbb53b1a3b99bce",
+      "bytes": 581169,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "chapaeu de couro.fbx",
+      "sha256": "b4aef20ca2541bb98dc08c6d0dfb3823f333f6c64535d5dd8ad87f4314096377",
+      "bytes": 632017,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "esquiva 1.fbx",
+      "sha256": "ad7ff009533ee722c3e9507cb5bafbefc70b2333dd6715d7ef9aa94c1375b9dd",
+      "bytes": 694897,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "esquiva 2.fbx",
+      "sha256": "cd5daf68e95c29abc31dc399355f8fd8963b8929df70b8731a966a97a02c6851",
+      "bytes": 509649,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "esquiva 3.fbx",
+      "sha256": "39dcd0bd32bc711c6ad3f2aaffd5428ab4e932023602491d7289794babd500ff",
+      "bytes": 490561,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "esquiva 4.fbx",
+      "sha256": "c0f7d2bfa2c1439be85dbec49eb86e7735555972fe2c3953d1108b5bf4f4852e",
+      "bytes": 552849,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "esquiva 5.fbx",
+      "sha256": "2be51b02d6b47bcb83a72137e1ee75f207d87c049a98006c079307b4ef5e087a",
+      "bytes": 489089,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "ginga backward.fbx",
+      "sha256": "3164e92d5a35acafc6f7d9fc12afeabc36fe7b41fe8ea68a0a75094dbfaaa056",
+      "bytes": 392465,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "ginga forward.fbx",
+      "sha256": "e1604abc580deeb244dc00db633ee2dca26260db2f573138c120cb814fcfdf64",
+      "bytes": 399985,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "ginga sideways 1.fbx",
+      "sha256": "4d9e7a6f895b01731e92b606de834614fcadee774692c441f4b189407ab6a7e1",
+      "bytes": 447217,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "ginga sideways 2.fbx",
+      "sha256": "a8d3fb946d48212c40e974b5ce6ba03eb81f605122bbc9f8c4c55f3ee1920ea8",
+      "bytes": 503809,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "ginga sideways to au.fbx",
+      "sha256": "fe08678c7d2bbf9809e8bade0ac4b1ffd308d30bd1ac722c840b22b2c279916b",
+      "bytes": 653521,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "ginga variation 1.fbx",
+      "sha256": "7288dd864c91f862cc0b0e3107906c4ef9fd5982635e7ced0576c1ab5f85013c",
+      "bytes": 637009,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "ginga variation 2.fbx",
+      "sha256": "d5323d4f30cc8772fd4288ad88a94e78a5ffb08c6156f265a03b3d425c5058dc",
+      "bytes": 671937,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "ginga variation 3.fbx",
+      "sha256": "aa216642ccfcfb0e5edb044bfc6f51a02fc3277edfc6adc3ee50df75ea61df91",
+      "bytes": 567313,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "macaco side.fbx",
+      "sha256": "c3638f101e3d4ad023af146438c46b4098df64f3379c863d8456284718883b68",
+      "bytes": 619745,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "martelo 2.fbx",
+      "sha256": "c1b521e808f09b9a16f532054dada67ecfd2ec85335bd592c68ec6fe1b03a245",
+      "bytes": 409457,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "martelo 3.fbx",
+      "sha256": "0d73c2251efd118c957362612213df38b7b6dd87903f9ec61eafbc294a9c9b83",
+      "bytes": 477425,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "martelo do chau sem mao.fbx",
+      "sha256": "18acadfdd1b0145d46782bf02ffa18795bbbab643cccc96a8b3aa600d89140d2",
+      "bytes": 597489,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "martelo do chau.fbx",
+      "sha256": "d0f49e5c468dd84214e46dde6e4adb5593c72d0e6d17dfcf20e77093c86c96b1",
+      "bytes": 582145,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "meia lua de compasso back.fbx",
+      "sha256": "6c852baa18fe49e45905897e57590907448989f5258608d21624521e2b259a3d",
+      "bytes": 507697,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "meia lua de compasso.fbx",
+      "sha256": "f4e31aed4302db916bd486023db8aeccb1fda145fdcc19e1bd8ebd862370e59e",
+      "bytes": 453121,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "meia lua de frente.fbx",
+      "sha256": "1be0fe4b70495f89ed6ab3c3a406f9b9d007bbf085aef7deac08ca353836e7e1",
+      "bytes": 536033,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "pontera.fbx",
+      "sha256": "8913cb6c837810cb3b4ca32a24a076fabc29fd109ceaacb0bb7620d56a5fd8c3",
+      "bytes": 410673,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "queshada 1.fbx",
+      "sha256": "0692961b2323842a6c5757a766fd0455b97cb27c4ae4a2a158ab2efbae3e9151",
+      "bytes": 547329,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "queshada 2.fbx",
+      "sha256": "a578f20c71d3327bb32540400cbe742e891025bdbb3f287641e62735d60779ff",
+      "bytes": 485025,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "rasteira 1.fbx",
+      "sha256": "4c4f2bdb42fb8af246854a8a533dfaf539192670c7c5dd71de76593a391e24af",
+      "bytes": 467489,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "rasteira 2.fbx",
+      "sha256": "aa615f974644b51ebded3f65f48a3612945a8a756e949129cca9e21ac3791d2a",
+      "bytes": 524577,
+      "role": "motion",
+      "bakedFps": 30
+    },
+    {
+      "file": "troca 1.fbx",
+      "sha256": "28be732c585da91caa7ba9d3f0dc91517a5feb1e8b74c5f799576448ed9be67a",
+      "bytes": 691809,
+      "role": "motion",
+      "bakedFps": 30
+    }
+  ],
+  "clips": [
+    {
+      "name": "armada to esquiva",
+      "channels": 53,
+      "duration": 4.0333333015441895
+    },
+    {
+      "name": "armada",
+      "channels": 53,
+      "duration": 1.600000023841858
+    },
+    {
+      "name": "au to role",
+      "channels": 53,
+      "duration": 4
+    },
+    {
+      "name": "au",
+      "channels": 53,
+      "duration": 2.9000000953674316
+    },
+    {
+      "name": "bencao",
+      "channels": 53,
+      "duration": 1.3666666746139526
+    },
+    {
+      "name": "capoeira (2)",
+      "channels": 53,
+      "duration": 17.700000762939453
+    },
+    {
+      "name": "capoeira (3)",
+      "channels": 53,
+      "duration": 4.800000190734863
+    },
+    {
+      "name": "capoeira",
+      "channels": 53,
+      "duration": 3.433333396911621
+    },
+    {
+      "name": "chapa 2",
+      "channels": 53,
+      "duration": 1.2333333492279053
+    },
+    {
+      "name": "chapa giratoria 2",
+      "channels": 53,
+      "duration": 2.366666555404663
+    },
+    {
+      "name": "chapa-giratoria",
+      "channels": 53,
+      "duration": 3
+    },
+    {
+      "name": "chapaeu de couro",
+      "channels": 53,
+      "duration": 3.433333396911621
+    },
+    {
+      "name": "esquiva 1",
+      "channels": 53,
+      "duration": 4.599999904632568
+    },
+    {
+      "name": "esquiva 2",
+      "channels": 53,
+      "duration": 2.2333333492279053
+    },
+    {
+      "name": "esquiva 3",
+      "channels": 53,
+      "duration": 2.1666667461395264
+    },
+    {
+      "name": "esquiva 4",
+      "channels": 53,
+      "duration": 2.799999952316284
+    },
+    {
+      "name": "esquiva 5",
+      "channels": 53,
+      "duration": 2.1666667461395264
+    },
+    {
+      "name": "ginga backward",
+      "channels": 53,
+      "duration": 1.1333333253860474
+    },
+    {
+      "name": "ginga forward",
+      "channels": 53,
+      "duration": 1.2333333492279053
+    },
+    {
+      "name": "ginga sideways 1",
+      "channels": 53,
+      "duration": 1.600000023841858
+    },
+    {
+      "name": "ginga sideways 2",
+      "channels": 53,
+      "duration": 2.133333444595337
+    },
+    {
+      "name": "ginga sideways to au",
+      "channels": 53,
+      "duration": 3.7666666507720947
+    },
+    {
+      "name": "ginga variation 1",
+      "channels": 53,
+      "duration": 3.5333333015441895
+    },
+    {
+      "name": "ginga variation 2",
+      "channels": 53,
+      "duration": 3.8333332538604736
+    },
+    {
+      "name": "ginga variation 3",
+      "channels": 53,
+      "duration": 2.866666555404663
+    },
+    {
+      "name": "macaco side",
+      "channels": 53,
+      "duration": 3.2666666507720947
+    },
+    {
+      "name": "martelo 2",
+      "channels": 53,
+      "duration": 1.2999999523162842
+    },
+    {
+      "name": "martelo 3",
+      "channels": 53,
+      "duration": 1.9666666984558105
+    },
+    {
+      "name": "martelo do chau sem mao",
+      "channels": 53,
+      "duration": 3.066666603088379
+    },
+    {
+      "name": "martelo do chau",
+      "channels": 53,
+      "duration": 3
+    },
+    {
+      "name": "meia lua de compasso back",
+      "channels": 53,
+      "duration": 2.200000047683716
+    },
+    {
+      "name": "meia lua de compasso",
+      "channels": 53,
+      "duration": 1.600000023841858
+    },
+    {
+      "name": "meia lua de frente",
+      "channels": 53,
+      "duration": 2.4666666984558105
+    },
+    {
+      "name": "pontera",
+      "channels": 53,
+      "duration": 1.2666666507720947
+    },
+    {
+      "name": "queshada 1",
+      "channels": 53,
+      "duration": 2.566666603088379
+    },
+    {
+      "name": "queshada 2",
+      "channels": 53,
+      "duration": 2
+    },
+    {
+      "name": "rasteira 1",
+      "channels": 53,
+      "duration": 1.8666666746139526
+    },
+    {
+      "name": "rasteira 2",
+      "channels": 53,
+      "duration": 2.433333396911621
+    },
+    {
+      "name": "troca 1",
+      "channels": 53,
+      "duration": 5.166666507720947
+    }
+  ],
+  "validation": {
+    "numErrors": 0,
+    "numWarnings": 2,
+    "numInfos": 1,
+    "numHints": 0,
+    "messages": [
+      {
+        "code": "NODE_SKINNED_MESH_NON_ROOT",
+        "message": "Node with a skinned mesh is not root. Parent transforms will not affect a skinned mesh.",
+        "severity": 1,
+        "pointer": "/nodes/53"
+      },
+      {
+        "code": "NODE_SKINNED_MESH_NON_ROOT",
+        "message": "Node with a skinned mesh is not root. Parent transforms will not affect a skinned mesh.",
+        "severity": 1,
+        "pointer": "/nodes/54"
+      },
+      {
+        "code": "UNUSED_OBJECT",
+        "message": "This object may be unused.",
+        "severity": 2,
+        "pointer": "/accessors/680"
+      }
+    ],
+    "truncated": false
+  },
+  "conversionWarnings": [
+    {
+      "file": "Y Bot.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips/mixamorig:Spine uses unsupported transform inheritance type 'eInheritRrs'\r\n     This tool will attempt to partially compensate, but glTF cannot truly express this mode.\r\n     If this was a Maya export, consider turning off 'Segment Scale Compensate' on all joints.\r\n     (Further warnings of this type squelched.)\r\nAnimation Take 001: [4294967295 - 4294967295]\r\nAnimation mixamo.com: [0 - 1]\r\nWarning: animation 'Take 001' has zero channels. Skipping.\r\nWrote 2348605 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\0.glb."
+    },
+    {
+      "file": "armada to esquiva.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 121]\r\nWrote 133905 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\1.glb."
+    },
+    {
+      "file": "armada.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 48]\r\nWrote 71885 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\2.glb."
+    },
+    {
+      "file": "au to role.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 120]\r\nWrote 133045 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\3.glb."
+    },
+    {
+      "file": "au.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 87]\r\nWrote 105017 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\4.glb."
+    },
+    {
+      "file": "bencao.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 41]\r\nWrote 65945 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\5.glb."
+    },
+    {
+      "file": "capoeira (2).fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 531]\r\nWrote 481633 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\6.glb."
+    },
+    {
+      "file": "capoeira (3).fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 144]\r\nWrote 153417 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\7.glb."
+    },
+    {
+      "file": "capoeira.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 103]\r\nWrote 118637 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\8.glb."
+    },
+    {
+      "file": "chapa 2.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 37]\r\nWrote 62553 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\9.glb."
+    },
+    {
+      "file": "chapa giratoria 2.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 71]\r\nWrote 91445 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\10.glb."
+    },
+    {
+      "file": "chapa-giratoria.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 90]\r\nWrote 107549 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\11.glb."
+    },
+    {
+      "file": "chapaeu de couro.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 103]\r\nWrote 118637 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\12.glb."
+    },
+    {
+      "file": "esquiva 1.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 138]\r\nWrote 148329 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\13.glb."
+    },
+    {
+      "file": "esquiva 2.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 67]\r\nWrote 88053 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\14.glb."
+    },
+    {
+      "file": "esquiva 3.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 65]\r\nWrote 86357 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\15.glb."
+    },
+    {
+      "file": "esquiva 4.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 84]\r\nWrote 102473 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\16.glb."
+    },
+    {
+      "file": "esquiva 5.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 65]\r\nWrote 86357 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\17.glb."
+    },
+    {
+      "file": "ginga backward.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 34]\r\nWrote 60009 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\18.glb."
+    },
+    {
+      "file": "ginga forward.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 37]\r\nWrote 62553 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\19.glb."
+    },
+    {
+      "file": "ginga sideways 1.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 48]\r\nWrote 71885 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\20.glb."
+    },
+    {
+      "file": "ginga sideways 2.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 64]\r\nWrote 85509 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\21.glb."
+    },
+    {
+      "file": "ginga sideways to au.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 113]\r\nWrote 127121 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\22.glb."
+    },
+    {
+      "file": "ginga variation 1.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 106]\r\nWrote 121185 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\23.glb."
+    },
+    {
+      "file": "ginga variation 2.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 115]\r\nWrote 128817 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\24.glb."
+    },
+    {
+      "file": "ginga variation 3.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 86]\r\nWrote 104169 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\25.glb."
+    },
+    {
+      "file": "macaco side.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 98]\r\nWrote 114345 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\26.glb."
+    },
+    {
+      "file": "martelo 2.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 39]\r\nWrote 64249 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\27.glb."
+    },
+    {
+      "file": "martelo 3.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 59]\r\nWrote 81213 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\28.glb."
+    },
+    {
+      "file": "martelo do chau sem mao.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 92]\r\nWrote 109257 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\29.glb."
+    },
+    {
+      "file": "martelo do chau.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 90]\r\nWrote 107549 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\30.glb."
+    },
+    {
+      "file": "meia lua de compasso back.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 66]\r\nWrote 87205 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\31.glb."
+    },
+    {
+      "file": "meia lua de compasso.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 48]\r\nWrote 71885 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\32.glb."
+    },
+    {
+      "file": "meia lua de frente.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 74]\r\nWrote 93989 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\33.glb."
+    },
+    {
+      "file": "pontera.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 38]\r\nWrote 63401 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\34.glb."
+    },
+    {
+      "file": "queshada 1.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 77]\r\nWrote 96533 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\35.glb."
+    },
+    {
+      "file": "queshada 2.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 60]\r\nWrote 82049 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\36.glb."
+    },
+    {
+      "file": "rasteira 1.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 56]\r\nWrote 78669 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\37.glb."
+    },
+    {
+      "file": "rasteira 2.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 73]\r\nWrote 93141 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\38.glb."
+    },
+    {
+      "file": "troca 1.fbx",
+      "log": "Warning: node /RootNode/mixamorig:Hips uses unsupported transform inheritance type 'eInheritRrSs'.\r\n         (Further warnings of this type squelched.)\r\nAnimation mixamo.com: [0 - 155]\r\nWrote 162749 bytes of binary glTF to C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\.cache\\prod-assets\\capoeira\\converted\\39.glb."
+    }
+  ],
+  "bytes": 5642328,
+  "sha256": "ca7f9e617d3f75796132add53515ffc30c7d3a3f592f00cf44f6fb8bfc061e98"
+}

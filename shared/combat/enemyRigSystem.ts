@@ -1,3 +1,4 @@
+import { EffectKind, effectSpec, type EffectSpec } from '../protocol/presentationProtocol.js';
 /**
  * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
  * Shared 3D Skeletal Enemy Rig, 6 Bone-Attached Physics Colliders (REQ-BODYPARTS),
@@ -24,6 +25,7 @@ import { AgentPhysicsBody, RAPIER } from '../physics/characterController.js';
 import { EnemyBinarySnapshotState, quatFromYaw, Vec3 } from '../protocol/binaryProtocol.js';
 import { AgentAnimState } from '../constants.js';
 import { createCombatPresentation, EnemyArchetype, HitReaction, WARDEN_RIG_SCALE, type CombatPresentation, type DroppedWeaponState } from './combatPresentation.js';
+import { weaponForStyle, WEAPON_PROFILES, type WeaponVariant } from './weaponPresentation.js';
 
 export interface LimbRuntimeState {
   limbId: EnemyLimbId;
@@ -97,6 +99,7 @@ export interface VatsLimbEvaluation {
 }
 
 export interface CombatEventResult {
+  shotOrigin?: Vec3; impactNormal?: Vec3; surfaceHit?: boolean;
   type:
     | 'WEAPON_HIT'
     | 'WEAPON_MISS'
@@ -205,18 +208,19 @@ export function computeBoneWorldPosition(
  * V.A.T.S. Occlusion Raycasts, Motion-Warped Melee, and Q Counter-Parry Shockwaves.
  */
 export class EnemyCombatManager {
+  public onEffect: ((event: EffectSpec) => void) | null = null;
   public readonly weaponObstacleProbes = new Map<string, (agent: AgentPhysicsBody, origin: Vec3, direction: Vec3, maxDistance: number) => { distance: number; resolve: () => CombatEventResult } | null>();
   public weaponObstacleResolver: ((agent: AgentPhysicsBody, origin: Vec3, direction: Vec3, maxDistance: number) => CombatEventResult | null) | null = null;
   public extraSolidCollider: ((collider: RAPIER.Collider) => boolean) | null = null;
   private elapsed = 0;
   private nextDropId = 1;
-  private readonly drops = new Map<number, { body: RAPIER.RigidBody; life: number }>();
+  private readonly drops = new Map<number, { body: RAPIER.RigidBody; life: number; variant: WeaponVariant; scale: number }>();
   private readonly pairs = new Map<number, { agent: AgentPhysicsBody; enemy: EnemyPhysicsEntity; player: Vec3; target: Vec3; yaw: number; remaining: number }>();
   private readonly combos = new Map<number, { ready: number; step: number }>();
 
   public getPresentationStates(): CombatPresentation[] { return [...this.enemies.values()].map(e => e.presentation); }
   public getDroppedWeaponStates(): DroppedWeaponState[] {
-    return [...this.drops].map(([id, d]) => ({ id, position: { ...d.body.translation() }, rotation: { ...d.body.rotation() } }));
+    return [...this.drops].map(([id, d]) => ({ id, position: { ...d.body.translation() }, rotation: { ...d.body.rotation() }, variant: d.variant, scale: d.scale }));
   }
   public isPaired(agent: AgentPhysicsBody): boolean { return this.pairs.has(agent.entityId); }
   public releaseAgent(entityId: number): void {
@@ -241,11 +245,14 @@ export class EnemyCombatManager {
     const arm = enemy.limbs[EnemyLimbId.RIGHT_ARM].worldPosition;
     const scale = enemy.presentation.archetype === EnemyArchetype.SECTOR_WARDEN ? WARDEN_RIG_SCALE : 1;
     const hand = { x: arm.x, y: arm.y - 0.28 * scale, z: arm.z };
-    const body = this.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(hand.x, hand.y, hand.z).setCcdEnabled(true));
-    this.world.createCollider(RAPIER.ColliderDesc.cuboid(0.07, 0.09, 0.3).setMass(3).setRestitution(0.25), body);
+    const variant = weaponForStyle(enemy.presentation.archetype), profile = WEAPON_PROFILES[variant];
+    const body = this.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(hand.x, hand.y, hand.z).setRotation(quatFromYaw(enemy.yaw)).setCcdEnabled(true));
+    const rear = 0.13 + profile.stock / 2;
+    this.world.createCollider(RAPIER.ColliderDesc.cuboid(profile.width * 0.6 * scale, 0.24 * scale, (rear - profile.muzzleZ) / 2 * scale)
+      .setTranslation(0, 0, (rear + profile.muzzleZ) / 2 * scale).setMass(3).setRestitution(0.25), body);
     body.setLinvel({ x: enemy.presentation.direction.x * 4, y: 4.5, z: enemy.presentation.direction.z * 4 }, true);
     body.setAngvel({ x: 3, y: 7, z: 4 }, true);
-    this.drops.set(this.nextDropId++, { body, life: 12 });
+    this.drops.set(this.nextDropId++, { body, life: 12, variant, scale });
   }
   /** All damage paths enter here; AI movement is suspended while the physical impulse resolves. */
   public reactToHit(enemy: EnemyPhysicsEntity, origin: Vec3, heavy = false, reaction = HitReaction.FLINCH): void {
@@ -290,6 +297,9 @@ export class EnemyCombatManager {
       const travel = hit ? Math.max(0, hit.time_of_impact - 0.025) : speed * dt;
       enemy.position.x += direction.x * travel; enemy.position.z += direction.z * travel;
       if (hit && speed > 8 && Math.abs(hit.normal1.y) < 0.6 && r.reaction !== HitReaction.WALL_SPLAT) {
+        const origin={x:enemy.position.x,y:enemy.position.y+.96,z:enemy.position.z};
+        const contact=hit.collider.castRayAndGetNormal(new RAPIER.Ray(origin,direction),2,true);
+        if(contact)this.onEffect?.(effectSpec(EffectKind.WALL,{x:origin.x+direction.x*contact.timeOfImpact,y:origin.y,z:origin.z+direction.z*contact.timeOfImpact},{actor:enemy.lastAttacker?.entityId??0,target:enemy.enemyId,normal:contact.normal}));
         r.reaction = HitReaction.WALL_SPLAT; r.timer = 1.8; r.impulse = { x: 0, y: 0, z: 0 };
         enemy.hp = Math.max(0, enemy.hp - 35); enemy.staggerTimer = Math.max(enemy.staggerTimer, 1.8);
         if (enemy.hp <= 0 && enemy.combatState !== EnemyCombatState.DEAD) {
@@ -812,6 +822,7 @@ export class EnemyCombatManager {
               const effectiveDmg = enemy.armsCrippledTimer > 0 ? rawDmg * 0.5 : rawDmg;
               const damage = effectiveDmg * (1 - nearestAgent.buildModifiers.incomingDamageReduction);
               nearestAgent.hp = Math.max(0, nearestAgent.hp - damage);
+              this.onEffect?.(effectSpec(EffectKind.HIT, { ...nearestAgent.position, y: nearestAgent.position.y + 1 }, { actor: enemy.enemyId, target: nearestAgent.entityId }));
               if (nearestAgent.hp === 0) {
                 nearestAgent.telemetry.agentDowns = (nearestAgent.telemetry.agentDowns || 0) + 1;
               }
@@ -1014,7 +1025,7 @@ export class EnemyCombatManager {
     const ray = new RAPIER.Ray(shooterOrigin, rayDir);
 
     // 1. Check solid environment cover distance first
-    const envHit = this.world.castRay(
+    const envHit = this.world.castRayAndGetNormal(
       ray,
       effectiveLockOnRange,
       true,
@@ -1028,6 +1039,7 @@ export class EnemyCombatManager {
     let hitEnemy: EnemyPhysicsEntity | null = null;
     let hitLimbId: EnemyLimbId = targetedLimbId;
     let bestToi = maxUnblockedToi;
+    let impactToi = bestToi, impactNormal = envHit?.normal ?? { x: -rayDir.x, y: -rayDir.y, z: -rayDir.z };
 
     this.world.intersectionsWithRay(
       ray,
@@ -1044,7 +1056,7 @@ export class EnemyCombatManager {
               ? intersection.timeOfImpact - 0.15
               : intersection.timeOfImpact;
             if (effectiveToi < bestToi) {
-              bestToi = effectiveToi;
+              bestToi = effectiveToi; impactToi = intersection.timeOfImpact; impactNormal = intersection.normal;
               hitEnemy = e;
               hitLimbId = match.limbId;
             }
@@ -1059,12 +1071,15 @@ export class EnemyCombatManager {
       const hit = probe(agent, shooterOrigin, rayDir, Math.max(0, bestToi));
       if (hit && (!nearest || hit.distance < nearest.distance)) nearest = hit;
     }
-    if (nearest) return nearest.resolve();
+    const decorate = (event: CombatEventResult, hit = true) => {
+      event.shotOrigin = { ...shooterOrigin }; event.impactNormal = { ...impactNormal }; event.surfaceHit = hit; return event;
+    };
+    if (nearest) return decorate(nearest.resolve());
     const obstacle = this.weaponObstacleResolver?.(agent, shooterOrigin, rayDir, Math.max(0, bestToi));
-    if (obstacle) return obstacle;
+    if (obstacle) return decorate(obstacle);
     if (!hitEnemy) {
       return {
-        type: 'WEAPON_MISS',
+        type: 'WEAPON_MISS', shotOrigin: { ...shooterOrigin }, impactNormal: { ...impactNormal }, surfaceHit: !!envHit,
         attackerEntityId: agent.entityId,
         targetEnemyId: 0,
         damageDealt: 0,
@@ -1083,7 +1098,9 @@ export class EnemyCombatManager {
 
     const resolvedEnemy = hitEnemy as EnemyPhysicsEntity;
     const weaponDmg = WEAPON_BASE_DAMAGE * (agent.buildModifiers?.weaponDamageMultiplier ?? 1.0);
-    return this.applyLimbDamage(agent, resolvedEnemy, hitLimbId, weaponDmg);
+    const event = this.applyLimbDamage(agent, resolvedEnemy, hitLimbId, weaponDmg);
+    event.impactPoint = { x: shooterOrigin.x + rayDir.x * impactToi, y: shooterOrigin.y + rayDir.y * impactToi, z: shooterOrigin.z + rayDir.z * impactToi };
+    return decorate(event);
   }
 
   /**

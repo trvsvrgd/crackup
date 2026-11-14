@@ -1,7 +1,10 @@
+import { COUNTER_CONTACT_SEC, PAIRED_DURATION_SEC } from '../../shared/protocol/presentationProtocol.js';
 import * as THREE from 'three';
 import { AgentAnimState } from '../../shared/constants.js';
 import { HitReaction, EnemyArchetype, type CombatPresentation } from '../../shared/combat/combatPresentation.js';
 import { HumanoidRig, JOINT_LAYOUT, type JointName } from './humanoidRig.js';
+import { createMotionSample, getMixamoMotion } from './mixamoMotion.js';
+import { productionAssets } from '../assets/productionAssets.js';
 
 export type SkeletalState = 'IdleBreathing' | 'DrivingSeated' | 'Walk' | 'TacticalSprint' | 'AirborneRise' | 'AirborneApex' | 'FallLoop' | 'HardLandingRoll' | 'LedgeHang' | 'LedgeMantleClimb' | 'AirDash' | 'MeleeCombo1_Jab' | 'MeleeCombo2_Cross' | 'MeleeCombo3_SpinningKick' | 'AirborneGroundSlam' | 'DropToKneeStagger' | 'WeaponDropRecoil' | 'WallSplatStun' | 'PairedCounter' | 'CounterVictim' | 'KnockbackTumble' | 'BlindStagger' | 'Windup';
 export interface AnimationInput {
@@ -24,6 +27,14 @@ export class SkeletalAnimator {
   private pose = newPose();
   private from = newPose();
   private previousVertical = 0;
+  private readonly motionSample = createMotionSample();
+  private readonly blendedMotion = createMotionSample();
+  private readonly previousMotion = createMotionSample();
+  private motionWeight = 0;
+  private previousMotionWeight = 0;
+  private readonly handWorld = new THREE.Quaternion();
+  private readonly aimWorld = new THREE.Quaternion();
+  public activeMotion: string | null = null;
   constructor(public readonly rig: HumanoidRig) {}
   private choose(input: AnimationInput): SkeletalState {
     const r = input.reaction;
@@ -63,15 +74,46 @@ export class SkeletalAnimator {
         this.pose[n].set(THREE.MathUtils.lerp(this.from[n].x, target[n].x, t), THREE.MathUtils.lerp(this.from[n].y, target[n].y, t), THREE.MathUtils.lerp(this.from[n].z, target[n].z, t));
       }
       this.previousVertical = input.verticalSpeed;
+      this.previousMotionWeight = this.motionWeight;
+      for (const n of Object.keys(JOINT_LAYOUT) as JointName[]) this.previousMotion.rotations[n].copy(this.blendedMotion.rotations[n]);
+      this.previousMotion.pelvisY = this.blendedMotion.pelvisY;
+      const motion = this.state === 'MeleeCombo3_SpinningKick' ? getMixamoMotion(productionAssets.characters.get('capoeira_ybot'), 'armada') : null;
+      this.activeMotion = motion?.name ?? null;
+      this.motionWeight = THREE.MathUtils.clamp(this.motionWeight + (motion ? 1 : -1) / (60 * 0.07), 0, 1);
+      if (motion) {
+        // Preserve the existing 0.28-second presentation window and authoritative damage cadence.
+        // This source take starts with ginga footwork. Use its actual kick/recovery
+        // interval, rather than compressing the whole 1.6s take into a single hit.
+        motion.sample(THREE.MathUtils.lerp(1.05, Math.min(1.5, motion.duration), Math.min(1, this.age / 0.28)), this.motionSample);
+        for (const n of Object.keys(JOINT_LAYOUT) as JointName[]) this.blendedMotion.rotations[n].copy(this.motionSample.rotations[n]);
+        this.blendedMotion.pelvisY = this.motionSample.pelvisY;
+      }
     }
     // Interpolate fixed-step poses for displays faster than 60 Hz.
     const alpha = Math.max(0, this.accumulator * 60);
     for (const n of Object.keys(JOINT_LAYOUT) as JointName[]) {
       const a = new THREE.Quaternion().setFromEuler(this.previous[n]), b = new THREE.Quaternion().setFromEuler(this.pose[n]);
       this.rig.bones[n].quaternion.copy(a.slerp(b, alpha));
+      const weight = THREE.MathUtils.lerp(this.previousMotionWeight, this.motionWeight, alpha);
+      if (weight > 0) {
+        a.copy(this.previousMotion.rotations[n]).slerp(this.blendedMotion.rotations[n], alpha);
+        this.rig.bones[n].quaternion.slerp(a, weight);
+      }
     }
     const down = ['DropToKneeStagger', 'WallSplatStun', 'CounterVictim'].includes(this.state) ? 0.37 : 0;
     this.rig.bones.Pelvis.position.y = (this.state === 'DrivingSeated' ? 0.30 : 0.94) - down + Math.sin(this.phase * 2.4) * 0.01;
+    this.rig.bones.Pelvis.position.y = THREE.MathUtils.lerp(this.rig.bones.Pelvis.position.y,
+      THREE.MathUtils.lerp(this.previousMotion.pelvisY, this.blendedMotion.pelvisY, alpha), THREE.MathUtils.lerp(this.previousMotionWeight, this.motionWeight, alpha));
+    this.rig.weapon.rotation.set(-Math.PI / 2, 0, 0);
+    // The palm remains attached in every pose; aim aligns the barrel to the agent's forward/pitch.
+    const aim = THREE.MathUtils.clamp(input.aim ?? 0, 0, 1);
+    if (aim > 0 && !this.state.startsWith('Melee') && this.state !== 'PairedCounter' && this.state !== 'CounterVictim') {
+      this.rig.root.updateWorldMatrix(true, true);
+      this.rig.bones.RightHand.getWorldQuaternion(this.handWorld).invert();
+      this.rig.root.getWorldQuaternion(this.aimWorld);
+      this.aimWorld.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), input.aimPitch ?? 0));
+      this.rig.weapon.quaternion.slerp(this.handWorld.multiply(this.aimWorld), aim);
+    }
     this.rig.weapon.visible = this.state !== 'DrivingSeated' && !input.reaction?.weaponDropped;
     const flash = (input.reaction?.flashSec ?? 0) > 0;
     this.rig.materials.armor.emissive.setHex(flash ? 0xffffff : 0);
@@ -112,15 +154,16 @@ export class SkeletalAnimator {
     if (this.state === 'Windup') { p.Chest.x = -0.2; p.RightUpperArm.x = -2.1; p.RightForearm.x = -1.2; p.Spine.y = 0.3; }
     if (this.state === 'WallSplatStun') { p.Chest.x = 0.8; p.Head.x = 0.45; p.LeftCalf.x = p.RightCalf.x = 1.2; p.LeftUpperArm.z = 0.5; p.RightUpperArm.z = -0.5; }
     if (this.state === 'PairedCounter' || this.state === 'CounterVictim') {
-      const t = Math.min(1, (input.pairedElapsed ?? input.reaction?.pairedElapsed ?? this.age) / 0.65), deflect = Math.sin(t * Math.PI), slam = Math.max(0, (t - 0.45) / 0.55);
-      if (this.state === 'PairedCounter') { p.LeftUpperArm.x = -1.5 * deflect; p.RightUpperArm.x = -1.8 * slam; p.Spine.y = -0.7 * deflect; p.RightThigh.x = -0.7 * slam; }
+      const elapsed = input.pairedElapsed ?? input.reaction?.pairedElapsed ?? this.age, t = Math.min(1, elapsed / PAIRED_DURATION_SEC), deflect = Math.sin(t * Math.PI), slam = Math.max(0, Math.min(1, (elapsed - .16) / (COUNTER_CONTACT_SEC - .16)));
+      if (this.state === 'PairedCounter') { p.LeftUpperArm.x = -1.5 * deflect; p.RightUpperArm.x = 1.6 * slam; p.RightForearm.x = .5 * slam; p.Spine.y = -0.7 * deflect; p.RightThigh.x = -0.7 * slam; }
       else { p.RightUpperArm.z = -1.8 * deflect; p.Chest.x = slam * 1.3; p.Head.x = slam * 0.6; p.LeftCalf.x = p.RightCalf.x = slam * 1.8; }
     }
     // Upper body aim and recoil are layered without replacing leg locomotion.
     const aim = input.aim ?? 0;
     p.Spine.y += aim * -0.15; p.Chest.x += aim * (input.aimPitch ?? 0);
-    p.RightUpperArm.x += aim * -1.25; p.LeftUpperArm.x += aim * -0.95;
-    p.RightForearm.x += aim * -0.45; p.Chest.x -= (input.recoil ?? 0) * 0.18;
+    // +X raises the downward-pointing arm toward game-forward (-Z).
+    p.RightUpperArm.x = THREE.MathUtils.lerp(p.RightUpperArm.x, 1.05, aim); p.LeftUpperArm.x = THREE.MathUtils.lerp(p.LeftUpperArm.x, 1.1, aim);
+    p.RightForearm.x = THREE.MathUtils.lerp(p.RightForearm.x, 0.5, aim); p.Chest.x -= (input.recoil ?? 0) * 0.18;
     const r = input.reaction;
     if (r && r.flinchSec > 0) {
       const force = Math.sin(Math.min(1, r.flinchSec / 0.18) * Math.PI) * 0.4;

@@ -1,3 +1,1731 @@
+// shared/narrative/storyBible.ts
+var CHARACTERS = {
+  vance: {
+    name: "Director Julian Vance",
+    role: "Aegis Directorate",
+    faction: "aegis",
+    color: "#42caff",
+    appearance: "Silver swept hair, narrow jaw, white ceramic collar, cobalt neural temple implants.",
+    motivation: "Convert citizens into a distributed neural processor while presenting control as public safety.",
+    arc: ["Paternal mission commander", "Conceals the relay harvest", "Activates the kill-switch and retreats to the Dreadnought"],
+    voiceHz: 108
+  },
+  sera: {
+    name: "Handler Sera Lin",
+    role: "Squad Comms Officer",
+    faction: "aegis",
+    color: "#86dcff",
+    appearance: "Asymmetric dark fringe, angular comms headset, cobalt uniform, copper emergency patch lead.",
+    motivation: "Protect her squad; loyalty shifts from the Directorate to the people it exploits.",
+    arc: ["Trusts Aegis dispatch", "Confirms the cover-up and forges telemetry", "Risks her life transmitting the override"],
+    voiceHz: 218
+  },
+  voss: {
+    name: "Dr. Kaelen Voss",
+    role: "Resistance Architect",
+    faction: "resistance",
+    color: "#50efad",
+    appearance: "Shaved scalp, round optic lenses, carbon field coat, exposed copper implant wiring.",
+    motivation: "Free the dissident minds trapped in the implants he designed.",
+    arc: ["Branded a terrorist", "Reveals the minds inside Agility Orbs", "Builds the Protocol Eclipse Override"],
+    voiceHz: 152
+  }
+};
+var CINEMATIC_LINES = {
+  arrival: { id: "cinema-arrival", speaker: "sera", text: "Squad link stable. Neon Docks is ahead. Follow the relay signal." },
+  lieutenant: { id: "cinema-lieutenant", speaker: "sera", text: "Lieutenant on the field. Watch for the counter window." },
+  kingpin: { id: "cinema-kingpin", speaker: "sera", text: "The kingpin holds the core. Break their guard." },
+  dreadnought: { id: "cinema-dreadnought", speaker: "sera", text: "Break the engines. Expose the core. End the Dreadnought." }
+};
+var STORY_BEATS = [
+  { id: "deployment", act: 1, title: "Welcome to Neo-Veridia", entry: "mandate", trigger: (c2) => c2.deployed, nodes: [
+    { id: "mandate", speaker: "vance", text: "Agents. Neo-Veridia is a city under siege. Voss has poisoned its relays. You are the cure.", next: "dispatch" },
+    {
+      id: "dispatch",
+      speaker: "sera",
+      text: "Squad link stable. Start in the Docks and Foundry. Hack both terminals, remove the lieutenant, then reach the core.",
+      choices: [{ label: "Who is Voss?", next: "target" }, { label: "Understood. Moving.", next: "move" }]
+    },
+    { id: "target", speaker: "vance", text: "A gifted architect who mistook doubt for conscience. Do not give his broadcasts an audience.", next: "move" },
+    { id: "move", speaker: "sera", text: "Keep moving. Comms stay live while you work. Amber windup means a counter opportunity: press Q." }
+  ] },
+  {
+    id: "mandate",
+    act: 1,
+    title: "Restoring Order",
+    requires: "deployment",
+    entry: "order",
+    trigger: (c2) => c2.districtIndex <= 1 && c2.vigilanteLevel <= 2 && c2.relaySabotage,
+    nodes: [
+      { id: "order", speaker: "vance", text: "Every relay you disable returns a district to lawful service. Precision is compassion, Agent.", next: "anomaly" },
+      { id: "anomaly", speaker: "sera", text: "Odd. The outage report is listing patient identifiers instead of power loss. I will check it." }
+    ]
+  },
+  {
+    id: "evidence",
+    act: 2,
+    title: "A Human Signal",
+    requires: "deployment",
+    entry: "breach",
+    trigger: (c2) => c2.whisperOrbs >= 3 || c2.nonLethalBounties >= 2,
+    nodes: [
+      { id: "breach", speaker: "voss", text: "You spared witnesses. Or perhaps you listened to the whispers. Either way, you have heard what Aegis deletes.", next: "choice" },
+      { id: "choice", speaker: "sera", text: "Unauthorized signal. Wait... those signatures match the missing citizens.", choices: [
+        { label: "Show us the source.", next: "source" },
+        { label: "Why trust you?", next: "guilt" }
+      ] },
+      { id: "guilt", speaker: "voss", text: "I designed your implants. My guilt is not evidence. The relay telemetry is. Read it yourself.", next: "source" },
+      { id: "source", speaker: "voss", text: "Reach a relay core. I can expose its live feed there. Keep this channel beneath your mission carrier." }
+    ]
+  },
+  {
+    id: "revelation",
+    act: 2,
+    title: "The Dampeners",
+    requires: "evidence",
+    entry: "truth",
+    trigger: (c2) => c2.relaySabotage,
+    nodes: [
+      { id: "truth", speaker: "voss", text: "There. Not a terrorist transmitter: an Aegis neural dampener. Those spikes are people. Your Agility Orbs are harvested dissident minds.", next: "confirm" },
+      { id: "confirm", speaker: "sera", text: "I checked the raw telemetry against hospital records. He is right. Vance signed the harvest orders.", next: "fake" },
+      { id: "fake", speaker: "sera", text: "I will forge your mission returns. Vance sees loyal Agents; we see the route into the Citadel.", next: "rescue" },
+      { id: "rescue", speaker: "voss", text: "Then help me turn the prison into a door. Save the source nodes. We will need them for Eclipse." }
+    ]
+  },
+  {
+    id: "killswitch",
+    act: 3,
+    title: "Revocation",
+    requires: "revelation",
+    entry: "revoke",
+    trigger: (c2) => c2.citadelLoopStage >= 3,
+    nodes: [
+      { id: "revoke", speaker: "vance", text: "Sera. I read the silence between your reports. Agents, your autonomy was a revocable privilege. Neural termination authorized.", next: "hold" },
+      { id: "hold", speaker: "sera", text: "Stay with me! I have severed dispatch. Kaelen, send it now.", next: "override" },
+      { id: "override", speaker: "voss", text: "Protocol Eclipse Override uploading. Your thoughts belong to you. So does what you choose next.", next: "free" },
+      { id: "free", speaker: "sera", text: "Kill-switch neutralized. Storm the Plaza. Break the engines, expose the core, and end Vance's Dreadnought." }
+    ]
+  },
+  {
+    id: "dawn",
+    act: 3,
+    title: "A City Unbound",
+    requires: "killswitch",
+    entry: "silence",
+    trigger: (c2) => c2.bossDefeated,
+    nodes: [
+      { id: "silence", speaker: "sera", text: "Dreadnought down. The city channels are opening. Listen: no commands. Just people.", next: "after" },
+      { id: "after", speaker: "voss", text: "We cannot return every stolen moment. We can make sure the next one belongs to them." }
+    ]
+  }
+];
+var WHISPER_TRANSCRIPTS = [
+  "My name is Imani. If the light remembers me, tell my son I reached the seawall.",
+  "The clinic called it civic service. No one explained why the doors locked from outside.",
+  "I can hear the relay counting. Those are heartbeats, not packets.",
+  "Voss argued with the Director. The next morning his office was sealed.",
+  "They call the blue lights agility. I remember calling one of them my sister.",
+  "Sera Lin requested the missing persons ledger. Someone still asks questions.",
+  "The Foundry shift never clocked out. We woke inside the grid.",
+  "If an Agent listens, the implant opens a narrow channel. Please keep listening.",
+  "Aegis can stop a heart from dispatch. The authorization key is in the Citadel.",
+  "Eclipse is not a weapon. It is the permission to say no.",
+  "The engines shield his reactor. Even a tyrant is afraid of falling.",
+  "When the signal clears, leave the channel open. We want to hear the bay again."
+];
+var StoryDirector = class {
+  completed = /* @__PURE__ */ new Set();
+  choices = [];
+  beat = null;
+  node = null;
+  snapshot() {
+    return {
+      completed: [...this.completed],
+      active: this.beat && this.node ? { beat: this.beat.id, node: this.node.id } : null,
+      choices: this.choices.map((c2) => ({ ...c2 }))
+    };
+  }
+  restore(saved) {
+    this.completed.clear();
+    saved.completed.forEach((id) => this.completed.add(id));
+    this.choices = saved.choices.map((c2) => ({ ...c2 }));
+    this.beat = STORY_BEATS.find((b2) => b2.id === saved.active?.beat) ?? null;
+    this.node = this.beat?.nodes.find((n3) => n3.id === saved.active?.node) ?? null;
+  }
+  update(context) {
+    if (this.node) return this.node;
+    const currentAct = Math.max(1, ...STORY_BEATS.filter((b2) => this.completed.has(b2.id)).map((b2) => b2.act));
+    this.beat = STORY_BEATS.find((b2) => b2.act >= currentAct && !this.completed.has(b2.id) && (!b2.requires || this.completed.has(b2.requires)) && b2.trigger(context)) ?? null;
+    this.node = this.beat?.nodes.find((n3) => n3.id === this.beat.entry) ?? null;
+    return this.node;
+  }
+  advance(choice = 0) {
+    if (!this.node || !this.beat) return;
+    if (this.node.choices) {
+      if (!this.node.choices[choice]) return;
+      this.choices = this.choices.filter((c2) => c2.beat !== this.beat.id || c2.node !== this.node.id);
+      this.choices.push({ beat: this.beat.id, node: this.node.id, index: choice });
+    }
+    const next = this.node.choices?.[choice]?.next ?? this.node.next;
+    if (next) this.node = this.beat.nodes.find((n3) => n3.id === next) ?? null;
+    else {
+      this.completed.add(this.beat.id);
+      this.node = null;
+      this.beat = null;
+    }
+  }
+};
+
+// shared/constants.ts
+var FIXED_TIMESTEP = 1 / 60;
+var FIXED_TIMESTEP_MS = 1e3 / 60;
+var SNAPSHOT_HZ = 30;
+var SNAPSHOT_INTERVAL_MS = 1e3 / SNAPSHOT_HZ;
+var PREDICTION_BUFFER_SIZE = 128;
+var INTERPOLATION_DELAY_MS = 100;
+var WORLD_GRAVITY = { x: 0, y: -24, z: 0 };
+var TERMINAL_VELOCITY = -55;
+var CITY_HALF_EXTENT = 600;
+var TOTAL_AGILITY_ORBS = 150;
+var TOTAL_RENEGADE_ORBS = 20;
+var TOTAL_WHISPER_ORBS = 12;
+var TOTAL_ORBS = TOTAL_AGILITY_ORBS + TOTAL_RENEGADE_ORBS + TOTAL_WHISPER_ORBS;
+var CAPSULE_RADIUS = 0.4;
+var CAPSULE_HALF_HEIGHT = 0.55;
+var CAPSULE_TOTAL_HEIGHT = CAPSULE_HALF_HEIGHT * 2 + CAPSULE_RADIUS * 2;
+var CAPSULE_CENTER_OFFSET_Y = CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS;
+var CONTROLLER_MAX_STEP_HEIGHT = 0.45;
+var CONTROLLER_MIN_STEP_WIDTH = 0.2;
+var CONTROLLER_MAX_SLOPE_CLIMB_ANGLE = 50 * Math.PI / 180;
+var CONTROLLER_MIN_SLOPE_SLIDE_ANGLE = 52 * Math.PI / 180;
+var CONTROLLER_SNAP_TO_GROUND_DIST = 0.3;
+var CONTROLLER_AUTOSLIDE_OFFSET = 0.02;
+var MANTLE_CHEST_RAY_Y = 1.3;
+var MANTLE_HEAD_RAY_Y = 2.1;
+var MANTLE_DURATION_SEC = 0.35;
+var CAMERA_SHOULDER_OFFSET = { x: 0.45, y: 1.65, z: 0 };
+var CAMERA_PITCH_MIN_RAD = -75 * Math.PI / 180;
+var CAMERA_PITCH_MAX_RAD = 80 * Math.PI / 180;
+var CAMERA_ARM_DEFAULT = 4.5;
+var CAMERA_ARM_AIM = 2.2;
+var CAMERA_ARM_SPRINT_MAX = 7.5;
+var CAMERA_WHISKER_MARGIN = 0.2;
+var CAMERA_WHISKER_SPHERE_RADIUS = 0.22;
+var AIR_DASH_SPEED = 22;
+var AIR_DASH_DURATION_SEC = 0.22;
+var INPUT_FLAG_JUMP = 1 << 0;
+var INPUT_FLAG_DASH = 1 << 1;
+var INPUT_FLAG_MANTLE = 1 << 2;
+var INPUT_FLAG_SPRINT = 1 << 3;
+var INPUT_FLAG_AIM = 1 << 4;
+var INPUT_FLAG_FIRE = 1 << 5;
+var INPUT_FLAG_MELEE = 1 << 6;
+var INPUT_FLAG_PARRY = 1 << 7;
+var INPUT_LIMB_SHIFT = 8;
+var INPUT_LIMB_MASK = 7;
+var INPUT_FLAG_GRAPPLE = 1 << 11;
+var INPUT_FLAG_GRAB_THROW = 1 << 12;
+var INPUT_FLAG_VEHICLE_INTERACT = 1 << 13;
+var INPUT_FLAG_RELIC_REWIND = 1 << 14;
+var INPUT_FLAG_OBJECTIVE_JETPACK = 1 << 15;
+var OMEGA_BOUNTY_DURATION_SEC = 90;
+var DISTRICT_OBJECTIVE_INTERACT_RADIUS_M = 4.2;
+var SKYBOX_ARENA_BASE_Y = 400;
+var PET_ORBIT_RADIUS_M = 2.6;
+var PET_SEPARATION_RADIUS_M = 2.2;
+var PET_NEIGHBOR_RADIUS_M = 6;
+var PET_TELEPORT_LEASH_M = 40;
+var PET_DERBY_LAPS = 2;
+var PET_DERBY_LOBBY_SEC = 8;
+var PET_DERBY_COUNTDOWN_SEC = 5;
+var PET_DERBY_MAX_RACE_SEC = 150;
+var PET_DERBY_RESULTS_SEC = 10;
+var PET_CLASH_LOBBY_SEC = 8;
+var PET_CLASH_COUNTDOWN_SEC = 3;
+var PET_CLASH_MAX_FIGHT_SEC = 90;
+var PET_CLASH_RESULTS_SEC = 8;
+var DreadnoughtPartId = /* @__PURE__ */ ((DreadnoughtPartId2) => {
+  DreadnoughtPartId2[DreadnoughtPartId2["CORE_REACTOR"] = 0] = "CORE_REACTOR";
+  DreadnoughtPartId2[DreadnoughtPartId2["ENGINE_FL"] = 1] = "ENGINE_FL";
+  DreadnoughtPartId2[DreadnoughtPartId2["ENGINE_FR"] = 2] = "ENGINE_FR";
+  DreadnoughtPartId2[DreadnoughtPartId2["ENGINE_RL"] = 3] = "ENGINE_RL";
+  DreadnoughtPartId2[DreadnoughtPartId2["ENGINE_RR"] = 4] = "ENGINE_RR";
+  DreadnoughtPartId2[DreadnoughtPartId2["FLAK_TURRET_PORT"] = 5] = "FLAK_TURRET_PORT";
+  DreadnoughtPartId2[DreadnoughtPartId2["FLAK_TURRET_STARBOARD"] = 6] = "FLAK_TURRET_STARBOARD";
+  return DreadnoughtPartId2;
+})(DreadnoughtPartId || {});
+var DREADNOUGHT_ORBIT_CENTER = { x: -90, z: -90 };
+var DREADNOUGHT_ORBIT_RADIUS_M = 70;
+var DREADNOUGHT_BASE_ALTITUDE_M = 150;
+var DREADNOUGHT_WEAPON_RANGE_M = 220;
+var DREADNOUGHT_RESPAWN_SEC = 300;
+var GRAPPLE_MAX_RANGE_M = 45;
+var GRAPPLE_MIN_LENGTH_M = 2.2;
+var GRAPPLE_REEL_SPEED_MPS = 16;
+var GRAPPLE_TENSION_ACCEL_MPS2 = 28;
+var VEHICLE_WHEEL_REST_LENGTH_M = 0.65;
+var VEHICLE_WHEEL_RADIUS_M = 0.38;
+var VEHICLE_INTERACT_RANGE_M = 4.5;
+var VEHICLE_WALL_THRUSTER_IMPULSE_Y = 14;
+var PROP_PICKUP_RANGE_M = 4;
+var CHRONO_REWIND_SECONDS = 3;
+var CHRONO_REWIND_TICKS = Math.round(CHRONO_REWIND_SECONDS / FIXED_TIMESTEP);
+function packTargetLimbIntoButtons(buttons, limbId) {
+  return buttons & ~(INPUT_LIMB_MASK << INPUT_LIMB_SHIFT) | (limbId & INPUT_LIMB_MASK) << INPUT_LIMB_SHIFT;
+}
+function unpackTargetLimbFromButtons(buttons) {
+  const raw = buttons >> INPUT_LIMB_SHIFT & INPUT_LIMB_MASK;
+  return raw <= 5 ? raw : 1 /* TORSO */;
+}
+var LIMB_COLLIDER_SPECS = {
+  [0 /* HEAD */]: {
+    name: "HEAD",
+    shape: "sphere",
+    radius: 0.18,
+    // Sphere r = 0.18m
+    halfHeight: 0,
+    damageMultiplier: 2.2,
+    // 2.2x Crit multiplier
+    staggerDurationSec: 4,
+    // 4.0s Blind/Stagger interrupting windup
+    localOffset: { x: 0, y: 1.68, z: 0 }
+  },
+  [1 /* TORSO */]: {
+    name: "TORSO",
+    shape: "capsule",
+    radius: 0.28,
+    // Capsule r = 0.28m, h = 0.55m
+    halfHeight: 0.275,
+    damageMultiplier: 1,
+    // 1.0x Base damage
+    armorStripMultiplier: 1.3,
+    // Strips ablative armor plating 30% faster
+    localOffset: { x: 0, y: 1.18, z: 0 }
+  },
+  [2 /* LEFT_ARM */]: {
+    name: "LEFT_ARM",
+    shape: "capsule",
+    radius: 0.12,
+    // Capsule r = 0.12m, h = 0.45m
+    halfHeight: 0.225,
+    damageMultiplier: 0.85,
+    // 0.85x damage
+    crippleDurationSec: 8,
+    // Disables heavy weapon & reduces outgoing damage by 50% for 8.0s
+    localOffset: { x: -0.34, y: 1.18, z: 0 }
+  },
+  [3 /* RIGHT_ARM */]: {
+    name: "RIGHT_ARM",
+    shape: "capsule",
+    radius: 0.12,
+    // Capsule r = 0.12m, h = 0.45m
+    halfHeight: 0.225,
+    damageMultiplier: 0.85,
+    crippleDurationSec: 8,
+    localOffset: { x: 0.34, y: 1.18, z: 0 }
+  },
+  [4 /* LEFT_LEG */]: {
+    name: "LEFT_LEG",
+    shape: "capsule",
+    radius: 0.15,
+    // Capsule r = 0.15m, h = 0.60m
+    halfHeight: 0.3,
+    damageMultiplier: 0.85,
+    // 0.85x damage
+    crippleDurationSec: 8,
+    // Reduces max steering velocity by 70% for 8.0s & grounds airborne targets
+    localOffset: { x: -0.15, y: 0.45, z: 0 }
+  },
+  [5 /* RIGHT_LEG */]: {
+    name: "RIGHT_LEG",
+    shape: "capsule",
+    radius: 0.15,
+    halfHeight: 0.3,
+    damageMultiplier: 0.85,
+    crippleDurationSec: 8,
+    localOffset: { x: 0.15, y: 0.45, z: 0 }
+  }
+};
+var MELEE_ENGAGE_RANGE_M = 4.5;
+var MELEE_WARP_SPEED_MPS = 18;
+var MELEE_STRIKE_CONNECT_DIST_M = 1.65;
+var PARRY_SHOCKWAVE_RADIUS_M = 6;
+var WEAPON_BASE_DAMAGE = 42;
+var EnemyCombatState = /* @__PURE__ */ ((EnemyCombatState2) => {
+  EnemyCombatState2[EnemyCombatState2["IDLE"] = 0] = "IDLE";
+  EnemyCombatState2[EnemyCombatState2["CHASE"] = 1] = "CHASE";
+  EnemyCombatState2[EnemyCombatState2["WINDUP"] = 2] = "WINDUP";
+  EnemyCombatState2[EnemyCombatState2["ACTIVE_SWEEP"] = 3] = "ACTIVE_SWEEP";
+  EnemyCombatState2[EnemyCombatState2["RECOVERY"] = 4] = "RECOVERY";
+  EnemyCombatState2[EnemyCombatState2["STAGGER_BLIND"] = 5] = "STAGGER_BLIND";
+  EnemyCombatState2[EnemyCombatState2["COUNTER_STANCE"] = 6] = "COUNTER_STANCE";
+  EnemyCombatState2[EnemyCombatState2["DEAD"] = 7] = "DEAD";
+  return EnemyCombatState2;
+})(EnemyCombatState || {});
+var AgentAnimState = /* @__PURE__ */ ((AgentAnimState2) => {
+  AgentAnimState2[AgentAnimState2["IDLE"] = 0] = "IDLE";
+  AgentAnimState2[AgentAnimState2["RUN"] = 1] = "RUN";
+  AgentAnimState2[AgentAnimState2["SPRINT"] = 2] = "SPRINT";
+  AgentAnimState2[AgentAnimState2["JUMP_ASCEND"] = 3] = "JUMP_ASCEND";
+  AgentAnimState2[AgentAnimState2["FALL"] = 4] = "FALL";
+  AgentAnimState2[AgentAnimState2["AIR_DASH"] = 5] = "AIR_DASH";
+  AgentAnimState2[AgentAnimState2["MANTLE_VAULT"] = 6] = "MANTLE_VAULT";
+  AgentAnimState2[AgentAnimState2["MELEE_STRIKE"] = 7] = "MELEE_STRIKE";
+  AgentAnimState2[AgentAnimState2["PARRY_TAKEDOWN"] = 8] = "PARRY_TAKEDOWN";
+  AgentAnimState2[AgentAnimState2["GRAPPLE_SWING"] = 9] = "GRAPPLE_SWING";
+  AgentAnimState2[AgentAnimState2["DRIVING_VEHICLE"] = 10] = "DRIVING_VEHICLE";
+  AgentAnimState2[AgentAnimState2["CARRYING_PROP"] = 11] = "CARRYING_PROP";
+  AgentAnimState2[AgentAnimState2["CHRONO_REWIND"] = 12] = "CHRONO_REWIND";
+  AgentAnimState2[AgentAnimState2["JETPACK_FLIGHT"] = 13] = "JETPACK_FLIGHT";
+  AgentAnimState2[AgentAnimState2["GROUND_SLAM"] = 14] = "GROUND_SLAM";
+  return AgentAnimState2;
+})(AgentAnimState || {});
+var DEFAULT_ATTRIBUTES = {
+  agility: 1,
+  strength: 1,
+  driving: 1,
+  shooting: 1,
+  explosives: 1,
+  flying: 1,
+  vigilante: 1
+};
+var DEFAULT_TELEMETRY = {
+  totalDistanceMeters: 0,
+  mantlesCompleted: 0,
+  jumpsExecuted: 0,
+  airDashesExecuted: 0,
+  peakElevationMeters: 0,
+  playTimeSeconds: 0,
+  agilityOrbsCollected: 0,
+  renegadeOrbsCollected: 0,
+  whisperOrbsCollected: 0
+};
+var ATTRIBUTE_XP_THRESHOLDS = [0, 100, 250, 500, 900];
+function computeAttributeLevelFromXP(xp) {
+  if (!Number.isFinite(xp) || xp < ATTRIBUTE_XP_THRESHOLDS[1]) return 1;
+  if (xp >= ATTRIBUTE_XP_THRESHOLDS[4]) return 5;
+  if (xp >= ATTRIBUTE_XP_THRESHOLDS[3]) return 4;
+  if (xp >= ATTRIBUTE_XP_THRESHOLDS[2]) return 3;
+  return 2;
+}
+function clampAttributeLevel(level) {
+  if (!Number.isFinite(level)) return 1;
+  return Math.max(1, Math.min(5, level));
+}
+function getAgilityParams(agilityLevel) {
+  const lv = clampAttributeLevel(agilityLevel);
+  const t3 = (lv - 1) / 4;
+  const runSpeed = 8 + t3 * (16.5 - 8);
+  const sprintMultiplier = 1.28;
+  const jumpApexMeters = 3.2 + t3 * (14.5 - 3.2);
+  const ascentGravityMultiplier = 1 - t3 * 0.32;
+  const effectiveAscentGravity = Math.abs(WORLD_GRAVITY.y) * ascentGravityMultiplier;
+  const jumpImpulseVelocity = Math.sqrt(2 * effectiveAscentGravity * jumpApexMeters);
+  const maxAirDashes = Math.round(1 + t3 * 2);
+  const ledgeGrabReach = 0.8 + t3 * (1.8 - 0.8);
+  return {
+    level: lv,
+    runSpeed,
+    sprintSpeed: runSpeed * sprintMultiplier,
+    jumpApexMeters,
+    ascentGravityMultiplier,
+    jumpImpulseVelocity,
+    maxAirDashes,
+    ledgeGrabReach
+  };
+}
+function getStrengthParams(strengthLevel) {
+  const lv = clampAttributeLevel(strengthLevel);
+  const t3 = (lv - 1) / 4;
+  return {
+    level: lv,
+    meleeBaseDamage: 35 + t3 * (140 - 35),
+    // 35 -> 140 dmg
+    maxHp: Math.round(200 + t3 * (600 - 200)),
+    // 200 -> 600 HP
+    throwMassLimitKg: 150 + t3 * (4e3 - 150)
+    // 150 kg -> 4000 kg
+  };
+}
+function getDrivingParams(drivingLevel) {
+  const lv = clampAttributeLevel(drivingLevel);
+  const t3 = (lv - 1) / 4;
+  return {
+    level: lv,
+    topSpeedMps: 28 + t3 * (55 - 28),
+    // 28 m/s -> 55 m/s
+    chassisMassKg: 1400 + t3 * (3200 - 1400),
+    // 1400 kg -> 3200 kg
+    springStiffness: 42 + t3 * (78 - 42),
+    // Suspension spring stiffness (N/m normalized)
+    damping: 6.5 + t3 * (12.5 - 6.5),
+    // Suspension velocity damping
+    lateralTireFriction: 8.5 + t3 * (18 - 8.5),
+    // Lateral grip / anti-drift coefficient
+    unlockWallThrusterHop: lv >= 4
+  };
+}
+function getShootingParams(shootingLevel) {
+  const lv = clampAttributeLevel(shootingLevel);
+  const t3 = (lv - 1) / 4;
+  return {
+    level: lv,
+    spreadConeDeg: 4.2 - t3 * (4.2 - 0.4),
+    // 4.2 deg -> 0.4 deg
+    lockOnRangeMeters: 40 + t3 * (110 - 40)
+    // 40m -> 110m
+  };
+}
+function getExplosivesParams(explosivesLevel) {
+  const lv = clampAttributeLevel(explosivesLevel);
+  const t3 = (lv - 1) / 4;
+  return {
+    level: lv,
+    blastRadiusMeters: 4.5 + t3 * (12 - 4.5),
+    // 4.5m -> 12.0m
+    impulseNs: 18 + t3 * (65 - 18)
+    // 18 N*s -> 65 N*s
+  };
+}
+function getFlyingParams(flyingLevel) {
+  const lv = clampAttributeLevel(flyingLevel);
+  const t3 = (lv - 1) / 4;
+  return {
+    level: lv,
+    jetpackFuelSeconds: 3 + t3 * (12 - 3),
+    // 3.0s -> 12.0s
+    maxUpwardAccelMps2: 12 + t3 * (28 - 12),
+    // 12 m/s^2 -> 28 m/s^2
+    diveBombRadiusMeters: 15
+  };
+}
+function getVigilanteParams(vigilanteLevel) {
+  const lv = clampAttributeLevel(vigilanteLevel);
+  const t3 = (lv - 1) / 4;
+  return {
+    level: lv,
+    auraRadiusMeters: 15 + t3 * (45 - 15),
+    // 15m -> 45m
+    counterWindowMs: 220 + t3 * (420 - 220)
+    // 220ms -> 420ms
+  };
+}
+function getDistrictForPosition(x2, z2) {
+  if (z2 >= 0) {
+    return x2 < 0 ? "NEON_DOCKS" /* NEON_DOCKS */ : "FOUNDRY_SLUMS" /* FOUNDRY_SLUMS */;
+  } else {
+    return x2 >= 0 ? "HELIOS_SPIRE" /* HELIOS_SPIRE */ : "AEGIS_CITADEL" /* AEGIS_CITADEL */;
+  }
+}
+
+// shared/progression/skillTreeSystem.ts
+function earnedSkillPoints(xp) {
+  return Object.values(xp).reduce((sum, value) => sum + computeAttributeLevelFromXP(value) - 1, 0);
+}
+function availableSkillPoints(xp, unlocked) {
+  const spent = new Set(Array.from(unlocked).filter((id) => SKILL_NODE_BY_ID.has(id))).size;
+  return Math.max(0, earnedSkillPoints(xp) - spent);
+}
+function skillUnlockError(id, xp, unlocked) {
+  const node = SKILL_NODE_BY_ID.get(id);
+  if (!node) return "Unknown upgrade.";
+  if (unlocked.has(id)) return "Upgrade already installed.";
+  if (availableSkillPoints(xp, unlocked) < 1) return "Earn an attribute level to gain an upgrade point.";
+  const previous = SKILL_TREE_NODES.find((entry) => entry.branch === node.branch && entry.tier === node.tier - 1);
+  if (previous && !unlocked.has(previous.id)) return "Install the previous upgrade in this branch first.";
+  return null;
+}
+var AUGMENT_CHASSIS_CATALOG = {
+  ["TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */]: {
+    id: "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */,
+    name: "Titan Juggernaut Exo-Frame",
+    branchName: "Titan Juggernaut",
+    description: "Heavy kinetic exo-chassis (+15% Max HP, +20% Throw Mass Limit baseline).",
+    accentHex: "#ff9d00"
+  },
+  ["PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */]: {
+    id: "PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */,
+    name: "Phantom Neural Optic Rig",
+    branchName: "Phantom Sharpshooter",
+    description: "Precision V.A.T.S. targeting chassis (-15% Spread Cone, +10m Lock-On Range baseline).",
+    accentHex: "#00f2ff"
+  },
+  ["AERO_VALKYRIE" /* AERO_VALKYRIE */]: {
+    id: "AERO_VALKYRIE" /* AERO_VALKYRIE */,
+    name: "Aero-Valkyrie Thruster Harness",
+    branchName: "Aero-Valkyrie",
+    description: "High-altitude parkour & grapple harness (+10m Grapple Range, +10% Air-Dash Speed baseline).",
+    accentHex: "#38ef7d"
+  },
+  ["DEMOLITION_SAVANT" /* DEMOLITION_SAVANT */]: {
+    id: "DEMOLITION_SAVANT" /* DEMOLITION_SAVANT */,
+    name: "Demolition Ordnance Rig",
+    branchName: "Demolition Savant",
+    description: "Thermobaric ordnance chassis (+15% Blast Radius & Impulse baseline).",
+    accentHex: "#ff2a6d"
+  },
+  ["PACK_VANGUARD" /* PACK_VANGUARD */]: {
+    id: "PACK_VANGUARD" /* PACK_VANGUARD */,
+    name: "Pack Vanguard Command Core",
+    branchName: "Pack Vanguard",
+    description: "Co-op interceptor & counter-parry chassis (+10% Vehicle Top Speed, +60ms Parry Window baseline).",
+    accentHex: "#b56bff"
+  }
+};
+var SKILL_TREE_NODES = [
+  // Branch 1: Titan Juggernaut (4 nodes)
+  {
+    id: "titan_1_kinetic_plating",
+    branch: "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */,
+    tier: 1,
+    name: "Ablative Kinetic Plating",
+    description: "+25% Max HP and -15% incoming melee & ballistic damage."
+  },
+  {
+    id: "titan_2_hydraulic_grip",
+    branch: "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */,
+    tier: 2,
+    name: "Hydraulic Servo Grip",
+    description: "+35% Throw Mass Limit (kg) and +20% thrown 3D prop launch velocity."
+  },
+  {
+    id: "titan_3_seismic_slam",
+    branch: "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */,
+    tier: 3,
+    name: "Seismic Parry Overdrive",
+    description: "Expands Q Counter-Parry radial shockwave radius by +2.5m (to 8.5m) and +30% parry damage."
+  },
+  {
+    id: "titan_4_unstoppable_momentum",
+    branch: "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */,
+    tier: 4,
+    name: "Unstoppable Root-Motion",
+    description: "Extends motion-warped melee range by +1.7m (to 6.2m) and pierces 50% of Elite Counter-Stance shields."
+  },
+  // Branch 2: Phantom Sharpshooter (4 nodes)
+  {
+    id: "phantom_1_neural_stabilizer",
+    branch: "PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */,
+    tier: 1,
+    name: "Neural Recoil Stabilizer",
+    description: "Reduces 3D weapon spread cone by 30% and adds +12% V.A.T.S. limb hit probability."
+  },
+  {
+    id: "phantom_2_hyper_velocity_rounds",
+    branch: "PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */,
+    tier: 2,
+    name: "Hyper-Velocity Sabot",
+    description: "Boosts Headshot Crit multiplier by +0.45x (to 2.65x) and extends lock-on range by +15m."
+  },
+  {
+    id: "phantom_3_tendon_sever",
+    branch: "PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */,
+    tier: 3,
+    name: "Sub-Collider Tendon Sever",
+    description: "Extends Arm & Leg cripple duration from 8.0s to 12.0s and deals +25% limb damage."
+  },
+  {
+    id: "phantom_4_phase_ricochet",
+    branch: "PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */,
+    tier: 4,
+    name: "Phase-Core Shatter",
+    description: "Torso shots strip ablative armor +30% faster (1.6x total) and crippling any limb restores 1 Air-Dash."
+  },
+  // Branch 3: Aero-Valkyrie (4 nodes)
+  {
+    id: "aero_1_grapnel_overdrive",
+    branch: "AERO_VALKYRIE" /* AERO_VALKYRIE */,
+    tier: 1,
+    name: "High-Tension Grapnel Winch",
+    description: "Extends 3D Grapple-Hook range by +15m (to 60m) and increases reel-in tension speed by +30%."
+  },
+  {
+    id: "aero_2_slipstream_capacitors",
+    branch: "AERO_VALKYRIE" /* AERO_VALKYRIE */,
+    tier: 2,
+    name: "Slipstream Thruster Capacitors",
+    description: "Grants +1 bonus mid-air dash and +15% horizontal air-dash burst velocity."
+  },
+  {
+    id: "aero_3_vector_wingsuit",
+    branch: "AERO_VALKYRIE" /* AERO_VALKYRIE */,
+    tier: 3,
+    name: "Vector-Lift Foil Membrane",
+    description: "Reduces airborne descent gravity by 25% and increases ledge-mantle reach by +0.4m."
+  },
+  {
+    id: "aero_4_supersonic_divebomb",
+    branch: "AERO_VALKYRIE" /* AERO_VALKYRIE */,
+    tier: 4,
+    name: "Supersonic Dive-Bomb Impact",
+    description: "Ground impact from high vertical descent emits a 15.0m kinetic shockwave damaging enemies."
+  },
+  // Branch 4: Demolition Savant (4 nodes)
+  {
+    id: "demo_1_shaped_charges",
+    branch: "DEMOLITION_SAVANT" /* DEMOLITION_SAVANT */,
+    tier: 1,
+    name: "High-Yield Shaped Charges",
+    description: "Increases 3D spherical explosive blast radius by +25%."
+  },
+  {
+    id: "demo_2_thermobaric_core",
+    branch: "DEMOLITION_SAVANT" /* DEMOLITION_SAVANT */,
+    tier: 2,
+    name: "Thermobaric Impulse Core",
+    description: "Increases 3D radial ragdoll/rigidbody blast impulse (N*s) by +35%."
+  },
+  {
+    id: "demo_3_volatile_scavenger",
+    branch: "DEMOLITION_SAVANT" /* DEMOLITION_SAVANT */,
+    tier: 3,
+    name: "Kinetic Ordnance Fuse",
+    description: "Every thrown 3D physics prop detonates with a concussive 6.0m blast wave on high-speed impact."
+  },
+  {
+    id: "demo_4_chain_detonation",
+    branch: "DEMOLITION_SAVANT" /* DEMOLITION_SAVANT */,
+    tier: 4,
+    name: "Chain Reaction Cascade",
+    description: "Enemies defeated by explosions or thrown props trigger a secondary 5.0m blast wave."
+  },
+  // Branch 5: Pack Vanguard (4 nodes)
+  {
+    id: "vanguard_1_tactical_relay",
+    branch: "PACK_VANGUARD" /* PACK_VANGUARD */,
+    tier: 1,
+    name: "Vigilante Telemetry Relay",
+    description: "Expands 3D spherical co-op Vigilante buff aura radius by +30%."
+  },
+  {
+    id: "vanguard_2_reflex_chronometer",
+    branch: "PACK_VANGUARD" /* PACK_VANGUARD */,
+    tier: 2,
+    name: "Combat Reflex Chronometer",
+    description: "Widens lag-compensated Q Counter-Parry timing window by +120ms."
+  },
+  {
+    id: "vanguard_3_interceptor_overclock",
+    branch: "PACK_VANGUARD" /* PACK_VANGUARD */,
+    tier: 3,
+    name: "Interceptor Suspension Overclock",
+    description: "Increases 4-wheel vehicle top speed by +20% and unlocks Wall-Thruster Hops at Driving Lv 3."
+  },
+  {
+    id: "vanguard_4_nanite_siphon",
+    branch: "PACK_VANGUARD" /* PACK_VANGUARD */,
+    tier: 4,
+    name: "Nanite Triage Siphon",
+    description: "Counter-parries and limb cripples restore +35 HP to the Agent."
+  }
+];
+var SKILL_NODE_BY_ID = new Map(
+  SKILL_TREE_NODES.map((n3) => [n3.id, n3])
+);
+var PROTOTYPE_RELIC_SPECS = [
+  {
+    id: "CHRONO_SHIFT_ANCHOR" /* CHRONO_SHIFT_ANCHOR */,
+    name: "Chrono-Shift Anchor",
+    district: "HELIOS_SPIRE" /* HELIOS_SPIRE */,
+    // Placed on the Central/Helios calibration terrace so players can also reach it during tests/exploration
+    position: { x: 0, y: 7, z: -20 },
+    description: "Experimental temporal phase anchor recovered from Helios Spire. Continuously buffers 3.0 seconds of 3D transform, velocity, and HP state.",
+    activeAbilityDesc: "Press [R] to rewind 3D Position, Velocity, Rotation & HP by 3.0 seconds.",
+    colorHex: 62207
+  },
+  {
+    id: "GRAV_FLUX_CORE" /* GRAV_FLUX_CORE */,
+    name: "Aegis Grav-Flux Core",
+    district: "AEGIS_CITADEL" /* AEGIS_CITADEL */,
+    position: { x: -32, y: 8.5, z: -36 },
+    description: "Zero-point gravimetric stabilizer from Aegis Citadel. Reduces downward gravity by 20% and amplifies Grapple-Hook pendulum swing impulse by +25%.",
+    activeAbilityDesc: "Passive: -20% Gravity & +25% Grapple Pendulum Swing Impulse.",
+    colorHex: 11889663
+  },
+  {
+    id: "HYPERION_COIL" /* HYPERION_COIL */,
+    name: "Hyperion Arc Coil",
+    district: "NEON_DOCKS" /* NEON_DOCKS */,
+    position: { x: -35, y: 0.5, z: 32 },
+    description: "Superconducting magnetic railgun coil from Neon Docks. Boosts V.A.T.S. headshot crit multiplier (+0.3x) and armor-strip efficiency (+25%).",
+    activeAbilityDesc: "Passive: +0.3x Headshot Crit & +25% Armor Strip.",
+    colorHex: 16765286
+  },
+  {
+    id: "TITAN_GYRO" /* TITAN_GYRO */,
+    name: "Foundry Titan Gyroscope",
+    district: "FOUNDRY_SLUMS" /* FOUNDRY_SLUMS */,
+    position: { x: 35, y: 0.5, z: 32 },
+    description: "Heavy industrial inertial gyroscope from Foundry Slums. Increases dynamic 3D object throw mass limit by +1,000 kg and vehicle ramming impulse by +40%.",
+    activeAbilityDesc: "Passive: +1,000 kg Throw Mass Limit & +40% Vehicle Ram Impulse.",
+    colorHex: 16722541
+  }
+];
+function computeAgentBuildModifiers(chassis = "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */, unlockedSkillIds = [], unlockedRelicIds = [], unlockedDistrictRewards = [], activeNeuralDrifts = []) {
+  const skills = new Set(unlockedSkillIds);
+  const relics = new Set(unlockedRelicIds);
+  const loopRewards = new Set(unlockedDistrictRewards);
+  const drifts = new Set(activeNeuralDrifts);
+  const mods = {
+    maxHpMultiplier: 1,
+    incomingDamageReduction: 0,
+    throwMassBonusMultiplier: 1,
+    throwVelocityMultiplier: 1,
+    parryShockwaveRadiusBonusM: 0,
+    parryDamageMultiplier: 1,
+    meleeEngageRangeBonusM: 0,
+    penetrateCounterStanceRatio: 0,
+    spreadConeMultiplier: 1,
+    vatsHitProbBonusPct: 0,
+    headshotCritMultiplierBonus: 0,
+    lockOnRangeBonusM: 0,
+    limbCrippleDurationBonusSec: 0,
+    limbDamageMultiplier: 1,
+    torsoArmorStripBonus: 0,
+    restoreAirDashOnCripple: false,
+    grappleRangeBonusM: 0,
+    grappleReelSpeedMultiplier: 1,
+    bonusAirDashes: 0,
+    airDashSpeedMultiplier: 1,
+    glideGravityMultiplier: 1,
+    mantleReachBonusM: 0,
+    unlockDiveBombShockwave: false,
+    blastRadiusMultiplier: 1,
+    blastImpulseMultiplier: 1,
+    thrownPropConcussiveBlast: false,
+    chainDetonationOnKill: false,
+    vigilanteAuraMultiplier: 1,
+    parryWindowBonusMs: 0,
+    vehicleTopSpeedMultiplier: 1,
+    wallThrusterMinDrivingLevel: 4,
+    siphonHpOnParryOrCripple: 0,
+    chronoRewindUnlocked: relics.has("CHRONO_SHIFT_ANCHOR" /* CHRONO_SHIFT_ANCHOR */),
+    gravityScaleMultiplier: 1,
+    grappleSwingImpulseMultiplier: 1,
+    flatThrowMassBonusKg: 0,
+    vehicleRamImpulseMultiplier: 1,
+    jetpackFuelBonusSec: 0,
+    jetpackAccelMultiplier: 1,
+    weaponDamageMultiplier: 1,
+    vigilanteAuraRadiusBonusM: 0,
+    vigilanteTriageRegenHpPerSec: 0
+  };
+  switch (chassis) {
+    case "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */:
+      mods.maxHpMultiplier += 0.15;
+      mods.throwMassBonusMultiplier += 0.2;
+      break;
+    case "PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */:
+      mods.spreadConeMultiplier *= 0.85;
+      mods.lockOnRangeBonusM += 10;
+      break;
+    case "AERO_VALKYRIE" /* AERO_VALKYRIE */:
+      mods.grappleRangeBonusM += 10;
+      mods.airDashSpeedMultiplier += 0.1;
+      break;
+    case "DEMOLITION_SAVANT" /* DEMOLITION_SAVANT */:
+      mods.blastRadiusMultiplier += 0.15;
+      mods.blastImpulseMultiplier += 0.15;
+      break;
+    case "PACK_VANGUARD" /* PACK_VANGUARD */:
+      mods.vehicleTopSpeedMultiplier += 0.1;
+      mods.parryWindowBonusMs += 60;
+      break;
+  }
+  if (skills.has("titan_1_kinetic_plating")) {
+    mods.maxHpMultiplier += 0.25;
+    mods.incomingDamageReduction += 0.15;
+  }
+  if (skills.has("titan_2_hydraulic_grip")) {
+    mods.throwMassBonusMultiplier += 0.35;
+    mods.throwVelocityMultiplier += 0.2;
+  }
+  if (skills.has("titan_3_seismic_slam")) {
+    mods.parryShockwaveRadiusBonusM += 2.5;
+    mods.parryDamageMultiplier += 0.3;
+  }
+  if (skills.has("titan_4_unstoppable_momentum")) {
+    mods.meleeEngageRangeBonusM += 1.7;
+    mods.penetrateCounterStanceRatio = 0.5;
+  }
+  if (skills.has("phantom_1_neural_stabilizer")) {
+    mods.spreadConeMultiplier *= 0.7;
+    mods.vatsHitProbBonusPct += 12;
+  }
+  if (skills.has("phantom_2_hyper_velocity_rounds")) {
+    mods.headshotCritMultiplierBonus += 0.45;
+    mods.lockOnRangeBonusM += 15;
+  }
+  if (skills.has("phantom_3_tendon_sever")) {
+    mods.limbCrippleDurationBonusSec += 4;
+    mods.limbDamageMultiplier += 0.25;
+  }
+  if (skills.has("phantom_4_phase_ricochet")) {
+    mods.torsoArmorStripBonus += 0.3;
+    mods.restoreAirDashOnCripple = true;
+  }
+  if (skills.has("aero_1_grapnel_overdrive")) {
+    mods.grappleRangeBonusM += 15;
+    mods.grappleReelSpeedMultiplier += 0.3;
+  }
+  if (skills.has("aero_2_slipstream_capacitors")) {
+    mods.bonusAirDashes += 1;
+    mods.airDashSpeedMultiplier += 0.15;
+  }
+  if (skills.has("aero_3_vector_wingsuit")) {
+    mods.glideGravityMultiplier *= 0.75;
+    mods.mantleReachBonusM += 0.4;
+  }
+  if (skills.has("aero_4_supersonic_divebomb")) {
+    mods.unlockDiveBombShockwave = true;
+  }
+  if (skills.has("demo_1_shaped_charges")) {
+    mods.blastRadiusMultiplier += 0.25;
+  }
+  if (skills.has("demo_2_thermobaric_core")) {
+    mods.blastImpulseMultiplier += 0.35;
+  }
+  if (skills.has("demo_3_volatile_scavenger")) {
+    mods.thrownPropConcussiveBlast = true;
+  }
+  if (skills.has("demo_4_chain_detonation")) {
+    mods.chainDetonationOnKill = true;
+  }
+  if (skills.has("vanguard_1_tactical_relay")) {
+    mods.vigilanteAuraMultiplier += 0.3;
+  }
+  if (skills.has("vanguard_2_reflex_chronometer")) {
+    mods.parryWindowBonusMs += 120;
+  }
+  if (skills.has("vanguard_3_interceptor_overclock")) {
+    mods.vehicleTopSpeedMultiplier += 0.2;
+    mods.wallThrusterMinDrivingLevel = 3;
+  }
+  if (skills.has("vanguard_4_nanite_siphon")) {
+    mods.siphonHpOnParryOrCripple += 35;
+  }
+  if (relics.has("GRAV_FLUX_CORE" /* GRAV_FLUX_CORE */)) {
+    mods.gravityScaleMultiplier *= 0.8;
+    mods.grappleSwingImpulseMultiplier += 0.25;
+  }
+  if (relics.has("HYPERION_COIL" /* HYPERION_COIL */)) {
+    mods.headshotCritMultiplierBonus += 0.3;
+    mods.torsoArmorStripBonus += 0.25;
+  }
+  if (relics.has("TITAN_GYRO" /* TITAN_GYRO */)) {
+    mods.flatThrowMassBonusKg += 1e3;
+    mods.vehicleRamImpulseMultiplier += 0.4;
+  }
+  if (loopRewards.has("UNLOCK_GRAPPLE_OVERDRIVE" /* UNLOCK_GRAPPLE_OVERDRIVE */)) {
+    mods.grappleRangeBonusM += 20;
+    mods.grappleReelSpeedMultiplier += 0.35;
+  }
+  if (loopRewards.has("UNLOCK_PLASMA_RAILGUN" /* UNLOCK_PLASMA_RAILGUN */)) {
+    mods.weaponDamageMultiplier *= 1.65;
+    mods.torsoArmorStripBonus += 0.5;
+  }
+  if (loopRewards.has("UNLOCK_GRAV_FLIGHT_OVERDRIVE" /* UNLOCK_GRAV_FLIGHT_OVERDRIVE */)) {
+    mods.jetpackFuelBonusSec += 6;
+    mods.jetpackAccelMultiplier *= 1.4;
+    mods.glideGravityMultiplier *= 0.65;
+  }
+  if (loopRewards.has("UNLOCK_PROTOCOL_ECLIPSE_OVERRIDE" /* UNLOCK_PROTOCOL_ECLIPSE_OVERRIDE */)) {
+    mods.maxHpMultiplier += 0.3;
+    mods.vigilanteAuraRadiusBonusM += 15;
+    mods.penetrateCounterStanceRatio = Math.max(mods.penetrateCounterStanceRatio, 1);
+  }
+  if (drifts.has("PYRO_NEUROSIS" /* PYRO_NEUROSIS */)) {
+    mods.blastRadiusMultiplier += 0.3;
+    mods.blastImpulseMultiplier += 0.35;
+  }
+  if (drifts.has("SURGICAL_COLDNESS" /* SURGICAL_COLDNESS */)) {
+    mods.headshotCritMultiplierBonus += 0.5;
+    mods.limbDamageMultiplier += 0.25;
+    mods.spreadConeMultiplier *= 0.75;
+  }
+  if (drifts.has("HOLLOW_FRAME_ADAPTATION" /* HOLLOW_FRAME_ADAPTATION */)) {
+    mods.gravityScaleMultiplier *= 0.75;
+    mods.jetpackFuelBonusSec += 3;
+    mods.airDashSpeedMultiplier += 0.15;
+  }
+  if (drifts.has("GHOST_CONSCIENCE" /* GHOST_CONSCIENCE */)) {
+    mods.vigilanteAuraRadiusBonusM += 15;
+    mods.vigilanteTriageRegenHpPerSec += 20;
+    mods.parryWindowBonusMs += 100;
+  }
+  return mods;
+}
+function computeNearestRelicRadarPing(agentPos, collectedRelics) {
+  let nearest = null;
+  let bestDist = Infinity;
+  for (const r2 of PROTOTYPE_RELIC_SPECS) {
+    if (collectedRelics.has(r2.id)) continue;
+    const d2 = Math.hypot(
+      r2.position.x - agentPos.x,
+      r2.position.y - agentPos.y,
+      r2.position.z - agentPos.z
+    );
+    if (d2 < bestDist) {
+      bestDist = d2;
+      nearest = r2;
+    }
+  }
+  if (!nearest) return null;
+  const dx = nearest.position.x - agentPos.x;
+  const dz = nearest.position.z - agentPos.z;
+  const bearingYawRad = Math.atan2(-dx, -dz);
+  const elevationDeltaMeters = nearest.position.y - agentPos.y;
+  const pingIntervalSec = Math.max(0.25, Math.min(2.4, bestDist / 45));
+  return {
+    relicId: nearest.id,
+    name: nearest.name,
+    distanceMeters: bestDist,
+    bearingYawRad,
+    elevationDeltaMeters,
+    pingIntervalSec,
+    position: { ...nearest.position }
+  };
+}
+
+// shared/world/phase5Systems.ts
+var DISTRICT_LOOP_SPECS = [
+  {
+    district: "NEON_DOCKS" /* NEON_DOCKS */,
+    districtIndex: 0,
+    name: "Neon Docks Smuggler Grid",
+    faction: "NEON_SYNDICATE" /* NEON_SYNDICATE */,
+    rewardId: "UNLOCK_GRAPPLE_OVERDRIVE" /* UNLOCK_GRAPPLE_OVERDRIVE */,
+    rewardName: "3D Grapple-Hook Overdrive (+20m Range & +35% Winch Speed)",
+    stage1Terminals: [
+      { x: -24, y: 0, z: 20 },
+      { x: -34, y: 0, z: 26 }
+    ],
+    lieutenantEnemyId: 501,
+    lieutenantCallsign: "SYNDICATE-LT-VEX",
+    lieutenantSpawnPos: { x: -30, y: 0, z: 24 },
+    kingpinEnemyId: 511,
+    kingpinCallsign: "KINGPIN-KRAKEN",
+    kingpinSpawnPos: { x: -38, y: 0, z: 32 },
+    coreOverridePos: { x: -38, y: 0, z: 32 }
+  },
+  {
+    district: "FOUNDRY_SLUMS" /* FOUNDRY_SLUMS */,
+    districtIndex: 1,
+    name: "Foundry Slums Thermobaric Core",
+    faction: "FOUNDRY_IRONCLAD" /* FOUNDRY_IRONCLAD */,
+    rewardId: "UNLOCK_PLASMA_RAILGUN" /* UNLOCK_PLASMA_RAILGUN */,
+    rewardName: "Hyperion Plasma Railgun (1.65x Weapon DMG & +50% Armor Strip)",
+    stage1Terminals: [
+      { x: 24, y: 0, z: 20 },
+      { x: 34, y: 0, z: 26 }
+    ],
+    lieutenantEnemyId: 502,
+    lieutenantCallsign: "IRONCLAD-LT-VULCAN",
+    lieutenantSpawnPos: { x: 30, y: 0, z: 24 },
+    kingpinEnemyId: 512,
+    kingpinCallsign: "KINGPIN-SLAG",
+    kingpinSpawnPos: { x: 38, y: 0, z: 32 },
+    coreOverridePos: { x: 38, y: 0, z: 32 }
+  },
+  {
+    district: "HELIOS_SPIRE" /* HELIOS_SPIRE */,
+    districtIndex: 2,
+    name: "Helios Spire Orbital Telemetry",
+    faction: "HELIOS_EXECUTIVE_GUARD" /* HELIOS_EXECUTIVE_GUARD */,
+    rewardId: "UNLOCK_GRAV_FLIGHT_OVERDRIVE" /* UNLOCK_GRAV_FLIGHT_OVERDRIVE */,
+    rewardName: "Grav-Flight Overdrive (+6s Jetpack Fuel & +40% Vector Thrust)",
+    stage1Terminals: [
+      { x: 24, y: 0, z: -20 },
+      { x: 34, y: 0, z: -26 }
+    ],
+    lieutenantEnemyId: 503,
+    lieutenantCallsign: "HELIOS-LT-SOLARIS",
+    lieutenantSpawnPos: { x: 30, y: 0, z: -24 },
+    kingpinEnemyId: 513,
+    kingpinCallsign: "KINGPIN-HELIO",
+    kingpinSpawnPos: { x: 38, y: 0, z: -32 },
+    coreOverridePos: { x: 38, y: 0, z: -32 }
+  },
+  {
+    district: "AEGIS_CITADEL" /* AEGIS_CITADEL */,
+    districtIndex: 3,
+    name: "Aegis Citadel Eclipse Bastion",
+    faction: "AEGIS_DIRECTORATE" /* AEGIS_DIRECTORATE */,
+    rewardId: "UNLOCK_PROTOCOL_ECLIPSE_OVERRIDE" /* UNLOCK_PROTOCOL_ECLIPSE_OVERRIDE */,
+    rewardName: "Protocol Eclipse Override (+30% Max HP, +15m Vigilante Sphere & Shield Pierce)",
+    stage1Terminals: [
+      { x: -24, y: 0, z: -20 },
+      { x: -34, y: 0, z: -26 }
+    ],
+    lieutenantEnemyId: 504,
+    lieutenantCallsign: "AEGIS-LT-PRAETOR",
+    lieutenantSpawnPos: { x: -30, y: 0, z: -24 },
+    kingpinEnemyId: 514,
+    kingpinCallsign: "COMMANDER-KRONOS",
+    kingpinSpawnPos: { x: -38, y: 0, z: -32 },
+    coreOverridePos: { x: -38, y: 0, z: -32 }
+  }
+];
+var OMEGA_EXTRACTION_WAYPOINTS = [
+  { x: -16, y: 0, z: 22 },
+  { x: 16, y: 0, z: 22 },
+  { x: 30, y: 0, z: 10 },
+  { x: 30, y: 0, z: -12 },
+  { x: 16, y: 0, z: -26 },
+  { x: -16, y: 0, z: -26 },
+  { x: -32, y: 0, z: -14 },
+  { x: -46, y: 0, z: -40 }
+];
+var NEURAL_DRIFT_CATALOG = {
+  ["PYRO_NEUROSIS" /* PYRO_NEUROSIS */]: {
+    id: "PYRO_NEUROSIS" /* PYRO_NEUROSIS */,
+    index: 0,
+    name: "Pyro-Neurosis",
+    description: "+30% Explosive Blast Radius & +35% Radial Blast Impulse (N*s).",
+    consequenceDesc: "Aegis Firebreak Auditor Airship & Suppression Hit-Squad deployed!"
+  },
+  ["SURGICAL_COLDNESS" /* SURGICAL_COLDNESS */]: {
+    id: "SURGICAL_COLDNESS" /* SURGICAL_COLDNESS */,
+    index: 1,
+    name: "Surgical Coldness",
+    description: "+0.5x Headshot Crit Multiplier, +25% Limb Damage & -25% Spread Cone.",
+    consequenceDesc: "Aegis Neural-Hunter Auditor Airship & Precision Hit-Squad deployed!"
+  },
+  ["HOLLOW_FRAME_ADAPTATION" /* HOLLOW_FRAME_ADAPTATION */]: {
+    id: "HOLLOW_FRAME_ADAPTATION" /* HOLLOW_FRAME_ADAPTATION */,
+    index: 2,
+    name: "Hollow-Frame Adaptation",
+    description: "-25% Airborne Gravity, +3.0s Jetpack Fuel & +15% Air-Dash Speed.",
+    consequenceDesc: "Aegis Sky-Interceptor Auditor Airship & Aerial Hit-Squad deployed!"
+  },
+  ["GHOST_CONSCIENCE" /* GHOST_CONSCIENCE */]: {
+    id: "GHOST_CONSCIENCE" /* GHOST_CONSCIENCE */,
+    index: 3,
+    name: "Ghost Conscience",
+    description: "+15m Vigilante Co-op Buff Sphere, +20 HP/s Triage Aura & +100ms Parry Window.",
+    consequenceDesc: "Aegis Directorate marks Agent Rogue \u2014 Inquisitor Airship deployed!"
+  }
+};
+function computeNeuralDriftRatios(telemetry) {
+  const totalDmg = Math.max(1, telemetry.totalDamageDealt || 0);
+  const blastDmg = telemetry.collateralBlastDamageDealt || 0;
+  const kills = Math.max(1, telemetry.enemiesDefeated || 0);
+  const cripples = telemetry.limbsCrippled || 0;
+  const playSec = Math.max(1, telemetry.playTimeSeconds || 0);
+  const airSec = telemetry.airborneTimeSeconds || 0;
+  const revivesAndNonLethal = telemetry.squadRevivesAndNonLethalCount || 0;
+  const totalEncounters = Math.max(1, (telemetry.enemiesDefeated || 0) + revivesAndNonLethal);
+  return {
+    collateral_blast_damage_ratio: Math.min(1, blastDmg / totalDmg),
+    limb_cripple_to_kill_ratio: Math.min(2, cripples / kills),
+    airborne_time_ratio: Math.min(1, airSec / playSec),
+    squad_revive_and_nonlethal_ratio: Math.min(1, revivesAndNonLethal / totalEncounters)
+  };
+}
+var Phase5WorldDirector = class {
+  constructor(combatManager) {
+    this.combatManager = combatManager;
+    for (const spec of DISTRICT_LOOP_SPECS) {
+      this.districtLoops.set(spec.district, {
+        spec,
+        currentStage: 1,
+        terminal1Hacked: false,
+        terminal2Hacked: false,
+        lieutenantDefeated: false,
+        kingpinDefeated: false
+      });
+    }
+    this.omegaBounty = {
+      active: false,
+      escaped: false,
+      completed: false,
+      enemyId: 800,
+      waypointIndex: 0,
+      waypoints: OMEGA_EXTRACTION_WAYPOINTS.map((w2) => ({ ...w2 })),
+      timeRemainingSec: OMEGA_BOUNTY_DURATION_SEC,
+      cooldownBeforeNextSec: 2,
+      position: { ...OMEGA_EXTRACTION_WAYPOINTS[0] },
+      hp: 900,
+      maxHp: 900
+    };
+    this.startOmegaBounty();
+  }
+  districtLoops = /* @__PURE__ */ new Map();
+  unlockedDistrictRewards = /* @__PURE__ */ new Set();
+  omegaBounty;
+  auditorAirships = /* @__PURE__ */ new Map();
+  pendingNotifications = [];
+  nextAirshipId = 1;
+  nextAuditorEnemyId = 700;
+  /**
+   * Spawns or restarts the 90-second Omega Bounty HVT Convoy across the 3D city waypoint path (REQ-BOUNTIES)
+   */
+  startOmegaBounty() {
+    const startPos = { ...OMEGA_EXTRACTION_WAYPOINTS[0] };
+    const hvt = this.combatManager.spawnEnemy(
+      800,
+      "OMEGA-CONVOY-VALKYRIE",
+      startPos,
+      true,
+      {
+        faction: "AEGIS_DIRECTORATE" /* AEGIS_DIRECTORATE */,
+        rank: "OMEGA_HVT",
+        maxHp: 900,
+        maxArmor: 220,
+        disableAutoRespawn: true
+      }
+    );
+    this.omegaBounty.active = true;
+    this.omegaBounty.escaped = false;
+    this.omegaBounty.completed = false;
+    this.omegaBounty.enemyId = hvt.enemyId;
+    this.omegaBounty.waypointIndex = 1;
+    this.omegaBounty.timeRemainingSec = OMEGA_BOUNTY_DURATION_SEC;
+    this.omegaBounty.position = { ...startPos };
+    this.omegaBounty.hp = hvt.hp;
+    this.omegaBounty.maxHp = hvt.maxHp;
+    this.pendingNotifications.push({
+      type: "OMEGA_BOUNTY_STARTED",
+      message: `OMEGA BOUNTY DEPLOYED: Intercept HVT #800 along 3D extraction route (${OMEGA_BOUNTY_DURATION_SEC}s remaining)!`
+    });
+    return hvt;
+  }
+  /**
+   * Interacts with the nearest District Operational Loop 3D Terminal or Core Override Beacon (REQ-LOOPS)
+   * Also supports Co-op Squad Triage/Revive when near an injured co-op Agent!
+   */
+  tryInteractObjectiveOrRevive(agent, allAgents) {
+    let interacted = false;
+    for (const ally of allAgents.values()) {
+      if (ally.entityId === agent.entityId) continue;
+      const d2 = Math.hypot(
+        ally.position.x - agent.position.x,
+        ally.position.y - agent.position.y,
+        ally.position.z - agent.position.z
+      );
+      if (d2 <= 4.5 && ally.hp < ally.maxHp) {
+        ally.hp = Math.min(ally.maxHp, ally.hp + 75);
+        agent.telemetry.squadRevivesAndNonLethalCount = (agent.telemetry.squadRevivesAndNonLethalCount || 0) + 1;
+        interacted = true;
+      }
+    }
+    for (const loop of this.districtLoops.values()) {
+      const { spec } = loop;
+      if (loop.currentStage === 1) {
+        const d1 = Math.hypot(
+          spec.stage1Terminals[0].x - agent.position.x,
+          spec.stage1Terminals[0].y - agent.position.y,
+          spec.stage1Terminals[0].z - agent.position.z
+        );
+        const d2 = Math.hypot(
+          spec.stage1Terminals[1].x - agent.position.x,
+          spec.stage1Terminals[1].y - agent.position.y,
+          spec.stage1Terminals[1].z - agent.position.z
+        );
+        if (!loop.terminal1Hacked && d1 <= DISTRICT_OBJECTIVE_INTERACT_RADIUS_M) {
+          loop.terminal1Hacked = true;
+          interacted = true;
+        }
+        if (!loop.terminal2Hacked && d2 <= DISTRICT_OBJECTIVE_INTERACT_RADIUS_M) {
+          loop.terminal2Hacked = true;
+          interacted = true;
+        }
+        if (loop.terminal1Hacked && loop.terminal2Hacked) {
+          this.advanceDistrictLoopToStage2(loop);
+        }
+      } else if (loop.currentStage === 3) {
+        const dCore = Math.hypot(
+          spec.coreOverridePos.x - agent.position.x,
+          spec.coreOverridePos.y - agent.position.y,
+          spec.coreOverridePos.z - agent.position.z
+        );
+        const kingpin = this.combatManager.enemies.get(spec.kingpinEnemyId);
+        if (dCore <= DISTRICT_OBJECTIVE_INTERACT_RADIUS_M && kingpin?.combatState === 7 /* DEAD */) {
+          this.completeDistrictLoop(loop, agent, allAgents);
+          interacted = true;
+        }
+      }
+    }
+    return interacted;
+  }
+  advanceDistrictLoopToStage2(loop) {
+    if (loop.currentStage !== 1) return;
+    loop.currentStage = 2;
+    const { spec } = loop;
+    this.combatManager.spawnEnemy(
+      spec.lieutenantEnemyId,
+      spec.lieutenantCallsign,
+      spec.lieutenantSpawnPos,
+      true,
+      {
+        faction: spec.faction,
+        rank: "LIEUTENANT",
+        maxHp: 480,
+        maxArmor: 180,
+        disableAutoRespawn: true
+      }
+    );
+    this.pendingNotifications.push({
+      type: "DISTRICT_STAGE_ADVANCED",
+      district: spec.district,
+      stage: 2,
+      message: `[${spec.district}] STAGE 2: Faction Lieutenant ${spec.lieutenantCallsign} deployed!`
+    });
+  }
+  advanceDistrictLoopToStage3(loop) {
+    if (loop.currentStage !== 2) return;
+    loop.currentStage = 3;
+    loop.lieutenantDefeated = true;
+    const { spec } = loop;
+    this.combatManager.spawnEnemy(
+      spec.kingpinEnemyId,
+      spec.kingpinCallsign,
+      spec.kingpinSpawnPos,
+      true,
+      {
+        faction: spec.faction,
+        rank: "KINGPIN",
+        maxHp: 750,
+        maxArmor: 260,
+        disableAutoRespawn: true
+      }
+    );
+    this.pendingNotifications.push({
+      type: "DISTRICT_STAGE_ADVANCED",
+      district: spec.district,
+      stage: 3,
+      message: `[${spec.district}] STAGE 3: District Kingpin ${spec.kingpinCallsign} & Core Override exposed!`
+    });
+  }
+  completeDistrictLoop(loop, triggeringAgent, allAgents) {
+    if (loop.currentStage === 4) return;
+    loop.currentStage = 4;
+    loop.kingpinDefeated = true;
+    const { spec } = loop;
+    this.unlockedDistrictRewards.add(spec.rewardId);
+    if (triggeringAgent) {
+      triggeringAgent.telemetry.districtLoopsCompleted = (triggeringAgent.telemetry.districtLoopsCompleted || 0) + 1;
+    }
+    for (const a2 of allAgents.values()) {
+      a2.unlockedDistrictRewards.add(spec.rewardId);
+      a2.buildModifiers = computeAgentBuildModifiers(
+        a2.augmentChassis,
+        a2.unlockedSkills,
+        a2.unlockedRelics,
+        a2.unlockedDistrictRewards,
+        a2.activeNeuralDrifts
+      );
+    }
+    this.pendingNotifications.push({
+      type: "DISTRICT_LOOP_COMPLETED",
+      district: spec.district,
+      stage: 4,
+      rewardId: spec.rewardId,
+      rewardName: spec.rewardName,
+      message: `[${spec.district}] OPERATIONAL LOOP COMPLETE! Unlocked ${spec.rewardName}!`
+    });
+  }
+  /**
+   * Evaluates the 4 rolling telemetry ratios for an Agent and organically triggers
+   * Secret Neural Drift mutations + 3D Aegis Auditor Airship Hit-Squads (PRD Section 4.4 REQ-SECRET)
+   */
+  evaluateAgentNeuralDrift(agent) {
+    const ratios = computeNeuralDriftRatios(agent.telemetry);
+    agent.neuralDriftRatios = ratios;
+    const newlyActivated = [];
+    const checkAndActivate = (id, condition) => {
+      if (condition && !agent.activeNeuralDrifts.has(id)) {
+        agent.activeNeuralDrifts.add(id);
+        newlyActivated.push(id);
+        agent.buildModifiers = computeAgentBuildModifiers(
+          agent.augmentChassis,
+          agent.unlockedSkills,
+          agent.unlockedRelics,
+          agent.unlockedDistrictRewards,
+          agent.activeNeuralDrifts
+        );
+        this.spawnAegisAuditorAirshipAndSquad(agent, id);
+        const info = NEURAL_DRIFT_CATALOG[id];
+        this.pendingNotifications.push({
+          type: "NEURAL_DRIFT_ACTIVATED",
+          mutationId: id,
+          mutationName: info.name,
+          agentCallsign: agent.callsign,
+          message: `SECRET NEURAL DRIFT [${info.name}] ACTIVATED ON ${agent.callsign}! ${info.consequenceDesc}`
+        });
+      }
+    };
+    checkAndActivate(
+      "PYRO_NEUROSIS" /* PYRO_NEUROSIS */,
+      ratios.collateral_blast_damage_ratio >= 0.38 && (agent.telemetry.collateralBlastDamageDealt || 0) >= 200
+    );
+    checkAndActivate(
+      "SURGICAL_COLDNESS" /* SURGICAL_COLDNESS */,
+      ratios.limb_cripple_to_kill_ratio >= 0.75 && (agent.telemetry.limbsCrippled || 0) >= 2
+    );
+    checkAndActivate(
+      "HOLLOW_FRAME_ADAPTATION" /* HOLLOW_FRAME_ADAPTATION */,
+      ratios.airborne_time_ratio >= 0.35 && (agent.telemetry.airborneTimeSeconds || 0) >= 3
+    );
+    checkAndActivate(
+      "GHOST_CONSCIENCE" /* GHOST_CONSCIENCE */,
+      ratios.squad_revive_and_nonlethal_ratio >= 0.4 && (agent.telemetry.squadRevivesAndNonLethalCount || 0) >= 2
+    );
+    return newlyActivated;
+  }
+  spawnAegisAuditorAirshipAndSquad(targetAgent, mutationId) {
+    const airshipId = this.nextAirshipId++;
+    const info = NEURAL_DRIFT_CATALOG[mutationId];
+    const airshipPos = {
+      x: targetAgent.position.x + 8,
+      y: Math.max(24, targetAgent.position.y + 22),
+      z: targetAgent.position.z - 10
+    };
+    const auditorIds = [];
+    for (let i2 = 0; i2 < 2; i2++) {
+      const enemyId = this.nextAuditorEnemyId++;
+      const offsetX = i2 === 0 ? -3.5 : 3.5;
+      this.combatManager.spawnEnemy(
+        enemyId,
+        `AEGIS-AUDITOR-${airshipId}-${i2 + 1}`,
+        {
+          x: targetAgent.position.x + offsetX,
+          y: targetAgent.position.y,
+          z: targetAgent.position.z - 5.5
+        },
+        true,
+        {
+          faction: "AEGIS_AUDITOR_HIT_SQUAD" /* AEGIS_AUDITOR_HIT_SQUAD */,
+          rank: "AUDITOR",
+          maxHp: 380,
+          maxArmor: 150,
+          disableAutoRespawn: true
+        }
+      );
+      auditorIds.push(enemyId);
+    }
+    const airship = {
+      airshipId,
+      targetEntityId: targetAgent.entityId,
+      mutationId,
+      mutationIndex: info.index,
+      active: true,
+      position: airshipPos,
+      yaw: 0,
+      orbitAngle: 0,
+      auditorEnemyIds: auditorIds
+    };
+    this.auditorAirships.set(airshipId, airship);
+    return airship;
+  }
+  /**
+   * Steps all Phase 5 World Systems at 60Hz:
+   * - 4 District 3-Stage Operational Loops
+   * - 90s Omega Bounty 3D Waypoint Extraction Convoy
+   * - 3D Aegis Auditor Airships & Secret Neural Drift evaluations
+   */
+  stepPhase5Systems(agents, dt) {
+    for (const loop of this.districtLoops.values()) {
+      if (loop.currentStage === 2) {
+        const lt = this.combatManager.enemies.get(loop.spec.lieutenantEnemyId);
+        if (lt && lt.combatState === 7 /* DEAD */) {
+          this.advanceDistrictLoopToStage3(loop);
+        }
+      } else if (loop.currentStage === 3) {
+        const kp = this.combatManager.enemies.get(loop.spec.kingpinEnemyId);
+        if (kp && kp.combatState === 7 /* DEAD */) {
+          loop.kingpinDefeated = true;
+        }
+      }
+    }
+    if (this.omegaBounty.active) {
+      const hvt = this.combatManager.enemies.get(this.omegaBounty.enemyId);
+      this.omegaBounty.timeRemainingSec = Math.max(0, this.omegaBounty.timeRemainingSec - dt);
+      if (!hvt || hvt.combatState === 7 /* DEAD */ || hvt.hp <= 0 || hvt.capturedByEntityId) {
+        this.omegaBounty.active = false;
+        this.omegaBounty.completed = true;
+        this.omegaBounty.hp = 0;
+        this.omegaBounty.cooldownBeforeNextSec = 25;
+        for (const a2 of agents.values()) {
+          a2.telemetry.omegaBountiesCompleted = (a2.telemetry.omegaBountiesCompleted || 0) + 1;
+          if (hvt?.capturedByEntityId === a2.entityId) a2.telemetry.nonLethalBountiesCompleted = (a2.telemetry.nonLethalBountiesCompleted ?? 0) + 1;
+        }
+        this.pendingNotifications.push({
+          type: "OMEGA_BOUNTY_COMPLETED",
+          message: hvt?.capturedByEntityId ? "OMEGA BOUNTY CAPTURED! Non-lethal extraction confirmed. Encrypted witness testimony recovered." : "OMEGA BOUNTY ELIMINATED! Extraction Convoy destroyed in 3D space!"
+        });
+        if (hvt?.capturedByEntityId) this.combatManager.removeEnemy(hvt.enemyId);
+      } else if (this.omegaBounty.timeRemainingSec <= 0) {
+        this.omegaBounty.active = false;
+        this.omegaBounty.escaped = true;
+        this.omegaBounty.cooldownBeforeNextSec = 20;
+        this.combatManager.removeEnemy(this.omegaBounty.enemyId);
+        this.pendingNotifications.push({
+          type: "OMEGA_BOUNTY_ESCAPED",
+          message: "OMEGA BOUNTY ESCAPED! 90s extraction window expired."
+        });
+      } else {
+        this.omegaBounty.hp = hvt.hp;
+        this.omegaBounty.maxHp = hvt.maxHp;
+        const targetWp = this.omegaBounty.waypoints[Math.min(this.omegaBounty.waypointIndex, this.omegaBounty.waypoints.length - 1)];
+        const dx = targetWp.x - hvt.position.x;
+        const dy = targetWp.y - hvt.position.y;
+        const dz = targetWp.z - hvt.position.z;
+        const dist = Math.hypot(dx, dy, dz);
+        if (dist <= 1.2) {
+          this.omegaBounty.waypointIndex += 1;
+          if (this.omegaBounty.waypointIndex >= this.omegaBounty.waypoints.length) {
+            this.omegaBounty.active = false;
+            this.omegaBounty.escaped = true;
+            this.omegaBounty.cooldownBeforeNextSec = 20;
+            this.combatManager.removeEnemy(this.omegaBounty.enemyId);
+            this.pendingNotifications.push({
+              type: "OMEGA_BOUNTY_ESCAPED",
+              message: "OMEGA BOUNTY ESCAPED! Reached final Aegis Extraction Pad."
+            });
+          }
+        } else if (hvt.staggerTimer <= 0 && hvt.presentation.timer <= 0) {
+          const baseConvoySpeed = 7.2;
+          const speed = hvt.legsCrippledTimer > 0 ? baseConvoySpeed * 0.3 : baseConvoySpeed;
+          hvt.yaw = Math.atan2(-dx, -dz);
+          hvt.velocity.x = dx / dist * speed;
+          hvt.velocity.y = dy / dist * speed;
+          hvt.velocity.z = dz / dist * speed;
+          hvt.position.x += hvt.velocity.x * dt;
+          hvt.position.y += hvt.velocity.y * dt;
+          hvt.position.z += hvt.velocity.z * dt;
+          this.omegaBounty.position = { ...hvt.position };
+          this.combatManager.syncEnemyBoneColliders(hvt);
+        }
+      }
+    }
+    for (const a2 of agents.values()) {
+      this.evaluateAgentNeuralDrift(a2);
+    }
+    for (const airship of this.auditorAirships.values()) {
+      if (!airship.active) continue;
+      const anyAlive = airship.auditorEnemyIds.some((id) => {
+        const e2 = this.combatManager.enemies.get(id);
+        return e2 && e2.combatState !== 7 /* DEAD */;
+      });
+      if (!anyAlive) {
+        airship.active = false;
+        continue;
+      }
+      const target = agents.get(airship.targetEntityId);
+      airship.orbitAngle += 0.55 * dt;
+      const centerX = target ? target.position.x : airship.position.x;
+      const centerZ = target ? target.position.z : airship.position.z;
+      const desiredY = target ? Math.max(24, target.position.y + 22) : 24;
+      airship.position.x = centerX + Math.cos(airship.orbitAngle) * 14;
+      airship.position.z = centerZ + Math.sin(airship.orbitAngle) * 14;
+      airship.position.y += (desiredY - airship.position.y) * Math.min(1, 2 * dt);
+      airship.yaw = airship.orbitAngle + Math.PI * 0.5;
+    }
+  }
+  toBinaryOmegaBountySnapshot() {
+    const targetWp = this.omegaBounty.waypoints[Math.min(this.omegaBounty.waypointIndex, this.omegaBounty.waypoints.length - 1)] || this.omegaBounty.position;
+    return {
+      active: this.omegaBounty.active,
+      escaped: this.omegaBounty.escaped,
+      completed: this.omegaBounty.completed,
+      enemyId: this.omegaBounty.enemyId,
+      waypointIndex: this.omegaBounty.waypointIndex,
+      totalWaypoints: this.omegaBounty.waypoints.length,
+      timeRemainingSec: this.omegaBounty.timeRemainingSec,
+      position: { ...this.omegaBounty.position },
+      targetWaypoint: { ...targetWp },
+      hp: this.omegaBounty.hp,
+      maxHp: this.omegaBounty.maxHp
+    };
+  }
+  toBinaryDistrictLoopSnapshots() {
+    const out = [];
+    for (const spec of DISTRICT_LOOP_SPECS) {
+      const loop = this.districtLoops.get(spec.district);
+      const terminalsHacked = (loop.terminal1Hacked ? 1 : 0) + (loop.terminal2Hacked ? 1 : 0);
+      let activeObjectivePos = spec.coreOverridePos;
+      if (loop.currentStage === 1) {
+        activeObjectivePos = !loop.terminal1Hacked ? spec.stage1Terminals[0] : spec.stage1Terminals[1];
+      } else if (loop.currentStage === 2) {
+        const lt = this.combatManager.enemies.get(spec.lieutenantEnemyId);
+        activeObjectivePos = lt ? lt.position : spec.lieutenantSpawnPos;
+      } else if (loop.currentStage === 3) {
+        const kp = this.combatManager.enemies.get(spec.kingpinEnemyId);
+        activeObjectivePos = kp ? kp.position : spec.coreOverridePos;
+      }
+      out.push({
+        districtIndex: spec.districtIndex,
+        currentStage: loop.currentStage,
+        terminalsHacked,
+        totalTerminals: 2,
+        activeObjectivePos: { ...activeObjectivePos }
+      });
+    }
+    return out;
+  }
+  toBinaryAuditorAirshipSnapshots() {
+    const out = [];
+    for (const a2 of this.auditorAirships.values()) {
+      if (!a2.active) continue;
+      out.push({
+        airshipId: a2.airshipId,
+        targetEntityId: a2.targetEntityId,
+        mutationIndex: a2.mutationIndex,
+        active: a2.active,
+        position: { ...a2.position },
+        yaw: a2.yaw
+      });
+    }
+    return out;
+  }
+};
+
+// shared/campaign/presentation.ts
+var CINEMATIC_IDS = /* @__PURE__ */ new Set([
+  "opening-v1",
+  "dreadnought-v1",
+  ...DISTRICT_LOOP_SPECS.flatMap((s2) => [`enemy-${s2.lieutenantEnemyId}`, `enemy-${s2.kingpinEnemyId}`])
+]);
+var CINEMATIC_ENDS = ["completed", "skipped", "damage", "death", "disconnected", "hidden", "interrupted"];
+function newCampaignPresentation() {
+  return {
+    story: { completed: [], active: null, choices: [], heard: [] },
+    cinematics: {},
+    settings: { sensitivity: 4, quality: "standard", bloom: true, cinematicIntros: true, audioMuted: false, commsMuted: false }
+  };
+}
+function check(ok) {
+  if (!ok) throw new Error("Invalid campaign presentation data");
+}
+function keys(value, allowed) {
+  check(value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).every((k2) => allowed.includes(k2)));
+}
+function parseCampaignPresentation(value) {
+  const p2 = value;
+  keys(p2, ["story", "cinematics", "settings"]);
+  const s2 = p2.story;
+  keys(s2, ["completed", "active", "choices", "heard"]);
+  check(Array.isArray(s2.completed) && s2.completed.length <= STORY_BEATS.length && new Set(s2.completed).size === s2.completed.length);
+  check(s2.completed.every((id) => STORY_BEATS.some((b2) => b2.id === id && (!b2.requires || s2.completed.includes(b2.requires)))));
+  const activeBeat = s2.active && STORY_BEATS.find((b2) => b2.id === s2.active.beat);
+  if (s2.active !== null) {
+    keys(s2.active, ["beat", "node"]);
+    check(activeBeat && !s2.completed.includes(activeBeat.id) && (!activeBeat.requires || s2.completed.includes(activeBeat.requires)) && activeBeat.nodes.some((n3) => n3.id === s2.active.node));
+  }
+  check(Array.isArray(s2.choices) && s2.choices.length <= 2);
+  const seen = /* @__PURE__ */ new Set();
+  for (const c2 of s2.choices) {
+    keys(c2, ["beat", "node", "index"]);
+    const beat = STORY_BEATS.find((b2) => b2.id === c2.beat), node = beat?.nodes.find((n3) => n3.id === c2.node);
+    check(beat && (s2.completed.includes(beat.id) || activeBeat?.id === beat.id) && Number.isInteger(c2.index) && c2.index >= 0 && node?.choices?.[c2.index]);
+    check(!seen.has(`${c2.beat}:${c2.node}`));
+    seen.add(`${c2.beat}:${c2.node}`);
+  }
+  check(Array.isArray(s2.heard) && s2.heard.length <= 4096 && new Set(s2.heard).size === s2.heard.length && s2.heard.every((n3) => Number.isInteger(n3) && n3 >= 0 && n3 < 65536));
+  keys(p2.cinematics, [...CINEMATIC_IDS]);
+  check(Object.values(p2.cinematics).every((v2) => CINEMATIC_ENDS.includes(v2)));
+  const settings = p2.settings;
+  keys(settings, ["sensitivity", "quality", "bloom", "cinematicIntros", "audioMuted", "commsMuted"]);
+  check(Number.isFinite(settings.sensitivity) && settings.sensitivity >= 1 && settings.sensitivity <= 10);
+  check(["standard", "performance"].includes(settings.quality));
+  check([settings.bloom, settings.cinematicIntros, settings.audioMuted, settings.commsMuted].every((v2) => typeof v2 === "boolean"));
+  return structuredClone(p2);
+}
+
+// client/narrative/campaignStorage.ts
+var CampaignStorage = class {
+  constructor(browser, publish) {
+    this.browser = browser;
+    this.publish = publish;
+  }
+  state = null;
+  callsign = "";
+  publishing = true;
+  /** Ending the old camera during reauthentication must not overwrite the newly loaded save. */
+  suspend() {
+    this.publishing = false;
+  }
+  useCampaign(callsign, solo, saved) {
+    this.callsign = callsign;
+    this.state = solo ? saved ? parseCampaignPresentation(saved) : this.importLegacy(callsign) : null;
+    this.publishing = true;
+    if (solo && saved === null) this.publish(structuredClone(this.state));
+  }
+  getItem(key) {
+    if (!this.state) {
+      try {
+        return this.browser?.getItem(key) ?? null;
+      } catch {
+        return null;
+      }
+    }
+    if (key === `crackup:story:v1:${this.callsign}`) return JSON.stringify(this.state.story);
+    if (key === `crackup:cinematics:v1:${this.callsign}`) return JSON.stringify(this.state.cinematics);
+    if (key === "crackup.settings") return JSON.stringify(this.state.settings);
+    if (key === "crackup.cinematicIntros") return String(this.state.settings.cinematicIntros);
+    if (key === "crackup.audioMuted") return String(this.state.settings.audioMuted);
+    if (key === "crackup.commsMuted") return String(this.state.settings.commsMuted);
+    return null;
+  }
+  setItem(key, value) {
+    if (!this.state) {
+      try {
+        this.browser?.setItem(key, value);
+      } catch {
+      }
+      return;
+    }
+    const next = structuredClone(this.state);
+    if (key === `crackup:story:v1:${this.callsign}`) next.story = JSON.parse(value);
+    else if (key === `crackup:cinematics:v1:${this.callsign}`) next.cinematics = JSON.parse(value);
+    else if (key === "crackup.settings") {
+      const raw = JSON.parse(value);
+      Object.assign(next.settings, { sensitivity: Number(raw.sensitivity), quality: raw.quality, bloom: raw.bloom });
+    } else if (key === "crackup.cinematicIntros") next.settings.cinematicIntros = value === "true";
+    else if (key === "crackup.audioMuted") next.settings.audioMuted = value === "true";
+    else if (key === "crackup.commsMuted") next.settings.commsMuted = value === "true";
+    else return;
+    const validated = parseCampaignPresentation(next);
+    if (JSON.stringify(validated) === JSON.stringify(this.state)) return;
+    this.state = validated;
+    if (this.publishing) this.publish(structuredClone(validated));
+  }
+  importLegacy(callsign) {
+    const result = newCampaignPresentation();
+    const read = (key) => {
+      try {
+        return JSON.parse(this.browser?.getItem(key) ?? "null");
+      } catch {
+        return null;
+      }
+    };
+    const story = read(`crackup:story:v1:${callsign}`);
+    if (story) {
+      for (const beat of STORY_BEATS) if (Array.isArray(story.completed) && story.completed.includes(beat.id) && (!beat.requires || result.story.completed.includes(beat.requires))) result.story.completed.push(beat.id);
+      if (Array.isArray(story.heard)) result.story.heard = [...new Set(story.heard.filter((n3) => Number.isInteger(n3) && Number(n3) >= 0 && Number(n3) < 65536))].slice(0, 4096);
+      if (story.active !== void 0 && story.choices !== void 0) {
+        try {
+          result.story = parseCampaignPresentation({ ...result, story }).story;
+        } catch {
+        }
+      }
+    }
+    const movies = read(`crackup:cinematics:v1:${callsign}`);
+    for (const [id, reason] of Object.entries(movies ?? {})) if (CINEMATIC_IDS.has(id) && CINEMATIC_ENDS.includes(reason)) result.cinematics[id] = reason;
+    const settings = read("crackup.settings");
+    if (settings) {
+      result.settings.sensitivity = Math.max(1, Math.min(10, Number(settings.sensitivity) || 4));
+      result.settings.quality = settings.quality === "performance" ? "performance" : "standard";
+      result.settings.bloom = settings.bloom !== false;
+    }
+    result.settings.cinematicIntros = read("crackup.cinematicIntros") !== false;
+    result.settings.audioMuted = read("crackup.audioMuted") === true;
+    result.settings.commsMuted = read("crackup.commsMuted") === true;
+    return parseCampaignPresentation(result);
+  }
+};
+
 // node_modules/three/build/three.module.js
 var REVISION = "170";
 var CullFaceNone = 0;
@@ -161,6 +1889,7 @@ var NotEqualCompare = 517;
 var GreaterEqualCompare = 518;
 var AlwaysCompare = 519;
 var StaticDrawUsage = 35044;
+var DynamicDrawUsage = 35048;
 var GLSL3 = "300 es";
 var WebGLCoordinateSystem = 2e3;
 var WebGPUCoordinateSystem = 2001;
@@ -220,8 +1949,8 @@ function generateUUID() {
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
-function euclideanModulo(n2, m2) {
-  return (n2 % m2 + m2) % m2;
+function euclideanModulo(n3, m2) {
+  return (n3 % m2 + m2) % m2;
 }
 function mapLinear(x2, a1, a2, b1, b2) {
   return b1 + (x2 - a1) * (b2 - b1) / (a2 - a1);
@@ -233,8 +1962,8 @@ function inverseLerp(x2, y2, value) {
     return 0;
   }
 }
-function lerp(x2, y2, t2) {
-  return (1 - t2) * x2 + t2 * y2;
+function lerp(x2, y2, t3) {
+  return (1 - t3) * x2 + t3 * y2;
 }
 function damp(x2, y2, lambda, dt) {
   return lerp(x2, y2, 1 - Math.exp(-lambda * dt));
@@ -265,10 +1994,10 @@ function randFloatSpread(range) {
 }
 function seededRandom(s2) {
   if (s2 !== void 0) _seed = s2;
-  let t2 = _seed += 1831565813;
-  t2 = Math.imul(t2 ^ t2 >>> 15, t2 | 1);
-  t2 ^= t2 + Math.imul(t2 ^ t2 >>> 7, t2 | 61);
-  return ((t2 ^ t2 >>> 14) >>> 0) / 4294967296;
+  let t3 = _seed += 1831565813;
+  t3 = Math.imul(t3 ^ t3 >>> 15, t3 | 1);
+  t3 ^= t3 + Math.imul(t3 ^ t3 >>> 7, t3 | 61);
+  return ((t3 ^ t3 >>> 14) >>> 0) / 4294967296;
 }
 function degToRad(degrees) {
   return degrees * DEG2RAD;
@@ -667,16 +2396,16 @@ var Matrix3 = class _Matrix3 {
     }
   }
   set(n11, n12, n13, n21, n22, n23, n31, n32, n33) {
-    const te = this.elements;
-    te[0] = n11;
-    te[1] = n21;
-    te[2] = n31;
-    te[3] = n12;
-    te[4] = n22;
-    te[5] = n32;
-    te[6] = n13;
-    te[7] = n23;
-    te[8] = n33;
+    const te2 = this.elements;
+    te2[0] = n11;
+    te2[1] = n21;
+    te2[2] = n31;
+    te2[3] = n12;
+    te2[4] = n22;
+    te2[5] = n32;
+    te2[6] = n13;
+    te2[7] = n23;
+    te2[8] = n33;
     return this;
   }
   identity() {
@@ -694,17 +2423,17 @@ var Matrix3 = class _Matrix3 {
     return this;
   }
   copy(m2) {
-    const te = this.elements;
+    const te2 = this.elements;
     const me = m2.elements;
-    te[0] = me[0];
-    te[1] = me[1];
-    te[2] = me[2];
-    te[3] = me[3];
-    te[4] = me[4];
-    te[5] = me[5];
-    te[6] = me[6];
-    te[7] = me[7];
-    te[8] = me[8];
+    te2[0] = me[0];
+    te2[1] = me[1];
+    te2[2] = me[2];
+    te2[3] = me[3];
+    te2[4] = me[4];
+    te2[5] = me[5];
+    te2[6] = me[6];
+    te2[7] = me[7];
+    te2[8] = me[8];
     return this;
   }
   extractBasis(xAxis, yAxis, zAxis) {
@@ -735,57 +2464,57 @@ var Matrix3 = class _Matrix3 {
     return this.multiplyMatrices(m2, this);
   }
   multiplyMatrices(a2, b2) {
-    const ae = a2.elements;
+    const ae2 = a2.elements;
     const be = b2.elements;
-    const te = this.elements;
-    const a11 = ae[0], a12 = ae[3], a13 = ae[6];
-    const a21 = ae[1], a22 = ae[4], a23 = ae[7];
-    const a31 = ae[2], a32 = ae[5], a33 = ae[8];
+    const te2 = this.elements;
+    const a11 = ae2[0], a12 = ae2[3], a13 = ae2[6];
+    const a21 = ae2[1], a22 = ae2[4], a23 = ae2[7];
+    const a31 = ae2[2], a32 = ae2[5], a33 = ae2[8];
     const b11 = be[0], b12 = be[3], b13 = be[6];
     const b21 = be[1], b22 = be[4], b23 = be[7];
     const b31 = be[2], b32 = be[5], b33 = be[8];
-    te[0] = a11 * b11 + a12 * b21 + a13 * b31;
-    te[3] = a11 * b12 + a12 * b22 + a13 * b32;
-    te[6] = a11 * b13 + a12 * b23 + a13 * b33;
-    te[1] = a21 * b11 + a22 * b21 + a23 * b31;
-    te[4] = a21 * b12 + a22 * b22 + a23 * b32;
-    te[7] = a21 * b13 + a22 * b23 + a23 * b33;
-    te[2] = a31 * b11 + a32 * b21 + a33 * b31;
-    te[5] = a31 * b12 + a32 * b22 + a33 * b32;
-    te[8] = a31 * b13 + a32 * b23 + a33 * b33;
+    te2[0] = a11 * b11 + a12 * b21 + a13 * b31;
+    te2[3] = a11 * b12 + a12 * b22 + a13 * b32;
+    te2[6] = a11 * b13 + a12 * b23 + a13 * b33;
+    te2[1] = a21 * b11 + a22 * b21 + a23 * b31;
+    te2[4] = a21 * b12 + a22 * b22 + a23 * b32;
+    te2[7] = a21 * b13 + a22 * b23 + a23 * b33;
+    te2[2] = a31 * b11 + a32 * b21 + a33 * b31;
+    te2[5] = a31 * b12 + a32 * b22 + a33 * b32;
+    te2[8] = a31 * b13 + a32 * b23 + a33 * b33;
     return this;
   }
   multiplyScalar(s2) {
-    const te = this.elements;
-    te[0] *= s2;
-    te[3] *= s2;
-    te[6] *= s2;
-    te[1] *= s2;
-    te[4] *= s2;
-    te[7] *= s2;
-    te[2] *= s2;
-    te[5] *= s2;
-    te[8] *= s2;
+    const te2 = this.elements;
+    te2[0] *= s2;
+    te2[3] *= s2;
+    te2[6] *= s2;
+    te2[1] *= s2;
+    te2[4] *= s2;
+    te2[7] *= s2;
+    te2[2] *= s2;
+    te2[5] *= s2;
+    te2[8] *= s2;
     return this;
   }
   determinant() {
-    const te = this.elements;
-    const a2 = te[0], b2 = te[1], c2 = te[2], d2 = te[3], e2 = te[4], f2 = te[5], g2 = te[6], h2 = te[7], i2 = te[8];
-    return a2 * e2 * i2 - a2 * f2 * h2 - b2 * d2 * i2 + b2 * f2 * g2 + c2 * d2 * h2 - c2 * e2 * g2;
+    const te2 = this.elements;
+    const a2 = te2[0], b2 = te2[1], c2 = te2[2], d2 = te2[3], e2 = te2[4], f2 = te2[5], g4 = te2[6], h2 = te2[7], i2 = te2[8];
+    return a2 * e2 * i2 - a2 * f2 * h2 - b2 * d2 * i2 + b2 * f2 * g4 + c2 * d2 * h2 - c2 * e2 * g4;
   }
   invert() {
-    const te = this.elements, n11 = te[0], n21 = te[1], n31 = te[2], n12 = te[3], n22 = te[4], n32 = te[5], n13 = te[6], n23 = te[7], n33 = te[8], t11 = n33 * n22 - n32 * n23, t12 = n32 * n13 - n33 * n12, t13 = n23 * n12 - n22 * n13, det = n11 * t11 + n21 * t12 + n31 * t13;
+    const te2 = this.elements, n11 = te2[0], n21 = te2[1], n31 = te2[2], n12 = te2[3], n22 = te2[4], n32 = te2[5], n13 = te2[6], n23 = te2[7], n33 = te2[8], t11 = n33 * n22 - n32 * n23, t12 = n32 * n13 - n33 * n12, t13 = n23 * n12 - n22 * n13, det = n11 * t11 + n21 * t12 + n31 * t13;
     if (det === 0) return this.set(0, 0, 0, 0, 0, 0, 0, 0, 0);
     const detInv = 1 / det;
-    te[0] = t11 * detInv;
-    te[1] = (n31 * n23 - n33 * n21) * detInv;
-    te[2] = (n32 * n21 - n31 * n22) * detInv;
-    te[3] = t12 * detInv;
-    te[4] = (n33 * n11 - n31 * n13) * detInv;
-    te[5] = (n31 * n12 - n32 * n11) * detInv;
-    te[6] = t13 * detInv;
-    te[7] = (n21 * n13 - n23 * n11) * detInv;
-    te[8] = (n22 * n11 - n21 * n12) * detInv;
+    te2[0] = t11 * detInv;
+    te2[1] = (n31 * n23 - n33 * n21) * detInv;
+    te2[2] = (n32 * n21 - n31 * n22) * detInv;
+    te2[3] = t12 * detInv;
+    te2[4] = (n33 * n11 - n31 * n13) * detInv;
+    te2[5] = (n31 * n12 - n32 * n11) * detInv;
+    te2[6] = t13 * detInv;
+    te2[7] = (n21 * n13 - n23 * n11) * detInv;
+    te2[8] = (n22 * n11 - n21 * n12) * detInv;
     return this;
   }
   transpose() {
@@ -908,10 +2637,10 @@ var Matrix3 = class _Matrix3 {
   }
   //
   equals(matrix) {
-    const te = this.elements;
+    const te2 = this.elements;
     const me = matrix.elements;
     for (let i2 = 0; i2 < 9; i2++) {
-      if (te[i2] !== me[i2]) return false;
+      if (te2[i2] !== me[i2]) return false;
     }
     return true;
   }
@@ -922,16 +2651,16 @@ var Matrix3 = class _Matrix3 {
     return this;
   }
   toArray(array = [], offset = 0) {
-    const te = this.elements;
-    array[offset] = te[0];
-    array[offset + 1] = te[1];
-    array[offset + 2] = te[2];
-    array[offset + 3] = te[3];
-    array[offset + 4] = te[4];
-    array[offset + 5] = te[5];
-    array[offset + 6] = te[6];
-    array[offset + 7] = te[7];
-    array[offset + 8] = te[8];
+    const te2 = this.elements;
+    array[offset] = te2[0];
+    array[offset + 1] = te2[1];
+    array[offset + 2] = te2[2];
+    array[offset + 3] = te2[3];
+    array[offset + 4] = te2[4];
+    array[offset + 5] = te2[5];
+    array[offset + 6] = te2[6];
+    array[offset + 7] = te2[7];
+    array[offset + 8] = te2[8];
     return array;
   }
   clone() {
@@ -1613,7 +3342,7 @@ var Vector4 = class _Vector4 {
   }
   setAxisAngleFromRotationMatrix(m2) {
     let angle, x2, y2, z2;
-    const epsilon = 0.01, epsilon2 = 0.1, te = m2.elements, m11 = te[0], m12 = te[4], m13 = te[8], m21 = te[1], m22 = te[5], m23 = te[9], m31 = te[2], m32 = te[6], m33 = te[10];
+    const epsilon = 0.01, epsilon2 = 0.1, te2 = m2.elements, m11 = te2[0], m12 = te2[4], m13 = te2[8], m21 = te2[1], m22 = te2[5], m23 = te2[9], m31 = te2[2], m32 = te2[6], m33 = te2[10];
     if (Math.abs(m12 - m21) < epsilon && Math.abs(m13 - m31) < epsilon && Math.abs(m23 - m32) < epsilon) {
       if (Math.abs(m12 + m21) < epsilon2 && Math.abs(m13 + m31) < epsilon2 && Math.abs(m23 + m32) < epsilon2 && Math.abs(m11 + m22 + m33 - 3) < epsilon2) {
         this.set(1, 0, 0, 0);
@@ -1950,17 +3679,17 @@ var Quaternion = class {
     this._z = z2;
     this._w = w2;
   }
-  static slerpFlat(dst, dstOffset, src0, srcOffset0, src1, srcOffset1, t2) {
+  static slerpFlat(dst, dstOffset, src0, srcOffset0, src1, srcOffset1, t3) {
     let x0 = src0[srcOffset0 + 0], y0 = src0[srcOffset0 + 1], z0 = src0[srcOffset0 + 2], w0 = src0[srcOffset0 + 3];
     const x1 = src1[srcOffset1 + 0], y1 = src1[srcOffset1 + 1], z1 = src1[srcOffset1 + 2], w1 = src1[srcOffset1 + 3];
-    if (t2 === 0) {
+    if (t3 === 0) {
       dst[dstOffset + 0] = x0;
       dst[dstOffset + 1] = y0;
       dst[dstOffset + 2] = z0;
       dst[dstOffset + 3] = w0;
       return;
     }
-    if (t2 === 1) {
+    if (t3 === 1) {
       dst[dstOffset + 0] = x1;
       dst[dstOffset + 1] = y1;
       dst[dstOffset + 2] = z1;
@@ -1968,19 +3697,19 @@ var Quaternion = class {
       return;
     }
     if (w0 !== w1 || x0 !== x1 || y0 !== y1 || z0 !== z1) {
-      let s2 = 1 - t2;
+      let s2 = 1 - t3;
       const cos = x0 * x1 + y0 * y1 + z0 * z1 + w0 * w1, dir = cos >= 0 ? 1 : -1, sqrSin = 1 - cos * cos;
       if (sqrSin > Number.EPSILON) {
         const sin = Math.sqrt(sqrSin), len = Math.atan2(sin, cos * dir);
         s2 = Math.sin(s2 * len) / sin;
-        t2 = Math.sin(t2 * len) / sin;
+        t3 = Math.sin(t3 * len) / sin;
       }
-      const tDir = t2 * dir;
+      const tDir = t3 * dir;
       x0 = x0 * s2 + x1 * tDir;
       y0 = y0 * s2 + y1 * tDir;
       z0 = z0 * s2 + z1 * tDir;
       w0 = w0 * s2 + w1 * tDir;
-      if (s2 === 1 - t2) {
+      if (s2 === 1 - t3) {
         const f2 = 1 / Math.sqrt(x0 * x0 + y0 * y0 + z0 * z0 + w0 * w0);
         x0 *= f2;
         y0 *= f2;
@@ -2118,7 +3847,7 @@ var Quaternion = class {
     return this;
   }
   setFromRotationMatrix(m2) {
-    const te = m2.elements, m11 = te[0], m12 = te[4], m13 = te[8], m21 = te[1], m22 = te[5], m23 = te[9], m31 = te[2], m32 = te[6], m33 = te[10], trace = m11 + m22 + m33;
+    const te2 = m2.elements, m11 = te2[0], m12 = te2[4], m13 = te2[8], m21 = te2[1], m22 = te2[5], m23 = te2[9], m31 = te2[2], m32 = te2[6], m33 = te2[10], trace = m11 + m22 + m33;
     if (trace > 0) {
       const s2 = 0.5 / Math.sqrt(trace + 1);
       this._w = 0.25 / s2;
@@ -2176,8 +3905,8 @@ var Quaternion = class {
   rotateTowards(q2, step) {
     const angle = this.angleTo(q2);
     if (angle === 0) return this;
-    const t2 = Math.min(1, step / angle);
-    this.slerp(q2, t2);
+    const t3 = Math.min(1, step / angle);
+    this.slerp(q2, t3);
     return this;
   }
   identity() {
@@ -2235,9 +3964,9 @@ var Quaternion = class {
     this._onChangeCallback();
     return this;
   }
-  slerp(qb, t2) {
-    if (t2 === 0) return this;
-    if (t2 === 1) return this.copy(qb);
+  slerp(qb, t3) {
+    if (t3 === 0) return this;
+    if (t3 === 1) return this.copy(qb);
     const x2 = this._x, y2 = this._y, z2 = this._z, w2 = this._w;
     let cosHalfTheta = w2 * qb._w + x2 * qb._x + y2 * qb._y + z2 * qb._z;
     if (cosHalfTheta < 0) {
@@ -2258,17 +3987,17 @@ var Quaternion = class {
     }
     const sqrSinHalfTheta = 1 - cosHalfTheta * cosHalfTheta;
     if (sqrSinHalfTheta <= Number.EPSILON) {
-      const s2 = 1 - t2;
-      this._w = s2 * w2 + t2 * this._w;
-      this._x = s2 * x2 + t2 * this._x;
-      this._y = s2 * y2 + t2 * this._y;
-      this._z = s2 * z2 + t2 * this._z;
+      const s2 = 1 - t3;
+      this._w = s2 * w2 + t3 * this._w;
+      this._x = s2 * x2 + t3 * this._x;
+      this._y = s2 * y2 + t3 * this._y;
+      this._z = s2 * z2 + t3 * this._z;
       this.normalize();
       return this;
     }
     const sinHalfTheta = Math.sqrt(sqrSinHalfTheta);
     const halfTheta = Math.atan2(sinHalfTheta, cosHalfTheta);
-    const ratioA = Math.sin((1 - t2) * halfTheta) / sinHalfTheta, ratioB = Math.sin(t2 * halfTheta) / sinHalfTheta;
+    const ratioA = Math.sin((1 - t3) * halfTheta) / sinHalfTheta, ratioB = Math.sin(t3 * halfTheta) / sinHalfTheta;
     this._w = w2 * ratioA + this._w * ratioB;
     this._x = x2 * ratioA + this._x * ratioB;
     this._y = y2 * ratioA + this._y * ratioB;
@@ -2276,8 +4005,8 @@ var Quaternion = class {
     this._onChangeCallback();
     return this;
   }
-  slerpQuaternions(qa, qb, t2) {
-    return this.copy(qa).slerp(qb, t2);
+  slerpQuaternions(qa, qb, t3) {
+    return this.copy(qa).slerp(qb, t3);
   }
   random() {
     const theta1 = 2 * Math.PI * Math.random();
@@ -2734,10 +4463,10 @@ var Vector3 = class _Vector3 {
   }
   randomDirection() {
     const theta = Math.random() * Math.PI * 2;
-    const u2 = Math.random() * 2 - 1;
-    const c2 = Math.sqrt(1 - u2 * u2);
+    const u3 = Math.random() * 2 - 1;
+    const c2 = Math.sqrt(1 - u3 * u3);
     this.x = c2 * Math.cos(theta);
-    this.y = u2;
+    this.y = u3;
     this.z = c2 * Math.sin(theta);
     return this;
   }
@@ -3191,15 +4920,15 @@ var Ray = class {
     this.direction.copy(ray.direction);
     return this;
   }
-  at(t2, target) {
-    return target.copy(this.origin).addScaledVector(this.direction, t2);
+  at(t3, target) {
+    return target.copy(this.origin).addScaledVector(this.direction, t3);
   }
   lookAt(v2) {
     this.direction.copy(v2).sub(this.origin).normalize();
     return this;
   }
-  recast(t2) {
-    this.origin.copy(this.at(t2, _vector$a));
+  recast(t3) {
+    this.origin.copy(this.at(t3, _vector$a));
     return this;
   }
   closestPointToPoint(point, target) {
@@ -3305,15 +5034,15 @@ var Ray = class {
       }
       return null;
     }
-    const t2 = -(this.origin.dot(plane.normal) + plane.constant) / denominator;
-    return t2 >= 0 ? t2 : null;
+    const t3 = -(this.origin.dot(plane.normal) + plane.constant) / denominator;
+    return t3 >= 0 ? t3 : null;
   }
   intersectPlane(plane, target) {
-    const t2 = this.distanceToPlane(plane);
-    if (t2 === null) {
+    const t3 = this.distanceToPlane(plane);
+    if (t3 === null) {
       return null;
     }
-    return this.at(t2, target);
+    return this.at(t3, target);
   }
   intersectsPlane(plane) {
     const distToPoint = plane.distanceToPoint(this.origin);
@@ -3434,23 +5163,23 @@ var Matrix4 = class _Matrix4 {
     }
   }
   set(n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44) {
-    const te = this.elements;
-    te[0] = n11;
-    te[4] = n12;
-    te[8] = n13;
-    te[12] = n14;
-    te[1] = n21;
-    te[5] = n22;
-    te[9] = n23;
-    te[13] = n24;
-    te[2] = n31;
-    te[6] = n32;
-    te[10] = n33;
-    te[14] = n34;
-    te[3] = n41;
-    te[7] = n42;
-    te[11] = n43;
-    te[15] = n44;
+    const te2 = this.elements;
+    te2[0] = n11;
+    te2[4] = n12;
+    te2[8] = n13;
+    te2[12] = n14;
+    te2[1] = n21;
+    te2[5] = n22;
+    te2[9] = n23;
+    te2[13] = n24;
+    te2[2] = n31;
+    te2[6] = n32;
+    te2[10] = n33;
+    te2[14] = n34;
+    te2[3] = n41;
+    te2[7] = n42;
+    te2[11] = n43;
+    te2[15] = n44;
     return this;
   }
   identity() {
@@ -3478,31 +5207,31 @@ var Matrix4 = class _Matrix4 {
     return new _Matrix4().fromArray(this.elements);
   }
   copy(m2) {
-    const te = this.elements;
+    const te2 = this.elements;
     const me = m2.elements;
-    te[0] = me[0];
-    te[1] = me[1];
-    te[2] = me[2];
-    te[3] = me[3];
-    te[4] = me[4];
-    te[5] = me[5];
-    te[6] = me[6];
-    te[7] = me[7];
-    te[8] = me[8];
-    te[9] = me[9];
-    te[10] = me[10];
-    te[11] = me[11];
-    te[12] = me[12];
-    te[13] = me[13];
-    te[14] = me[14];
-    te[15] = me[15];
+    te2[0] = me[0];
+    te2[1] = me[1];
+    te2[2] = me[2];
+    te2[3] = me[3];
+    te2[4] = me[4];
+    te2[5] = me[5];
+    te2[6] = me[6];
+    te2[7] = me[7];
+    te2[8] = me[8];
+    te2[9] = me[9];
+    te2[10] = me[10];
+    te2[11] = me[11];
+    te2[12] = me[12];
+    te2[13] = me[13];
+    te2[14] = me[14];
+    te2[15] = me[15];
     return this;
   }
   copyPosition(m2) {
-    const te = this.elements, me = m2.elements;
-    te[12] = me[12];
-    te[13] = me[13];
-    te[14] = me[14];
+    const te2 = this.elements, me = m2.elements;
+    te2[12] = me[12];
+    te2[13] = me[13];
+    te2[14] = me[14];
     return this;
   }
   setFromMatrix3(m2) {
@@ -3555,116 +5284,116 @@ var Matrix4 = class _Matrix4 {
     return this;
   }
   extractRotation(m2) {
-    const te = this.elements;
+    const te2 = this.elements;
     const me = m2.elements;
     const scaleX = 1 / _v1$5.setFromMatrixColumn(m2, 0).length();
     const scaleY = 1 / _v1$5.setFromMatrixColumn(m2, 1).length();
     const scaleZ = 1 / _v1$5.setFromMatrixColumn(m2, 2).length();
-    te[0] = me[0] * scaleX;
-    te[1] = me[1] * scaleX;
-    te[2] = me[2] * scaleX;
-    te[3] = 0;
-    te[4] = me[4] * scaleY;
-    te[5] = me[5] * scaleY;
-    te[6] = me[6] * scaleY;
-    te[7] = 0;
-    te[8] = me[8] * scaleZ;
-    te[9] = me[9] * scaleZ;
-    te[10] = me[10] * scaleZ;
-    te[11] = 0;
-    te[12] = 0;
-    te[13] = 0;
-    te[14] = 0;
-    te[15] = 1;
+    te2[0] = me[0] * scaleX;
+    te2[1] = me[1] * scaleX;
+    te2[2] = me[2] * scaleX;
+    te2[3] = 0;
+    te2[4] = me[4] * scaleY;
+    te2[5] = me[5] * scaleY;
+    te2[6] = me[6] * scaleY;
+    te2[7] = 0;
+    te2[8] = me[8] * scaleZ;
+    te2[9] = me[9] * scaleZ;
+    te2[10] = me[10] * scaleZ;
+    te2[11] = 0;
+    te2[12] = 0;
+    te2[13] = 0;
+    te2[14] = 0;
+    te2[15] = 1;
     return this;
   }
   makeRotationFromEuler(euler) {
-    const te = this.elements;
+    const te2 = this.elements;
     const x2 = euler.x, y2 = euler.y, z2 = euler.z;
     const a2 = Math.cos(x2), b2 = Math.sin(x2);
     const c2 = Math.cos(y2), d2 = Math.sin(y2);
     const e2 = Math.cos(z2), f2 = Math.sin(z2);
     if (euler.order === "XYZ") {
-      const ae = a2 * e2, af = a2 * f2, be = b2 * e2, bf = b2 * f2;
-      te[0] = c2 * e2;
-      te[4] = -c2 * f2;
-      te[8] = d2;
-      te[1] = af + be * d2;
-      te[5] = ae - bf * d2;
-      te[9] = -b2 * c2;
-      te[2] = bf - ae * d2;
-      te[6] = be + af * d2;
-      te[10] = a2 * c2;
+      const ae2 = a2 * e2, af = a2 * f2, be = b2 * e2, bf = b2 * f2;
+      te2[0] = c2 * e2;
+      te2[4] = -c2 * f2;
+      te2[8] = d2;
+      te2[1] = af + be * d2;
+      te2[5] = ae2 - bf * d2;
+      te2[9] = -b2 * c2;
+      te2[2] = bf - ae2 * d2;
+      te2[6] = be + af * d2;
+      te2[10] = a2 * c2;
     } else if (euler.order === "YXZ") {
       const ce = c2 * e2, cf = c2 * f2, de = d2 * e2, df = d2 * f2;
-      te[0] = ce + df * b2;
-      te[4] = de * b2 - cf;
-      te[8] = a2 * d2;
-      te[1] = a2 * f2;
-      te[5] = a2 * e2;
-      te[9] = -b2;
-      te[2] = cf * b2 - de;
-      te[6] = df + ce * b2;
-      te[10] = a2 * c2;
+      te2[0] = ce + df * b2;
+      te2[4] = de * b2 - cf;
+      te2[8] = a2 * d2;
+      te2[1] = a2 * f2;
+      te2[5] = a2 * e2;
+      te2[9] = -b2;
+      te2[2] = cf * b2 - de;
+      te2[6] = df + ce * b2;
+      te2[10] = a2 * c2;
     } else if (euler.order === "ZXY") {
       const ce = c2 * e2, cf = c2 * f2, de = d2 * e2, df = d2 * f2;
-      te[0] = ce - df * b2;
-      te[4] = -a2 * f2;
-      te[8] = de + cf * b2;
-      te[1] = cf + de * b2;
-      te[5] = a2 * e2;
-      te[9] = df - ce * b2;
-      te[2] = -a2 * d2;
-      te[6] = b2;
-      te[10] = a2 * c2;
+      te2[0] = ce - df * b2;
+      te2[4] = -a2 * f2;
+      te2[8] = de + cf * b2;
+      te2[1] = cf + de * b2;
+      te2[5] = a2 * e2;
+      te2[9] = df - ce * b2;
+      te2[2] = -a2 * d2;
+      te2[6] = b2;
+      te2[10] = a2 * c2;
     } else if (euler.order === "ZYX") {
-      const ae = a2 * e2, af = a2 * f2, be = b2 * e2, bf = b2 * f2;
-      te[0] = c2 * e2;
-      te[4] = be * d2 - af;
-      te[8] = ae * d2 + bf;
-      te[1] = c2 * f2;
-      te[5] = bf * d2 + ae;
-      te[9] = af * d2 - be;
-      te[2] = -d2;
-      te[6] = b2 * c2;
-      te[10] = a2 * c2;
+      const ae2 = a2 * e2, af = a2 * f2, be = b2 * e2, bf = b2 * f2;
+      te2[0] = c2 * e2;
+      te2[4] = be * d2 - af;
+      te2[8] = ae2 * d2 + bf;
+      te2[1] = c2 * f2;
+      te2[5] = bf * d2 + ae2;
+      te2[9] = af * d2 - be;
+      te2[2] = -d2;
+      te2[6] = b2 * c2;
+      te2[10] = a2 * c2;
     } else if (euler.order === "YZX") {
       const ac = a2 * c2, ad = a2 * d2, bc = b2 * c2, bd = b2 * d2;
-      te[0] = c2 * e2;
-      te[4] = bd - ac * f2;
-      te[8] = bc * f2 + ad;
-      te[1] = f2;
-      te[5] = a2 * e2;
-      te[9] = -b2 * e2;
-      te[2] = -d2 * e2;
-      te[6] = ad * f2 + bc;
-      te[10] = ac - bd * f2;
+      te2[0] = c2 * e2;
+      te2[4] = bd - ac * f2;
+      te2[8] = bc * f2 + ad;
+      te2[1] = f2;
+      te2[5] = a2 * e2;
+      te2[9] = -b2 * e2;
+      te2[2] = -d2 * e2;
+      te2[6] = ad * f2 + bc;
+      te2[10] = ac - bd * f2;
     } else if (euler.order === "XZY") {
       const ac = a2 * c2, ad = a2 * d2, bc = b2 * c2, bd = b2 * d2;
-      te[0] = c2 * e2;
-      te[4] = -f2;
-      te[8] = d2 * e2;
-      te[1] = ac * f2 + bd;
-      te[5] = a2 * e2;
-      te[9] = ad * f2 - bc;
-      te[2] = bc * f2 - ad;
-      te[6] = b2 * e2;
-      te[10] = bd * f2 + ac;
+      te2[0] = c2 * e2;
+      te2[4] = -f2;
+      te2[8] = d2 * e2;
+      te2[1] = ac * f2 + bd;
+      te2[5] = a2 * e2;
+      te2[9] = ad * f2 - bc;
+      te2[2] = bc * f2 - ad;
+      te2[6] = b2 * e2;
+      te2[10] = bd * f2 + ac;
     }
-    te[3] = 0;
-    te[7] = 0;
-    te[11] = 0;
-    te[12] = 0;
-    te[13] = 0;
-    te[14] = 0;
-    te[15] = 1;
+    te2[3] = 0;
+    te2[7] = 0;
+    te2[11] = 0;
+    te2[12] = 0;
+    te2[13] = 0;
+    te2[14] = 0;
+    te2[15] = 1;
     return this;
   }
   makeRotationFromQuaternion(q2) {
     return this.compose(_zero, q2, _one);
   }
   lookAt(eye, target, up) {
-    const te = this.elements;
+    const te2 = this.elements;
     _z.subVectors(eye, target);
     if (_z.lengthSq() === 0) {
       _z.z = 1;
@@ -3682,15 +5411,15 @@ var Matrix4 = class _Matrix4 {
     }
     _x.normalize();
     _y.crossVectors(_z, _x);
-    te[0] = _x.x;
-    te[4] = _y.x;
-    te[8] = _z.x;
-    te[1] = _x.y;
-    te[5] = _y.y;
-    te[9] = _z.y;
-    te[2] = _x.z;
-    te[6] = _y.z;
-    te[10] = _z.z;
+    te2[0] = _x.x;
+    te2[4] = _y.x;
+    te2[8] = _z.x;
+    te2[1] = _x.y;
+    te2[5] = _y.y;
+    te2[9] = _z.y;
+    te2[2] = _x.z;
+    te2[6] = _y.z;
+    te2[10] = _z.z;
     return this;
   }
   multiply(m2) {
@@ -3700,144 +5429,144 @@ var Matrix4 = class _Matrix4 {
     return this.multiplyMatrices(m2, this);
   }
   multiplyMatrices(a2, b2) {
-    const ae = a2.elements;
+    const ae2 = a2.elements;
     const be = b2.elements;
-    const te = this.elements;
-    const a11 = ae[0], a12 = ae[4], a13 = ae[8], a14 = ae[12];
-    const a21 = ae[1], a22 = ae[5], a23 = ae[9], a24 = ae[13];
-    const a31 = ae[2], a32 = ae[6], a33 = ae[10], a34 = ae[14];
-    const a41 = ae[3], a42 = ae[7], a43 = ae[11], a44 = ae[15];
+    const te2 = this.elements;
+    const a11 = ae2[0], a12 = ae2[4], a13 = ae2[8], a14 = ae2[12];
+    const a21 = ae2[1], a22 = ae2[5], a23 = ae2[9], a24 = ae2[13];
+    const a31 = ae2[2], a32 = ae2[6], a33 = ae2[10], a34 = ae2[14];
+    const a41 = ae2[3], a42 = ae2[7], a43 = ae2[11], a44 = ae2[15];
     const b11 = be[0], b12 = be[4], b13 = be[8], b14 = be[12];
     const b21 = be[1], b22 = be[5], b23 = be[9], b24 = be[13];
     const b31 = be[2], b32 = be[6], b33 = be[10], b34 = be[14];
     const b41 = be[3], b42 = be[7], b43 = be[11], b44 = be[15];
-    te[0] = a11 * b11 + a12 * b21 + a13 * b31 + a14 * b41;
-    te[4] = a11 * b12 + a12 * b22 + a13 * b32 + a14 * b42;
-    te[8] = a11 * b13 + a12 * b23 + a13 * b33 + a14 * b43;
-    te[12] = a11 * b14 + a12 * b24 + a13 * b34 + a14 * b44;
-    te[1] = a21 * b11 + a22 * b21 + a23 * b31 + a24 * b41;
-    te[5] = a21 * b12 + a22 * b22 + a23 * b32 + a24 * b42;
-    te[9] = a21 * b13 + a22 * b23 + a23 * b33 + a24 * b43;
-    te[13] = a21 * b14 + a22 * b24 + a23 * b34 + a24 * b44;
-    te[2] = a31 * b11 + a32 * b21 + a33 * b31 + a34 * b41;
-    te[6] = a31 * b12 + a32 * b22 + a33 * b32 + a34 * b42;
-    te[10] = a31 * b13 + a32 * b23 + a33 * b33 + a34 * b43;
-    te[14] = a31 * b14 + a32 * b24 + a33 * b34 + a34 * b44;
-    te[3] = a41 * b11 + a42 * b21 + a43 * b31 + a44 * b41;
-    te[7] = a41 * b12 + a42 * b22 + a43 * b32 + a44 * b42;
-    te[11] = a41 * b13 + a42 * b23 + a43 * b33 + a44 * b43;
-    te[15] = a41 * b14 + a42 * b24 + a43 * b34 + a44 * b44;
+    te2[0] = a11 * b11 + a12 * b21 + a13 * b31 + a14 * b41;
+    te2[4] = a11 * b12 + a12 * b22 + a13 * b32 + a14 * b42;
+    te2[8] = a11 * b13 + a12 * b23 + a13 * b33 + a14 * b43;
+    te2[12] = a11 * b14 + a12 * b24 + a13 * b34 + a14 * b44;
+    te2[1] = a21 * b11 + a22 * b21 + a23 * b31 + a24 * b41;
+    te2[5] = a21 * b12 + a22 * b22 + a23 * b32 + a24 * b42;
+    te2[9] = a21 * b13 + a22 * b23 + a23 * b33 + a24 * b43;
+    te2[13] = a21 * b14 + a22 * b24 + a23 * b34 + a24 * b44;
+    te2[2] = a31 * b11 + a32 * b21 + a33 * b31 + a34 * b41;
+    te2[6] = a31 * b12 + a32 * b22 + a33 * b32 + a34 * b42;
+    te2[10] = a31 * b13 + a32 * b23 + a33 * b33 + a34 * b43;
+    te2[14] = a31 * b14 + a32 * b24 + a33 * b34 + a34 * b44;
+    te2[3] = a41 * b11 + a42 * b21 + a43 * b31 + a44 * b41;
+    te2[7] = a41 * b12 + a42 * b22 + a43 * b32 + a44 * b42;
+    te2[11] = a41 * b13 + a42 * b23 + a43 * b33 + a44 * b43;
+    te2[15] = a41 * b14 + a42 * b24 + a43 * b34 + a44 * b44;
     return this;
   }
   multiplyScalar(s2) {
-    const te = this.elements;
-    te[0] *= s2;
-    te[4] *= s2;
-    te[8] *= s2;
-    te[12] *= s2;
-    te[1] *= s2;
-    te[5] *= s2;
-    te[9] *= s2;
-    te[13] *= s2;
-    te[2] *= s2;
-    te[6] *= s2;
-    te[10] *= s2;
-    te[14] *= s2;
-    te[3] *= s2;
-    te[7] *= s2;
-    te[11] *= s2;
-    te[15] *= s2;
+    const te2 = this.elements;
+    te2[0] *= s2;
+    te2[4] *= s2;
+    te2[8] *= s2;
+    te2[12] *= s2;
+    te2[1] *= s2;
+    te2[5] *= s2;
+    te2[9] *= s2;
+    te2[13] *= s2;
+    te2[2] *= s2;
+    te2[6] *= s2;
+    te2[10] *= s2;
+    te2[14] *= s2;
+    te2[3] *= s2;
+    te2[7] *= s2;
+    te2[11] *= s2;
+    te2[15] *= s2;
     return this;
   }
   determinant() {
-    const te = this.elements;
-    const n11 = te[0], n12 = te[4], n13 = te[8], n14 = te[12];
-    const n21 = te[1], n22 = te[5], n23 = te[9], n24 = te[13];
-    const n31 = te[2], n32 = te[6], n33 = te[10], n34 = te[14];
-    const n41 = te[3], n42 = te[7], n43 = te[11], n44 = te[15];
+    const te2 = this.elements;
+    const n11 = te2[0], n12 = te2[4], n13 = te2[8], n14 = te2[12];
+    const n21 = te2[1], n22 = te2[5], n23 = te2[9], n24 = te2[13];
+    const n31 = te2[2], n32 = te2[6], n33 = te2[10], n34 = te2[14];
+    const n41 = te2[3], n42 = te2[7], n43 = te2[11], n44 = te2[15];
     return n41 * (+n14 * n23 * n32 - n13 * n24 * n32 - n14 * n22 * n33 + n12 * n24 * n33 + n13 * n22 * n34 - n12 * n23 * n34) + n42 * (+n11 * n23 * n34 - n11 * n24 * n33 + n14 * n21 * n33 - n13 * n21 * n34 + n13 * n24 * n31 - n14 * n23 * n31) + n43 * (+n11 * n24 * n32 - n11 * n22 * n34 - n14 * n21 * n32 + n12 * n21 * n34 + n14 * n22 * n31 - n12 * n24 * n31) + n44 * (-n13 * n22 * n31 - n11 * n23 * n32 + n11 * n22 * n33 + n13 * n21 * n32 - n12 * n21 * n33 + n12 * n23 * n31);
   }
   transpose() {
-    const te = this.elements;
+    const te2 = this.elements;
     let tmp2;
-    tmp2 = te[1];
-    te[1] = te[4];
-    te[4] = tmp2;
-    tmp2 = te[2];
-    te[2] = te[8];
-    te[8] = tmp2;
-    tmp2 = te[6];
-    te[6] = te[9];
-    te[9] = tmp2;
-    tmp2 = te[3];
-    te[3] = te[12];
-    te[12] = tmp2;
-    tmp2 = te[7];
-    te[7] = te[13];
-    te[13] = tmp2;
-    tmp2 = te[11];
-    te[11] = te[14];
-    te[14] = tmp2;
+    tmp2 = te2[1];
+    te2[1] = te2[4];
+    te2[4] = tmp2;
+    tmp2 = te2[2];
+    te2[2] = te2[8];
+    te2[8] = tmp2;
+    tmp2 = te2[6];
+    te2[6] = te2[9];
+    te2[9] = tmp2;
+    tmp2 = te2[3];
+    te2[3] = te2[12];
+    te2[12] = tmp2;
+    tmp2 = te2[7];
+    te2[7] = te2[13];
+    te2[13] = tmp2;
+    tmp2 = te2[11];
+    te2[11] = te2[14];
+    te2[14] = tmp2;
     return this;
   }
   setPosition(x2, y2, z2) {
-    const te = this.elements;
+    const te2 = this.elements;
     if (x2.isVector3) {
-      te[12] = x2.x;
-      te[13] = x2.y;
-      te[14] = x2.z;
+      te2[12] = x2.x;
+      te2[13] = x2.y;
+      te2[14] = x2.z;
     } else {
-      te[12] = x2;
-      te[13] = y2;
-      te[14] = z2;
+      te2[12] = x2;
+      te2[13] = y2;
+      te2[14] = z2;
     }
     return this;
   }
   invert() {
-    const te = this.elements, n11 = te[0], n21 = te[1], n31 = te[2], n41 = te[3], n12 = te[4], n22 = te[5], n32 = te[6], n42 = te[7], n13 = te[8], n23 = te[9], n33 = te[10], n43 = te[11], n14 = te[12], n24 = te[13], n34 = te[14], n44 = te[15], t11 = n23 * n34 * n42 - n24 * n33 * n42 + n24 * n32 * n43 - n22 * n34 * n43 - n23 * n32 * n44 + n22 * n33 * n44, t12 = n14 * n33 * n42 - n13 * n34 * n42 - n14 * n32 * n43 + n12 * n34 * n43 + n13 * n32 * n44 - n12 * n33 * n44, t13 = n13 * n24 * n42 - n14 * n23 * n42 + n14 * n22 * n43 - n12 * n24 * n43 - n13 * n22 * n44 + n12 * n23 * n44, t14 = n14 * n23 * n32 - n13 * n24 * n32 - n14 * n22 * n33 + n12 * n24 * n33 + n13 * n22 * n34 - n12 * n23 * n34;
+    const te2 = this.elements, n11 = te2[0], n21 = te2[1], n31 = te2[2], n41 = te2[3], n12 = te2[4], n22 = te2[5], n32 = te2[6], n42 = te2[7], n13 = te2[8], n23 = te2[9], n33 = te2[10], n43 = te2[11], n14 = te2[12], n24 = te2[13], n34 = te2[14], n44 = te2[15], t11 = n23 * n34 * n42 - n24 * n33 * n42 + n24 * n32 * n43 - n22 * n34 * n43 - n23 * n32 * n44 + n22 * n33 * n44, t12 = n14 * n33 * n42 - n13 * n34 * n42 - n14 * n32 * n43 + n12 * n34 * n43 + n13 * n32 * n44 - n12 * n33 * n44, t13 = n13 * n24 * n42 - n14 * n23 * n42 + n14 * n22 * n43 - n12 * n24 * n43 - n13 * n22 * n44 + n12 * n23 * n44, t14 = n14 * n23 * n32 - n13 * n24 * n32 - n14 * n22 * n33 + n12 * n24 * n33 + n13 * n22 * n34 - n12 * n23 * n34;
     const det = n11 * t11 + n21 * t12 + n31 * t13 + n41 * t14;
     if (det === 0) return this.set(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     const detInv = 1 / det;
-    te[0] = t11 * detInv;
-    te[1] = (n24 * n33 * n41 - n23 * n34 * n41 - n24 * n31 * n43 + n21 * n34 * n43 + n23 * n31 * n44 - n21 * n33 * n44) * detInv;
-    te[2] = (n22 * n34 * n41 - n24 * n32 * n41 + n24 * n31 * n42 - n21 * n34 * n42 - n22 * n31 * n44 + n21 * n32 * n44) * detInv;
-    te[3] = (n23 * n32 * n41 - n22 * n33 * n41 - n23 * n31 * n42 + n21 * n33 * n42 + n22 * n31 * n43 - n21 * n32 * n43) * detInv;
-    te[4] = t12 * detInv;
-    te[5] = (n13 * n34 * n41 - n14 * n33 * n41 + n14 * n31 * n43 - n11 * n34 * n43 - n13 * n31 * n44 + n11 * n33 * n44) * detInv;
-    te[6] = (n14 * n32 * n41 - n12 * n34 * n41 - n14 * n31 * n42 + n11 * n34 * n42 + n12 * n31 * n44 - n11 * n32 * n44) * detInv;
-    te[7] = (n12 * n33 * n41 - n13 * n32 * n41 + n13 * n31 * n42 - n11 * n33 * n42 - n12 * n31 * n43 + n11 * n32 * n43) * detInv;
-    te[8] = t13 * detInv;
-    te[9] = (n14 * n23 * n41 - n13 * n24 * n41 - n14 * n21 * n43 + n11 * n24 * n43 + n13 * n21 * n44 - n11 * n23 * n44) * detInv;
-    te[10] = (n12 * n24 * n41 - n14 * n22 * n41 + n14 * n21 * n42 - n11 * n24 * n42 - n12 * n21 * n44 + n11 * n22 * n44) * detInv;
-    te[11] = (n13 * n22 * n41 - n12 * n23 * n41 - n13 * n21 * n42 + n11 * n23 * n42 + n12 * n21 * n43 - n11 * n22 * n43) * detInv;
-    te[12] = t14 * detInv;
-    te[13] = (n13 * n24 * n31 - n14 * n23 * n31 + n14 * n21 * n33 - n11 * n24 * n33 - n13 * n21 * n34 + n11 * n23 * n34) * detInv;
-    te[14] = (n14 * n22 * n31 - n12 * n24 * n31 - n14 * n21 * n32 + n11 * n24 * n32 + n12 * n21 * n34 - n11 * n22 * n34) * detInv;
-    te[15] = (n12 * n23 * n31 - n13 * n22 * n31 + n13 * n21 * n32 - n11 * n23 * n32 - n12 * n21 * n33 + n11 * n22 * n33) * detInv;
+    te2[0] = t11 * detInv;
+    te2[1] = (n24 * n33 * n41 - n23 * n34 * n41 - n24 * n31 * n43 + n21 * n34 * n43 + n23 * n31 * n44 - n21 * n33 * n44) * detInv;
+    te2[2] = (n22 * n34 * n41 - n24 * n32 * n41 + n24 * n31 * n42 - n21 * n34 * n42 - n22 * n31 * n44 + n21 * n32 * n44) * detInv;
+    te2[3] = (n23 * n32 * n41 - n22 * n33 * n41 - n23 * n31 * n42 + n21 * n33 * n42 + n22 * n31 * n43 - n21 * n32 * n43) * detInv;
+    te2[4] = t12 * detInv;
+    te2[5] = (n13 * n34 * n41 - n14 * n33 * n41 + n14 * n31 * n43 - n11 * n34 * n43 - n13 * n31 * n44 + n11 * n33 * n44) * detInv;
+    te2[6] = (n14 * n32 * n41 - n12 * n34 * n41 - n14 * n31 * n42 + n11 * n34 * n42 + n12 * n31 * n44 - n11 * n32 * n44) * detInv;
+    te2[7] = (n12 * n33 * n41 - n13 * n32 * n41 + n13 * n31 * n42 - n11 * n33 * n42 - n12 * n31 * n43 + n11 * n32 * n43) * detInv;
+    te2[8] = t13 * detInv;
+    te2[9] = (n14 * n23 * n41 - n13 * n24 * n41 - n14 * n21 * n43 + n11 * n24 * n43 + n13 * n21 * n44 - n11 * n23 * n44) * detInv;
+    te2[10] = (n12 * n24 * n41 - n14 * n22 * n41 + n14 * n21 * n42 - n11 * n24 * n42 - n12 * n21 * n44 + n11 * n22 * n44) * detInv;
+    te2[11] = (n13 * n22 * n41 - n12 * n23 * n41 - n13 * n21 * n42 + n11 * n23 * n42 + n12 * n21 * n43 - n11 * n22 * n43) * detInv;
+    te2[12] = t14 * detInv;
+    te2[13] = (n13 * n24 * n31 - n14 * n23 * n31 + n14 * n21 * n33 - n11 * n24 * n33 - n13 * n21 * n34 + n11 * n23 * n34) * detInv;
+    te2[14] = (n14 * n22 * n31 - n12 * n24 * n31 - n14 * n21 * n32 + n11 * n24 * n32 + n12 * n21 * n34 - n11 * n22 * n34) * detInv;
+    te2[15] = (n12 * n23 * n31 - n13 * n22 * n31 + n13 * n21 * n32 - n11 * n23 * n32 - n12 * n21 * n33 + n11 * n22 * n33) * detInv;
     return this;
   }
   scale(v2) {
-    const te = this.elements;
+    const te2 = this.elements;
     const x2 = v2.x, y2 = v2.y, z2 = v2.z;
-    te[0] *= x2;
-    te[4] *= y2;
-    te[8] *= z2;
-    te[1] *= x2;
-    te[5] *= y2;
-    te[9] *= z2;
-    te[2] *= x2;
-    te[6] *= y2;
-    te[10] *= z2;
-    te[3] *= x2;
-    te[7] *= y2;
-    te[11] *= z2;
+    te2[0] *= x2;
+    te2[4] *= y2;
+    te2[8] *= z2;
+    te2[1] *= x2;
+    te2[5] *= y2;
+    te2[9] *= z2;
+    te2[2] *= x2;
+    te2[6] *= y2;
+    te2[10] *= z2;
+    te2[3] *= x2;
+    te2[7] *= y2;
+    te2[11] *= z2;
     return this;
   }
   getMaxScaleOnAxis() {
-    const te = this.elements;
-    const scaleXSq = te[0] * te[0] + te[1] * te[1] + te[2] * te[2];
-    const scaleYSq = te[4] * te[4] + te[5] * te[5] + te[6] * te[6];
-    const scaleZSq = te[8] * te[8] + te[9] * te[9] + te[10] * te[10];
+    const te2 = this.elements;
+    const scaleXSq = te2[0] * te2[0] + te2[1] * te2[1] + te2[2] * te2[2];
+    const scaleYSq = te2[4] * te2[4] + te2[5] * te2[5] + te2[6] * te2[6];
+    const scaleZSq = te2[8] * te2[8] + te2[9] * te2[9] + te2[10] * te2[10];
     return Math.sqrt(Math.max(scaleXSq, scaleYSq, scaleZSq));
   }
   makeTranslation(x2, y2, z2) {
@@ -3951,9 +5680,9 @@ var Matrix4 = class _Matrix4 {
   makeRotationAxis(axis, angle) {
     const c2 = Math.cos(angle);
     const s2 = Math.sin(angle);
-    const t2 = 1 - c2;
+    const t3 = 1 - c2;
     const x2 = axis.x, y2 = axis.y, z2 = axis.z;
-    const tx = t2 * x2, ty = t2 * y2;
+    const tx = t3 * x2, ty = t3 * y2;
     this.set(
       tx * x2 + c2,
       tx * y2 - s2 * z2,
@@ -3965,7 +5694,7 @@ var Matrix4 = class _Matrix4 {
       0,
       tx * z2 - s2 * y2,
       ty * z2 + s2 * x2,
-      t2 * z2 * z2 + c2,
+      t3 * z2 * z2 + c2,
       0,
       0,
       0,
@@ -4017,41 +5746,41 @@ var Matrix4 = class _Matrix4 {
     return this;
   }
   compose(position, quaternion, scale) {
-    const te = this.elements;
+    const te2 = this.elements;
     const x2 = quaternion._x, y2 = quaternion._y, z2 = quaternion._z, w2 = quaternion._w;
     const x22 = x2 + x2, y22 = y2 + y2, z22 = z2 + z2;
     const xx = x2 * x22, xy = x2 * y22, xz = x2 * z22;
     const yy = y2 * y22, yz = y2 * z22, zz = z2 * z22;
     const wx = w2 * x22, wy = w2 * y22, wz = w2 * z22;
     const sx = scale.x, sy = scale.y, sz = scale.z;
-    te[0] = (1 - (yy + zz)) * sx;
-    te[1] = (xy + wz) * sx;
-    te[2] = (xz - wy) * sx;
-    te[3] = 0;
-    te[4] = (xy - wz) * sy;
-    te[5] = (1 - (xx + zz)) * sy;
-    te[6] = (yz + wx) * sy;
-    te[7] = 0;
-    te[8] = (xz + wy) * sz;
-    te[9] = (yz - wx) * sz;
-    te[10] = (1 - (xx + yy)) * sz;
-    te[11] = 0;
-    te[12] = position.x;
-    te[13] = position.y;
-    te[14] = position.z;
-    te[15] = 1;
+    te2[0] = (1 - (yy + zz)) * sx;
+    te2[1] = (xy + wz) * sx;
+    te2[2] = (xz - wy) * sx;
+    te2[3] = 0;
+    te2[4] = (xy - wz) * sy;
+    te2[5] = (1 - (xx + zz)) * sy;
+    te2[6] = (yz + wx) * sy;
+    te2[7] = 0;
+    te2[8] = (xz + wy) * sz;
+    te2[9] = (yz - wx) * sz;
+    te2[10] = (1 - (xx + yy)) * sz;
+    te2[11] = 0;
+    te2[12] = position.x;
+    te2[13] = position.y;
+    te2[14] = position.z;
+    te2[15] = 1;
     return this;
   }
   decompose(position, quaternion, scale) {
-    const te = this.elements;
-    let sx = _v1$5.set(te[0], te[1], te[2]).length();
-    const sy = _v1$5.set(te[4], te[5], te[6]).length();
-    const sz = _v1$5.set(te[8], te[9], te[10]).length();
+    const te2 = this.elements;
+    let sx = _v1$5.set(te2[0], te2[1], te2[2]).length();
+    const sy = _v1$5.set(te2[4], te2[5], te2[6]).length();
+    const sz = _v1$5.set(te2[8], te2[9], te2[10]).length();
     const det = this.determinant();
     if (det < 0) sx = -sx;
-    position.x = te[12];
-    position.y = te[13];
-    position.z = te[14];
+    position.x = te2[12];
+    position.y = te2[13];
+    position.z = te2[14];
     _m1$4.copy(this);
     const invSX = 1 / sx;
     const invSY = 1 / sy;
@@ -4072,7 +5801,7 @@ var Matrix4 = class _Matrix4 {
     return this;
   }
   makePerspective(left, right, top, bottom, near, far, coordinateSystem = WebGLCoordinateSystem) {
-    const te = this.elements;
+    const te2 = this.elements;
     const x2 = 2 * near / (right - left);
     const y2 = 2 * near / (top - bottom);
     const a2 = (right + left) / (right - left);
@@ -4087,26 +5816,26 @@ var Matrix4 = class _Matrix4 {
     } else {
       throw new Error("THREE.Matrix4.makePerspective(): Invalid coordinate system: " + coordinateSystem);
     }
-    te[0] = x2;
-    te[4] = 0;
-    te[8] = a2;
-    te[12] = 0;
-    te[1] = 0;
-    te[5] = y2;
-    te[9] = b2;
-    te[13] = 0;
-    te[2] = 0;
-    te[6] = 0;
-    te[10] = c2;
-    te[14] = d2;
-    te[3] = 0;
-    te[7] = 0;
-    te[11] = -1;
-    te[15] = 0;
+    te2[0] = x2;
+    te2[4] = 0;
+    te2[8] = a2;
+    te2[12] = 0;
+    te2[1] = 0;
+    te2[5] = y2;
+    te2[9] = b2;
+    te2[13] = 0;
+    te2[2] = 0;
+    te2[6] = 0;
+    te2[10] = c2;
+    te2[14] = d2;
+    te2[3] = 0;
+    te2[7] = 0;
+    te2[11] = -1;
+    te2[15] = 0;
     return this;
   }
   makeOrthographic(left, right, top, bottom, near, far, coordinateSystem = WebGLCoordinateSystem) {
-    const te = this.elements;
+    const te2 = this.elements;
     const w2 = 1 / (right - left);
     const h2 = 1 / (top - bottom);
     const p2 = 1 / (far - near);
@@ -4122,29 +5851,29 @@ var Matrix4 = class _Matrix4 {
     } else {
       throw new Error("THREE.Matrix4.makeOrthographic(): Invalid coordinate system: " + coordinateSystem);
     }
-    te[0] = 2 * w2;
-    te[4] = 0;
-    te[8] = 0;
-    te[12] = -x2;
-    te[1] = 0;
-    te[5] = 2 * h2;
-    te[9] = 0;
-    te[13] = -y2;
-    te[2] = 0;
-    te[6] = 0;
-    te[10] = zInv;
-    te[14] = -z2;
-    te[3] = 0;
-    te[7] = 0;
-    te[11] = 0;
-    te[15] = 1;
+    te2[0] = 2 * w2;
+    te2[4] = 0;
+    te2[8] = 0;
+    te2[12] = -x2;
+    te2[1] = 0;
+    te2[5] = 2 * h2;
+    te2[9] = 0;
+    te2[13] = -y2;
+    te2[2] = 0;
+    te2[6] = 0;
+    te2[10] = zInv;
+    te2[14] = -z2;
+    te2[3] = 0;
+    te2[7] = 0;
+    te2[11] = 0;
+    te2[15] = 1;
     return this;
   }
   equals(matrix) {
-    const te = this.elements;
+    const te2 = this.elements;
     const me = matrix.elements;
     for (let i2 = 0; i2 < 16; i2++) {
-      if (te[i2] !== me[i2]) return false;
+      if (te2[i2] !== me[i2]) return false;
     }
     return true;
   }
@@ -4155,23 +5884,23 @@ var Matrix4 = class _Matrix4 {
     return this;
   }
   toArray(array = [], offset = 0) {
-    const te = this.elements;
-    array[offset] = te[0];
-    array[offset + 1] = te[1];
-    array[offset + 2] = te[2];
-    array[offset + 3] = te[3];
-    array[offset + 4] = te[4];
-    array[offset + 5] = te[5];
-    array[offset + 6] = te[6];
-    array[offset + 7] = te[7];
-    array[offset + 8] = te[8];
-    array[offset + 9] = te[9];
-    array[offset + 10] = te[10];
-    array[offset + 11] = te[11];
-    array[offset + 12] = te[12];
-    array[offset + 13] = te[13];
-    array[offset + 14] = te[14];
-    array[offset + 15] = te[15];
+    const te2 = this.elements;
+    array[offset] = te2[0];
+    array[offset + 1] = te2[1];
+    array[offset + 2] = te2[2];
+    array[offset + 3] = te2[3];
+    array[offset + 4] = te2[4];
+    array[offset + 5] = te2[5];
+    array[offset + 6] = te2[6];
+    array[offset + 7] = te2[7];
+    array[offset + 8] = te2[8];
+    array[offset + 9] = te2[9];
+    array[offset + 10] = te2[10];
+    array[offset + 11] = te2[11];
+    array[offset + 12] = te2[12];
+    array[offset + 13] = te2[13];
+    array[offset + 14] = te2[14];
+    array[offset + 15] = te2[15];
     return array;
   }
 };
@@ -4240,10 +5969,10 @@ var Euler = class _Euler {
     return this;
   }
   setFromRotationMatrix(m2, order = this._order, update = true) {
-    const te = m2.elements;
-    const m11 = te[0], m12 = te[4], m13 = te[8];
-    const m21 = te[1], m22 = te[5], m23 = te[9];
-    const m31 = te[2], m32 = te[6], m33 = te[10];
+    const te2 = m2.elements;
+    const m11 = te2[0], m12 = te2[4], m13 = te2[8];
+    const m21 = te2[1], m22 = te2[5], m23 = te2[9];
+    const m31 = te2[2], m32 = te2[6], m33 = te2[10];
     switch (order) {
       case "XYZ":
         this._y = Math.asin(clamp(m13, -1, 1));
@@ -4897,10 +6626,10 @@ var Object3D = class _Object3D extends EventDispatcher {
     }
     output.object = object;
     return output;
-    function extractFromCache(cache) {
+    function extractFromCache(cache2) {
       const values = [];
-      for (const key in cache) {
-        const data = cache[key];
+      for (const key in cache2) {
+        const data = cache2[key];
         delete data.metadata;
         values.push(data);
       }
@@ -4988,9 +6717,9 @@ var Triangle = class _Triangle {
       return null;
     }
     const invDenom = 1 / denom;
-    const u2 = (dot11 * dot02 - dot01 * dot12) * invDenom;
+    const u3 = (dot11 * dot02 - dot01 * dot12) * invDenom;
     const v2 = (dot00 * dot12 - dot01 * dot02) * invDenom;
-    return target.set(1 - u2 - v2, v2, u2);
+    return target.set(1 - u3 - v2, v2, u3);
   }
   static containsPoint(point, a2, b2, c2) {
     if (this.getBarycoord(point, a2, b2, c2, _v3$2) === null) {
@@ -5286,24 +7015,24 @@ var _colorKeywords = {
 };
 var _hslA = { h: 0, s: 0, l: 0 };
 var _hslB = { h: 0, s: 0, l: 0 };
-function hue2rgb(p2, q2, t2) {
-  if (t2 < 0) t2 += 1;
-  if (t2 > 1) t2 -= 1;
-  if (t2 < 1 / 6) return p2 + (q2 - p2) * 6 * t2;
-  if (t2 < 1 / 2) return q2;
-  if (t2 < 2 / 3) return p2 + (q2 - p2) * 6 * (2 / 3 - t2);
+function hue2rgb(p2, q2, t3) {
+  if (t3 < 0) t3 += 1;
+  if (t3 > 1) t3 -= 1;
+  if (t3 < 1 / 6) return p2 + (q2 - p2) * 6 * t3;
+  if (t3 < 1 / 2) return q2;
+  if (t3 < 2 / 3) return p2 + (q2 - p2) * 6 * (2 / 3 - t3);
   return p2;
 }
 var Color = class {
-  constructor(r2, g2, b2) {
+  constructor(r2, g4, b2) {
     this.isColor = true;
     this.r = 1;
     this.g = 1;
     this.b = 1;
-    return this.set(r2, g2, b2);
+    return this.set(r2, g4, b2);
   }
-  set(r2, g2, b2) {
-    if (g2 === void 0 && b2 === void 0) {
+  set(r2, g4, b2) {
+    if (g4 === void 0 && b2 === void 0) {
       const value = r2;
       if (value && value.isColor) {
         this.copy(value);
@@ -5313,7 +7042,7 @@ var Color = class {
         this.setStyle(value);
       }
     } else {
-      this.setRGB(r2, g2, b2);
+      this.setRGB(r2, g4, b2);
     }
     return this;
   }
@@ -5331,9 +7060,9 @@ var Color = class {
     ColorManagement.toWorkingColorSpace(this, colorSpace);
     return this;
   }
-  setRGB(r2, g2, b2, colorSpace = ColorManagement.workingColorSpace) {
+  setRGB(r2, g4, b2, colorSpace = ColorManagement.workingColorSpace) {
     this.r = r2;
-    this.g = g2;
+    this.g = g4;
     this.b = b2;
     ColorManagement.toWorkingColorSpace(this, colorSpace);
     return this;
@@ -5470,9 +7199,9 @@ var Color = class {
   }
   getHSL(target, colorSpace = ColorManagement.workingColorSpace) {
     ColorManagement.fromWorkingColorSpace(_color.copy(this), colorSpace);
-    const r2 = _color.r, g2 = _color.g, b2 = _color.b;
-    const max = Math.max(r2, g2, b2);
-    const min = Math.min(r2, g2, b2);
+    const r2 = _color.r, g4 = _color.g, b2 = _color.b;
+    const max = Math.max(r2, g4, b2);
+    const min = Math.min(r2, g4, b2);
     let hue, saturation;
     const lightness = (min + max) / 2;
     if (min === max) {
@@ -5483,13 +7212,13 @@ var Color = class {
       saturation = lightness <= 0.5 ? delta / (max + min) : delta / (2 - max - min);
       switch (max) {
         case r2:
-          hue = (g2 - b2) / delta + (g2 < b2 ? 6 : 0);
+          hue = (g4 - b2) / delta + (g4 < b2 ? 6 : 0);
           break;
-        case g2:
+        case g4:
           hue = (b2 - r2) / delta + 2;
           break;
         case b2:
-          hue = (r2 - g2) / delta + 4;
+          hue = (r2 - g4) / delta + 4;
           break;
       }
       hue /= 6;
@@ -5508,11 +7237,11 @@ var Color = class {
   }
   getStyle(colorSpace = SRGBColorSpace) {
     ColorManagement.fromWorkingColorSpace(_color.copy(this), colorSpace);
-    const r2 = _color.r, g2 = _color.g, b2 = _color.b;
+    const r2 = _color.r, g4 = _color.g, b2 = _color.b;
     if (colorSpace !== SRGBColorSpace) {
-      return `color(${colorSpace} ${r2.toFixed(3)} ${g2.toFixed(3)} ${b2.toFixed(3)})`;
+      return `color(${colorSpace} ${r2.toFixed(3)} ${g4.toFixed(3)} ${b2.toFixed(3)})`;
     }
-    return `rgb(${Math.round(r2 * 255)},${Math.round(g2 * 255)},${Math.round(b2 * 255)})`;
+    return `rgb(${Math.round(r2 * 255)},${Math.round(g4 * 255)},${Math.round(b2 * 255)})`;
   }
   offsetHSL(h2, s2, l2) {
     this.getHSL(_hslA);
@@ -5582,11 +7311,11 @@ var Color = class {
     return this;
   }
   applyMatrix3(m2) {
-    const r2 = this.r, g2 = this.g, b2 = this.b;
+    const r2 = this.r, g4 = this.g, b2 = this.b;
     const e2 = m2.elements;
-    this.r = e2[0] * r2 + e2[3] * g2 + e2[6] * b2;
-    this.g = e2[1] * r2 + e2[4] * g2 + e2[7] * b2;
-    this.b = e2[2] * r2 + e2[5] * g2 + e2[8] * b2;
+    this.r = e2[0] * r2 + e2[3] * g4 + e2[6] * b2;
+    this.g = e2[1] * r2 + e2[4] * g4 + e2[7] * b2;
+    this.b = e2[2] * r2 + e2[5] * g4 + e2[8] * b2;
     return this;
   }
   equals(c2) {
@@ -5876,10 +7605,10 @@ var Material = class extends EventDispatcher {
     if (this.toneMapped === false) data.toneMapped = false;
     if (this.fog === false) data.fog = false;
     if (Object.keys(this.userData).length > 0) data.userData = this.userData;
-    function extractFromCache(cache) {
+    function extractFromCache(cache2) {
       const values = [];
-      for (const key in cache) {
-        const data2 = cache[key];
+      for (const key in cache2) {
+        const data2 = cache2[key];
         delete data2.metadata;
         values.push(data2);
       }
@@ -5925,9 +7654,9 @@ var Material = class extends EventDispatcher {
     const srcPlanes = source.clippingPlanes;
     let dstPlanes = null;
     if (srcPlanes !== null) {
-      const n2 = srcPlanes.length;
-      dstPlanes = new Array(n2);
-      for (let i2 = 0; i2 !== n2; ++i2) {
+      const n3 = srcPlanes.length;
+      dstPlanes = new Array(n3);
+      for (let i2 = 0; i2 !== n3; ++i2) {
         dstPlanes[i2] = srcPlanes[i2].clone();
       }
     }
@@ -6639,14 +8368,14 @@ var BufferGeometry = class _BufferGeometry extends EventDispatcher {
       }
     }
     const tmp2 = new Vector3(), tmp22 = new Vector3();
-    const n2 = new Vector3(), n22 = new Vector3();
+    const n3 = new Vector3(), n22 = new Vector3();
     function handleVertex(v2) {
-      n2.fromBufferAttribute(normalAttribute, v2);
-      n22.copy(n2);
-      const t2 = tan1[v2];
-      tmp2.copy(t2);
-      tmp2.sub(n2.multiplyScalar(n2.dot(t2))).normalize();
-      tmp22.crossVectors(n22, t2);
+      n3.fromBufferAttribute(normalAttribute, v2);
+      n22.copy(n3);
+      const t3 = tan1[v2];
+      tmp2.copy(t3);
+      tmp2.sub(n3.multiplyScalar(n3.dot(t3))).normalize();
+      tmp22.crossVectors(n22, t3);
       const test = tmp22.dot(tan2[v2]);
       const w2 = test < 0 ? -1 : 1;
       tangentAttribute.setXYZW(v2, tmp2.x, tmp2.y, tmp2.z, w2);
@@ -6925,9 +8654,9 @@ var Mesh = class extends Object3D {
   updateMorphTargets() {
     const geometry = this.geometry;
     const morphAttributes = geometry.morphAttributes;
-    const keys = Object.keys(morphAttributes);
-    if (keys.length > 0) {
-      const morphAttribute = morphAttributes[keys[0]];
+    const keys2 = Object.keys(morphAttributes);
+    if (keys2.length > 0) {
+      const morphAttribute = morphAttributes[keys2[0]];
       if (morphAttribute !== void 0) {
         this.morphTargetInfluences = [];
         this.morphTargetDictionary = {};
@@ -7146,7 +8875,7 @@ var BoxGeometry = class _BoxGeometry extends BufferGeometry {
     this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
     this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
     this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
-    function buildPlane(u2, v2, w2, udir, vdir, width2, height2, depth2, gridX, gridY, materialIndex) {
+    function buildPlane(u3, v2, w2, udir, vdir, width2, height2, depth2, gridX, gridY, materialIndex) {
       const segmentWidth = width2 / gridX;
       const segmentHeight = height2 / gridY;
       const widthHalf = width2 / 2;
@@ -7161,11 +8890,11 @@ var BoxGeometry = class _BoxGeometry extends BufferGeometry {
         const y2 = iy * segmentHeight - heightHalf;
         for (let ix = 0; ix < gridX1; ix++) {
           const x2 = ix * segmentWidth - widthHalf;
-          vector[u2] = x2 * udir;
+          vector[u3] = x2 * udir;
           vector[v2] = y2 * vdir;
           vector[w2] = depthHalf;
           vertices.push(vector.x, vector.y, vector.z);
-          vector[u2] = 0;
+          vector[u3] = 0;
           vector[v2] = 0;
           vector[w2] = depth2 > 0 ? 1 : -1;
           normals.push(vector.x, vector.y, vector.z);
@@ -7201,21 +8930,21 @@ var BoxGeometry = class _BoxGeometry extends BufferGeometry {
 };
 function cloneUniforms(src) {
   const dst = {};
-  for (const u2 in src) {
-    dst[u2] = {};
-    for (const p2 in src[u2]) {
-      const property = src[u2][p2];
+  for (const u3 in src) {
+    dst[u3] = {};
+    for (const p2 in src[u3]) {
+      const property = src[u3][p2];
       if (property && (property.isColor || property.isMatrix3 || property.isMatrix4 || property.isVector2 || property.isVector3 || property.isVector4 || property.isTexture || property.isQuaternion)) {
         if (property.isRenderTargetTexture) {
           console.warn("UniformsUtils: Textures of render targets cannot be cloned via cloneUniforms() or mergeUniforms().");
-          dst[u2][p2] = null;
+          dst[u3][p2] = null;
         } else {
-          dst[u2][p2] = property.clone();
+          dst[u3][p2] = property.clone();
         }
       } else if (Array.isArray(property)) {
-        dst[u2][p2] = property.slice();
+        dst[u3][p2] = property.slice();
       } else {
-        dst[u2][p2] = property;
+        dst[u3][p2] = property;
       }
     }
   }
@@ -7223,8 +8952,8 @@ function cloneUniforms(src) {
 }
 function mergeUniforms(uniforms) {
   const merged = {};
-  for (let u2 = 0; u2 < uniforms.length; u2++) {
-    const tmp2 = cloneUniforms(uniforms[u2]);
+  for (let u3 = 0; u3 < uniforms.length; u3++) {
+    const tmp2 = cloneUniforms(uniforms[u3]);
     for (const p2 in tmp2) {
       merged[p2] = tmp2[p2];
     }
@@ -7233,8 +8962,8 @@ function mergeUniforms(uniforms) {
 }
 function cloneUniformsGroups(src) {
   const dst = [];
-  for (let u2 = 0; u2 < src.length; u2++) {
-    dst.push(src[u2].clone());
+  for (let u3 = 0; u3 < src.length; u3++) {
+    dst.push(src[u3].clone());
   }
   return dst;
 }
@@ -7847,11 +9576,11 @@ var Plane = class {
       }
       return null;
     }
-    const t2 = -(line.start.dot(this.normal) + this.constant) / denominator;
-    if (t2 < 0 || t2 > 1) {
+    const t3 = -(line.start.dot(this.normal) + this.constant) / denominator;
+    if (t3 < 0 || t3 > 1) {
       return null;
     }
-    return target.copy(line.start).addScaledVector(direction, t2);
+    return target.copy(line.start).addScaledVector(direction, t3);
   }
   intersectsLine(line) {
     const startSign = this.distanceToPoint(line.start);
@@ -9170,7 +10899,7 @@ function WebGLBindingStates(gl, attributes) {
     return false;
   }
   function saveCache(object, geometry, program, index) {
-    const cache = {};
+    const cache2 = {};
     const attributes2 = geometry.attributes;
     let attributesNum = 0;
     const programAttributes = program.getAttributes();
@@ -9187,11 +10916,11 @@ function WebGLBindingStates(gl, attributes) {
         if (attribute && attribute.data) {
           data.data = attribute.data;
         }
-        cache[name] = data;
+        cache2[name] = data;
         attributesNum++;
       }
     }
-    currentState.attributes = cache;
+    currentState.attributes = cache2;
     currentState.attributesNum = attributesNum;
     currentState.index = index;
   }
@@ -9995,10 +11724,10 @@ var PMREMGenerator = class {
     const renderer = this._renderer;
     const autoClear = renderer.autoClear;
     renderer.autoClear = false;
-    const n2 = this._lodPlanes.length;
-    for (let i2 = 1; i2 < n2; i2++) {
+    const n3 = this._lodPlanes.length;
+    for (let i2 = 1; i2 < n3; i2++) {
       const sigma = Math.sqrt(this._sigmas[i2] * this._sigmas[i2] - this._sigmas[i2 - 1] * this._sigmas[i2 - 1]);
-      const poleAxis = _axisDirections[(n2 - i2 - 1) % _axisDirections.length];
+      const poleAxis = _axisDirections[(n3 - i2 - 1) % _axisDirections.length];
       this._blur(cubeUVRenderTarget, i2 - 1, i2, sigma, poleAxis);
     }
     renderer.autoClear = autoClear;
@@ -10875,11 +12604,11 @@ var mat2array = new Float32Array(4);
 function flatten(array, nBlocks, blockSize) {
   const firstElem = array[0];
   if (firstElem <= 0 || firstElem > 0) return array;
-  const n2 = nBlocks * blockSize;
-  let r2 = arrayCacheF32[n2];
+  const n3 = nBlocks * blockSize;
+  let r2 = arrayCacheF32[n3];
   if (r2 === void 0) {
-    r2 = new Float32Array(n2);
-    arrayCacheF32[n2] = r2;
+    r2 = new Float32Array(n3);
+    arrayCacheF32[n3] = r2;
   }
   if (nBlocks !== 0) {
     firstElem.toArray(r2, 0);
@@ -10902,225 +12631,225 @@ function copyArray(a2, b2) {
     a2[i2] = b2[i2];
   }
 }
-function allocTexUnits(textures, n2) {
-  let r2 = arrayCacheI32[n2];
+function allocTexUnits(textures, n3) {
+  let r2 = arrayCacheI32[n3];
   if (r2 === void 0) {
-    r2 = new Int32Array(n2);
-    arrayCacheI32[n2] = r2;
+    r2 = new Int32Array(n3);
+    arrayCacheI32[n3] = r2;
   }
-  for (let i2 = 0; i2 !== n2; ++i2) {
+  for (let i2 = 0; i2 !== n3; ++i2) {
     r2[i2] = textures.allocateTextureUnit();
   }
   return r2;
 }
 function setValueV1f(gl, v2) {
-  const cache = this.cache;
-  if (cache[0] === v2) return;
+  const cache2 = this.cache;
+  if (cache2[0] === v2) return;
   gl.uniform1f(this.addr, v2);
-  cache[0] = v2;
+  cache2[0] = v2;
 }
 function setValueV2f(gl, v2) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   if (v2.x !== void 0) {
-    if (cache[0] !== v2.x || cache[1] !== v2.y) {
+    if (cache2[0] !== v2.x || cache2[1] !== v2.y) {
       gl.uniform2f(this.addr, v2.x, v2.y);
-      cache[0] = v2.x;
-      cache[1] = v2.y;
+      cache2[0] = v2.x;
+      cache2[1] = v2.y;
     }
   } else {
-    if (arraysEqual(cache, v2)) return;
+    if (arraysEqual(cache2, v2)) return;
     gl.uniform2fv(this.addr, v2);
-    copyArray(cache, v2);
+    copyArray(cache2, v2);
   }
 }
 function setValueV3f(gl, v2) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   if (v2.x !== void 0) {
-    if (cache[0] !== v2.x || cache[1] !== v2.y || cache[2] !== v2.z) {
+    if (cache2[0] !== v2.x || cache2[1] !== v2.y || cache2[2] !== v2.z) {
       gl.uniform3f(this.addr, v2.x, v2.y, v2.z);
-      cache[0] = v2.x;
-      cache[1] = v2.y;
-      cache[2] = v2.z;
+      cache2[0] = v2.x;
+      cache2[1] = v2.y;
+      cache2[2] = v2.z;
     }
   } else if (v2.r !== void 0) {
-    if (cache[0] !== v2.r || cache[1] !== v2.g || cache[2] !== v2.b) {
+    if (cache2[0] !== v2.r || cache2[1] !== v2.g || cache2[2] !== v2.b) {
       gl.uniform3f(this.addr, v2.r, v2.g, v2.b);
-      cache[0] = v2.r;
-      cache[1] = v2.g;
-      cache[2] = v2.b;
+      cache2[0] = v2.r;
+      cache2[1] = v2.g;
+      cache2[2] = v2.b;
     }
   } else {
-    if (arraysEqual(cache, v2)) return;
+    if (arraysEqual(cache2, v2)) return;
     gl.uniform3fv(this.addr, v2);
-    copyArray(cache, v2);
+    copyArray(cache2, v2);
   }
 }
 function setValueV4f(gl, v2) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   if (v2.x !== void 0) {
-    if (cache[0] !== v2.x || cache[1] !== v2.y || cache[2] !== v2.z || cache[3] !== v2.w) {
+    if (cache2[0] !== v2.x || cache2[1] !== v2.y || cache2[2] !== v2.z || cache2[3] !== v2.w) {
       gl.uniform4f(this.addr, v2.x, v2.y, v2.z, v2.w);
-      cache[0] = v2.x;
-      cache[1] = v2.y;
-      cache[2] = v2.z;
-      cache[3] = v2.w;
+      cache2[0] = v2.x;
+      cache2[1] = v2.y;
+      cache2[2] = v2.z;
+      cache2[3] = v2.w;
     }
   } else {
-    if (arraysEqual(cache, v2)) return;
+    if (arraysEqual(cache2, v2)) return;
     gl.uniform4fv(this.addr, v2);
-    copyArray(cache, v2);
+    copyArray(cache2, v2);
   }
 }
 function setValueM2(gl, v2) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   const elements = v2.elements;
   if (elements === void 0) {
-    if (arraysEqual(cache, v2)) return;
+    if (arraysEqual(cache2, v2)) return;
     gl.uniformMatrix2fv(this.addr, false, v2);
-    copyArray(cache, v2);
+    copyArray(cache2, v2);
   } else {
-    if (arraysEqual(cache, elements)) return;
+    if (arraysEqual(cache2, elements)) return;
     mat2array.set(elements);
     gl.uniformMatrix2fv(this.addr, false, mat2array);
-    copyArray(cache, elements);
+    copyArray(cache2, elements);
   }
 }
 function setValueM3(gl, v2) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   const elements = v2.elements;
   if (elements === void 0) {
-    if (arraysEqual(cache, v2)) return;
+    if (arraysEqual(cache2, v2)) return;
     gl.uniformMatrix3fv(this.addr, false, v2);
-    copyArray(cache, v2);
+    copyArray(cache2, v2);
   } else {
-    if (arraysEqual(cache, elements)) return;
+    if (arraysEqual(cache2, elements)) return;
     mat3array.set(elements);
     gl.uniformMatrix3fv(this.addr, false, mat3array);
-    copyArray(cache, elements);
+    copyArray(cache2, elements);
   }
 }
 function setValueM4(gl, v2) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   const elements = v2.elements;
   if (elements === void 0) {
-    if (arraysEqual(cache, v2)) return;
+    if (arraysEqual(cache2, v2)) return;
     gl.uniformMatrix4fv(this.addr, false, v2);
-    copyArray(cache, v2);
+    copyArray(cache2, v2);
   } else {
-    if (arraysEqual(cache, elements)) return;
+    if (arraysEqual(cache2, elements)) return;
     mat4array.set(elements);
     gl.uniformMatrix4fv(this.addr, false, mat4array);
-    copyArray(cache, elements);
+    copyArray(cache2, elements);
   }
 }
 function setValueV1i(gl, v2) {
-  const cache = this.cache;
-  if (cache[0] === v2) return;
+  const cache2 = this.cache;
+  if (cache2[0] === v2) return;
   gl.uniform1i(this.addr, v2);
-  cache[0] = v2;
+  cache2[0] = v2;
 }
 function setValueV2i(gl, v2) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   if (v2.x !== void 0) {
-    if (cache[0] !== v2.x || cache[1] !== v2.y) {
+    if (cache2[0] !== v2.x || cache2[1] !== v2.y) {
       gl.uniform2i(this.addr, v2.x, v2.y);
-      cache[0] = v2.x;
-      cache[1] = v2.y;
+      cache2[0] = v2.x;
+      cache2[1] = v2.y;
     }
   } else {
-    if (arraysEqual(cache, v2)) return;
+    if (arraysEqual(cache2, v2)) return;
     gl.uniform2iv(this.addr, v2);
-    copyArray(cache, v2);
+    copyArray(cache2, v2);
   }
 }
 function setValueV3i(gl, v2) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   if (v2.x !== void 0) {
-    if (cache[0] !== v2.x || cache[1] !== v2.y || cache[2] !== v2.z) {
+    if (cache2[0] !== v2.x || cache2[1] !== v2.y || cache2[2] !== v2.z) {
       gl.uniform3i(this.addr, v2.x, v2.y, v2.z);
-      cache[0] = v2.x;
-      cache[1] = v2.y;
-      cache[2] = v2.z;
+      cache2[0] = v2.x;
+      cache2[1] = v2.y;
+      cache2[2] = v2.z;
     }
   } else {
-    if (arraysEqual(cache, v2)) return;
+    if (arraysEqual(cache2, v2)) return;
     gl.uniform3iv(this.addr, v2);
-    copyArray(cache, v2);
+    copyArray(cache2, v2);
   }
 }
 function setValueV4i(gl, v2) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   if (v2.x !== void 0) {
-    if (cache[0] !== v2.x || cache[1] !== v2.y || cache[2] !== v2.z || cache[3] !== v2.w) {
+    if (cache2[0] !== v2.x || cache2[1] !== v2.y || cache2[2] !== v2.z || cache2[3] !== v2.w) {
       gl.uniform4i(this.addr, v2.x, v2.y, v2.z, v2.w);
-      cache[0] = v2.x;
-      cache[1] = v2.y;
-      cache[2] = v2.z;
-      cache[3] = v2.w;
+      cache2[0] = v2.x;
+      cache2[1] = v2.y;
+      cache2[2] = v2.z;
+      cache2[3] = v2.w;
     }
   } else {
-    if (arraysEqual(cache, v2)) return;
+    if (arraysEqual(cache2, v2)) return;
     gl.uniform4iv(this.addr, v2);
-    copyArray(cache, v2);
+    copyArray(cache2, v2);
   }
 }
 function setValueV1ui(gl, v2) {
-  const cache = this.cache;
-  if (cache[0] === v2) return;
+  const cache2 = this.cache;
+  if (cache2[0] === v2) return;
   gl.uniform1ui(this.addr, v2);
-  cache[0] = v2;
+  cache2[0] = v2;
 }
 function setValueV2ui(gl, v2) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   if (v2.x !== void 0) {
-    if (cache[0] !== v2.x || cache[1] !== v2.y) {
+    if (cache2[0] !== v2.x || cache2[1] !== v2.y) {
       gl.uniform2ui(this.addr, v2.x, v2.y);
-      cache[0] = v2.x;
-      cache[1] = v2.y;
+      cache2[0] = v2.x;
+      cache2[1] = v2.y;
     }
   } else {
-    if (arraysEqual(cache, v2)) return;
+    if (arraysEqual(cache2, v2)) return;
     gl.uniform2uiv(this.addr, v2);
-    copyArray(cache, v2);
+    copyArray(cache2, v2);
   }
 }
 function setValueV3ui(gl, v2) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   if (v2.x !== void 0) {
-    if (cache[0] !== v2.x || cache[1] !== v2.y || cache[2] !== v2.z) {
+    if (cache2[0] !== v2.x || cache2[1] !== v2.y || cache2[2] !== v2.z) {
       gl.uniform3ui(this.addr, v2.x, v2.y, v2.z);
-      cache[0] = v2.x;
-      cache[1] = v2.y;
-      cache[2] = v2.z;
+      cache2[0] = v2.x;
+      cache2[1] = v2.y;
+      cache2[2] = v2.z;
     }
   } else {
-    if (arraysEqual(cache, v2)) return;
+    if (arraysEqual(cache2, v2)) return;
     gl.uniform3uiv(this.addr, v2);
-    copyArray(cache, v2);
+    copyArray(cache2, v2);
   }
 }
 function setValueV4ui(gl, v2) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   if (v2.x !== void 0) {
-    if (cache[0] !== v2.x || cache[1] !== v2.y || cache[2] !== v2.z || cache[3] !== v2.w) {
+    if (cache2[0] !== v2.x || cache2[1] !== v2.y || cache2[2] !== v2.z || cache2[3] !== v2.w) {
       gl.uniform4ui(this.addr, v2.x, v2.y, v2.z, v2.w);
-      cache[0] = v2.x;
-      cache[1] = v2.y;
-      cache[2] = v2.z;
-      cache[3] = v2.w;
+      cache2[0] = v2.x;
+      cache2[1] = v2.y;
+      cache2[2] = v2.z;
+      cache2[3] = v2.w;
     }
   } else {
-    if (arraysEqual(cache, v2)) return;
+    if (arraysEqual(cache2, v2)) return;
     gl.uniform4uiv(this.addr, v2);
-    copyArray(cache, v2);
+    copyArray(cache2, v2);
   }
 }
 function setValueT1(gl, v2, textures) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   const unit = textures.allocateTextureUnit();
-  if (cache[0] !== unit) {
+  if (cache2[0] !== unit) {
     gl.uniform1i(this.addr, unit);
-    cache[0] = unit;
+    cache2[0] = unit;
   }
   let emptyTexture2D;
   if (this.type === gl.SAMPLER_2D_SHADOW) {
@@ -11132,29 +12861,29 @@ function setValueT1(gl, v2, textures) {
   textures.setTexture2D(v2 || emptyTexture2D, unit);
 }
 function setValueT3D1(gl, v2, textures) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   const unit = textures.allocateTextureUnit();
-  if (cache[0] !== unit) {
+  if (cache2[0] !== unit) {
     gl.uniform1i(this.addr, unit);
-    cache[0] = unit;
+    cache2[0] = unit;
   }
   textures.setTexture3D(v2 || empty3dTexture, unit);
 }
 function setValueT6(gl, v2, textures) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   const unit = textures.allocateTextureUnit();
-  if (cache[0] !== unit) {
+  if (cache2[0] !== unit) {
     gl.uniform1i(this.addr, unit);
-    cache[0] = unit;
+    cache2[0] = unit;
   }
   textures.setTextureCube(v2 || emptyCubeTexture, unit);
 }
 function setValueT2DArray1(gl, v2, textures) {
-  const cache = this.cache;
+  const cache2 = this.cache;
   const unit = textures.allocateTextureUnit();
-  if (cache[0] !== unit) {
+  if (cache2[0] !== unit) {
     gl.uniform1i(this.addr, unit);
-    cache[0] = unit;
+    cache2[0] = unit;
   }
   textures.setTexture2DArray(v2 || emptyArrayTexture, unit);
 }
@@ -11295,50 +13024,50 @@ function setValueV4uiArray(gl, v2) {
   gl.uniform4uiv(this.addr, v2);
 }
 function setValueT1Array(gl, v2, textures) {
-  const cache = this.cache;
-  const n2 = v2.length;
-  const units = allocTexUnits(textures, n2);
-  if (!arraysEqual(cache, units)) {
+  const cache2 = this.cache;
+  const n3 = v2.length;
+  const units = allocTexUnits(textures, n3);
+  if (!arraysEqual(cache2, units)) {
     gl.uniform1iv(this.addr, units);
-    copyArray(cache, units);
+    copyArray(cache2, units);
   }
-  for (let i2 = 0; i2 !== n2; ++i2) {
+  for (let i2 = 0; i2 !== n3; ++i2) {
     textures.setTexture2D(v2[i2] || emptyTexture, units[i2]);
   }
 }
 function setValueT3DArray(gl, v2, textures) {
-  const cache = this.cache;
-  const n2 = v2.length;
-  const units = allocTexUnits(textures, n2);
-  if (!arraysEqual(cache, units)) {
+  const cache2 = this.cache;
+  const n3 = v2.length;
+  const units = allocTexUnits(textures, n3);
+  if (!arraysEqual(cache2, units)) {
     gl.uniform1iv(this.addr, units);
-    copyArray(cache, units);
+    copyArray(cache2, units);
   }
-  for (let i2 = 0; i2 !== n2; ++i2) {
+  for (let i2 = 0; i2 !== n3; ++i2) {
     textures.setTexture3D(v2[i2] || empty3dTexture, units[i2]);
   }
 }
 function setValueT6Array(gl, v2, textures) {
-  const cache = this.cache;
-  const n2 = v2.length;
-  const units = allocTexUnits(textures, n2);
-  if (!arraysEqual(cache, units)) {
+  const cache2 = this.cache;
+  const n3 = v2.length;
+  const units = allocTexUnits(textures, n3);
+  if (!arraysEqual(cache2, units)) {
     gl.uniform1iv(this.addr, units);
-    copyArray(cache, units);
+    copyArray(cache2, units);
   }
-  for (let i2 = 0; i2 !== n2; ++i2) {
+  for (let i2 = 0; i2 !== n3; ++i2) {
     textures.setTextureCube(v2[i2] || emptyCubeTexture, units[i2]);
   }
 }
 function setValueT2DArrayArray(gl, v2, textures) {
-  const cache = this.cache;
-  const n2 = v2.length;
-  const units = allocTexUnits(textures, n2);
-  if (!arraysEqual(cache, units)) {
+  const cache2 = this.cache;
+  const n3 = v2.length;
+  const units = allocTexUnits(textures, n3);
+  if (!arraysEqual(cache2, units)) {
     gl.uniform1iv(this.addr, units);
-    copyArray(cache, units);
+    copyArray(cache2, units);
   }
-  for (let i2 = 0; i2 !== n2; ++i2) {
+  for (let i2 = 0; i2 !== n3; ++i2) {
     textures.setTexture2DArray(v2[i2] || emptyArrayTexture, units[i2]);
   }
 }
@@ -11454,9 +13183,9 @@ var StructuredUniform = class {
   }
   setValue(gl, value, textures) {
     const seq = this.seq;
-    for (let i2 = 0, n2 = seq.length; i2 !== n2; ++i2) {
-      const u2 = seq[i2];
-      u2.setValue(gl, value[u2.id], textures);
+    for (let i2 = 0, n3 = seq.length; i2 !== n3; ++i2) {
+      const u3 = seq[i2];
+      u3.setValue(gl, value[u3.id], textures);
     }
   }
 };
@@ -11491,33 +13220,33 @@ var WebGLUniforms = class {
   constructor(gl, program) {
     this.seq = [];
     this.map = {};
-    const n2 = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
-    for (let i2 = 0; i2 < n2; ++i2) {
+    const n3 = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+    for (let i2 = 0; i2 < n3; ++i2) {
       const info = gl.getActiveUniform(program, i2), addr = gl.getUniformLocation(program, info.name);
       parseUniform(info, addr, this);
     }
   }
   setValue(gl, name, value, textures) {
-    const u2 = this.map[name];
-    if (u2 !== void 0) u2.setValue(gl, value, textures);
+    const u3 = this.map[name];
+    if (u3 !== void 0) u3.setValue(gl, value, textures);
   }
   setOptional(gl, object, name) {
     const v2 = object[name];
     if (v2 !== void 0) this.setValue(gl, name, v2);
   }
   static upload(gl, seq, values, textures) {
-    for (let i2 = 0, n2 = seq.length; i2 !== n2; ++i2) {
-      const u2 = seq[i2], v2 = values[u2.id];
+    for (let i2 = 0, n3 = seq.length; i2 !== n3; ++i2) {
+      const u3 = seq[i2], v2 = values[u3.id];
       if (v2.needsUpdate !== false) {
-        u2.setValue(gl, v2.value, textures);
+        u3.setValue(gl, v2.value, textures);
       }
     }
   }
   static seqWithValue(seq, values) {
     const r2 = [];
-    for (let i2 = 0, n2 = seq.length; i2 !== n2; ++i2) {
-      const u2 = seq[i2];
-      if (u2.id in values) r2.push(u2);
+    for (let i2 = 0, n3 = seq.length; i2 !== n3; ++i2) {
+      const u3 = seq[i2];
+      if (u3.id in values) r2.push(u3);
     }
     return r2;
   }
@@ -11609,11 +13338,11 @@ var _v0$1 = /* @__PURE__ */ new Vector3();
 function getLuminanceFunction() {
   ColorManagement.getLuminanceCoefficients(_v0$1);
   const r2 = _v0$1.x.toFixed(4);
-  const g2 = _v0$1.y.toFixed(4);
+  const g4 = _v0$1.y.toFixed(4);
   const b2 = _v0$1.z.toFixed(4);
   return [
     "float luminance( const in vec3 rgb ) {",
-    `	const vec3 weights = vec3( ${r2}, ${g2}, ${b2} );`,
+    `	const vec3 weights = vec3( ${r2}, ${g4}, ${b2} );`,
     "	return dot( weights, rgb );",
     "}"
   ].join("\n");
@@ -11636,8 +13365,8 @@ function generateDefines(defines) {
 }
 function fetchAttributeLocations(gl, program) {
   const attributes = {};
-  const n2 = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
-  for (let i2 = 0; i2 < n2; i2++) {
+  const n3 = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
+  for (let i2 = 0; i2 < n3; i2++) {
     const info = gl.getActiveAttrib(program, i2);
     const name = info.name;
     let locationSize = 1;
@@ -12195,20 +13924,20 @@ var WebGLShaderCache = class {
     this.materialCache.clear();
   }
   _getShaderCacheForMaterial(material) {
-    const cache = this.materialCache;
-    let set = cache.get(material);
+    const cache2 = this.materialCache;
+    let set = cache2.get(material);
     if (set === void 0) {
       set = /* @__PURE__ */ new Set();
-      cache.set(material, set);
+      cache2.set(material, set);
     }
     return set;
   }
   _getShaderStage(code) {
-    const cache = this.shaderCache;
-    let stage = cache.get(code);
+    const cache2 = this.shaderCache;
+    let stage = cache2.get(code);
     if (stage === void 0) {
       stage = new WebGLShaderStage(code);
-      cache.set(code, stage);
+      cache2.set(code, stage);
     }
     return stage;
   }
@@ -12954,7 +14683,7 @@ function shadowCastingAndTexturingLightsFirst(lightA, lightB) {
   return (lightB.castShadow ? 2 : 0) - (lightA.castShadow ? 2 : 0) + (lightB.map ? 1 : 0) - (lightA.map ? 1 : 0);
 }
 function WebGLLights(extensions) {
-  const cache = new UniformsCache();
+  const cache2 = new UniformsCache();
   const shadowCache = ShadowUniformsCache();
   const state = {
     version: 0,
@@ -12997,7 +14726,7 @@ function WebGLLights(extensions) {
   const matrix4 = new Matrix4();
   const matrix42 = new Matrix4();
   function setup(lights) {
-    let r2 = 0, g2 = 0, b2 = 0;
+    let r2 = 0, g4 = 0, b2 = 0;
     for (let i2 = 0; i2 < 9; i2++) state.probe[i2].set(0, 0, 0);
     let directionalLength = 0;
     let pointLength = 0;
@@ -13019,7 +14748,7 @@ function WebGLLights(extensions) {
       const shadowMap = light.shadow && light.shadow.map ? light.shadow.map.texture : null;
       if (light.isAmbientLight) {
         r2 += color.r * intensity;
-        g2 += color.g * intensity;
+        g4 += color.g * intensity;
         b2 += color.b * intensity;
       } else if (light.isLightProbe) {
         for (let j2 = 0; j2 < 9; j2++) {
@@ -13027,7 +14756,7 @@ function WebGLLights(extensions) {
         }
         numLightProbes++;
       } else if (light.isDirectionalLight) {
-        const uniforms = cache.get(light);
+        const uniforms = cache2.get(light);
         uniforms.color.copy(light.color).multiplyScalar(light.intensity);
         if (light.castShadow) {
           const shadow = light.shadow;
@@ -13045,7 +14774,7 @@ function WebGLLights(extensions) {
         state.directional[directionalLength] = uniforms;
         directionalLength++;
       } else if (light.isSpotLight) {
-        const uniforms = cache.get(light);
+        const uniforms = cache2.get(light);
         uniforms.position.setFromMatrixPosition(light.matrixWorld);
         uniforms.color.copy(color).multiplyScalar(intensity);
         uniforms.distance = distance;
@@ -13074,14 +14803,14 @@ function WebGLLights(extensions) {
         }
         spotLength++;
       } else if (light.isRectAreaLight) {
-        const uniforms = cache.get(light);
+        const uniforms = cache2.get(light);
         uniforms.color.copy(color).multiplyScalar(intensity);
         uniforms.halfWidth.set(light.width * 0.5, 0, 0);
         uniforms.halfHeight.set(0, light.height * 0.5, 0);
         state.rectArea[rectAreaLength] = uniforms;
         rectAreaLength++;
       } else if (light.isPointLight) {
-        const uniforms = cache.get(light);
+        const uniforms = cache2.get(light);
         uniforms.color.copy(light.color).multiplyScalar(light.intensity);
         uniforms.distance = light.distance;
         uniforms.decay = light.decay;
@@ -13103,7 +14832,7 @@ function WebGLLights(extensions) {
         state.point[pointLength] = uniforms;
         pointLength++;
       } else if (light.isHemisphereLight) {
-        const uniforms = cache.get(light);
+        const uniforms = cache2.get(light);
         uniforms.skyColor.copy(light.color).multiplyScalar(intensity);
         uniforms.groundColor.copy(light.groundColor).multiplyScalar(intensity);
         state.hemi[hemiLength] = uniforms;
@@ -13120,7 +14849,7 @@ function WebGLLights(extensions) {
       }
     }
     state.ambient[0] = r2;
-    state.ambient[1] = g2;
+    state.ambient[1] = g4;
     state.ambient[2] = b2;
     const hash = state.hash;
     if (hash.directionalLength !== directionalLength || hash.pointLength !== pointLength || hash.spotLength !== spotLength || hash.rectAreaLength !== rectAreaLength || hash.hemiLength !== hemiLength || hash.numDirectionalShadows !== numDirectionalShadows || hash.numPointShadows !== numPointShadows || hash.numSpotShadows !== numSpotShadows || hash.numSpotMaps !== numSpotMaps || hash.numLightProbes !== numLightProbes) {
@@ -13543,12 +15272,12 @@ function WebGLShadowMap(renderer, objects, capabilities) {
     const material = event.target;
     material.removeEventListener("dispose", onMaterialDispose);
     for (const id in _materialCache) {
-      const cache = _materialCache[id];
+      const cache2 = _materialCache[id];
       const uuid = event.target.uuid;
-      if (uuid in cache) {
-        const shadowMaterial = cache[uuid];
+      if (uuid in cache2) {
+        const shadowMaterial = cache2[uuid];
         shadowMaterial.dispose();
-        delete cache[uuid];
+        delete cache2[uuid];
       }
     }
   }
@@ -13579,15 +15308,15 @@ function WebGLState(gl, extensions) {
       setLocked: function(lock) {
         locked = lock;
       },
-      setClear: function(r2, g2, b2, a2, premultipliedAlpha) {
+      setClear: function(r2, g4, b2, a2, premultipliedAlpha) {
         if (premultipliedAlpha === true) {
           r2 *= a2;
-          g2 *= a2;
+          g4 *= a2;
           b2 *= a2;
         }
-        color.set(r2, g2, b2, a2);
+        color.set(r2, g4, b2, a2);
         if (currentColorClear.equals(color) === false) {
-          gl.clearColor(r2, g2, b2, a2);
+          gl.clearColor(r2, g4, b2, a2);
           currentColorClear.copy(color);
         }
       },
@@ -15962,7 +17691,7 @@ var WebXRManager = class extends EventDispatcher {
     let referenceSpaceType = "local-floor";
     let foveation = 1;
     let customReferenceSpace = null;
-    let pose = null;
+    let pose2 = null;
     let glBinding = null;
     let glProjLayer = null;
     let glBaseLayer = null;
@@ -16325,10 +18054,10 @@ var WebXRManager = class extends EventDispatcher {
     };
     let onAnimationFrameCallback = null;
     function onAnimationFrame(time, frame) {
-      pose = frame.getViewerPose(customReferenceSpace || referenceSpace);
+      pose2 = frame.getViewerPose(customReferenceSpace || referenceSpace);
       xrFrame = frame;
-      if (pose !== null) {
-        const views = pose.views;
+      if (pose2 !== null) {
+        const views = pose2.views;
         if (glBaseLayer !== null) {
           renderer.setRenderTargetFramebuffer(newRenderTarget, glBaseLayer.framebuffer);
           renderer.setRenderTarget(newRenderTarget);
@@ -16766,13 +18495,13 @@ function WebGLUniformsGroups(gl, info, capabilities, state) {
   function updateBufferData(uniformsGroup) {
     const buffer = buffers[uniformsGroup.id];
     const uniforms = uniformsGroup.uniforms;
-    const cache = uniformsGroup.__cache;
+    const cache2 = uniformsGroup.__cache;
     gl.bindBuffer(gl.UNIFORM_BUFFER, buffer);
     for (let i2 = 0, il = uniforms.length; i2 < il; i2++) {
       const uniformArray = Array.isArray(uniforms[i2]) ? uniforms[i2] : [uniforms[i2]];
       for (let j2 = 0, jl = uniformArray.length; j2 < jl; j2++) {
         const uniform = uniformArray[j2];
-        if (hasUniformChanged(uniform, i2, j2, cache) === true) {
+        if (hasUniformChanged(uniform, i2, j2, cache2) === true) {
           const offset = uniform.__offset;
           const values = Array.isArray(uniform.value) ? uniform.value : [uniform.value];
           let arrayOffset = 0;
@@ -16806,21 +18535,21 @@ function WebGLUniformsGroups(gl, info, capabilities, state) {
     }
     gl.bindBuffer(gl.UNIFORM_BUFFER, null);
   }
-  function hasUniformChanged(uniform, index, indexArray, cache) {
+  function hasUniformChanged(uniform, index, indexArray, cache2) {
     const value = uniform.value;
     const indexString = index + "_" + indexArray;
-    if (cache[indexString] === void 0) {
+    if (cache2[indexString] === void 0) {
       if (typeof value === "number" || typeof value === "boolean") {
-        cache[indexString] = value;
+        cache2[indexString] = value;
       } else {
-        cache[indexString] = value.clone();
+        cache2[indexString] = value.clone();
       }
       return true;
     } else {
-      const cachedObject = cache[indexString];
+      const cachedObject = cache2[indexString];
       if (typeof value === "number" || typeof value === "boolean") {
         if (cachedObject !== value) {
-          cache[indexString] = value;
+          cache2[indexString] = value;
           return true;
         }
       } else {
@@ -17198,17 +18927,17 @@ var WebGLRenderer = class {
           const clearColor = background.getClearColor();
           const a2 = background.getClearAlpha();
           const r2 = clearColor.r;
-          const g2 = clearColor.g;
+          const g4 = clearColor.g;
           const b2 = clearColor.b;
           if (isUnsignedType) {
             uintClearColor[0] = r2;
-            uintClearColor[1] = g2;
+            uintClearColor[1] = g4;
             uintClearColor[2] = b2;
             uintClearColor[3] = a2;
             _gl.clearBufferuiv(_gl.COLOR, 0, uintClearColor);
           } else {
             intClearColor[0] = r2;
-            intClearColor[1] = g2;
+            intClearColor[1] = g4;
             intClearColor[2] = b2;
             intClearColor[3] = a2;
             _gl.clearBufferiv(_gl.COLOR, 0, intClearColor);
@@ -19428,9 +21157,9 @@ var Line = class extends Object3D {
   updateMorphTargets() {
     const geometry = this.geometry;
     const morphAttributes = geometry.morphAttributes;
-    const keys = Object.keys(morphAttributes);
-    if (keys.length > 0) {
-      const morphAttribute = morphAttributes[keys[0]];
+    const keys2 = Object.keys(morphAttributes);
+    if (keys2.length > 0) {
+      const morphAttribute = morphAttributes[keys2[0]];
       if (morphAttribute !== void 0) {
         this.morphTargetInfluences = [];
         this.morphTargetDictionary = {};
@@ -19579,9 +21308,9 @@ var Points = class extends Object3D {
   updateMorphTargets() {
     const geometry = this.geometry;
     const morphAttributes = geometry.morphAttributes;
-    const keys = Object.keys(morphAttributes);
-    if (keys.length > 0) {
-      const morphAttribute = morphAttributes[keys[0]];
+    const keys2 = Object.keys(morphAttributes);
+    if (keys2.length > 0) {
+      const morphAttribute = morphAttributes[keys2[0]];
       if (morphAttribute !== void 0) {
         this.morphTargetInfluences = [];
         this.morphTargetDictionary = {};
@@ -19614,6 +21343,39 @@ function testPoint(point, index, localThresholdSq, matrixWorld, raycaster, inter
     });
   }
 }
+var CompressedTexture = class extends Texture {
+  constructor(mipmaps, width, height, format, type, mapping, wrapS, wrapT, magFilter, minFilter, anisotropy, colorSpace) {
+    super(null, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
+    this.isCompressedTexture = true;
+    this.image = { width, height };
+    this.mipmaps = mipmaps;
+    this.flipY = false;
+    this.generateMipmaps = false;
+  }
+};
+var CompressedArrayTexture = class extends CompressedTexture {
+  constructor(mipmaps, width, height, depth, format, type) {
+    super(mipmaps, width, height, format, type);
+    this.isCompressedArrayTexture = true;
+    this.image.depth = depth;
+    this.wrapR = ClampToEdgeWrapping;
+    this.layerUpdates = /* @__PURE__ */ new Set();
+  }
+  addLayerUpdate(layerIndex) {
+    this.layerUpdates.add(layerIndex);
+  }
+  clearLayerUpdates() {
+    this.layerUpdates.clear();
+  }
+};
+var CompressedCubeTexture = class extends CompressedTexture {
+  constructor(images, format, type) {
+    super(void 0, images[0].width, images[0].height, format, type, CubeReflectionMapping);
+    this.isCompressedCubeTexture = true;
+    this.isCubeTexture = true;
+    this.image = images;
+  }
+};
 var CanvasTexture = class extends Texture {
   constructor(canvas, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy) {
     super(canvas, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
@@ -19634,9 +21396,9 @@ var Curve = class {
   }
   // Get point at relative position in curve according to arc length
   // - u [0 .. 1]
-  getPointAt(u2, optionalTarget) {
-    const t2 = this.getUtoTmapping(u2);
-    return this.getPoint(t2, optionalTarget);
+  getPointAt(u3, optionalTarget) {
+    const t3 = this.getUtoTmapping(u3);
+    return this.getPoint(t3, optionalTarget);
   }
   // Get sequence of points using getPoint( t )
   getPoints(divisions = 5) {
@@ -19665,25 +21427,25 @@ var Curve = class {
       return this.cacheArcLengths;
     }
     this.needsUpdate = false;
-    const cache = [];
+    const cache2 = [];
     let current, last = this.getPoint(0);
     let sum = 0;
-    cache.push(0);
+    cache2.push(0);
     for (let p2 = 1; p2 <= divisions; p2++) {
       current = this.getPoint(p2 / divisions);
       sum += current.distanceTo(last);
-      cache.push(sum);
+      cache2.push(sum);
       last = current;
     }
-    this.cacheArcLengths = cache;
-    return cache;
+    this.cacheArcLengths = cache2;
+    return cache2;
   }
   updateArcLengths() {
     this.needsUpdate = true;
     this.getLengths();
   }
   // Given u ( 0 .. 1 ), get a t to find p. This gives you points which are equidistant
-  getUtoTmapping(u2, distance) {
+  getUtoTmapping(u3, distance) {
     const arcLengths = this.getLengths();
     let i2 = 0;
     const il = arcLengths.length;
@@ -19691,7 +21453,7 @@ var Curve = class {
     if (distance) {
       targetArcLength = distance;
     } else {
-      targetArcLength = u2 * arcLengths[il - 1];
+      targetArcLength = u3 * arcLengths[il - 1];
     }
     let low = 0, high = il - 1, comparison;
     while (low <= high) {
@@ -19714,17 +21476,17 @@ var Curve = class {
     const lengthAfter = arcLengths[i2 + 1];
     const segmentLength = lengthAfter - lengthBefore;
     const segmentFraction = (targetArcLength - lengthBefore) / segmentLength;
-    const t2 = (i2 + segmentFraction) / (il - 1);
-    return t2;
+    const t3 = (i2 + segmentFraction) / (il - 1);
+    return t3;
   }
   // Returns a unit vector tangent at t
   // In case any sub curve does not implement its tangent derivation,
   // 2 points a small delta apart will be used to find its gradient
   // which seems to give a reasonable approximation
-  getTangent(t2, optionalTarget) {
+  getTangent(t3, optionalTarget) {
     const delta = 1e-4;
-    let t1 = t2 - delta;
-    let t22 = t2 + delta;
+    let t1 = t3 - delta;
+    let t22 = t3 + delta;
     if (t1 < 0) t1 = 0;
     if (t22 > 1) t22 = 1;
     const pt1 = this.getPoint(t1);
@@ -19733,9 +21495,9 @@ var Curve = class {
     tangent.copy(pt2).sub(pt1).normalize();
     return tangent;
   }
-  getTangentAt(u2, optionalTarget) {
-    const t2 = this.getUtoTmapping(u2);
-    return this.getTangent(t2, optionalTarget);
+  getTangentAt(u3, optionalTarget) {
+    const t3 = this.getUtoTmapping(u3);
+    return this.getTangent(t3, optionalTarget);
   }
   computeFrenetFrames(segments, closed) {
     const normal = new Vector3();
@@ -19745,8 +21507,8 @@ var Curve = class {
     const vec = new Vector3();
     const mat = new Matrix4();
     for (let i2 = 0; i2 <= segments; i2++) {
-      const u2 = i2 / segments;
-      tangents[i2] = this.getTangentAt(u2, new Vector3());
+      const u3 = i2 / segments;
+      tangents[i2] = this.getTangentAt(u3, new Vector3());
     }
     normals[0] = new Vector3();
     binormals[0] = new Vector3();
@@ -19834,7 +21596,7 @@ var EllipseCurve = class extends Curve {
     this.aClockwise = aClockwise;
     this.aRotation = aRotation;
   }
-  getPoint(t2, optionalTarget = new Vector2()) {
+  getPoint(t3, optionalTarget = new Vector2()) {
     const point = optionalTarget;
     const twoPi = Math.PI * 2;
     let deltaAngle = this.aEndAngle - this.aStartAngle;
@@ -19855,7 +21617,7 @@ var EllipseCurve = class extends Curve {
         deltaAngle = deltaAngle - twoPi;
       }
     }
-    const angle = this.aStartAngle + t2 * deltaAngle;
+    const angle = this.aStartAngle + t3 * deltaAngle;
     let x2 = this.aX + this.xRadius * Math.cos(angle);
     let y2 = this.aY + this.yRadius * Math.sin(angle);
     if (this.aRotation !== 0) {
@@ -19926,15 +21688,15 @@ function CubicPoly() {
     },
     initNonuniformCatmullRom: function(x0, x1, x2, x3, dt0, dt1, dt2) {
       let t1 = (x1 - x0) / dt0 - (x2 - x0) / (dt0 + dt1) + (x2 - x1) / dt1;
-      let t2 = (x2 - x1) / dt1 - (x3 - x1) / (dt1 + dt2) + (x3 - x2) / dt2;
+      let t22 = (x2 - x1) / dt1 - (x3 - x1) / (dt1 + dt2) + (x3 - x2) / dt2;
       t1 *= dt1;
-      t2 *= dt1;
-      init(x1, x2, t1, t2);
+      t22 *= dt1;
+      init(x1, x2, t1, t22);
     },
-    calc: function(t2) {
-      const t22 = t2 * t2;
-      const t3 = t22 * t2;
-      return c0 + c1 * t2 + c2 * t22 + c3 * t3;
+    calc: function(t3) {
+      const t22 = t3 * t3;
+      const t32 = t22 * t3;
+      return c0 + c1 * t3 + c2 * t22 + c3 * t32;
     }
   };
 }
@@ -19952,11 +21714,11 @@ var CatmullRomCurve3 = class extends Curve {
     this.curveType = curveType;
     this.tension = tension;
   }
-  getPoint(t2, optionalTarget = new Vector3()) {
+  getPoint(t3, optionalTarget = new Vector3()) {
     const point = optionalTarget;
     const points = this.points;
     const l2 = points.length;
-    const p2 = (l2 - (this.closed ? 0 : 1)) * t2;
+    const p2 = (l2 - (this.closed ? 0 : 1)) * t3;
     let intPoint = Math.floor(p2);
     let weight = p2 - intPoint;
     if (this.closed) {
@@ -20040,42 +21802,42 @@ var CatmullRomCurve3 = class extends Curve {
     return this;
   }
 };
-function CatmullRom(t2, p0, p1, p2, p3) {
+function CatmullRom(t3, p0, p1, p2, p3) {
   const v0 = (p2 - p0) * 0.5;
   const v1 = (p3 - p1) * 0.5;
-  const t22 = t2 * t2;
-  const t3 = t2 * t22;
-  return (2 * p1 - 2 * p2 + v0 + v1) * t3 + (-3 * p1 + 3 * p2 - 2 * v0 - v1) * t22 + v0 * t2 + p1;
+  const t22 = t3 * t3;
+  const t32 = t3 * t22;
+  return (2 * p1 - 2 * p2 + v0 + v1) * t32 + (-3 * p1 + 3 * p2 - 2 * v0 - v1) * t22 + v0 * t3 + p1;
 }
-function QuadraticBezierP0(t2, p2) {
-  const k2 = 1 - t2;
+function QuadraticBezierP0(t3, p2) {
+  const k2 = 1 - t3;
   return k2 * k2 * p2;
 }
-function QuadraticBezierP1(t2, p2) {
-  return 2 * (1 - t2) * t2 * p2;
+function QuadraticBezierP1(t3, p2) {
+  return 2 * (1 - t3) * t3 * p2;
 }
-function QuadraticBezierP2(t2, p2) {
-  return t2 * t2 * p2;
+function QuadraticBezierP2(t3, p2) {
+  return t3 * t3 * p2;
 }
-function QuadraticBezier(t2, p0, p1, p2) {
-  return QuadraticBezierP0(t2, p0) + QuadraticBezierP1(t2, p1) + QuadraticBezierP2(t2, p2);
+function QuadraticBezier(t3, p0, p1, p2) {
+  return QuadraticBezierP0(t3, p0) + QuadraticBezierP1(t3, p1) + QuadraticBezierP2(t3, p2);
 }
-function CubicBezierP0(t2, p2) {
-  const k2 = 1 - t2;
+function CubicBezierP0(t3, p2) {
+  const k2 = 1 - t3;
   return k2 * k2 * k2 * p2;
 }
-function CubicBezierP1(t2, p2) {
-  const k2 = 1 - t2;
-  return 3 * k2 * k2 * t2 * p2;
+function CubicBezierP1(t3, p2) {
+  const k2 = 1 - t3;
+  return 3 * k2 * k2 * t3 * p2;
 }
-function CubicBezierP2(t2, p2) {
-  return 3 * (1 - t2) * t2 * t2 * p2;
+function CubicBezierP2(t3, p2) {
+  return 3 * (1 - t3) * t3 * t3 * p2;
 }
-function CubicBezierP3(t2, p2) {
-  return t2 * t2 * t2 * p2;
+function CubicBezierP3(t3, p2) {
+  return t3 * t3 * t3 * p2;
 }
-function CubicBezier(t2, p0, p1, p2, p3) {
-  return CubicBezierP0(t2, p0) + CubicBezierP1(t2, p1) + CubicBezierP2(t2, p2) + CubicBezierP3(t2, p3);
+function CubicBezier(t3, p0, p1, p2, p3) {
+  return CubicBezierP0(t3, p0) + CubicBezierP1(t3, p1) + CubicBezierP2(t3, p2) + CubicBezierP3(t3, p3);
 }
 var CubicBezierCurve = class extends Curve {
   constructor(v0 = new Vector2(), v1 = new Vector2(), v2 = new Vector2(), v3 = new Vector2()) {
@@ -20087,12 +21849,12 @@ var CubicBezierCurve = class extends Curve {
     this.v2 = v2;
     this.v3 = v3;
   }
-  getPoint(t2, optionalTarget = new Vector2()) {
+  getPoint(t3, optionalTarget = new Vector2()) {
     const point = optionalTarget;
     const v0 = this.v0, v1 = this.v1, v2 = this.v2, v3 = this.v3;
     point.set(
-      CubicBezier(t2, v0.x, v1.x, v2.x, v3.x),
-      CubicBezier(t2, v0.y, v1.y, v2.y, v3.y)
+      CubicBezier(t3, v0.x, v1.x, v2.x, v3.x),
+      CubicBezier(t3, v0.y, v1.y, v2.y, v3.y)
     );
     return point;
   }
@@ -20131,13 +21893,13 @@ var CubicBezierCurve3 = class extends Curve {
     this.v2 = v2;
     this.v3 = v3;
   }
-  getPoint(t2, optionalTarget = new Vector3()) {
+  getPoint(t3, optionalTarget = new Vector3()) {
     const point = optionalTarget;
     const v0 = this.v0, v1 = this.v1, v2 = this.v2, v3 = this.v3;
     point.set(
-      CubicBezier(t2, v0.x, v1.x, v2.x, v3.x),
-      CubicBezier(t2, v0.y, v1.y, v2.y, v3.y),
-      CubicBezier(t2, v0.z, v1.z, v2.z, v3.z)
+      CubicBezier(t3, v0.x, v1.x, v2.x, v3.x),
+      CubicBezier(t3, v0.y, v1.y, v2.y, v3.y),
+      CubicBezier(t3, v0.z, v1.z, v2.z, v3.z)
     );
     return point;
   }
@@ -20174,25 +21936,25 @@ var LineCurve = class extends Curve {
     this.v1 = v1;
     this.v2 = v2;
   }
-  getPoint(t2, optionalTarget = new Vector2()) {
+  getPoint(t3, optionalTarget = new Vector2()) {
     const point = optionalTarget;
-    if (t2 === 1) {
+    if (t3 === 1) {
       point.copy(this.v2);
     } else {
       point.copy(this.v2).sub(this.v1);
-      point.multiplyScalar(t2).add(this.v1);
+      point.multiplyScalar(t3).add(this.v1);
     }
     return point;
   }
   // Line curve is linear, so we can overwrite default getPointAt
-  getPointAt(u2, optionalTarget) {
-    return this.getPoint(u2, optionalTarget);
+  getPointAt(u3, optionalTarget) {
+    return this.getPoint(u3, optionalTarget);
   }
-  getTangent(t2, optionalTarget = new Vector2()) {
+  getTangent(t3, optionalTarget = new Vector2()) {
     return optionalTarget.subVectors(this.v2, this.v1).normalize();
   }
-  getTangentAt(u2, optionalTarget) {
-    return this.getTangent(u2, optionalTarget);
+  getTangentAt(u3, optionalTarget) {
+    return this.getTangent(u3, optionalTarget);
   }
   copy(source) {
     super.copy(source);
@@ -20221,25 +21983,25 @@ var LineCurve3 = class extends Curve {
     this.v1 = v1;
     this.v2 = v2;
   }
-  getPoint(t2, optionalTarget = new Vector3()) {
+  getPoint(t3, optionalTarget = new Vector3()) {
     const point = optionalTarget;
-    if (t2 === 1) {
+    if (t3 === 1) {
       point.copy(this.v2);
     } else {
       point.copy(this.v2).sub(this.v1);
-      point.multiplyScalar(t2).add(this.v1);
+      point.multiplyScalar(t3).add(this.v1);
     }
     return point;
   }
   // Line curve is linear, so we can overwrite default getPointAt
-  getPointAt(u2, optionalTarget) {
-    return this.getPoint(u2, optionalTarget);
+  getPointAt(u3, optionalTarget) {
+    return this.getPoint(u3, optionalTarget);
   }
-  getTangent(t2, optionalTarget = new Vector3()) {
+  getTangent(t3, optionalTarget = new Vector3()) {
     return optionalTarget.subVectors(this.v2, this.v1).normalize();
   }
-  getTangentAt(u2, optionalTarget) {
-    return this.getTangent(u2, optionalTarget);
+  getTangentAt(u3, optionalTarget) {
+    return this.getTangent(u3, optionalTarget);
   }
   copy(source) {
     super.copy(source);
@@ -20269,12 +22031,12 @@ var QuadraticBezierCurve = class extends Curve {
     this.v1 = v1;
     this.v2 = v2;
   }
-  getPoint(t2, optionalTarget = new Vector2()) {
+  getPoint(t3, optionalTarget = new Vector2()) {
     const point = optionalTarget;
     const v0 = this.v0, v1 = this.v1, v2 = this.v2;
     point.set(
-      QuadraticBezier(t2, v0.x, v1.x, v2.x),
-      QuadraticBezier(t2, v0.y, v1.y, v2.y)
+      QuadraticBezier(t3, v0.x, v1.x, v2.x),
+      QuadraticBezier(t3, v0.y, v1.y, v2.y)
     );
     return point;
   }
@@ -20309,13 +22071,13 @@ var QuadraticBezierCurve3 = class extends Curve {
     this.v1 = v1;
     this.v2 = v2;
   }
-  getPoint(t2, optionalTarget = new Vector3()) {
+  getPoint(t3, optionalTarget = new Vector3()) {
     const point = optionalTarget;
     const v0 = this.v0, v1 = this.v1, v2 = this.v2;
     point.set(
-      QuadraticBezier(t2, v0.x, v1.x, v2.x),
-      QuadraticBezier(t2, v0.y, v1.y, v2.y),
-      QuadraticBezier(t2, v0.z, v1.z, v2.z)
+      QuadraticBezier(t3, v0.x, v1.x, v2.x),
+      QuadraticBezier(t3, v0.y, v1.y, v2.y),
+      QuadraticBezier(t3, v0.z, v1.z, v2.z)
     );
     return point;
   }
@@ -20348,10 +22110,10 @@ var SplineCurve = class extends Curve {
     this.type = "SplineCurve";
     this.points = points;
   }
-  getPoint(t2, optionalTarget = new Vector2()) {
+  getPoint(t3, optionalTarget = new Vector2()) {
     const point = optionalTarget;
     const points = this.points;
-    const p2 = (points.length - 1) * t2;
+    const p2 = (points.length - 1) * t3;
     const intPoint = Math.floor(p2);
     const weight = p2 - intPoint;
     const p0 = points[intPoint === 0 ? intPoint : intPoint - 1];
@@ -20431,8 +22193,8 @@ var CurvePath = class extends Curve {
   // 2. Locate and identify type of curve
   // 3. Get t for the curve
   // 4. Return curve.getPointAt(t')
-  getPoint(t2, optionalTarget) {
-    const d2 = t2 * this.getLength();
+  getPoint(t3, optionalTarget) {
+    const d2 = t3 * this.getLength();
     const curveLengths = this.getCurveLengths();
     let i2 = 0;
     while (i2 < curveLengths.length) {
@@ -20440,8 +22202,8 @@ var CurvePath = class extends Curve {
         const diff = curveLengths[i2] - d2;
         const curve = this.curves[i2];
         const segmentLength = curve.getLength();
-        const u2 = segmentLength === 0 ? 0 : 1 - diff / segmentLength;
-        return curve.getPointAt(u2, optionalTarget);
+        const u3 = segmentLength === 0 ? 0 : 1 - diff / segmentLength;
+        return curve.getPointAt(u3, optionalTarget);
       }
       i2++;
     }
@@ -20783,8 +22545,8 @@ var CylinderGeometry = class _CylinderGeometry extends BufferGeometry {
         const v2 = y2 / heightSegments;
         const radius = v2 * (radiusBottom - radiusTop) + radiusTop;
         for (let x2 = 0; x2 <= radialSegments; x2++) {
-          const u2 = x2 / radialSegments;
-          const theta = u2 * thetaLength + thetaStart;
+          const u3 = x2 / radialSegments;
+          const theta = u3 * thetaLength + thetaStart;
           const sinTheta = Math.sin(theta);
           const cosTheta = Math.cos(theta);
           vertex2.x = radius * sinTheta;
@@ -20793,7 +22555,7 @@ var CylinderGeometry = class _CylinderGeometry extends BufferGeometry {
           vertices.push(vertex2.x, vertex2.y, vertex2.z);
           normal.set(sinTheta, slope, cosTheta).normalize();
           normals.push(normal.x, normal.y, normal.z);
-          uvs.push(u2, 1 - v2);
+          uvs.push(u3, 1 - v2);
           indexRow.push(index++);
         }
         indexArray.push(indexRow);
@@ -20832,8 +22594,8 @@ var CylinderGeometry = class _CylinderGeometry extends BufferGeometry {
       }
       const centerIndexEnd = index;
       for (let x2 = 0; x2 <= radialSegments; x2++) {
-        const u2 = x2 / radialSegments;
-        const theta = u2 * thetaLength + thetaStart;
+        const u3 = x2 / radialSegments;
+        const theta = u3 * thetaLength + thetaStart;
         const cosTheta = Math.cos(theta);
         const sinTheta = Math.sin(theta);
         vertex2.x = radius * sinTheta;
@@ -20970,9 +22732,9 @@ var PolyhedronGeometry = class _PolyhedronGeometry extends BufferGeometry {
         vertex2.x = vertexBuffer[i2 + 0];
         vertex2.y = vertexBuffer[i2 + 1];
         vertex2.z = vertexBuffer[i2 + 2];
-        const u2 = azimuth(vertex2) / 2 / Math.PI + 0.5;
+        const u3 = azimuth(vertex2) / 2 / Math.PI + 0.5;
         const v2 = inclination(vertex2) / Math.PI + 0.5;
-        uvBuffer.push(u2, 1 - v2);
+        uvBuffer.push(u3, 1 - v2);
       }
       correctUVs();
       correctSeam();
@@ -21288,20 +23050,20 @@ function isEarHashed(ear, minX, minY, invSize) {
   const ax = a2.x, bx = b2.x, cx = c2.x, ay = a2.y, by = b2.y, cy = c2.y;
   const x0 = ax < bx ? ax < cx ? ax : cx : bx < cx ? bx : cx, y0 = ay < by ? ay < cy ? ay : cy : by < cy ? by : cy, x1 = ax > bx ? ax > cx ? ax : cx : bx > cx ? bx : cx, y1 = ay > by ? ay > cy ? ay : cy : by > cy ? by : cy;
   const minZ = zOrder(x0, y0, minX, minY, invSize), maxZ = zOrder(x1, y1, minX, minY, invSize);
-  let p2 = ear.prevZ, n2 = ear.nextZ;
-  while (p2 && p2.z >= minZ && n2 && n2.z <= maxZ) {
+  let p2 = ear.prevZ, n3 = ear.nextZ;
+  while (p2 && p2.z >= minZ && n3 && n3.z <= maxZ) {
     if (p2.x >= x0 && p2.x <= x1 && p2.y >= y0 && p2.y <= y1 && p2 !== a2 && p2 !== c2 && pointInTriangle(ax, ay, bx, by, cx, cy, p2.x, p2.y) && area(p2.prev, p2, p2.next) >= 0) return false;
     p2 = p2.prevZ;
-    if (n2.x >= x0 && n2.x <= x1 && n2.y >= y0 && n2.y <= y1 && n2 !== a2 && n2 !== c2 && pointInTriangle(ax, ay, bx, by, cx, cy, n2.x, n2.y) && area(n2.prev, n2, n2.next) >= 0) return false;
-    n2 = n2.nextZ;
+    if (n3.x >= x0 && n3.x <= x1 && n3.y >= y0 && n3.y <= y1 && n3 !== a2 && n3 !== c2 && pointInTriangle(ax, ay, bx, by, cx, cy, n3.x, n3.y) && area(n3.prev, n3, n3.next) >= 0) return false;
+    n3 = n3.nextZ;
   }
   while (p2 && p2.z >= minZ) {
     if (p2.x >= x0 && p2.x <= x1 && p2.y >= y0 && p2.y <= y1 && p2 !== a2 && p2 !== c2 && pointInTriangle(ax, ay, bx, by, cx, cy, p2.x, p2.y) && area(p2.prev, p2, p2.next) >= 0) return false;
     p2 = p2.prevZ;
   }
-  while (n2 && n2.z <= maxZ) {
-    if (n2.x >= x0 && n2.x <= x1 && n2.y >= y0 && n2.y <= y1 && n2 !== a2 && n2 !== c2 && pointInTriangle(ax, ay, bx, by, cx, cy, n2.x, n2.y) && area(n2.prev, n2, n2.next) >= 0) return false;
-    n2 = n2.nextZ;
+  while (n3 && n3.z <= maxZ) {
+    if (n3.x >= x0 && n3.x <= x1 && n3.y >= y0 && n3.y <= y1 && n3 !== a2 && n3 !== c2 && pointInTriangle(ax, ay, bx, by, cx, cy, n3.x, n3.y) && area(n3.prev, n3, n3.next) >= 0) return false;
+    n3 = n3.nextZ;
   }
   return true;
 }
@@ -21579,9 +23341,9 @@ function signedArea(data, start, end, dim) {
 var ShapeUtils = class _ShapeUtils {
   // calculate area of the contour polygon
   static area(contour) {
-    const n2 = contour.length;
+    const n3 = contour.length;
     let a2 = 0;
-    for (let p2 = n2 - 1, q2 = 0; q2 < n2; p2 = q2++) {
+    for (let p2 = n3 - 1, q2 = 0; q2 < n3; p2 = q2++) {
       a2 += contour[p2].x * contour[q2].y - contour[q2].x * contour[p2].y;
     }
     return a2 * 0.5;
@@ -21764,9 +23526,9 @@ var ExtrudeGeometry = class _ExtrudeGeometry extends BufferGeometry {
         verticesMovements = verticesMovements.concat(oneHoleMovements);
       }
       for (let b2 = 0; b2 < bevelSegments; b2++) {
-        const t2 = b2 / bevelSegments;
-        const z2 = bevelThickness * Math.cos(t2 * Math.PI / 2);
-        const bs2 = bevelSize * Math.sin(t2 * Math.PI / 2) + bevelOffset;
+        const t3 = b2 / bevelSegments;
+        const z2 = bevelThickness * Math.cos(t3 * Math.PI / 2);
+        const bs2 = bevelSize * Math.sin(t3 * Math.PI / 2) + bevelOffset;
         for (let i2 = 0, il = contour.length; i2 < il; i2++) {
           const vert = scalePt2(contour[i2], contourMovements[i2], bs2);
           v2(vert.x, vert.y, -z2);
@@ -21806,9 +23568,9 @@ var ExtrudeGeometry = class _ExtrudeGeometry extends BufferGeometry {
         }
       }
       for (let b2 = bevelSegments - 1; b2 >= 0; b2--) {
-        const t2 = b2 / bevelSegments;
-        const z2 = bevelThickness * Math.cos(t2 * Math.PI / 2);
-        const bs2 = bevelSize * Math.sin(t2 * Math.PI / 2) + bevelOffset;
+        const t3 = b2 / bevelSegments;
+        const z2 = bevelThickness * Math.cos(t3 * Math.PI / 2);
+        const bs2 = bevelSize * Math.sin(t3 * Math.PI / 2) + bevelOffset;
         for (let i2 = 0, il = contour.length; i2 < il; i2++) {
           const vert = scalePt2(contour[i2], contourMovements[i2], bs2);
           v2(vert.x, vert.y, depth + z2);
@@ -22007,42 +23769,42 @@ function toJSON$1(shapes, options, data) {
 }
 var IcosahedronGeometry = class _IcosahedronGeometry extends PolyhedronGeometry {
   constructor(radius = 1, detail = 0) {
-    const t2 = (1 + Math.sqrt(5)) / 2;
+    const t3 = (1 + Math.sqrt(5)) / 2;
     const vertices = [
       -1,
-      t2,
+      t3,
       0,
       1,
-      t2,
+      t3,
       0,
       -1,
-      -t2,
+      -t3,
       0,
       1,
-      -t2,
+      -t3,
       0,
       0,
       -1,
-      t2,
+      t3,
       0,
       1,
-      t2,
+      t3,
       0,
       -1,
-      -t2,
+      -t3,
       0,
       1,
-      -t2,
-      t2,
+      -t3,
+      t3,
       0,
       -1,
-      t2,
+      t3,
       0,
       1,
-      -t2,
+      -t3,
       0,
       -1,
-      -t2,
+      -t3,
       0,
       1
     ];
@@ -22273,14 +24035,14 @@ var SphereGeometry = class _SphereGeometry extends BufferGeometry {
         uOffset = -0.5 / widthSegments;
       }
       for (let ix = 0; ix <= widthSegments; ix++) {
-        const u2 = ix / widthSegments;
-        vertex2.x = -radius * Math.cos(phiStart + u2 * phiLength) * Math.sin(thetaStart + v2 * thetaLength);
+        const u3 = ix / widthSegments;
+        vertex2.x = -radius * Math.cos(phiStart + u3 * phiLength) * Math.sin(thetaStart + v2 * thetaLength);
         vertex2.y = radius * Math.cos(thetaStart + v2 * thetaLength);
-        vertex2.z = radius * Math.sin(phiStart + u2 * phiLength) * Math.sin(thetaStart + v2 * thetaLength);
+        vertex2.z = radius * Math.sin(phiStart + u3 * phiLength) * Math.sin(thetaStart + v2 * thetaLength);
         vertices.push(vertex2.x, vertex2.y, vertex2.z);
         normal.copy(vertex2).normalize();
         normals.push(normal.x, normal.y, normal.z);
-        uvs.push(u2 + uOffset, 1 - v2);
+        uvs.push(u3 + uOffset, 1 - v2);
         verticesRow.push(index++);
       }
       grid.push(verticesRow);
@@ -22309,6 +24071,47 @@ var SphereGeometry = class _SphereGeometry extends BufferGeometry {
     return new _SphereGeometry(data.radius, data.widthSegments, data.heightSegments, data.phiStart, data.phiLength, data.thetaStart, data.thetaLength);
   }
 };
+var TetrahedronGeometry = class _TetrahedronGeometry extends PolyhedronGeometry {
+  constructor(radius = 1, detail = 0) {
+    const vertices = [
+      1,
+      1,
+      1,
+      -1,
+      -1,
+      1,
+      -1,
+      1,
+      -1,
+      1,
+      -1,
+      -1
+    ];
+    const indices = [
+      2,
+      1,
+      0,
+      0,
+      3,
+      2,
+      1,
+      3,
+      0,
+      2,
+      3,
+      1
+    ];
+    super(vertices, indices, radius, detail);
+    this.type = "TetrahedronGeometry";
+    this.parameters = {
+      radius,
+      detail
+    };
+  }
+  static fromJSON(data) {
+    return new _TetrahedronGeometry(data.radius, data.detail);
+  }
+};
 var TorusGeometry = class _TorusGeometry extends BufferGeometry {
   constructor(radius = 1, tube = 0.4, radialSegments = 12, tubularSegments = 48, arc = Math.PI * 2) {
     super();
@@ -22331,14 +24134,14 @@ var TorusGeometry = class _TorusGeometry extends BufferGeometry {
     const normal = new Vector3();
     for (let j2 = 0; j2 <= radialSegments; j2++) {
       for (let i2 = 0; i2 <= tubularSegments; i2++) {
-        const u2 = i2 / tubularSegments * arc;
+        const u3 = i2 / tubularSegments * arc;
         const v2 = j2 / radialSegments * Math.PI * 2;
-        vertex2.x = (radius + tube * Math.cos(v2)) * Math.cos(u2);
-        vertex2.y = (radius + tube * Math.cos(v2)) * Math.sin(u2);
+        vertex2.x = (radius + tube * Math.cos(v2)) * Math.cos(u3);
+        vertex2.y = (radius + tube * Math.cos(v2)) * Math.sin(u3);
         vertex2.z = tube * Math.sin(v2);
         vertices.push(vertex2.x, vertex2.y, vertex2.z);
-        center.x = radius * Math.cos(u2);
-        center.y = radius * Math.sin(u2);
+        center.x = radius * Math.cos(u3);
+        center.y = radius * Math.sin(u3);
         normal.subVectors(vertex2, center).normalize();
         normals.push(normal.x, normal.y, normal.z);
         uvs.push(i2 / tubularSegments);
@@ -22367,6 +24170,103 @@ var TorusGeometry = class _TorusGeometry extends BufferGeometry {
   }
   static fromJSON(data) {
     return new _TorusGeometry(data.radius, data.tube, data.radialSegments, data.tubularSegments, data.arc);
+  }
+};
+var TubeGeometry = class _TubeGeometry extends BufferGeometry {
+  constructor(path = new QuadraticBezierCurve3(new Vector3(-1, -1, 0), new Vector3(-1, 1, 0), new Vector3(1, 1, 0)), tubularSegments = 64, radius = 1, radialSegments = 8, closed = false) {
+    super();
+    this.type = "TubeGeometry";
+    this.parameters = {
+      path,
+      tubularSegments,
+      radius,
+      radialSegments,
+      closed
+    };
+    const frames = path.computeFrenetFrames(tubularSegments, closed);
+    this.tangents = frames.tangents;
+    this.normals = frames.normals;
+    this.binormals = frames.binormals;
+    const vertex2 = new Vector3();
+    const normal = new Vector3();
+    const uv = new Vector2();
+    let P2 = new Vector3();
+    const vertices = [];
+    const normals = [];
+    const uvs = [];
+    const indices = [];
+    generateBufferData();
+    this.setIndex(indices);
+    this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+    this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
+    this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+    function generateBufferData() {
+      for (let i2 = 0; i2 < tubularSegments; i2++) {
+        generateSegment(i2);
+      }
+      generateSegment(closed === false ? tubularSegments : 0);
+      generateUVs();
+      generateIndices();
+    }
+    function generateSegment(i2) {
+      P2 = path.getPointAt(i2 / tubularSegments, P2);
+      const N2 = frames.normals[i2];
+      const B3 = frames.binormals[i2];
+      for (let j2 = 0; j2 <= radialSegments; j2++) {
+        const v2 = j2 / radialSegments * Math.PI * 2;
+        const sin = Math.sin(v2);
+        const cos = -Math.cos(v2);
+        normal.x = cos * N2.x + sin * B3.x;
+        normal.y = cos * N2.y + sin * B3.y;
+        normal.z = cos * N2.z + sin * B3.z;
+        normal.normalize();
+        normals.push(normal.x, normal.y, normal.z);
+        vertex2.x = P2.x + radius * normal.x;
+        vertex2.y = P2.y + radius * normal.y;
+        vertex2.z = P2.z + radius * normal.z;
+        vertices.push(vertex2.x, vertex2.y, vertex2.z);
+      }
+    }
+    function generateIndices() {
+      for (let j2 = 1; j2 <= tubularSegments; j2++) {
+        for (let i2 = 1; i2 <= radialSegments; i2++) {
+          const a2 = (radialSegments + 1) * (j2 - 1) + (i2 - 1);
+          const b2 = (radialSegments + 1) * j2 + (i2 - 1);
+          const c2 = (radialSegments + 1) * j2 + i2;
+          const d2 = (radialSegments + 1) * (j2 - 1) + i2;
+          indices.push(a2, b2, d2);
+          indices.push(b2, c2, d2);
+        }
+      }
+    }
+    function generateUVs() {
+      for (let i2 = 0; i2 <= tubularSegments; i2++) {
+        for (let j2 = 0; j2 <= radialSegments; j2++) {
+          uv.x = i2 / tubularSegments;
+          uv.y = j2 / radialSegments;
+          uvs.push(uv.x, uv.y);
+        }
+      }
+    }
+  }
+  copy(source) {
+    super.copy(source);
+    this.parameters = Object.assign({}, source.parameters);
+    return this;
+  }
+  toJSON() {
+    const data = super.toJSON();
+    data.path = this.parameters.path.toJSON();
+    return data;
+  }
+  static fromJSON(data) {
+    return new _TubeGeometry(
+      new Curves[data.path.type]().fromJSON(data.path),
+      data.tubularSegments,
+      data.radius,
+      data.radialSegments,
+      data.closed
+    );
   }
 };
 var RawShaderMaterial = class extends ShaderMaterial {
@@ -22653,9 +24553,9 @@ function getKeyframeOrder(times) {
   function compareTime(i2, j2) {
     return times[i2] - times[j2];
   }
-  const n2 = times.length;
-  const result = new Array(n2);
-  for (let i2 = 0; i2 !== n2; ++i2) result[i2] = i2;
+  const n3 = times.length;
+  const result = new Array(n3);
+  for (let i2 = 0; i2 !== n3; ++i2) result[i2] = i2;
   result.sort(compareTime);
   return result;
 }
@@ -22717,17 +24617,17 @@ var Interpolant = class {
     this.settings = null;
     this.DefaultSettings_ = {};
   }
-  evaluate(t2) {
+  evaluate(t3) {
     const pp = this.parameterPositions;
     let i1 = this._cachedIndex, t1 = pp[i1], t0 = pp[i1 - 1];
     validate_interval: {
       seek: {
         let right;
         linear_scan: {
-          forward_scan: if (!(t2 < t1)) {
+          forward_scan: if (!(t3 < t1)) {
             for (let giveUpAt = i1 + 2; ; ) {
               if (t1 === void 0) {
-                if (t2 < t0) break forward_scan;
+                if (t3 < t0) break forward_scan;
                 i1 = pp.length;
                 this._cachedIndex = i1;
                 return this.copySampleValue_(i1 - 1);
@@ -22735,16 +24635,16 @@ var Interpolant = class {
               if (i1 === giveUpAt) break;
               t0 = t1;
               t1 = pp[++i1];
-              if (t2 < t1) {
+              if (t3 < t1) {
                 break seek;
               }
             }
             right = pp.length;
             break linear_scan;
           }
-          if (!(t2 >= t0)) {
+          if (!(t3 >= t0)) {
             const t1global = pp[1];
-            if (t2 < t1global) {
+            if (t3 < t1global) {
               i1 = 2;
               t0 = t1global;
             }
@@ -22756,7 +24656,7 @@ var Interpolant = class {
               if (i1 === giveUpAt) break;
               t1 = t0;
               t0 = pp[--i1 - 1];
-              if (t2 >= t0) {
+              if (t3 >= t0) {
                 break seek;
               }
             }
@@ -22768,7 +24668,7 @@ var Interpolant = class {
         }
         while (i1 < right) {
           const mid = i1 + right >>> 1;
-          if (t2 < pp[mid]) {
+          if (t3 < pp[mid]) {
             right = mid;
           } else {
             i1 = mid + 1;
@@ -22789,7 +24689,7 @@ var Interpolant = class {
       this._cachedIndex = i1;
       this.intervalChanged_(i1, t0, t1);
     }
-    return this.interpolate_(i1, t0, t2, t1);
+    return this.interpolate_(i1, t0, t3, t1);
   }
   getSettings_() {
     return this.settings || this.DefaultSettings_;
@@ -22859,8 +24759,8 @@ var CubicInterpolant = class extends Interpolant {
     this._offsetPrev = iPrev * stride;
     this._offsetNext = iNext * stride;
   }
-  interpolate_(i1, t0, t2, t1) {
-    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, o1 = i1 * stride, o0 = o1 - stride, oP = this._offsetPrev, oN = this._offsetNext, wP = this._weightPrev, wN = this._weightNext, p2 = (t2 - t0) / (t1 - t0), pp = p2 * p2, ppp = pp * p2;
+  interpolate_(i1, t0, t3, t1) {
+    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, o1 = i1 * stride, o0 = o1 - stride, oP = this._offsetPrev, oN = this._offsetNext, wP = this._weightPrev, wN = this._weightNext, p2 = (t3 - t0) / (t1 - t0), pp = p2 * p2, ppp = pp * p2;
     const sP = -wP * ppp + 2 * wP * pp - wP * p2;
     const s0 = (1 + wP) * ppp + (-1.5 - 2 * wP) * pp + (-0.5 + wP) * p2 + 1;
     const s1 = (-1 - wN) * ppp + (1.5 + wN) * pp + 0.5 * p2;
@@ -22875,8 +24775,8 @@ var LinearInterpolant = class extends Interpolant {
   constructor(parameterPositions, sampleValues, sampleSize, resultBuffer) {
     super(parameterPositions, sampleValues, sampleSize, resultBuffer);
   }
-  interpolate_(i1, t0, t2, t1) {
-    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, offset1 = i1 * stride, offset0 = offset1 - stride, weight1 = (t2 - t0) / (t1 - t0), weight0 = 1 - weight1;
+  interpolate_(i1, t0, t3, t1) {
+    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, offset1 = i1 * stride, offset0 = offset1 - stride, weight1 = (t3 - t0) / (t1 - t0), weight0 = 1 - weight1;
     for (let i2 = 0; i2 !== stride; ++i2) {
       result[i2] = values[offset0 + i2] * weight0 + values[offset1 + i2] * weight1;
     }
@@ -22975,7 +24875,7 @@ var KeyframeTrack = class {
   shift(timeOffset) {
     if (timeOffset !== 0) {
       const times = this.times;
-      for (let i2 = 0, n2 = times.length; i2 !== n2; ++i2) {
+      for (let i2 = 0, n3 = times.length; i2 !== n3; ++i2) {
         times[i2] += timeOffset;
       }
     }
@@ -22985,7 +24885,7 @@ var KeyframeTrack = class {
   scale(timeScale) {
     if (timeScale !== 1) {
       const times = this.times;
-      for (let i2 = 0, n2 = times.length; i2 !== n2; ++i2) {
+      for (let i2 = 0, n3 = times.length; i2 !== n3; ++i2) {
         times[i2] *= timeScale;
       }
     }
@@ -23016,45 +24916,45 @@ var KeyframeTrack = class {
   }
   // ensure we do not get a GarbageInGarbageOut situation, make sure tracks are at least minimally viable
   validate() {
-    let valid3 = true;
+    let valid4 = true;
     const valueSize = this.getValueSize();
     if (valueSize - Math.floor(valueSize) !== 0) {
       console.error("THREE.KeyframeTrack: Invalid value size in track.", this);
-      valid3 = false;
+      valid4 = false;
     }
     const times = this.times, values = this.values, nKeys = times.length;
     if (nKeys === 0) {
       console.error("THREE.KeyframeTrack: Track is empty.", this);
-      valid3 = false;
+      valid4 = false;
     }
     let prevTime = null;
     for (let i2 = 0; i2 !== nKeys; i2++) {
       const currTime = times[i2];
       if (typeof currTime === "number" && isNaN(currTime)) {
         console.error("THREE.KeyframeTrack: Time is not a valid number.", this, i2, currTime);
-        valid3 = false;
+        valid4 = false;
         break;
       }
       if (prevTime !== null && prevTime > currTime) {
         console.error("THREE.KeyframeTrack: Out of order keys.", this, i2, currTime, prevTime);
-        valid3 = false;
+        valid4 = false;
         break;
       }
       prevTime = currTime;
     }
     if (values !== void 0) {
       if (isTypedArray(values)) {
-        for (let i2 = 0, n2 = values.length; i2 !== n2; ++i2) {
+        for (let i2 = 0, n3 = values.length; i2 !== n3; ++i2) {
           const value = values[i2];
           if (isNaN(value)) {
             console.error("THREE.KeyframeTrack: Value is not a valid number.", this, i2, value);
-            valid3 = false;
+            valid4 = false;
             break;
           }
         }
       }
     }
-    return valid3;
+    return valid4;
   }
   // removes equivalent sequential keys as common in morph target sequences
   // (0,0,0,0,1,1,1,0,0,0,0,0,0,0) --> (0,0,1,1,0,0)
@@ -23139,8 +25039,8 @@ var QuaternionLinearInterpolant = class extends Interpolant {
   constructor(parameterPositions, sampleValues, sampleSize, resultBuffer) {
     super(parameterPositions, sampleValues, sampleSize, resultBuffer);
   }
-  interpolate_(i1, t0, t2, t1) {
-    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, alpha = (t2 - t0) / (t1 - t0);
+  interpolate_(i1, t0, t3, t1) {
+    const result = this.resultBuffer, values = this.sampleValues, stride = this.valueSize, alpha = (t3 - t0) / (t1 - t0);
     let offset = i1 * stride;
     for (let end = offset + stride; offset !== end; offset += 4) {
       Quaternion.slerpFlat(result, 0, values, offset - stride, values, offset, alpha);
@@ -23182,7 +25082,7 @@ var AnimationClip = class {
   }
   static parse(json) {
     const tracks = [], jsonTracks = json.tracks, frameTime = 1 / (json.fps || 1);
-    for (let i2 = 0, n2 = jsonTracks.length; i2 !== n2; ++i2) {
+    for (let i2 = 0, n3 = jsonTracks.length; i2 !== n3; ++i2) {
       tracks.push(parseKeyframeTrack(jsonTracks[i2]).scale(frameTime));
     }
     const clip = new this(json.name, json.duration, tracks, json.blendMode);
@@ -23198,7 +25098,7 @@ var AnimationClip = class {
       "uuid": clip.uuid,
       "blendMode": clip.blendMode
     };
-    for (let i2 = 0, n2 = clipTracks.length; i2 !== n2; ++i2) {
+    for (let i2 = 0, n3 = clipTracks.length; i2 !== n3; ++i2) {
       tracks.push(KeyframeTrack.toJSON(clipTracks[i2]));
     }
     return json;
@@ -23346,7 +25246,7 @@ var AnimationClip = class {
   resetDuration() {
     const tracks = this.tracks;
     let duration = 0;
-    for (let i2 = 0, n2 = tracks.length; i2 !== n2; ++i2) {
+    for (let i2 = 0, n3 = tracks.length; i2 !== n3; ++i2) {
       const track = this.tracks[i2];
       duration = Math.max(duration, track.times[track.times.length - 1]);
     }
@@ -23360,11 +25260,11 @@ var AnimationClip = class {
     return this;
   }
   validate() {
-    let valid3 = true;
+    let valid4 = true;
     for (let i2 = 0; i2 < this.tracks.length; i2++) {
-      valid3 = valid3 && this.tracks[i2].validate();
+      valid4 = valid4 && this.tracks[i2].validate();
     }
-    return valid3;
+    return valid4;
   }
   optimize() {
     for (let i2 = 0; i2 < this.tracks.length; i2++) {
@@ -24410,32 +26310,32 @@ var PropertyMixer = class {
     }
   }
   // mix functions
-  _select(buffer, dstOffset, srcOffset, t2, stride) {
-    if (t2 >= 0.5) {
+  _select(buffer, dstOffset, srcOffset, t3, stride) {
+    if (t3 >= 0.5) {
       for (let i2 = 0; i2 !== stride; ++i2) {
         buffer[dstOffset + i2] = buffer[srcOffset + i2];
       }
     }
   }
-  _slerp(buffer, dstOffset, srcOffset, t2) {
-    Quaternion.slerpFlat(buffer, dstOffset, buffer, dstOffset, buffer, srcOffset, t2);
+  _slerp(buffer, dstOffset, srcOffset, t3) {
+    Quaternion.slerpFlat(buffer, dstOffset, buffer, dstOffset, buffer, srcOffset, t3);
   }
-  _slerpAdditive(buffer, dstOffset, srcOffset, t2, stride) {
+  _slerpAdditive(buffer, dstOffset, srcOffset, t3, stride) {
     const workOffset = this._workIndex * stride;
     Quaternion.multiplyQuaternionsFlat(buffer, workOffset, buffer, dstOffset, buffer, srcOffset);
-    Quaternion.slerpFlat(buffer, dstOffset, buffer, dstOffset, buffer, workOffset, t2);
+    Quaternion.slerpFlat(buffer, dstOffset, buffer, dstOffset, buffer, workOffset, t3);
   }
-  _lerp(buffer, dstOffset, srcOffset, t2, stride) {
-    const s2 = 1 - t2;
+  _lerp(buffer, dstOffset, srcOffset, t3, stride) {
+    const s2 = 1 - t3;
     for (let i2 = 0; i2 !== stride; ++i2) {
       const j2 = dstOffset + i2;
-      buffer[j2] = buffer[j2] * s2 + buffer[srcOffset + i2] * t2;
+      buffer[j2] = buffer[j2] * s2 + buffer[srcOffset + i2] * t3;
     }
   }
-  _lerpAdditive(buffer, dstOffset, srcOffset, t2, stride) {
+  _lerpAdditive(buffer, dstOffset, srcOffset, t3, stride) {
     for (let i2 = 0; i2 !== stride; ++i2) {
       const j2 = dstOffset + i2;
-      buffer[j2] = buffer[j2] + buffer[srcOffset + i2] * t2;
+      buffer[j2] = buffer[j2] + buffer[srcOffset + i2] * t3;
     }
   }
 };
@@ -24464,19 +26364,19 @@ var Composite = class {
   }
   setValue(array, offset) {
     const bindings = this._bindings;
-    for (let i2 = this._targetGroup.nCachedObjects_, n2 = bindings.length; i2 !== n2; ++i2) {
+    for (let i2 = this._targetGroup.nCachedObjects_, n3 = bindings.length; i2 !== n3; ++i2) {
       bindings[i2].setValue(array, offset);
     }
   }
   bind() {
     const bindings = this._bindings;
-    for (let i2 = this._targetGroup.nCachedObjects_, n2 = bindings.length; i2 !== n2; ++i2) {
+    for (let i2 = this._targetGroup.nCachedObjects_, n3 = bindings.length; i2 !== n3; ++i2) {
       bindings[i2].bind();
     }
   }
   unbind() {
     const bindings = this._bindings;
-    for (let i2 = this._targetGroup.nCachedObjects_, n2 = bindings.length; i2 !== n2; ++i2) {
+    for (let i2 = this._targetGroup.nCachedObjects_, n3 = bindings.length; i2 !== n3; ++i2) {
       bindings[i2].unbind();
     }
   }
@@ -24574,7 +26474,7 @@ var PropertyBinding = class _PropertyBinding {
   }
   _getValue_array(buffer, offset) {
     const source = this.resolvedProperty;
-    for (let i2 = 0, n2 = source.length; i2 !== n2; ++i2) {
+    for (let i2 = 0, n3 = source.length; i2 !== n3; ++i2) {
       buffer[offset++] = source[i2];
     }
   }
@@ -24599,20 +26499,20 @@ var PropertyBinding = class _PropertyBinding {
   // EntireArray
   _setValue_array(buffer, offset) {
     const dest = this.resolvedProperty;
-    for (let i2 = 0, n2 = dest.length; i2 !== n2; ++i2) {
+    for (let i2 = 0, n3 = dest.length; i2 !== n3; ++i2) {
       dest[i2] = buffer[offset++];
     }
   }
   _setValue_array_setNeedsUpdate(buffer, offset) {
     const dest = this.resolvedProperty;
-    for (let i2 = 0, n2 = dest.length; i2 !== n2; ++i2) {
+    for (let i2 = 0, n3 = dest.length; i2 !== n3; ++i2) {
       dest[i2] = buffer[offset++];
     }
     this.targetObject.needsUpdate = true;
   }
   _setValue_array_setMatrixWorldNeedsUpdate(buffer, offset) {
     const dest = this.resolvedProperty;
-    for (let i2 = 0, n2 = dest.length; i2 !== n2; ++i2) {
+    for (let i2 = 0, n3 = dest.length; i2 !== n3; ++i2) {
       dest[i2] = buffer[offset++];
     }
     this.targetObject.matrixWorldNeedsUpdate = true;
@@ -25232,7 +27132,7 @@ var AnimationMixer = class extends EventDispatcher {
         this._addInactiveAction(action, clipUuid, rootUuid);
       }
       const bindings = action._propertyBindings;
-      for (let i2 = 0, n2 = bindings.length; i2 !== n2; ++i2) {
+      for (let i2 = 0, n3 = bindings.length; i2 !== n3; ++i2) {
         const binding = bindings[i2];
         if (binding.useCount++ === 0) {
           this._lendBinding(binding);
@@ -25245,7 +27145,7 @@ var AnimationMixer = class extends EventDispatcher {
   _deactivateAction(action) {
     if (this._isActiveAction(action)) {
       const bindings = action._propertyBindings;
-      for (let i2 = 0, n2 = bindings.length; i2 !== n2; ++i2) {
+      for (let i2 = 0, n3 = bindings.length; i2 !== n3; ++i2) {
         const binding = bindings[i2];
         if (--binding.useCount === 0) {
           binding.restoreOriginalState();
@@ -25337,7 +27237,7 @@ var AnimationMixer = class extends EventDispatcher {
   }
   _removeInactiveBindingsForAction(action) {
     const bindings = action._propertyBindings;
-    for (let i2 = 0, n2 = bindings.length; i2 !== n2; ++i2) {
+    for (let i2 = 0, n3 = bindings.length; i2 !== n3; ++i2) {
       const binding = bindings[i2];
       if (--binding.referenceCount === 0) {
         this._removeInactiveBinding(binding);
@@ -25495,7 +27395,7 @@ var AnimationMixer = class extends EventDispatcher {
     const actions = this._actions, clipUuid = clip.uuid, actionsByClip = this._actionsByClip, actionsForClip = actionsByClip[clipUuid];
     if (actionsForClip !== void 0) {
       const actionsToRemove = actionsForClip.knownActions;
-      for (let i2 = 0, n2 = actionsToRemove.length; i2 !== n2; ++i2) {
+      for (let i2 = 0, n3 = actionsToRemove.length; i2 !== n3; ++i2) {
         const action = actionsToRemove[i2];
         this._deactivateAction(action);
         const cacheIndex = action._cacheIndex, lastInactiveAction = actions[actions.length - 1];
@@ -25550,346 +27450,587 @@ if (typeof window !== "undefined") {
   }
 }
 
-// shared/constants.ts
-var FIXED_TIMESTEP = 1 / 60;
-var FIXED_TIMESTEP_MS = 1e3 / 60;
-var SNAPSHOT_HZ = 30;
-var SNAPSHOT_INTERVAL_MS = 1e3 / SNAPSHOT_HZ;
-var PREDICTION_BUFFER_SIZE = 128;
-var INTERPOLATION_DELAY_MS = 100;
-var WORLD_GRAVITY = { x: 0, y: -24, z: 0 };
-var TERMINAL_VELOCITY = -55;
-var CITY_HALF_EXTENT = 600;
-var TOTAL_AGILITY_ORBS = 150;
-var TOTAL_RENEGADE_ORBS = 20;
-var TOTAL_WHISPER_ORBS = 12;
-var TOTAL_ORBS = TOTAL_AGILITY_ORBS + TOTAL_RENEGADE_ORBS + TOTAL_WHISPER_ORBS;
-var CAPSULE_RADIUS = 0.4;
-var CAPSULE_HALF_HEIGHT = 0.55;
-var CAPSULE_TOTAL_HEIGHT = CAPSULE_HALF_HEIGHT * 2 + CAPSULE_RADIUS * 2;
-var CAPSULE_CENTER_OFFSET_Y = CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS;
-var CONTROLLER_MAX_STEP_HEIGHT = 0.45;
-var CONTROLLER_MIN_STEP_WIDTH = 0.2;
-var CONTROLLER_MAX_SLOPE_CLIMB_ANGLE = 50 * Math.PI / 180;
-var CONTROLLER_MIN_SLOPE_SLIDE_ANGLE = 52 * Math.PI / 180;
-var CONTROLLER_SNAP_TO_GROUND_DIST = 0.3;
-var CONTROLLER_AUTOSLIDE_OFFSET = 0.02;
-var MANTLE_CHEST_RAY_Y = 1.3;
-var MANTLE_HEAD_RAY_Y = 2.1;
-var MANTLE_DURATION_SEC = 0.35;
-var CAMERA_SHOULDER_OFFSET = { x: 0.45, y: 1.65, z: 0 };
-var CAMERA_PITCH_MIN_RAD = -75 * Math.PI / 180;
-var CAMERA_PITCH_MAX_RAD = 80 * Math.PI / 180;
-var CAMERA_ARM_DEFAULT = 4.5;
-var CAMERA_ARM_AIM = 2.2;
-var CAMERA_ARM_SPRINT_MAX = 7.5;
-var CAMERA_WHISKER_MARGIN = 0.2;
-var CAMERA_WHISKER_SPHERE_RADIUS = 0.22;
-var AIR_DASH_SPEED = 22;
-var AIR_DASH_DURATION_SEC = 0.22;
-var INPUT_FLAG_JUMP = 1 << 0;
-var INPUT_FLAG_DASH = 1 << 1;
-var INPUT_FLAG_MANTLE = 1 << 2;
-var INPUT_FLAG_SPRINT = 1 << 3;
-var INPUT_FLAG_AIM = 1 << 4;
-var INPUT_FLAG_FIRE = 1 << 5;
-var INPUT_FLAG_MELEE = 1 << 6;
-var INPUT_FLAG_PARRY = 1 << 7;
-var INPUT_LIMB_SHIFT = 8;
-var INPUT_LIMB_MASK = 7;
-var INPUT_FLAG_GRAPPLE = 1 << 11;
-var INPUT_FLAG_GRAB_THROW = 1 << 12;
-var INPUT_FLAG_VEHICLE_INTERACT = 1 << 13;
-var INPUT_FLAG_RELIC_REWIND = 1 << 14;
-var INPUT_FLAG_OBJECTIVE_JETPACK = 1 << 15;
-var OMEGA_BOUNTY_DURATION_SEC = 90;
-var DISTRICT_OBJECTIVE_INTERACT_RADIUS_M = 4.2;
-var SKYBOX_ARENA_BASE_Y = 400;
-var PET_ORBIT_RADIUS_M = 2.6;
-var PET_SEPARATION_RADIUS_M = 2.2;
-var PET_NEIGHBOR_RADIUS_M = 6;
-var PET_TELEPORT_LEASH_M = 40;
-var PET_DERBY_LAPS = 2;
-var PET_DERBY_LOBBY_SEC = 8;
-var PET_DERBY_COUNTDOWN_SEC = 5;
-var PET_DERBY_MAX_RACE_SEC = 150;
-var PET_DERBY_RESULTS_SEC = 10;
-var PET_CLASH_LOBBY_SEC = 8;
-var PET_CLASH_COUNTDOWN_SEC = 3;
-var PET_CLASH_MAX_FIGHT_SEC = 90;
-var PET_CLASH_RESULTS_SEC = 8;
-var DreadnoughtPartId = /* @__PURE__ */ ((DreadnoughtPartId2) => {
-  DreadnoughtPartId2[DreadnoughtPartId2["CORE_REACTOR"] = 0] = "CORE_REACTOR";
-  DreadnoughtPartId2[DreadnoughtPartId2["ENGINE_FL"] = 1] = "ENGINE_FL";
-  DreadnoughtPartId2[DreadnoughtPartId2["ENGINE_FR"] = 2] = "ENGINE_FR";
-  DreadnoughtPartId2[DreadnoughtPartId2["ENGINE_RL"] = 3] = "ENGINE_RL";
-  DreadnoughtPartId2[DreadnoughtPartId2["ENGINE_RR"] = 4] = "ENGINE_RR";
-  DreadnoughtPartId2[DreadnoughtPartId2["FLAK_TURRET_PORT"] = 5] = "FLAK_TURRET_PORT";
-  DreadnoughtPartId2[DreadnoughtPartId2["FLAK_TURRET_STARBOARD"] = 6] = "FLAK_TURRET_STARBOARD";
-  return DreadnoughtPartId2;
-})(DreadnoughtPartId || {});
-var DREADNOUGHT_ORBIT_CENTER = { x: -90, z: -90 };
-var DREADNOUGHT_ORBIT_RADIUS_M = 70;
-var DREADNOUGHT_BASE_ALTITUDE_M = 150;
-var DREADNOUGHT_WEAPON_RANGE_M = 220;
-var DREADNOUGHT_RESPAWN_SEC = 300;
-var GRAPPLE_MAX_RANGE_M = 45;
-var GRAPPLE_MIN_LENGTH_M = 2.2;
-var GRAPPLE_REEL_SPEED_MPS = 16;
-var GRAPPLE_TENSION_ACCEL_MPS2 = 28;
-var VEHICLE_WHEEL_REST_LENGTH_M = 0.65;
-var VEHICLE_WHEEL_RADIUS_M = 0.38;
-var VEHICLE_INTERACT_RANGE_M = 4.5;
-var VEHICLE_WALL_THRUSTER_IMPULSE_Y = 14;
-var PROP_PICKUP_RANGE_M = 4;
-var CHRONO_REWIND_SECONDS = 3;
-var CHRONO_REWIND_TICKS = Math.round(CHRONO_REWIND_SECONDS / FIXED_TIMESTEP);
-function packTargetLimbIntoButtons(buttons, limbId) {
-  return buttons & ~(INPUT_LIMB_MASK << INPUT_LIMB_SHIFT) | (limbId & INPUT_LIMB_MASK) << INPUT_LIMB_SHIFT;
+// shared/protocol/presentationProtocol.ts
+var PRESENTATION_PACKET = 11;
+var MAX_EFFECT_EVENTS = 256;
+var COUNTER_CONTACT_SEC = 0.48;
+var PAIRED_DURATION_SEC = 0.65;
+var uint = (n3, max) => Number.isInteger(n3) && n3 >= 0 && n3 <= max;
+function valid(p2) {
+  if (!uint(p2.tick, 4294967295) || p2.events.length > MAX_EFFECT_EVENTS)
+    return false;
+  const ids = /* @__PURE__ */ new Set();
+  for (const e2 of p2.events) {
+    if (!uint(e2.id, 4294967295) || !e2.id || ids.has(e2.id) || !uint(e2.tick, 4294967295) || !uint(e2.kind, 7) || !uint(e2.actor, 65535) || !uint(e2.target, 65535) || !uint(e2.limb, 6) || !uint(e2.flags, 7))
+      return false;
+    if (![
+      ...Object.values(e2.origin),
+      ...Object.values(e2.point),
+      ...Object.values(e2.normal),
+      e2.radius,
+      e2.delay
+    ].every(Number.isFinite) || e2.radius < 0 || e2.radius > 100 || e2.delay < 0 || e2.delay > 2 || Math.abs(Math.hypot(e2.normal.x, e2.normal.y, e2.normal.z) - 1) > 0.02)
+      return false;
+    if ([...Object.values(e2.origin), ...Object.values(e2.point)].some(
+      (n3) => Math.abs(n3) > 1e5
+    ))
+      return false;
+    ids.add(e2.id);
+  }
+  return true;
 }
-function unpackTargetLimbFromButtons(buttons) {
-  const raw = buttons >> INPUT_LIMB_SHIFT & INPUT_LIMB_MASK;
-  return raw <= 5 ? raw : 1 /* TORSO */;
+function decodeEffects(buffer) {
+  if (buffer.byteLength < 8) return null;
+  const v2 = new DataView(buffer), n3 = v2.getUint16(2, true);
+  if (v2.getUint8(0) !== PRESENTATION_PACKET || v2.getUint8(1) !== 1 || n3 > MAX_EFFECT_EVENTS || buffer.byteLength !== 8 + n3 * 64)
+    return null;
+  const packet = { tick: v2.getUint32(4, true), events: [] };
+  for (let i2 = 0; i2 < n3; i2++) {
+    const b2 = 8 + i2 * 64, f2 = (j2) => v2.getFloat32(b2 + 16 + j2 * 4, true);
+    if (v2.getUint32(b2 + 60, true) !== 0) return null;
+    packet.events.push({
+      id: v2.getUint32(b2, true),
+      tick: v2.getUint32(b2 + 4, true),
+      kind: v2.getUint8(b2 + 8),
+      limb: v2.getUint8(b2 + 9),
+      flags: v2.getUint16(b2 + 10, true),
+      actor: v2.getUint16(b2 + 12, true),
+      target: v2.getUint16(b2 + 14, true),
+      origin: { x: f2(0), y: f2(1), z: f2(2) },
+      point: { x: f2(3), y: f2(4), z: f2(5) },
+      normal: { x: f2(6), y: f2(7), z: f2(8) },
+      radius: f2(9),
+      delay: f2(10)
+    });
+  }
+  return valid(packet) ? packet : null;
 }
-var LIMB_COLLIDER_SPECS = {
-  [0 /* HEAD */]: {
-    name: "HEAD",
-    shape: "sphere",
-    radius: 0.18,
-    // Sphere r = 0.18m
-    halfHeight: 0,
-    damageMultiplier: 2.2,
-    // 2.2x Crit multiplier
-    staggerDurationSec: 4,
-    // 4.0s Blind/Stagger interrupting windup
-    localOffset: { x: 0, y: 1.68, z: 0 }
-  },
-  [1 /* TORSO */]: {
-    name: "TORSO",
-    shape: "capsule",
-    radius: 0.28,
-    // Capsule r = 0.28m, h = 0.55m
-    halfHeight: 0.275,
-    damageMultiplier: 1,
-    // 1.0x Base damage
-    armorStripMultiplier: 1.3,
-    // Strips ablative armor plating 30% faster
-    localOffset: { x: 0, y: 1.18, z: 0 }
-  },
-  [2 /* LEFT_ARM */]: {
-    name: "LEFT_ARM",
-    shape: "capsule",
-    radius: 0.12,
-    // Capsule r = 0.12m, h = 0.45m
-    halfHeight: 0.225,
-    damageMultiplier: 0.85,
-    // 0.85x damage
-    crippleDurationSec: 8,
-    // Disables heavy weapon & reduces outgoing damage by 50% for 8.0s
-    localOffset: { x: -0.34, y: 1.18, z: 0 }
-  },
-  [3 /* RIGHT_ARM */]: {
-    name: "RIGHT_ARM",
-    shape: "capsule",
-    radius: 0.12,
-    // Capsule r = 0.12m, h = 0.45m
-    halfHeight: 0.225,
-    damageMultiplier: 0.85,
-    crippleDurationSec: 8,
-    localOffset: { x: 0.34, y: 1.18, z: 0 }
-  },
-  [4 /* LEFT_LEG */]: {
-    name: "LEFT_LEG",
-    shape: "capsule",
-    radius: 0.15,
-    // Capsule r = 0.15m, h = 0.60m
-    halfHeight: 0.3,
-    damageMultiplier: 0.85,
-    // 0.85x damage
-    crippleDurationSec: 8,
-    // Reduces max steering velocity by 70% for 8.0s & grounds airborne targets
-    localOffset: { x: -0.15, y: 0.45, z: 0 }
-  },
-  [5 /* RIGHT_LEG */]: {
-    name: "RIGHT_LEG",
-    shape: "capsule",
-    radius: 0.15,
-    halfHeight: 0.3,
-    damageMultiplier: 0.85,
-    crippleDurationSec: 8,
-    localOffset: { x: 0.15, y: 0.45, z: 0 }
+function effectSpec(kind, point, overrides = {}) {
+  return {
+    kind,
+    actor: 0,
+    target: 0,
+    limb: 6,
+    flags: 0,
+    origin: { ...point },
+    point: { ...point },
+    normal: { x: 0, y: 1, z: 0 },
+    radius: 1,
+    delay: 0,
+    ...overrides
+  };
+}
+
+// client/animation/combatEffects.ts
+var Pool = class {
+  constructor(kind, capacity, geometry) {
+    this.kind = kind;
+    this.alpha = new InstancedBufferAttribute(
+      new Float32Array(capacity),
+      1
+    );
+    geometry.setAttribute("effectOpacity", this.alpha);
+    const material = new ShaderMaterial({
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+      side: DoubleSide,
+      blending: kind === "mark" ? NormalBlending : AdditiveBlending,
+      polygonOffset: kind === "mark",
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -2,
+      uniforms: { shell: { value: kind === "wave" ? 1 : 0 } },
+      vertexShader: `attribute float effectOpacity; varying float alpha; varying vec3 color; varying vec3 facing; varying vec3 eye;
+        void main(){alpha=effectOpacity;color=instanceColor;vec4 p=modelViewMatrix*instanceMatrix*vec4(position,1);eye=-p.xyz;facing=normalize(normalMatrix*mat3(instanceMatrix)*normal);gl_Position=projectionMatrix*p;}`,
+      fragmentShader: `varying float alpha;varying vec3 color;varying vec3 facing;varying vec3 eye;uniform float shell;
+        void main(){float edge=pow(1.0-abs(dot(normalize(facing),normalize(eye))),2.0);gl_FragColor=vec4(color,alpha*mix(1.0,.12+.88*edge,shell));
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+        }`
+    });
+    this.mesh = new InstancedMesh(geometry, material, capacity);
+    this.mesh.name = `Pooled_${kind}`;
+    this.mesh.count = 0;
+    this.mesh.frustumCulled = false;
+    this.mesh.userData.excludeSurfacePass = true;
+    this.particles = Array.from({ length: capacity }, () => ({
+      active: false,
+      age: 0,
+      life: 1,
+      position: new Vector3(),
+      velocity: new Vector3(),
+      rotation: new Quaternion(),
+      scale: new Vector3(1, 1, 1),
+      color: new Color(),
+      radius: 1
+    }));
+    for (let i2 = 0; i2 < capacity; i2++)
+      this.mesh.setColorAt(i2, new Color());
+    this.mesh.instanceMatrix.setUsage(DynamicDrawUsage);
+    this.mesh.instanceColor.setUsage(DynamicDrawUsage);
+    this.alpha.setUsage(DynamicDrawUsage);
+  }
+  mesh;
+  particles;
+  overwritten = 0;
+  cursor = 0;
+  matrix = new Matrix4();
+  alpha;
+  take(life) {
+    const p2 = this.particles[this.cursor];
+    this.cursor = (this.cursor + 1) % this.particles.length;
+    if (p2.active) this.overwritten++;
+    p2.active = true;
+    p2.age = 0;
+    p2.life = life;
+    p2.velocity.set(0, 0, 0);
+    p2.rotation.identity();
+    p2.scale.set(1, 1, 1);
+    return p2;
+  }
+  update(dt) {
+    let count = 0;
+    for (const p2 of this.particles) {
+      if (!p2.active) continue;
+      p2.age += dt;
+      if (p2.age >= p2.life) {
+        p2.active = false;
+        continue;
+      }
+      const t3 = p2.age / p2.life;
+      if (this.kind === "spark") {
+        p2.velocity.y -= 9.8 * dt;
+        p2.position.addScaledVector(p2.velocity, dt);
+      }
+      if (this.kind === "wave")
+        p2.scale.setScalar(Math.max(0.01, p2.radius * (0.1 + 0.9 * t3)));
+      this.matrix.compose(p2.position, p2.rotation, p2.scale);
+      this.mesh.setMatrixAt(count, this.matrix);
+      this.mesh.setColorAt(count, p2.color);
+      this.alpha.setX(
+        count,
+        this.kind === "mark" ? 0.65 * (1 - Math.max(0, (t3 - 0.7) / 0.3)) : (1 - t3) * 0.85
+      );
+      count++;
+    }
+    this.mesh.count = count;
+    this.mesh.visible = count > 0;
+    this.mesh.instanceMatrix.needsUpdate = true;
+    this.mesh.instanceColor.needsUpdate = true;
+    this.alpha.needsUpdate = true;
+  }
+  clear() {
+    this.particles.forEach((p2) => p2.active = false);
+    this.mesh.count = 0;
+    this.mesh.visible = false;
+  }
+  dispose() {
+    this.clear();
+    this.mesh.geometry.dispose();
+    this.mesh.material.dispose();
+    this.mesh.dispose();
   }
 };
-var MELEE_ENGAGE_RANGE_M = 4.5;
-var MELEE_WARP_SPEED_MPS = 18;
-var MELEE_STRIKE_CONNECT_DIST_M = 1.65;
-var PARRY_SHOCKWAVE_RADIUS_M = 6;
-var WEAPON_BASE_DAMAGE = 42;
-var EnemyCombatState = /* @__PURE__ */ ((EnemyCombatState2) => {
-  EnemyCombatState2[EnemyCombatState2["IDLE"] = 0] = "IDLE";
-  EnemyCombatState2[EnemyCombatState2["CHASE"] = 1] = "CHASE";
-  EnemyCombatState2[EnemyCombatState2["WINDUP"] = 2] = "WINDUP";
-  EnemyCombatState2[EnemyCombatState2["ACTIVE_SWEEP"] = 3] = "ACTIVE_SWEEP";
-  EnemyCombatState2[EnemyCombatState2["RECOVERY"] = 4] = "RECOVERY";
-  EnemyCombatState2[EnemyCombatState2["STAGGER_BLIND"] = 5] = "STAGGER_BLIND";
-  EnemyCombatState2[EnemyCombatState2["COUNTER_STANCE"] = 6] = "COUNTER_STANCE";
-  EnemyCombatState2[EnemyCombatState2["DEAD"] = 7] = "DEAD";
-  return EnemyCombatState2;
-})(EnemyCombatState || {});
-var AgentAnimState = /* @__PURE__ */ ((AgentAnimState2) => {
-  AgentAnimState2[AgentAnimState2["IDLE"] = 0] = "IDLE";
-  AgentAnimState2[AgentAnimState2["RUN"] = 1] = "RUN";
-  AgentAnimState2[AgentAnimState2["SPRINT"] = 2] = "SPRINT";
-  AgentAnimState2[AgentAnimState2["JUMP_ASCEND"] = 3] = "JUMP_ASCEND";
-  AgentAnimState2[AgentAnimState2["FALL"] = 4] = "FALL";
-  AgentAnimState2[AgentAnimState2["AIR_DASH"] = 5] = "AIR_DASH";
-  AgentAnimState2[AgentAnimState2["MANTLE_VAULT"] = 6] = "MANTLE_VAULT";
-  AgentAnimState2[AgentAnimState2["MELEE_STRIKE"] = 7] = "MELEE_STRIKE";
-  AgentAnimState2[AgentAnimState2["PARRY_TAKEDOWN"] = 8] = "PARRY_TAKEDOWN";
-  AgentAnimState2[AgentAnimState2["GRAPPLE_SWING"] = 9] = "GRAPPLE_SWING";
-  AgentAnimState2[AgentAnimState2["DRIVING_VEHICLE"] = 10] = "DRIVING_VEHICLE";
-  AgentAnimState2[AgentAnimState2["CARRYING_PROP"] = 11] = "CARRYING_PROP";
-  AgentAnimState2[AgentAnimState2["CHRONO_REWIND"] = 12] = "CHRONO_REWIND";
-  AgentAnimState2[AgentAnimState2["JETPACK_FLIGHT"] = 13] = "JETPACK_FLIGHT";
-  AgentAnimState2[AgentAnimState2["GROUND_SLAM"] = 14] = "GROUND_SLAM";
-  return AgentAnimState2;
-})(AgentAnimState || {});
-var DEFAULT_ATTRIBUTES = {
-  agility: 1,
-  strength: 1,
-  driving: 1,
-  shooting: 1,
-  explosives: 1,
-  flying: 1,
-  vigilante: 1
-};
-var DEFAULT_TELEMETRY = {
-  totalDistanceMeters: 0,
-  mantlesCompleted: 0,
-  jumpsExecuted: 0,
-  airDashesExecuted: 0,
-  peakElevationMeters: 0,
-  playTimeSeconds: 0,
-  agilityOrbsCollected: 0,
-  renegadeOrbsCollected: 0,
-  whisperOrbsCollected: 0
-};
-var ATTRIBUTE_XP_THRESHOLDS = [0, 100, 250, 500, 900];
-function computeAttributeLevelFromXP(xp) {
-  if (!Number.isFinite(xp) || xp < ATTRIBUTE_XP_THRESHOLDS[1]) return 1;
-  if (xp >= ATTRIBUTE_XP_THRESHOLDS[4]) return 5;
-  if (xp >= ATTRIBUTE_XP_THRESHOLDS[3]) return 4;
-  if (xp >= ATTRIBUTE_XP_THRESHOLDS[2]) return 3;
-  return 2;
-}
-function clampAttributeLevel(level) {
-  if (!Number.isFinite(level)) return 1;
-  return Math.max(1, Math.min(5, level));
-}
-function getAgilityParams(agilityLevel) {
-  const lv = clampAttributeLevel(agilityLevel);
-  const t2 = (lv - 1) / 4;
-  const runSpeed = 8 + t2 * (16.5 - 8);
-  const sprintMultiplier = 1.28;
-  const jumpApexMeters = 3.2 + t2 * (14.5 - 3.2);
-  const ascentGravityMultiplier = 1 - t2 * 0.32;
-  const effectiveAscentGravity = Math.abs(WORLD_GRAVITY.y) * ascentGravityMultiplier;
-  const jumpImpulseVelocity = Math.sqrt(2 * effectiveAscentGravity * jumpApexMeters);
-  const maxAirDashes = Math.round(1 + t2 * 2);
-  const ledgeGrabReach = 0.8 + t2 * (1.8 - 0.8);
-  return {
-    level: lv,
-    runSpeed,
-    sprintSpeed: runSpeed * sprintMultiplier,
-    jumpApexMeters,
-    ascentGravityMultiplier,
-    jumpImpulseVelocity,
-    maxAirDashes,
-    ledgeGrabReach
-  };
-}
-function getStrengthParams(strengthLevel) {
-  const lv = clampAttributeLevel(strengthLevel);
-  const t2 = (lv - 1) / 4;
-  return {
-    level: lv,
-    meleeBaseDamage: 35 + t2 * (140 - 35),
-    // 35 -> 140 dmg
-    maxHp: Math.round(200 + t2 * (600 - 200)),
-    // 200 -> 600 HP
-    throwMassLimitKg: 150 + t2 * (4e3 - 150)
-    // 150 kg -> 4000 kg
-  };
-}
-function getDrivingParams(drivingLevel) {
-  const lv = clampAttributeLevel(drivingLevel);
-  const t2 = (lv - 1) / 4;
-  return {
-    level: lv,
-    topSpeedMps: 28 + t2 * (55 - 28),
-    // 28 m/s -> 55 m/s
-    chassisMassKg: 1400 + t2 * (3200 - 1400),
-    // 1400 kg -> 3200 kg
-    springStiffness: 42 + t2 * (78 - 42),
-    // Suspension spring stiffness (N/m normalized)
-    damping: 6.5 + t2 * (12.5 - 6.5),
-    // Suspension velocity damping
-    lateralTireFriction: 8.5 + t2 * (18 - 8.5),
-    // Lateral grip / anti-drift coefficient
-    unlockWallThrusterHop: lv >= 4
-  };
-}
-function getShootingParams(shootingLevel) {
-  const lv = clampAttributeLevel(shootingLevel);
-  const t2 = (lv - 1) / 4;
-  return {
-    level: lv,
-    spreadConeDeg: 4.2 - t2 * (4.2 - 0.4),
-    // 4.2 deg -> 0.4 deg
-    lockOnRangeMeters: 40 + t2 * (110 - 40)
-    // 40m -> 110m
-  };
-}
-function getExplosivesParams(explosivesLevel) {
-  const lv = clampAttributeLevel(explosivesLevel);
-  const t2 = (lv - 1) / 4;
-  return {
-    level: lv,
-    blastRadiusMeters: 4.5 + t2 * (12 - 4.5),
-    // 4.5m -> 12.0m
-    impulseNs: 18 + t2 * (65 - 18)
-    // 18 N*s -> 65 N*s
-  };
-}
-function getFlyingParams(flyingLevel) {
-  const lv = clampAttributeLevel(flyingLevel);
-  const t2 = (lv - 1) / 4;
-  return {
-    level: lv,
-    jetpackFuelSeconds: 3 + t2 * (12 - 3),
-    // 3.0s -> 12.0s
-    maxUpwardAccelMps2: 12 + t2 * (28 - 12),
-    // 12 m/s^2 -> 28 m/s^2
-    diveBombRadiusMeters: 15
-  };
-}
-function getVigilanteParams(vigilanteLevel) {
-  const lv = clampAttributeLevel(vigilanteLevel);
-  const t2 = (lv - 1) / 4;
-  return {
-    level: lv,
-    auraRadiusMeters: 15 + t2 * (45 - 15),
-    // 15m -> 45m
-    counterWindowMs: 220 + t2 * (420 - 220)
-    // 220ms -> 420ms
-  };
-}
-function getDistrictForPosition(x2, z2) {
-  if (z2 >= 0) {
-    return x2 < 0 ? "NEON_DOCKS" /* NEON_DOCKS */ : "FOUNDRY_SLUMS" /* FOUNDRY_SLUMS */;
-  } else {
-    return x2 >= 0 ? "HELIOS_SPIRE" /* HELIOS_SPIRE */ : "AEGIS_CITADEL" /* AEGIS_CITADEL */;
+var CombatEffects = class {
+  root = new Group();
+  pools;
+  direction = new Vector3();
+  normal = new Vector3();
+  matrix = new Matrix4();
+  played = 0;
+  culled = 0;
+  constructor() {
+    this.root.name = "CombatEffects";
+    this.pools = {
+      tracer: new Pool(
+        "tracer",
+        64,
+        new CylinderGeometry(0.018, 0.018, 1, 5)
+      ),
+      spark: new Pool("spark", 384, new TetrahedronGeometry(0.045)),
+      wave: new Pool("wave", 12, new SphereGeometry(1, 16, 10)),
+      mark: new Pool("mark", 256, new PlaneGeometry(1, 1))
+    };
+    Object.values(this.pools).forEach((p2) => this.root.add(p2.mesh));
   }
+  emit(e2, listener, muzzle) {
+    if (listener && Math.hypot(
+      e2.point.x - listener.x,
+      e2.point.y - listener.y,
+      e2.point.z - listener.z
+    ) > 180 && Math.hypot(
+      e2.origin.x - listener.x,
+      e2.origin.y - listener.y,
+      e2.origin.z - listener.z
+    ) > 180) {
+      this.culled++;
+      return;
+    }
+    this.played++;
+    this.normal.set(e2.normal.x, e2.normal.y, e2.normal.z).normalize();
+    if (e2.kind === 0 /* SHOT */) {
+      const origin = muzzle ?? e2.origin, p2 = this.pools.tracer.take(0.09);
+      this.direction.set(
+        e2.point.x - origin.x,
+        e2.point.y - origin.y,
+        e2.point.z - origin.z
+      );
+      const length = this.direction.length();
+      p2.position.set(origin.x, origin.y, origin.z).addScaledVector(this.direction, 0.5);
+      p2.rotation.setFromUnitVectors(
+        new Vector3(0, 1, 0),
+        this.direction.normalize()
+      );
+      p2.scale.set(1, Math.max(0.01, length), 1);
+      p2.color.set(7858943);
+      if (e2.flags & 1) this.sparks(e2, 9);
+      return;
+    }
+    if (e2.kind === 5 /* FOOTSTEP */) return;
+    if (e2.kind === 6 /* SKID */) {
+      const p2 = this.pools.mark.take(25);
+      this.direction.set(
+        e2.point.x - e2.origin.x,
+        e2.point.y - e2.origin.y,
+        e2.point.z - e2.origin.z
+      );
+      const length = this.direction.length();
+      this.direction.addScaledVector(this.normal, -this.direction.dot(this.normal)).normalize();
+      const right = new Vector3().crossVectors(this.direction, this.normal).normalize();
+      this.matrix.makeBasis(right, this.direction, this.normal);
+      p2.rotation.setFromRotationMatrix(this.matrix);
+      p2.position.set(
+        (e2.origin.x + e2.point.x) / 2,
+        (e2.origin.y + e2.point.y) / 2,
+        (e2.origin.z + e2.point.z) / 2
+      ).addScaledVector(this.normal, 0.01);
+      p2.scale.set(0.22, Math.min(4, length), 1);
+      p2.color.set(330512);
+      return;
+    }
+    this.sparks(
+      e2,
+      e2.kind === 3 /* BLAST */ || e2.kind === 7 /* DESTRUCTION */ ? 28 : 14
+    );
+    if (e2.kind === 2 /* COUNTER */ || e2.kind === 3 /* BLAST */ || e2.kind === 7 /* DESTRUCTION */) {
+      const p2 = this.pools.wave.take(
+        e2.kind === 2 /* COUNTER */ ? 0.32 : 0.7
+      );
+      p2.position.set(e2.point.x, e2.point.y, e2.point.z);
+      p2.radius = e2.radius;
+      p2.color.set(e2.kind === 2 /* COUNTER */ ? 6941439 : 16742445);
+    }
+    if (e2.kind === 4 /* WALL */) {
+      const p2 = this.pools.mark.take(10);
+      p2.position.set(e2.point.x, e2.point.y, e2.point.z).addScaledVector(this.normal, 0.025);
+      p2.rotation.setFromUnitVectors(new Vector3(0, 0, 1), this.normal);
+      p2.scale.set(0.5, 0.5, 1);
+      p2.color.set(1514274);
+    }
+  }
+  sparks(e2, count) {
+    let seed = e2.id * 1664525 + 1013904223 >>> 0;
+    const random = () => {
+      seed = Math.imul(seed, 1664525) + 1013904223 >>> 0;
+      return seed / 4294967296;
+    };
+    for (let i2 = 0; i2 < count; i2++) {
+      const p2 = this.pools.spark.take(0.2 + random() * 0.45);
+      p2.position.set(e2.point.x, e2.point.y, e2.point.z);
+      p2.velocity.set(random() - 0.5, random() - 0.5, random() - 0.5).normalize().multiplyScalar(1.5 + random() * 3).addScaledVector(this.normal, 2.5);
+      if (p2.velocity.dot(this.normal) < 0) p2.velocity.reflect(this.normal);
+      p2.color.set(e2.flags & 2 ? 16770721 : 16753735);
+      p2.scale.setScalar(0.6 + random());
+    }
+  }
+  update(dt) {
+    for (const pool of Object.values(this.pools))
+      pool.update(Math.max(0, Math.min(0.1, dt)));
+  }
+  reset() {
+    Object.values(this.pools).forEach((p2) => p2.clear());
+  }
+  get stats() {
+    return Object.fromEntries(
+      Object.entries(this.pools).map(([k2, p2]) => [
+        k2,
+        {
+          active: p2.particles.filter((p3) => p3.active).length,
+          capacity: p2.particles.length,
+          overwritten: p2.overwritten
+        }
+      ])
+    );
+  }
+  dispose() {
+    Object.values(this.pools).forEach((p2) => p2.dispose());
+    this.root.removeFromParent();
+    this.root.clear();
+  }
+};
+
+// client/animation/presentationQueue.ts
+var PresentationQueue = class {
+  seen = /* @__PURE__ */ new Set();
+  pending = [];
+  accepted = 0;
+  duplicates = 0;
+  expired = 0;
+  receive(packet, now2) {
+    const accepted = [];
+    for (const event of packet.events) {
+      if (this.seen.has(event.id)) {
+        this.duplicates++;
+        continue;
+      }
+      this.seen.add(event.id);
+      while (this.seen.size > 4096)
+        this.seen.delete(this.seen.values().next().value);
+      const age = Math.max(0, (packet.tick - event.tick | 0) / 60), remaining = event.delay - age;
+      if (age > event.delay + 1) {
+        this.expired++;
+        continue;
+      }
+      if (this.pending.length >= MAX_EFFECT_EVENTS) this.pending.shift();
+      this.pending.push({
+        event,
+        due: now2 + Math.max(0, remaining),
+        expires: now2 + Math.max(0, remaining) + 0.35
+      });
+      this.accepted++;
+      accepted.push(event);
+    }
+    return accepted;
+  }
+  update(now2, emit, pairedElapsed) {
+    this.pending = this.pending.filter((item) => {
+      if (now2 > item.expires) {
+        this.expired++;
+        return false;
+      }
+      const paired = pairedElapsed?.(item.event);
+      if (paired !== void 0 ? paired + 0.017 < item.event.delay : now2 < item.due)
+        return true;
+      emit(item.event);
+      return false;
+    });
+  }
+  reset() {
+    this.pending = [];
+    this.seen.clear();
+  }
+  get size() {
+    return this.pending.length;
+  }
+};
+
+// shared/combat/presentationEvents.ts
+var PresentationEventBus = class {
+  constructor(tick) {
+    this.tick = tick;
+  }
+  enabled = true;
+  dropped = 0;
+  sequence = 0;
+  events = [];
+  strides = /* @__PURE__ */ new Map();
+  emit(spec) {
+    if (!this.enabled) return;
+    const magnitude = Math.hypot(spec.normal.x, spec.normal.y, spec.normal.z);
+    spec = {
+      ...spec,
+      normal: magnitude > 1e-3 ? {
+        x: spec.normal.x / magnitude,
+        y: spec.normal.y / magnitude,
+        z: spec.normal.z / magnitude
+      } : { x: 0, y: 1, z: 0 }
+    };
+    if (this.events.length === MAX_EFFECT_EVENTS) {
+      this.events.shift();
+      this.dropped++;
+    }
+    this.sequence = this.sequence + 1 >>> 0 || 1;
+    this.events.push({
+      ...spec,
+      id: this.sequence,
+      tick: this.tick() >>> 0,
+      origin: { ...spec.origin },
+      point: { ...spec.point },
+      normal: { ...spec.normal }
+    });
+  }
+  fromCombat(e2) {
+    const point = { ...e2.impactPoint };
+    const common2 = {
+      actor: e2.attackerEntityId,
+      target: e2.targetEnemyId,
+      limb: e2.limbId ?? 6,
+      normal: e2.impactNormal ?? { x: 0, y: 1, z: 0 },
+      flags: e2.isCrit ? 2 : 0
+    };
+    if (e2.shotOrigin) {
+      this.emit(
+        effectSpec(0 /* SHOT */, point, {
+          ...common2,
+          origin: e2.shotOrigin,
+          flags: common2.flags | (e2.surfaceHit ? 1 : 0)
+        })
+      );
+      return;
+    }
+    if (e2.type === "PARRY_TAKEDOWN") {
+      point.y += 0.9;
+      this.emit(
+        effectSpec(2 /* COUNTER */, point, {
+          ...common2,
+          delay: COUNTER_CONTACT_SEC,
+          radius: e2.shockwaveTriggered ? 6 : 1,
+          flags: common2.flags | (e2.shockwaveTriggered ? 4 : 0)
+        })
+      );
+    } else if (e2.type !== "WEAPON_MISS")
+      this.emit(effectSpec(1 /* HIT */, point, common2));
+  }
+  footsteps(agents) {
+    if (!this.enabled) return;
+    const active = /* @__PURE__ */ new Set();
+    for (const a2 of agents) {
+      active.add(a2.entityId);
+      const previous = this.strides.get(a2.entityId), d2 = previous ? Math.hypot(
+        a2.position.x - previous.position.x,
+        a2.position.z - previous.position.z
+      ) : 0;
+      const state = previous ?? {
+        position: { ...a2.position },
+        distance: 0,
+        side: 1
+      };
+      state.position = { ...a2.position };
+      this.strides.set(a2.entityId, state);
+      if (!a2.grounded || a2.hp <= 0 || a2.mantling || a2.mountedVehicleId || d2 > 2 || d2 < 5e-3) {
+        state.distance = 0;
+        continue;
+      }
+      state.distance += d2;
+      if (state.distance < 1.6) continue;
+      state.distance %= 1.6;
+      state.side *= -1;
+      this.emit(
+        effectSpec(
+          5 /* FOOTSTEP */,
+          {
+            x: a2.position.x + state.side * 0.17,
+            y: a2.position.y + 0.025,
+            z: a2.position.z
+          },
+          { actor: a2.entityId }
+        )
+      );
+    }
+    for (const id of this.strides.keys())
+      if (!active.has(id)) this.strides.delete(id);
+  }
+  drain() {
+    const out = this.events;
+    this.events = [];
+    return out;
+  }
+};
+
+// shared/world/bayVista.ts
+var BAY_SIZE = 1e4;
+var VISTA_FAR = 18e3;
+var BRIDGES = [
+  { id: "vermilion", origin: { x: -160, z: -598 }, yaw: 0, color: 9715500 },
+  {
+    id: "eclipse",
+    origin: { x: 598, z: 160 },
+    yaw: -Math.PI / 2,
+    color: 7441818
+  }
+];
+var BRIDGE_LENGTH = 2800;
+var BRIDGE_WIDTH = 28;
+function bridgeHeight(distance) {
+  return 14.3 + 47.7 * Math.min(
+    1,
+    Math.max(0, distance / 480),
+    Math.max(0, (BRIDGE_LENGTH - distance) / 480)
+  );
+}
+function bridgePoint(bridge, along, across = 0, y2 = bridgeHeight(along)) {
+  return {
+    x: bridge.origin.x - Math.sin(bridge.yaw) * along + Math.cos(bridge.yaw) * across,
+    y: y2,
+    z: bridge.origin.z - Math.cos(bridge.yaw) * along - Math.sin(bridge.yaw) * across
+  };
+}
+function bridgeCableHeight(t3) {
+  if (t3 < 700) return 66 + 180 * t3 / 700;
+  if (t3 > 2100) return 66 + 180 * (2800 - t3) / 700;
+  return 87 + 159 * ((t3 - 1400) / 700) ** 2;
+}
+function buildBayBridgeColliders() {
+  const out = [];
+  for (const bridge of BRIDGES)
+    for (let i2 = 0; i2 < 70; i2++) {
+      const a2 = i2 * 40, b2 = a2 + 40, dy = bridgeHeight(b2) - bridgeHeight(a2), tilt = Math.atan2(dy, 40);
+      for (const side of [0, -1, 1]) {
+        const p2 = bridgePoint(
+          bridge,
+          (a2 + b2) / 2,
+          side * (BRIDGE_WIDTH / 2 + 0.4),
+          (bridgeHeight(a2) + bridgeHeight(b2)) / 2 + (side ? 0.9 : -0.5)
+        );
+        const rotation = bridge.yaw === 0 ? { x: tilt, y: 0, z: 0 } : { x: 0, y: 0, z: tilt };
+        const half = bridge.yaw === 0 ? {
+          x: side ? 0.4 : BRIDGE_WIDTH / 2,
+          y: side ? 0.9 : 0.5,
+          z: Math.hypot(40, dy) / 2 + 0.03
+        } : {
+          x: Math.hypot(40, dy) / 2 + 0.03,
+          y: side ? 0.9 : 0.5,
+          z: side ? 0.4 : BRIDGE_WIDTH / 2
+        };
+        out.push({
+          id: `bay_${bridge.id}_${side ? `rail${side}` : "deck"}_${i2}`,
+          center: p2,
+          halfExtents: half,
+          rotation,
+          material: side ? "brutalist_concrete" : "plaza_asphalt",
+          excludeOrbPlacement: true
+        });
+      }
+    }
+  for (const bridge of BRIDGES)
+    out.push({
+      id: `bay_${bridge.id}_viewing_end`,
+      center: bridgePoint(bridge, BRIDGE_LENGTH - 1, 0, 15.2),
+      halfExtents: bridge.yaw === 0 ? { x: 14.7, y: 0.9, z: 0.4 } : { x: 0.4, y: 0.9, z: 14.7 },
+      material: "brutalist_concrete",
+      excludeOrbPlacement: true
+    });
+  return out;
+}
+function terrainRadius(angle) {
+  return 3270 + 150 * Math.sin(angle * 5) + 120 * Math.sin(angle * 9);
+}
+function terrainHeight(angle, radius) {
+  const t3 = Math.max(0, radius - terrainRadius(angle));
+  const x2 = Math.cos(angle) * radius, z2 = Math.sin(angle) * radius;
+  const port = Math.min(
+    Math.abs(x2 + 160) + Math.max(0, z2 + 2900),
+    Math.abs(z2 - 160) + Math.max(0, 2900 - x2)
+  );
+  const portBlend = Math.min(
+    1,
+    Math.max(
+      Math.max(0, (port - 70) / 240),
+      Math.max(0, (radius - 3500) / 200)
+    )
+  );
+  const height = -4 + Math.min(1, t3 / 750) * (130 + 200 * (0.5 + 0.5 * Math.sin(angle * 7 + t3 / 700)) + 210 * Math.sin(angle * 3 + t3 / 1100) ** 2);
+  return port < 310 && radius < 3700 ? height * portBlend : height;
 }
 
 // node_modules/@dimforge/rapier3d-compat/rapier.es.js
@@ -25897,22 +28038,22 @@ var A;
 var I = new Array(128).fill(void 0);
 I.push(void 0, null, true, false);
 var g = I.length;
-function C(A2) {
+function C(A3) {
   g === I.length && I.push(I.length + 1);
-  const C2 = g;
-  return g = I[C2], I[C2] = A2, C2;
+  const C4 = g;
+  return g = I[C4], I[C4] = A3, C4;
 }
-function B(A2) {
-  return I[A2];
+function B(A3) {
+  return I[A3];
 }
-function Q(A2) {
-  const C2 = B(A2);
-  return function(A3) {
-    A3 < 132 || (I[A3] = g, g = A3);
-  }(A2), C2;
+function Q(A3) {
+  const C4 = B(A3);
+  return function(A4) {
+    A4 < 132 || (I[A4] = g, g = A4);
+  }(A3), C4;
 }
-function E(A2) {
-  return null == A2;
+function E(A3) {
+  return null == A3;
 }
 var i = null;
 function D() {
@@ -25927,43 +28068,43 @@ var w = "undefined" != typeof TextDecoder ? new TextDecoder("utf-8", { ignoreBOM
 } };
 "undefined" != typeof TextDecoder && w.decode();
 var G = null;
-function k(I2, g2) {
-  return I2 >>>= 0, w.decode((null !== G && 0 !== G.byteLength || (G = new Uint8Array(A.memory.buffer)), G).subarray(I2, I2 + g2));
+function k(I3, g4) {
+  return I3 >>>= 0, w.decode((null !== G && 0 !== G.byteLength || (G = new Uint8Array(A.memory.buffer)), G).subarray(I3, I3 + g4));
 }
-function K(A2, I2) {
-  if (!(A2 instanceof I2)) throw new Error(`expected instance of ${I2.name}`);
-  return A2.ptr;
+function K(A3, I3) {
+  if (!(A3 instanceof I3)) throw new Error(`expected instance of ${I3.name}`);
+  return A3.ptr;
 }
 var J = null;
 function U() {
   return null !== J && 0 !== J.byteLength || (J = new Float32Array(A.memory.buffer)), J;
 }
 var h = 128;
-function y(A2) {
+function y(A3) {
   if (1 == h) throw new Error("out of js stack");
-  return I[--h] = A2, h;
+  return I[--h] = A3, h;
 }
-function N(A2, I2) {
-  return A2 >>>= 0, U().subarray(A2 / 4, A2 / 4 + I2);
+function N(A3, I3) {
+  return A3 >>>= 0, U().subarray(A3 / 4, A3 / 4 + I3);
 }
 var M = null;
 function F() {
   return null !== M && 0 !== M.byteLength || (M = new Uint32Array(A.memory.buffer)), M;
 }
 var a = 0;
-function s(A2, I2) {
-  const g2 = I2(4 * A2.length, 4) >>> 0;
-  return U().set(A2, g2 / 4), a = A2.length, g2;
+function s(A3, I3) {
+  const g4 = I3(4 * A3.length, 4) >>> 0;
+  return U().set(A3, g4 / 4), a = A3.length, g4;
 }
-function R(A2, I2) {
-  const g2 = I2(4 * A2.length, 4) >>> 0;
-  return F().set(A2, g2 / 4), a = A2.length, g2;
+function R(A3, I3) {
+  const g4 = I3(4 * A3.length, 4) >>> 0;
+  return F().set(A3, g4 / 4), a = A3.length, g4;
 }
-function c(I2, g2) {
+function c(I3, g4) {
   try {
-    return I2.apply(this, g2);
-  } catch (I3) {
-    A.__wbindgen_exn_store(C(I3));
+    return I3.apply(this, g4);
+  } catch (I4) {
+    A.__wbindgen_exn_store(C(I4));
   }
 }
 var q = Object.freeze({ LinX: 0, 0: "LinX", LinY: 1, 1: "LinY", LinZ: 2, 2: "LinZ", AngX: 3, 3: "AngX", AngY: 4, 4: "AngY", AngZ: 5, 5: "AngZ" });
@@ -25973,442 +28114,442 @@ Object.freeze({ Vertex: 0, 0: "Vertex", Edge: 1, 1: "Edge", Face: 2, 2: "Face", 
 var l = Object.freeze({ Ball: 0, 0: "Ball", Cuboid: 1, 1: "Cuboid", Capsule: 2, 2: "Capsule", Segment: 3, 3: "Segment", Polyline: 4, 4: "Polyline", Triangle: 5, 5: "Triangle", TriMesh: 6, 6: "TriMesh", HeightField: 7, 7: "HeightField", Compound: 8, 8: "Compound", ConvexPolyhedron: 9, 9: "ConvexPolyhedron", Cylinder: 10, 10: "Cylinder", Cone: 11, 11: "Cone", RoundCuboid: 12, 12: "RoundCuboid", RoundTriangle: 13, 13: "RoundTriangle", RoundCylinder: 14, 14: "RoundCylinder", RoundCone: 15, 15: "RoundCone", RoundConvexPolyhedron: 16, 16: "RoundConvexPolyhedron", HalfSpace: 17, 17: "HalfSpace" });
 var L = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawbroadphase_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawbroadphase_free(I3 >>> 0));
 var H = class _H {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_H.prototype);
-    return I2.__wbg_ptr = A2, L.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_H.prototype);
+    return I3.__wbg_ptr = A3, L.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, L.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, L.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawbroadphase_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawbroadphase_free(I3);
   }
   constructor() {
-    const I2 = A.rawbroadphase_new();
-    return this.__wbg_ptr = I2 >>> 0, this;
+    const I3 = A.rawbroadphase_new();
+    return this.__wbg_ptr = I3 >>> 0, this;
   }
 };
 var t = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawccdsolver_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawccdsolver_free(I3 >>> 0));
 var p = class {
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, t.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, t.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawccdsolver_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawccdsolver_free(I3);
   }
   constructor() {
-    const I2 = A.rawccdsolver_new();
-    return this.__wbg_ptr = I2 >>> 0, this;
+    const I3 = A.rawccdsolver_new();
+    return this.__wbg_ptr = I3 >>> 0, this;
   }
 };
 var e = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawcharactercollision_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawcharactercollision_free(I3 >>> 0));
 var r = class {
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, e.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, e.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawcharactercollision_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawcharactercollision_free(I3);
   }
   constructor() {
-    const I2 = A.rawcharactercollision_new();
-    return this.__wbg_ptr = I2 >>> 0, this;
+    const I3 = A.rawcharactercollision_new();
+    return this.__wbg_ptr = I3 >>> 0, this;
   }
   handle() {
     return A.rawcharactercollision_handle(this.__wbg_ptr);
   }
   translationDeltaApplied() {
-    const I2 = A.rawcharactercollision_translationDeltaApplied(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcharactercollision_translationDeltaApplied(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   translationDeltaRemaining() {
-    const I2 = A.rawcharactercollision_translationDeltaRemaining(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcharactercollision_translationDeltaRemaining(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   toi() {
     return A.rawcharactercollision_toi(this.__wbg_ptr);
   }
   worldWitness1() {
-    const I2 = A.rawcharactercollision_worldWitness1(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcharactercollision_worldWitness1(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   worldWitness2() {
-    const I2 = A.rawcharactercollision_worldWitness2(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcharactercollision_worldWitness2(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   worldNormal1() {
-    const I2 = A.rawcharactercollision_worldNormal1(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcharactercollision_worldNormal1(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   worldNormal2() {
-    const I2 = A.rawcharactercollision_worldNormal2(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcharactercollision_worldNormal2(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
 };
 var n = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawcolliderset_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawcolliderset_free(I3 >>> 0));
 var d = class _d {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_d.prototype);
-    return I2.__wbg_ptr = A2, n.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_d.prototype);
+    return I3.__wbg_ptr = A3, n.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, n.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, n.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawcolliderset_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawcolliderset_free(I3);
   }
-  coTranslation(I2) {
-    const g2 = A.rawcolliderset_coTranslation(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  coTranslation(I3) {
+    const g4 = A.rawcolliderset_coTranslation(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  coRotation(I2) {
-    const g2 = A.rawcolliderset_coRotation(this.__wbg_ptr, I2);
-    return HA.__wrap(g2);
+  coRotation(I3) {
+    const g4 = A.rawcolliderset_coRotation(this.__wbg_ptr, I3);
+    return HA.__wrap(g4);
   }
-  coSetTranslation(I2, g2, C2, B2) {
-    A.rawcolliderset_coSetTranslation(this.__wbg_ptr, I2, g2, C2, B2);
+  coSetTranslation(I3, g4, C4, B3) {
+    A.rawcolliderset_coSetTranslation(this.__wbg_ptr, I3, g4, C4, B3);
   }
-  coSetTranslationWrtParent(I2, g2, C2, B2) {
-    A.rawcolliderset_coSetTranslationWrtParent(this.__wbg_ptr, I2, g2, C2, B2);
+  coSetTranslationWrtParent(I3, g4, C4, B3) {
+    A.rawcolliderset_coSetTranslationWrtParent(this.__wbg_ptr, I3, g4, C4, B3);
   }
-  coSetRotation(I2, g2, C2, B2, Q2) {
-    A.rawcolliderset_coSetRotation(this.__wbg_ptr, I2, g2, C2, B2, Q2);
+  coSetRotation(I3, g4, C4, B3, Q3) {
+    A.rawcolliderset_coSetRotation(this.__wbg_ptr, I3, g4, C4, B3, Q3);
   }
-  coSetRotationWrtParent(I2, g2, C2, B2, Q2) {
-    A.rawcolliderset_coSetRotationWrtParent(this.__wbg_ptr, I2, g2, C2, B2, Q2);
+  coSetRotationWrtParent(I3, g4, C4, B3, Q3) {
+    A.rawcolliderset_coSetRotationWrtParent(this.__wbg_ptr, I3, g4, C4, B3, Q3);
   }
-  coIsSensor(I2) {
-    return 0 !== A.rawcolliderset_coIsSensor(this.__wbg_ptr, I2);
+  coIsSensor(I3) {
+    return 0 !== A.rawcolliderset_coIsSensor(this.__wbg_ptr, I3);
   }
-  coShapeType(I2) {
-    return A.rawcolliderset_coShapeType(this.__wbg_ptr, I2);
+  coShapeType(I3) {
+    return A.rawcolliderset_coShapeType(this.__wbg_ptr, I3);
   }
-  coHalfspaceNormal(I2) {
-    const g2 = A.rawcolliderset_coHalfspaceNormal(this.__wbg_ptr, I2);
-    return 0 === g2 ? void 0 : xA.__wrap(g2);
+  coHalfspaceNormal(I3) {
+    const g4 = A.rawcolliderset_coHalfspaceNormal(this.__wbg_ptr, I3);
+    return 0 === g4 ? void 0 : xA.__wrap(g4);
   }
-  coHalfExtents(I2) {
-    const g2 = A.rawcolliderset_coHalfExtents(this.__wbg_ptr, I2);
-    return 0 === g2 ? void 0 : xA.__wrap(g2);
+  coHalfExtents(I3) {
+    const g4 = A.rawcolliderset_coHalfExtents(this.__wbg_ptr, I3);
+    return 0 === g4 ? void 0 : xA.__wrap(g4);
   }
-  coSetHalfExtents(I2, g2) {
-    K(g2, xA), A.rawcolliderset_coSetHalfExtents(this.__wbg_ptr, I2, g2.__wbg_ptr);
+  coSetHalfExtents(I3, g4) {
+    K(g4, xA), A.rawcolliderset_coSetHalfExtents(this.__wbg_ptr, I3, g4.__wbg_ptr);
   }
-  coRadius(I2) {
+  coRadius(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawcolliderset_coRadius(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawcolliderset_coRadius(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  coSetRadius(I2, g2) {
-    A.rawcolliderset_coSetRadius(this.__wbg_ptr, I2, g2);
+  coSetRadius(I3, g4) {
+    A.rawcolliderset_coSetRadius(this.__wbg_ptr, I3, g4);
   }
-  coHalfHeight(I2) {
+  coHalfHeight(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawcolliderset_coHalfHeight(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawcolliderset_coHalfHeight(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  coSetHalfHeight(I2, g2) {
-    A.rawcolliderset_coSetHalfHeight(this.__wbg_ptr, I2, g2);
+  coSetHalfHeight(I3, g4) {
+    A.rawcolliderset_coSetHalfHeight(this.__wbg_ptr, I3, g4);
   }
-  coRoundRadius(I2) {
+  coRoundRadius(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawcolliderset_coRoundRadius(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawcolliderset_coRoundRadius(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  coSetRoundRadius(I2, g2) {
-    A.rawcolliderset_coSetRoundRadius(this.__wbg_ptr, I2, g2);
+  coSetRoundRadius(I3, g4) {
+    A.rawcolliderset_coSetRoundRadius(this.__wbg_ptr, I3, g4);
   }
-  coVertices(I2) {
+  coVertices(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawcolliderset_coVertices(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = S()[B2 / 4 + 1];
-      let Q2;
-      return 0 !== g2 && (Q2 = N(g2, C2).slice(), A.__wbindgen_free(g2, 4 * C2, 4)), Q2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawcolliderset_coVertices(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = S()[B3 / 4 + 1];
+      let Q3;
+      return 0 !== g4 && (Q3 = N(g4, C4).slice(), A.__wbindgen_free(g4, 4 * C4, 4)), Q3;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  coIndices(I2) {
+  coIndices(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawcolliderset_coIndices(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = S()[B2 / 4 + 1];
-      let Q2;
-      return 0 !== g2 && (Q2 = function(A2, I3) {
-        return A2 >>>= 0, F().subarray(A2 / 4, A2 / 4 + I3);
-      }(g2, C2).slice(), A.__wbindgen_free(g2, 4 * C2, 4)), Q2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawcolliderset_coIndices(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = S()[B3 / 4 + 1];
+      let Q3;
+      return 0 !== g4 && (Q3 = function(A3, I4) {
+        return A3 >>>= 0, F().subarray(A3 / 4, A3 / 4 + I4);
+      }(g4, C4).slice(), A.__wbindgen_free(g4, 4 * C4, 4)), Q3;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  coTriMeshFlags(I2) {
+  coTriMeshFlags(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawcolliderset_coTriMeshFlags(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = S()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2 >>> 0;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawcolliderset_coTriMeshFlags(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = S()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4 >>> 0;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  coHeightFieldFlags(I2) {
+  coHeightFieldFlags(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawcolliderset_coHeightFieldFlags(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = S()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2 >>> 0;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawcolliderset_coHeightFieldFlags(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = S()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4 >>> 0;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  coHeightfieldHeights(I2) {
+  coHeightfieldHeights(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawcolliderset_coHeightfieldHeights(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = S()[B2 / 4 + 1];
-      let Q2;
-      return 0 !== g2 && (Q2 = N(g2, C2).slice(), A.__wbindgen_free(g2, 4 * C2, 4)), Q2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawcolliderset_coHeightfieldHeights(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = S()[B3 / 4 + 1];
+      let Q3;
+      return 0 !== g4 && (Q3 = N(g4, C4).slice(), A.__wbindgen_free(g4, 4 * C4, 4)), Q3;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  coHeightfieldScale(I2) {
-    const g2 = A.rawcolliderset_coHeightfieldScale(this.__wbg_ptr, I2);
-    return 0 === g2 ? void 0 : xA.__wrap(g2);
+  coHeightfieldScale(I3) {
+    const g4 = A.rawcolliderset_coHeightfieldScale(this.__wbg_ptr, I3);
+    return 0 === g4 ? void 0 : xA.__wrap(g4);
   }
-  coHeightfieldNRows(I2) {
+  coHeightfieldNRows(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawcolliderset_coHeightfieldNRows(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = S()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2 >>> 0;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawcolliderset_coHeightfieldNRows(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = S()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4 >>> 0;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  coHeightfieldNCols(I2) {
+  coHeightfieldNCols(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawcolliderset_coHeightfieldNCols(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = S()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2 >>> 0;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawcolliderset_coHeightfieldNCols(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = S()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4 >>> 0;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  coParent(I2) {
+  coParent(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawcolliderset_coParent(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = D()[B2 / 8 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawcolliderset_coParent(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = D()[B3 / 8 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  coSetEnabled(I2, g2) {
-    A.rawcolliderset_coSetEnabled(this.__wbg_ptr, I2, g2);
+  coSetEnabled(I3, g4) {
+    A.rawcolliderset_coSetEnabled(this.__wbg_ptr, I3, g4);
   }
-  coIsEnabled(I2) {
-    return 0 !== A.rawcolliderset_coIsEnabled(this.__wbg_ptr, I2);
+  coIsEnabled(I3) {
+    return 0 !== A.rawcolliderset_coIsEnabled(this.__wbg_ptr, I3);
   }
-  coSetContactSkin(I2, g2) {
-    A.rawcolliderset_coSetContactSkin(this.__wbg_ptr, I2, g2);
+  coSetContactSkin(I3, g4) {
+    A.rawcolliderset_coSetContactSkin(this.__wbg_ptr, I3, g4);
   }
-  coContactSkin(I2) {
-    return A.rawcolliderset_coContactSkin(this.__wbg_ptr, I2);
+  coContactSkin(I3) {
+    return A.rawcolliderset_coContactSkin(this.__wbg_ptr, I3);
   }
-  coFriction(I2) {
-    return A.rawcolliderset_coFriction(this.__wbg_ptr, I2);
+  coFriction(I3) {
+    return A.rawcolliderset_coFriction(this.__wbg_ptr, I3);
   }
-  coRestitution(I2) {
-    return A.rawcolliderset_coRestitution(this.__wbg_ptr, I2);
+  coRestitution(I3) {
+    return A.rawcolliderset_coRestitution(this.__wbg_ptr, I3);
   }
-  coDensity(I2) {
-    return A.rawcolliderset_coDensity(this.__wbg_ptr, I2);
+  coDensity(I3) {
+    return A.rawcolliderset_coDensity(this.__wbg_ptr, I3);
   }
-  coMass(I2) {
-    return A.rawcolliderset_coMass(this.__wbg_ptr, I2);
+  coMass(I3) {
+    return A.rawcolliderset_coMass(this.__wbg_ptr, I3);
   }
-  coVolume(I2) {
-    return A.rawcolliderset_coVolume(this.__wbg_ptr, I2);
+  coVolume(I3) {
+    return A.rawcolliderset_coVolume(this.__wbg_ptr, I3);
   }
-  coCollisionGroups(I2) {
-    return A.rawcolliderset_coCollisionGroups(this.__wbg_ptr, I2) >>> 0;
+  coCollisionGroups(I3) {
+    return A.rawcolliderset_coCollisionGroups(this.__wbg_ptr, I3) >>> 0;
   }
-  coSolverGroups(I2) {
-    return A.rawcolliderset_coSolverGroups(this.__wbg_ptr, I2) >>> 0;
+  coSolverGroups(I3) {
+    return A.rawcolliderset_coSolverGroups(this.__wbg_ptr, I3) >>> 0;
   }
-  coActiveHooks(I2) {
-    return A.rawcolliderset_coActiveHooks(this.__wbg_ptr, I2) >>> 0;
+  coActiveHooks(I3) {
+    return A.rawcolliderset_coActiveHooks(this.__wbg_ptr, I3) >>> 0;
   }
-  coActiveCollisionTypes(I2) {
-    return A.rawcolliderset_coActiveCollisionTypes(this.__wbg_ptr, I2);
+  coActiveCollisionTypes(I3) {
+    return A.rawcolliderset_coActiveCollisionTypes(this.__wbg_ptr, I3);
   }
-  coActiveEvents(I2) {
-    return A.rawcolliderset_coActiveEvents(this.__wbg_ptr, I2) >>> 0;
+  coActiveEvents(I3) {
+    return A.rawcolliderset_coActiveEvents(this.__wbg_ptr, I3) >>> 0;
   }
-  coContactForceEventThreshold(I2) {
-    return A.rawcolliderset_coContactForceEventThreshold(this.__wbg_ptr, I2);
+  coContactForceEventThreshold(I3) {
+    return A.rawcolliderset_coContactForceEventThreshold(this.__wbg_ptr, I3);
   }
-  coContainsPoint(I2, g2) {
-    K(g2, xA);
-    return 0 !== A.rawcolliderset_coContainsPoint(this.__wbg_ptr, I2, g2.__wbg_ptr);
+  coContainsPoint(I3, g4) {
+    K(g4, xA);
+    return 0 !== A.rawcolliderset_coContainsPoint(this.__wbg_ptr, I3, g4.__wbg_ptr);
   }
-  coCastShape(I2, g2, C2, B2, Q2, E2, i2, D2, o2) {
-    K(g2, xA), K(C2, dA), K(B2, xA), K(Q2, HA), K(E2, xA);
-    const S2 = A.rawcolliderset_coCastShape(this.__wbg_ptr, I2, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr, E2.__wbg_ptr, i2, D2, o2);
+  coCastShape(I3, g4, C4, B3, Q3, E2, i2, D2, o2) {
+    K(g4, xA), K(C4, dA), K(B3, xA), K(Q3, HA), K(E2, xA);
+    const S2 = A.rawcolliderset_coCastShape(this.__wbg_ptr, I3, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr, E2.__wbg_ptr, i2, D2, o2);
     return 0 === S2 ? void 0 : OA.__wrap(S2);
   }
-  coCastCollider(I2, g2, C2, B2, Q2, E2, i2) {
-    K(g2, xA), K(B2, xA);
-    const D2 = A.rawcolliderset_coCastCollider(this.__wbg_ptr, I2, g2.__wbg_ptr, C2, B2.__wbg_ptr, Q2, E2, i2);
+  coCastCollider(I3, g4, C4, B3, Q3, E2, i2) {
+    K(g4, xA), K(B3, xA);
+    const D2 = A.rawcolliderset_coCastCollider(this.__wbg_ptr, I3, g4.__wbg_ptr, C4, B3.__wbg_ptr, Q3, E2, i2);
     return 0 === D2 ? void 0 : O.__wrap(D2);
   }
-  coIntersectsShape(I2, g2, C2, B2) {
-    K(g2, dA), K(C2, xA), K(B2, HA);
-    return 0 !== A.rawcolliderset_coIntersectsShape(this.__wbg_ptr, I2, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr);
+  coIntersectsShape(I3, g4, C4, B3) {
+    K(g4, dA), K(C4, xA), K(B3, HA);
+    return 0 !== A.rawcolliderset_coIntersectsShape(this.__wbg_ptr, I3, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr);
   }
-  coContactShape(I2, g2, C2, B2, Q2) {
-    K(g2, dA), K(C2, xA), K(B2, HA);
-    const E2 = A.rawcolliderset_coContactShape(this.__wbg_ptr, I2, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2);
+  coContactShape(I3, g4, C4, B3, Q3) {
+    K(g4, dA), K(C4, xA), K(B3, HA);
+    const E2 = A.rawcolliderset_coContactShape(this.__wbg_ptr, I3, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3);
     return 0 === E2 ? void 0 : bA.__wrap(E2);
   }
-  coContactCollider(I2, g2, C2) {
-    const B2 = A.rawcolliderset_coContactCollider(this.__wbg_ptr, I2, g2, C2);
-    return 0 === B2 ? void 0 : bA.__wrap(B2);
+  coContactCollider(I3, g4, C4) {
+    const B3 = A.rawcolliderset_coContactCollider(this.__wbg_ptr, I3, g4, C4);
+    return 0 === B3 ? void 0 : bA.__wrap(B3);
   }
-  coProjectPoint(I2, g2, C2) {
-    K(g2, xA);
-    const B2 = A.rawcolliderset_coProjectPoint(this.__wbg_ptr, I2, g2.__wbg_ptr, C2);
-    return yA.__wrap(B2);
+  coProjectPoint(I3, g4, C4) {
+    K(g4, xA);
+    const B3 = A.rawcolliderset_coProjectPoint(this.__wbg_ptr, I3, g4.__wbg_ptr, C4);
+    return yA.__wrap(B3);
   }
-  coIntersectsRay(I2, g2, C2, B2) {
-    K(g2, xA), K(C2, xA);
-    return 0 !== A.rawcolliderset_coIntersectsRay(this.__wbg_ptr, I2, g2.__wbg_ptr, C2.__wbg_ptr, B2);
+  coIntersectsRay(I3, g4, C4, B3) {
+    K(g4, xA), K(C4, xA);
+    return 0 !== A.rawcolliderset_coIntersectsRay(this.__wbg_ptr, I3, g4.__wbg_ptr, C4.__wbg_ptr, B3);
   }
-  coCastRay(I2, g2, C2, B2, Q2) {
-    K(g2, xA), K(C2, xA);
-    return A.rawcolliderset_coCastRay(this.__wbg_ptr, I2, g2.__wbg_ptr, C2.__wbg_ptr, B2, Q2);
+  coCastRay(I3, g4, C4, B3, Q3) {
+    K(g4, xA), K(C4, xA);
+    return A.rawcolliderset_coCastRay(this.__wbg_ptr, I3, g4.__wbg_ptr, C4.__wbg_ptr, B3, Q3);
   }
-  coCastRayAndGetNormal(I2, g2, C2, B2, Q2) {
-    K(g2, xA), K(C2, xA);
-    const E2 = A.rawcolliderset_coCastRayAndGetNormal(this.__wbg_ptr, I2, g2.__wbg_ptr, C2.__wbg_ptr, B2, Q2);
+  coCastRayAndGetNormal(I3, g4, C4, B3, Q3) {
+    K(g4, xA), K(C4, xA);
+    const E2 = A.rawcolliderset_coCastRayAndGetNormal(this.__wbg_ptr, I3, g4.__wbg_ptr, C4.__wbg_ptr, B3, Q3);
     return 0 === E2 ? void 0 : qA.__wrap(E2);
   }
-  coSetSensor(I2, g2) {
-    A.rawcolliderset_coSetSensor(this.__wbg_ptr, I2, g2);
+  coSetSensor(I3, g4) {
+    A.rawcolliderset_coSetSensor(this.__wbg_ptr, I3, g4);
   }
-  coSetRestitution(I2, g2) {
-    A.rawcolliderset_coSetRestitution(this.__wbg_ptr, I2, g2);
+  coSetRestitution(I3, g4) {
+    A.rawcolliderset_coSetRestitution(this.__wbg_ptr, I3, g4);
   }
-  coSetFriction(I2, g2) {
-    A.rawcolliderset_coSetFriction(this.__wbg_ptr, I2, g2);
+  coSetFriction(I3, g4) {
+    A.rawcolliderset_coSetFriction(this.__wbg_ptr, I3, g4);
   }
-  coFrictionCombineRule(I2) {
-    return A.rawcolliderset_coFrictionCombineRule(this.__wbg_ptr, I2) >>> 0;
+  coFrictionCombineRule(I3) {
+    return A.rawcolliderset_coFrictionCombineRule(this.__wbg_ptr, I3) >>> 0;
   }
-  coSetFrictionCombineRule(I2, g2) {
-    A.rawcolliderset_coSetFrictionCombineRule(this.__wbg_ptr, I2, g2);
+  coSetFrictionCombineRule(I3, g4) {
+    A.rawcolliderset_coSetFrictionCombineRule(this.__wbg_ptr, I3, g4);
   }
-  coRestitutionCombineRule(I2) {
-    return A.rawcolliderset_coRestitutionCombineRule(this.__wbg_ptr, I2) >>> 0;
+  coRestitutionCombineRule(I3) {
+    return A.rawcolliderset_coRestitutionCombineRule(this.__wbg_ptr, I3) >>> 0;
   }
-  coSetRestitutionCombineRule(I2, g2) {
-    A.rawcolliderset_coSetRestitutionCombineRule(this.__wbg_ptr, I2, g2);
+  coSetRestitutionCombineRule(I3, g4) {
+    A.rawcolliderset_coSetRestitutionCombineRule(this.__wbg_ptr, I3, g4);
   }
-  coSetCollisionGroups(I2, g2) {
-    A.rawcolliderset_coSetCollisionGroups(this.__wbg_ptr, I2, g2);
+  coSetCollisionGroups(I3, g4) {
+    A.rawcolliderset_coSetCollisionGroups(this.__wbg_ptr, I3, g4);
   }
-  coSetSolverGroups(I2, g2) {
-    A.rawcolliderset_coSetSolverGroups(this.__wbg_ptr, I2, g2);
+  coSetSolverGroups(I3, g4) {
+    A.rawcolliderset_coSetSolverGroups(this.__wbg_ptr, I3, g4);
   }
-  coSetActiveHooks(I2, g2) {
-    A.rawcolliderset_coSetActiveHooks(this.__wbg_ptr, I2, g2);
+  coSetActiveHooks(I3, g4) {
+    A.rawcolliderset_coSetActiveHooks(this.__wbg_ptr, I3, g4);
   }
-  coSetActiveEvents(I2, g2) {
-    A.rawcolliderset_coSetActiveEvents(this.__wbg_ptr, I2, g2);
+  coSetActiveEvents(I3, g4) {
+    A.rawcolliderset_coSetActiveEvents(this.__wbg_ptr, I3, g4);
   }
-  coSetActiveCollisionTypes(I2, g2) {
-    A.rawcolliderset_coSetActiveCollisionTypes(this.__wbg_ptr, I2, g2);
+  coSetActiveCollisionTypes(I3, g4) {
+    A.rawcolliderset_coSetActiveCollisionTypes(this.__wbg_ptr, I3, g4);
   }
-  coSetShape(I2, g2) {
-    K(g2, dA), A.rawcolliderset_coSetShape(this.__wbg_ptr, I2, g2.__wbg_ptr);
+  coSetShape(I3, g4) {
+    K(g4, dA), A.rawcolliderset_coSetShape(this.__wbg_ptr, I3, g4.__wbg_ptr);
   }
-  coSetContactForceEventThreshold(I2, g2) {
-    A.rawcolliderset_coSetContactForceEventThreshold(this.__wbg_ptr, I2, g2);
+  coSetContactForceEventThreshold(I3, g4) {
+    A.rawcolliderset_coSetContactForceEventThreshold(this.__wbg_ptr, I3, g4);
   }
-  coSetDensity(I2, g2) {
-    A.rawcolliderset_coSetDensity(this.__wbg_ptr, I2, g2);
+  coSetDensity(I3, g4) {
+    A.rawcolliderset_coSetDensity(this.__wbg_ptr, I3, g4);
   }
-  coSetMass(I2, g2) {
-    A.rawcolliderset_coSetMass(this.__wbg_ptr, I2, g2);
+  coSetMass(I3, g4) {
+    A.rawcolliderset_coSetMass(this.__wbg_ptr, I3, g4);
   }
-  coSetMassProperties(I2, g2, C2, B2, Q2) {
-    K(C2, xA), K(B2, xA), K(Q2, HA), A.rawcolliderset_coSetMassProperties(this.__wbg_ptr, I2, g2, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr);
+  coSetMassProperties(I3, g4, C4, B3, Q3) {
+    K(C4, xA), K(B3, xA), K(Q3, HA), A.rawcolliderset_coSetMassProperties(this.__wbg_ptr, I3, g4, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr);
   }
   constructor() {
-    const I2 = A.rawcolliderset_new();
-    return this.__wbg_ptr = I2 >>> 0, this;
+    const I3 = A.rawcolliderset_new();
+    return this.__wbg_ptr = I3 >>> 0, this;
   }
   len() {
     return A.rawcolliderset_len(this.__wbg_ptr) >>> 0;
   }
-  contains(I2) {
-    return 0 !== A.rawcolliderset_contains(this.__wbg_ptr, I2);
+  contains(I3) {
+    return 0 !== A.rawcolliderset_contains(this.__wbg_ptr, I3);
   }
-  createCollider(I2, g2, C2, B2, Q2, E2, i2, o2, w2, G2, k2, J2, U2, h2, y2, N2, M2, F2, a2, s2, R2, c2, q2, Y2, l2) {
+  createCollider(I3, g4, C4, B3, Q3, E2, i2, o2, w2, G2, k2, J2, U2, h2, y2, N2, M2, F2, a2, s2, R3, c2, q2, Y2, l2) {
     try {
-      const t2 = A.__wbindgen_add_to_stack_pointer(-16);
-      K(g2, dA), K(C2, xA), K(B2, HA), K(i2, xA), K(o2, xA), K(w2, HA), K(l2, lA), A.rawcolliderset_createCollider(t2, this.__wbg_ptr, I2, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2, E2, i2.__wbg_ptr, o2.__wbg_ptr, w2.__wbg_ptr, G2, k2, J2, U2, h2, y2, N2, M2, F2, a2, s2, R2, c2, q2, Y2, l2.__wbg_ptr);
-      var L2 = S()[t2 / 4 + 0], H2 = D()[t2 / 8 + 1];
+      const t3 = A.__wbindgen_add_to_stack_pointer(-16);
+      K(g4, dA), K(C4, xA), K(B3, HA), K(i2, xA), K(o2, xA), K(w2, HA), K(l2, lA), A.rawcolliderset_createCollider(t3, this.__wbg_ptr, I3, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3, E2, i2.__wbg_ptr, o2.__wbg_ptr, w2.__wbg_ptr, G2, k2, J2, U2, h2, y2, N2, M2, F2, a2, s2, R3, c2, q2, Y2, l2.__wbg_ptr);
+      var L2 = S()[t3 / 4 + 0], H2 = D()[t3 / 8 + 1];
       return 0 === L2 ? void 0 : H2;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  remove(I2, g2, C2, B2) {
-    K(g2, EA), K(C2, lA), A.rawcolliderset_remove(this.__wbg_ptr, I2, g2.__wbg_ptr, C2.__wbg_ptr, B2);
+  remove(I3, g4, C4, B3) {
+    K(g4, EA), K(C4, lA), A.rawcolliderset_remove(this.__wbg_ptr, I3, g4.__wbg_ptr, C4.__wbg_ptr, B3);
   }
-  isHandleValid(I2) {
-    return 0 !== A.rawcolliderset_contains(this.__wbg_ptr, I2);
+  isHandleValid(I3) {
+    return 0 !== A.rawcolliderset_contains(this.__wbg_ptr, I3);
   }
-  forEachColliderHandle(g2) {
+  forEachColliderHandle(g4) {
     try {
-      A.rawcolliderset_forEachColliderHandle(this.__wbg_ptr, y(g2));
+      A.rawcolliderset_forEachColliderHandle(this.__wbg_ptr, y(g4));
     } finally {
       I[h++] = void 0;
     }
@@ -26416,20 +28557,20 @@ var d = class _d {
 };
 var T = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawcollidershapecasthit_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawcollidershapecasthit_free(I3 >>> 0));
 var O = class _O {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_O.prototype);
-    return I2.__wbg_ptr = A2, T.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_O.prototype);
+    return I3.__wbg_ptr = A3, T.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, T.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, T.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawcollidershapecasthit_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawcollidershapecasthit_free(I3);
   }
   colliderHandle() {
     return A.rawcharactercollision_handle(this.__wbg_ptr);
@@ -26438,38 +28579,38 @@ var O = class _O {
     return A.rawcollidershapecasthit_time_of_impact(this.__wbg_ptr);
   }
   witness1() {
-    const I2 = A.rawcollidershapecasthit_witness1(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcollidershapecasthit_witness1(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   witness2() {
-    const I2 = A.rawcollidershapecasthit_witness2(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcollidershapecasthit_witness2(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   normal1() {
-    const I2 = A.rawcharactercollision_translationDeltaApplied(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcharactercollision_translationDeltaApplied(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   normal2() {
-    const I2 = A.rawcharactercollision_translationDeltaRemaining(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcharactercollision_translationDeltaRemaining(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
 };
 var Z = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawcontactforceevent_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawcontactforceevent_free(I3 >>> 0));
 var b = class _b {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_b.prototype);
-    return I2.__wbg_ptr = A2, Z.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_b.prototype);
+    return I3.__wbg_ptr = A3, Z.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, Z.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, Z.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawcontactforceevent_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawcontactforceevent_free(I3);
   }
   collider1() {
     return A.rawcharactercollision_handle(this.__wbg_ptr);
@@ -26478,15 +28619,15 @@ var b = class _b {
     return A.rawcontactforceevent_collider2(this.__wbg_ptr);
   }
   total_force() {
-    const I2 = A.rawcontactforceevent_total_force(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcontactforceevent_total_force(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   total_force_magnitude() {
     return A.rawcontactforceevent_total_force_magnitude(this.__wbg_ptr);
   }
   max_force_direction() {
-    const I2 = A.rawcontactforceevent_max_force_direction(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcontactforceevent_max_force_direction(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   max_force_magnitude() {
     return A.rawcontactforceevent_max_force_magnitude(this.__wbg_ptr);
@@ -26494,32 +28635,32 @@ var b = class _b {
 };
 var W = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawcontactmanifold_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawcontactmanifold_free(I3 >>> 0));
 var x = class _x2 {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_x2.prototype);
-    return I2.__wbg_ptr = A2, W.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_x2.prototype);
+    return I3.__wbg_ptr = A3, W.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, W.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, W.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawcontactmanifold_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawcontactmanifold_free(I3);
   }
   normal() {
-    const I2 = A.rawcontactmanifold_normal(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcontactmanifold_normal(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   local_n1() {
-    const I2 = A.rawcontactmanifold_local_n1(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcontactmanifold_local_n1(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   local_n2() {
-    const I2 = A.rawcontactmanifold_local_n2(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcontactmanifold_local_n2(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   subshape1() {
     return A.rawcontactmanifold_subshape1(this.__wbg_ptr) >>> 0;
@@ -26530,69 +28671,69 @@ var x = class _x2 {
   num_contacts() {
     return A.rawcontactmanifold_num_contacts(this.__wbg_ptr) >>> 0;
   }
-  contact_local_p1(I2) {
-    const g2 = A.rawcontactmanifold_contact_local_p1(this.__wbg_ptr, I2);
-    return 0 === g2 ? void 0 : xA.__wrap(g2);
+  contact_local_p1(I3) {
+    const g4 = A.rawcontactmanifold_contact_local_p1(this.__wbg_ptr, I3);
+    return 0 === g4 ? void 0 : xA.__wrap(g4);
   }
-  contact_local_p2(I2) {
-    const g2 = A.rawcontactmanifold_contact_local_p2(this.__wbg_ptr, I2);
-    return 0 === g2 ? void 0 : xA.__wrap(g2);
+  contact_local_p2(I3) {
+    const g4 = A.rawcontactmanifold_contact_local_p2(this.__wbg_ptr, I3);
+    return 0 === g4 ? void 0 : xA.__wrap(g4);
   }
-  contact_dist(I2) {
-    return A.rawcontactmanifold_contact_dist(this.__wbg_ptr, I2);
+  contact_dist(I3) {
+    return A.rawcontactmanifold_contact_dist(this.__wbg_ptr, I3);
   }
-  contact_fid1(I2) {
-    return A.rawcontactmanifold_contact_fid1(this.__wbg_ptr, I2) >>> 0;
+  contact_fid1(I3) {
+    return A.rawcontactmanifold_contact_fid1(this.__wbg_ptr, I3) >>> 0;
   }
-  contact_fid2(I2) {
-    return A.rawcontactmanifold_contact_fid2(this.__wbg_ptr, I2) >>> 0;
+  contact_fid2(I3) {
+    return A.rawcontactmanifold_contact_fid2(this.__wbg_ptr, I3) >>> 0;
   }
-  contact_impulse(I2) {
-    return A.rawcontactmanifold_contact_impulse(this.__wbg_ptr, I2);
+  contact_impulse(I3) {
+    return A.rawcontactmanifold_contact_impulse(this.__wbg_ptr, I3);
   }
-  contact_tangent_impulse_x(I2) {
-    return A.rawcontactmanifold_contact_tangent_impulse_x(this.__wbg_ptr, I2);
+  contact_tangent_impulse_x(I3) {
+    return A.rawcontactmanifold_contact_tangent_impulse_x(this.__wbg_ptr, I3);
   }
-  contact_tangent_impulse_y(I2) {
-    return A.rawcontactmanifold_contact_tangent_impulse_y(this.__wbg_ptr, I2);
+  contact_tangent_impulse_y(I3) {
+    return A.rawcontactmanifold_contact_tangent_impulse_y(this.__wbg_ptr, I3);
   }
   num_solver_contacts() {
     return A.rawcontactmanifold_num_solver_contacts(this.__wbg_ptr) >>> 0;
   }
-  solver_contact_point(I2) {
-    const g2 = A.rawcontactmanifold_solver_contact_point(this.__wbg_ptr, I2);
-    return 0 === g2 ? void 0 : xA.__wrap(g2);
+  solver_contact_point(I3) {
+    const g4 = A.rawcontactmanifold_solver_contact_point(this.__wbg_ptr, I3);
+    return 0 === g4 ? void 0 : xA.__wrap(g4);
   }
-  solver_contact_dist(I2) {
-    return A.rawcontactmanifold_solver_contact_dist(this.__wbg_ptr, I2);
+  solver_contact_dist(I3) {
+    return A.rawcontactmanifold_solver_contact_dist(this.__wbg_ptr, I3);
   }
-  solver_contact_friction(I2) {
-    return A.rawcontactmanifold_solver_contact_friction(this.__wbg_ptr, I2);
+  solver_contact_friction(I3) {
+    return A.rawcontactmanifold_solver_contact_friction(this.__wbg_ptr, I3);
   }
-  solver_contact_restitution(I2) {
-    return A.rawcontactmanifold_solver_contact_restitution(this.__wbg_ptr, I2);
+  solver_contact_restitution(I3) {
+    return A.rawcontactmanifold_solver_contact_restitution(this.__wbg_ptr, I3);
   }
-  solver_contact_tangent_velocity(I2) {
-    const g2 = A.rawcontactmanifold_solver_contact_tangent_velocity(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  solver_contact_tangent_velocity(I3) {
+    const g4 = A.rawcontactmanifold_solver_contact_tangent_velocity(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
 };
 var m = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawcontactpair_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawcontactpair_free(I3 >>> 0));
 var j = class _j {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_j.prototype);
-    return I2.__wbg_ptr = A2, m.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_j.prototype);
+    return I3.__wbg_ptr = A3, m.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, m.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, m.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawcontactpair_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawcontactpair_free(I3);
   }
   collider1() {
     return A.rawcontactpair_collider1(this.__wbg_ptr);
@@ -26603,26 +28744,26 @@ var j = class _j {
   numContactManifolds() {
     return A.rawcontactpair_numContactManifolds(this.__wbg_ptr) >>> 0;
   }
-  contactManifold(I2) {
-    const g2 = A.rawcontactpair_contactManifold(this.__wbg_ptr, I2);
-    return 0 === g2 ? void 0 : x.__wrap(g2);
+  contactManifold(I3) {
+    const g4 = A.rawcontactpair_contactManifold(this.__wbg_ptr, I3);
+    return 0 === g4 ? void 0 : x.__wrap(g4);
   }
 };
 var f = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawdebugrenderpipeline_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawdebugrenderpipeline_free(I3 >>> 0));
 var V = class {
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, f.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, f.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawdebugrenderpipeline_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawdebugrenderpipeline_free(I3);
   }
   constructor() {
-    const I2 = A.rawdebugrenderpipeline_new();
-    return this.__wbg_ptr = I2 >>> 0, this;
+    const I3 = A.rawdebugrenderpipeline_new();
+    return this.__wbg_ptr = I3 >>> 0, this;
   }
   vertices() {
     return Q(A.rawdebugrenderpipeline_vertices(this.__wbg_ptr));
@@ -26630,79 +28771,79 @@ var V = class {
   colors() {
     return Q(A.rawdebugrenderpipeline_colors(this.__wbg_ptr));
   }
-  render(I2, g2, C2, B2, Q2) {
-    K(I2, lA), K(g2, d), K(C2, gA), K(B2, SA), K(Q2, GA), A.rawdebugrenderpipeline_render(this.__wbg_ptr, I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr);
+  render(I3, g4, C4, B3, Q3) {
+    K(I3, lA), K(g4, d), K(C4, gA), K(B3, SA), K(Q3, GA), A.rawdebugrenderpipeline_render(this.__wbg_ptr, I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr);
   }
 };
 var X = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawdeserializedworld_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawdeserializedworld_free(I3 >>> 0));
 var P = class _P {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_P.prototype);
-    return I2.__wbg_ptr = A2, X.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_P.prototype);
+    return I3.__wbg_ptr = A3, X.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, X.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, X.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawdeserializedworld_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawdeserializedworld_free(I3);
   }
   takeGravity() {
-    const I2 = A.rawdeserializedworld_takeGravity(this.__wbg_ptr);
-    return 0 === I2 ? void 0 : xA.__wrap(I2);
+    const I3 = A.rawdeserializedworld_takeGravity(this.__wbg_ptr);
+    return 0 === I3 ? void 0 : xA.__wrap(I3);
   }
   takeIntegrationParameters() {
-    const I2 = A.rawdeserializedworld_takeIntegrationParameters(this.__wbg_ptr);
-    return 0 === I2 ? void 0 : BA.__wrap(I2);
+    const I3 = A.rawdeserializedworld_takeIntegrationParameters(this.__wbg_ptr);
+    return 0 === I3 ? void 0 : BA.__wrap(I3);
   }
   takeIslandManager() {
-    const I2 = A.rawdeserializedworld_takeIslandManager(this.__wbg_ptr);
-    return 0 === I2 ? void 0 : EA.__wrap(I2);
+    const I3 = A.rawdeserializedworld_takeIslandManager(this.__wbg_ptr);
+    return 0 === I3 ? void 0 : EA.__wrap(I3);
   }
   takeBroadPhase() {
-    const I2 = A.rawdeserializedworld_takeBroadPhase(this.__wbg_ptr);
-    return 0 === I2 ? void 0 : H.__wrap(I2);
+    const I3 = A.rawdeserializedworld_takeBroadPhase(this.__wbg_ptr);
+    return 0 === I3 ? void 0 : H.__wrap(I3);
   }
   takeNarrowPhase() {
-    const I2 = A.rawdeserializedworld_takeNarrowPhase(this.__wbg_ptr);
-    return 0 === I2 ? void 0 : GA.__wrap(I2);
+    const I3 = A.rawdeserializedworld_takeNarrowPhase(this.__wbg_ptr);
+    return 0 === I3 ? void 0 : GA.__wrap(I3);
   }
   takeBodies() {
-    const I2 = A.rawdeserializedworld_takeBodies(this.__wbg_ptr);
-    return 0 === I2 ? void 0 : lA.__wrap(I2);
+    const I3 = A.rawdeserializedworld_takeBodies(this.__wbg_ptr);
+    return 0 === I3 ? void 0 : lA.__wrap(I3);
   }
   takeColliders() {
-    const I2 = A.rawdeserializedworld_takeColliders(this.__wbg_ptr);
-    return 0 === I2 ? void 0 : d.__wrap(I2);
+    const I3 = A.rawdeserializedworld_takeColliders(this.__wbg_ptr);
+    return 0 === I3 ? void 0 : d.__wrap(I3);
   }
   takeImpulseJoints() {
-    const I2 = A.rawdeserializedworld_takeImpulseJoints(this.__wbg_ptr);
-    return 0 === I2 ? void 0 : gA.__wrap(I2);
+    const I3 = A.rawdeserializedworld_takeImpulseJoints(this.__wbg_ptr);
+    return 0 === I3 ? void 0 : gA.__wrap(I3);
   }
   takeMultibodyJoints() {
-    const I2 = A.rawdeserializedworld_takeMultibodyJoints(this.__wbg_ptr);
-    return 0 === I2 ? void 0 : SA.__wrap(I2);
+    const I3 = A.rawdeserializedworld_takeMultibodyJoints(this.__wbg_ptr);
+    return 0 === I3 ? void 0 : SA.__wrap(I3);
   }
 };
 var u = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawdynamicraycastvehiclecontroller_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawdynamicraycastvehiclecontroller_free(I3 >>> 0));
 var v = class {
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, u.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, u.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawdynamicraycastvehiclecontroller_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawdynamicraycastvehiclecontroller_free(I3);
   }
-  constructor(I2) {
-    const g2 = A.rawdynamicraycastvehiclecontroller_new(I2);
-    return this.__wbg_ptr = g2 >>> 0, this;
+  constructor(I3) {
+    const g4 = A.rawdynamicraycastvehiclecontroller_new(I3);
+    return this.__wbg_ptr = g4 >>> 0, this;
   }
   current_vehicle_speed() {
     return A.rawdynamicraycastvehiclecontroller_current_vehicle_speed(this.__wbg_ptr);
@@ -26713,276 +28854,276 @@ var v = class {
   index_up_axis() {
     return A.rawdynamicraycastvehiclecontroller_index_up_axis(this.__wbg_ptr) >>> 0;
   }
-  set_index_up_axis(I2) {
-    A.rawdynamicraycastvehiclecontroller_set_index_up_axis(this.__wbg_ptr, I2);
+  set_index_up_axis(I3) {
+    A.rawdynamicraycastvehiclecontroller_set_index_up_axis(this.__wbg_ptr, I3);
   }
   index_forward_axis() {
     return A.rawdynamicraycastvehiclecontroller_index_forward_axis(this.__wbg_ptr) >>> 0;
   }
-  set_index_forward_axis(I2) {
-    A.rawdynamicraycastvehiclecontroller_set_index_forward_axis(this.__wbg_ptr, I2);
+  set_index_forward_axis(I3) {
+    A.rawdynamicraycastvehiclecontroller_set_index_forward_axis(this.__wbg_ptr, I3);
   }
-  add_wheel(I2, g2, C2, B2, Q2) {
-    K(I2, xA), K(g2, xA), K(C2, xA), A.rawdynamicraycastvehiclecontroller_add_wheel(this.__wbg_ptr, I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2, Q2);
+  add_wheel(I3, g4, C4, B3, Q3) {
+    K(I3, xA), K(g4, xA), K(C4, xA), A.rawdynamicraycastvehiclecontroller_add_wheel(this.__wbg_ptr, I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3, Q3);
   }
   num_wheels() {
     return A.rawdynamicraycastvehiclecontroller_num_wheels(this.__wbg_ptr) >>> 0;
   }
-  update_vehicle(g2, C2, B2, Q2, i2, D2, o2) {
+  update_vehicle(g4, C4, B3, Q3, i2, D2, o2) {
     try {
-      K(C2, lA), K(B2, d), K(Q2, MA), A.rawdynamicraycastvehiclecontroller_update_vehicle(this.__wbg_ptr, g2, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr, i2, !E(D2), E(D2) ? 0 : D2, y(o2));
+      K(C4, lA), K(B3, d), K(Q3, MA), A.rawdynamicraycastvehiclecontroller_update_vehicle(this.__wbg_ptr, g4, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr, i2, !E(D2), E(D2) ? 0 : D2, y(o2));
     } finally {
       I[h++] = void 0;
     }
   }
-  wheel_chassis_connection_point_cs(I2) {
-    const g2 = A.rawdynamicraycastvehiclecontroller_wheel_chassis_connection_point_cs(this.__wbg_ptr, I2);
-    return 0 === g2 ? void 0 : xA.__wrap(g2);
+  wheel_chassis_connection_point_cs(I3) {
+    const g4 = A.rawdynamicraycastvehiclecontroller_wheel_chassis_connection_point_cs(this.__wbg_ptr, I3);
+    return 0 === g4 ? void 0 : xA.__wrap(g4);
   }
-  set_wheel_chassis_connection_point_cs(I2, g2) {
-    K(g2, xA), A.rawdynamicraycastvehiclecontroller_set_wheel_chassis_connection_point_cs(this.__wbg_ptr, I2, g2.__wbg_ptr);
+  set_wheel_chassis_connection_point_cs(I3, g4) {
+    K(g4, xA), A.rawdynamicraycastvehiclecontroller_set_wheel_chassis_connection_point_cs(this.__wbg_ptr, I3, g4.__wbg_ptr);
   }
-  wheel_suspension_rest_length(I2) {
+  wheel_suspension_rest_length(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_suspension_rest_length(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_suspension_rest_length(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  set_wheel_suspension_rest_length(I2, g2) {
-    A.rawdynamicraycastvehiclecontroller_set_wheel_suspension_rest_length(this.__wbg_ptr, I2, g2);
+  set_wheel_suspension_rest_length(I3, g4) {
+    A.rawdynamicraycastvehiclecontroller_set_wheel_suspension_rest_length(this.__wbg_ptr, I3, g4);
   }
-  wheel_max_suspension_travel(I2) {
+  wheel_max_suspension_travel(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_max_suspension_travel(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_max_suspension_travel(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  set_wheel_max_suspension_travel(I2, g2) {
-    A.rawdynamicraycastvehiclecontroller_set_wheel_max_suspension_travel(this.__wbg_ptr, I2, g2);
+  set_wheel_max_suspension_travel(I3, g4) {
+    A.rawdynamicraycastvehiclecontroller_set_wheel_max_suspension_travel(this.__wbg_ptr, I3, g4);
   }
-  wheel_radius(I2) {
+  wheel_radius(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_radius(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_radius(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  set_wheel_radius(I2, g2) {
-    A.rawdynamicraycastvehiclecontroller_set_wheel_radius(this.__wbg_ptr, I2, g2);
+  set_wheel_radius(I3, g4) {
+    A.rawdynamicraycastvehiclecontroller_set_wheel_radius(this.__wbg_ptr, I3, g4);
   }
-  wheel_suspension_stiffness(I2) {
+  wheel_suspension_stiffness(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_suspension_stiffness(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_suspension_stiffness(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  set_wheel_suspension_stiffness(I2, g2) {
-    A.rawdynamicraycastvehiclecontroller_set_wheel_suspension_stiffness(this.__wbg_ptr, I2, g2);
+  set_wheel_suspension_stiffness(I3, g4) {
+    A.rawdynamicraycastvehiclecontroller_set_wheel_suspension_stiffness(this.__wbg_ptr, I3, g4);
   }
-  wheel_suspension_compression(I2) {
+  wheel_suspension_compression(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_suspension_compression(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_suspension_compression(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  set_wheel_suspension_compression(I2, g2) {
-    A.rawdynamicraycastvehiclecontroller_set_wheel_suspension_compression(this.__wbg_ptr, I2, g2);
+  set_wheel_suspension_compression(I3, g4) {
+    A.rawdynamicraycastvehiclecontroller_set_wheel_suspension_compression(this.__wbg_ptr, I3, g4);
   }
-  wheel_suspension_relaxation(I2) {
+  wheel_suspension_relaxation(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_suspension_relaxation(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_suspension_relaxation(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  set_wheel_suspension_relaxation(I2, g2) {
-    A.rawdynamicraycastvehiclecontroller_set_wheel_suspension_relaxation(this.__wbg_ptr, I2, g2);
+  set_wheel_suspension_relaxation(I3, g4) {
+    A.rawdynamicraycastvehiclecontroller_set_wheel_suspension_relaxation(this.__wbg_ptr, I3, g4);
   }
-  wheel_max_suspension_force(I2) {
+  wheel_max_suspension_force(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_max_suspension_force(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_max_suspension_force(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  set_wheel_max_suspension_force(I2, g2) {
-    A.rawdynamicraycastvehiclecontroller_set_wheel_max_suspension_force(this.__wbg_ptr, I2, g2);
+  set_wheel_max_suspension_force(I3, g4) {
+    A.rawdynamicraycastvehiclecontroller_set_wheel_max_suspension_force(this.__wbg_ptr, I3, g4);
   }
-  wheel_brake(I2) {
+  wheel_brake(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_brake(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_brake(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  set_wheel_brake(I2, g2) {
-    A.rawdynamicraycastvehiclecontroller_set_wheel_brake(this.__wbg_ptr, I2, g2);
+  set_wheel_brake(I3, g4) {
+    A.rawdynamicraycastvehiclecontroller_set_wheel_brake(this.__wbg_ptr, I3, g4);
   }
-  wheel_steering(I2) {
+  wheel_steering(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_steering(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_steering(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  set_wheel_steering(I2, g2) {
-    A.rawdynamicraycastvehiclecontroller_set_wheel_steering(this.__wbg_ptr, I2, g2);
+  set_wheel_steering(I3, g4) {
+    A.rawdynamicraycastvehiclecontroller_set_wheel_steering(this.__wbg_ptr, I3, g4);
   }
-  wheel_engine_force(I2) {
+  wheel_engine_force(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_engine_force(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_engine_force(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  set_wheel_engine_force(I2, g2) {
-    A.rawdynamicraycastvehiclecontroller_set_wheel_engine_force(this.__wbg_ptr, I2, g2);
+  set_wheel_engine_force(I3, g4) {
+    A.rawdynamicraycastvehiclecontroller_set_wheel_engine_force(this.__wbg_ptr, I3, g4);
   }
-  wheel_direction_cs(I2) {
-    const g2 = A.rawdynamicraycastvehiclecontroller_wheel_direction_cs(this.__wbg_ptr, I2);
-    return 0 === g2 ? void 0 : xA.__wrap(g2);
+  wheel_direction_cs(I3) {
+    const g4 = A.rawdynamicraycastvehiclecontroller_wheel_direction_cs(this.__wbg_ptr, I3);
+    return 0 === g4 ? void 0 : xA.__wrap(g4);
   }
-  set_wheel_direction_cs(I2, g2) {
-    K(g2, xA), A.rawdynamicraycastvehiclecontroller_set_wheel_direction_cs(this.__wbg_ptr, I2, g2.__wbg_ptr);
+  set_wheel_direction_cs(I3, g4) {
+    K(g4, xA), A.rawdynamicraycastvehiclecontroller_set_wheel_direction_cs(this.__wbg_ptr, I3, g4.__wbg_ptr);
   }
-  wheel_axle_cs(I2) {
-    const g2 = A.rawdynamicraycastvehiclecontroller_wheel_axle_cs(this.__wbg_ptr, I2);
-    return 0 === g2 ? void 0 : xA.__wrap(g2);
+  wheel_axle_cs(I3) {
+    const g4 = A.rawdynamicraycastvehiclecontroller_wheel_axle_cs(this.__wbg_ptr, I3);
+    return 0 === g4 ? void 0 : xA.__wrap(g4);
   }
-  set_wheel_axle_cs(I2, g2) {
-    K(g2, xA), A.rawdynamicraycastvehiclecontroller_set_wheel_axle_cs(this.__wbg_ptr, I2, g2.__wbg_ptr);
+  set_wheel_axle_cs(I3, g4) {
+    K(g4, xA), A.rawdynamicraycastvehiclecontroller_set_wheel_axle_cs(this.__wbg_ptr, I3, g4.__wbg_ptr);
   }
-  wheel_friction_slip(I2) {
+  wheel_friction_slip(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_friction_slip(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_friction_slip(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  set_wheel_friction_slip(I2, g2) {
-    A.rawdynamicraycastvehiclecontroller_set_wheel_friction_slip(this.__wbg_ptr, I2, g2);
+  set_wheel_friction_slip(I3, g4) {
+    A.rawdynamicraycastvehiclecontroller_set_wheel_friction_slip(this.__wbg_ptr, I3, g4);
   }
-  wheel_side_friction_stiffness(I2) {
+  wheel_side_friction_stiffness(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_side_friction_stiffness(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_side_friction_stiffness(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  set_wheel_side_friction_stiffness(I2, g2) {
-    A.rawdynamicraycastvehiclecontroller_set_wheel_side_friction_stiffness(this.__wbg_ptr, I2, g2);
+  set_wheel_side_friction_stiffness(I3, g4) {
+    A.rawdynamicraycastvehiclecontroller_set_wheel_side_friction_stiffness(this.__wbg_ptr, I3, g4);
   }
-  wheel_rotation(I2) {
+  wheel_rotation(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_rotation(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_rotation(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  wheel_forward_impulse(I2) {
+  wheel_forward_impulse(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_forward_impulse(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_forward_impulse(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  wheel_side_impulse(I2) {
+  wheel_side_impulse(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_side_impulse(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_side_impulse(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  wheel_suspension_force(I2) {
+  wheel_suspension_force(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_suspension_force(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_suspension_force(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  wheel_contact_normal_ws(I2) {
-    const g2 = A.rawdynamicraycastvehiclecontroller_wheel_contact_normal_ws(this.__wbg_ptr, I2);
-    return 0 === g2 ? void 0 : xA.__wrap(g2);
+  wheel_contact_normal_ws(I3) {
+    const g4 = A.rawdynamicraycastvehiclecontroller_wheel_contact_normal_ws(this.__wbg_ptr, I3);
+    return 0 === g4 ? void 0 : xA.__wrap(g4);
   }
-  wheel_contact_point_ws(I2) {
-    const g2 = A.rawdynamicraycastvehiclecontroller_wheel_contact_point_ws(this.__wbg_ptr, I2);
-    return 0 === g2 ? void 0 : xA.__wrap(g2);
+  wheel_contact_point_ws(I3) {
+    const g4 = A.rawdynamicraycastvehiclecontroller_wheel_contact_point_ws(this.__wbg_ptr, I3);
+    return 0 === g4 ? void 0 : xA.__wrap(g4);
   }
-  wheel_suspension_length(I2) {
+  wheel_suspension_length(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_suspension_length(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = U()[B2 / 4 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_suspension_length(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = U()[B3 / 4 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  wheel_hard_point_ws(I2) {
-    const g2 = A.rawdynamicraycastvehiclecontroller_wheel_hard_point_ws(this.__wbg_ptr, I2);
-    return 0 === g2 ? void 0 : xA.__wrap(g2);
+  wheel_hard_point_ws(I3) {
+    const g4 = A.rawdynamicraycastvehiclecontroller_wheel_hard_point_ws(this.__wbg_ptr, I3);
+    return 0 === g4 ? void 0 : xA.__wrap(g4);
   }
-  wheel_is_in_contact(I2) {
-    return 0 !== A.rawdynamicraycastvehiclecontroller_wheel_is_in_contact(this.__wbg_ptr, I2);
+  wheel_is_in_contact(I3) {
+    return 0 !== A.rawdynamicraycastvehiclecontroller_wheel_is_in_contact(this.__wbg_ptr, I3);
   }
-  wheel_ground_object(I2) {
+  wheel_ground_object(I3) {
     try {
-      const B2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawdynamicraycastvehiclecontroller_wheel_ground_object(B2, this.__wbg_ptr, I2);
-      var g2 = S()[B2 / 4 + 0], C2 = D()[B2 / 8 + 1];
-      return 0 === g2 ? void 0 : C2;
+      const B3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawdynamicraycastvehiclecontroller_wheel_ground_object(B3, this.__wbg_ptr, I3);
+      var g4 = S()[B3 / 4 + 0], C4 = D()[B3 / 8 + 1];
+      return 0 === g4 ? void 0 : C4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
@@ -26990,30 +29131,30 @@ var v = class {
 };
 var z = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_raweventqueue_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_raweventqueue_free(I3 >>> 0));
 var _ = class {
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, z.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, z.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_raweventqueue_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_raweventqueue_free(I3);
   }
-  constructor(I2) {
-    const g2 = A.raweventqueue_new(I2);
-    return this.__wbg_ptr = g2 >>> 0, this;
+  constructor(I3) {
+    const g4 = A.raweventqueue_new(I3);
+    return this.__wbg_ptr = g4 >>> 0, this;
   }
-  drainCollisionEvents(g2) {
+  drainCollisionEvents(g4) {
     try {
-      A.raweventqueue_drainCollisionEvents(this.__wbg_ptr, y(g2));
+      A.raweventqueue_drainCollisionEvents(this.__wbg_ptr, y(g4));
     } finally {
       I[h++] = void 0;
     }
   }
-  drainContactForceEvents(g2) {
+  drainContactForceEvents(g4) {
     try {
-      A.raweventqueue_drainContactForceEvents(this.__wbg_ptr, y(g2));
+      A.raweventqueue_drainContactForceEvents(this.__wbg_ptr, y(g4));
     } finally {
       I[h++] = void 0;
     }
@@ -27024,162 +29165,162 @@ var _ = class {
 };
 var $ = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawgenericjoint_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawgenericjoint_free(I3 >>> 0));
 var AA = class _AA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_AA.prototype);
-    return I2.__wbg_ptr = A2, $.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_AA.prototype);
+    return I3.__wbg_ptr = A3, $.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, $.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, $.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawgenericjoint_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawgenericjoint_free(I3);
   }
-  static generic(I2, g2, C2, B2) {
-    K(I2, xA), K(g2, xA), K(C2, xA);
-    const Q2 = A.rawgenericjoint_generic(I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2);
-    return 0 === Q2 ? void 0 : _AA.__wrap(Q2);
+  static generic(I3, g4, C4, B3) {
+    K(I3, xA), K(g4, xA), K(C4, xA);
+    const Q3 = A.rawgenericjoint_generic(I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3);
+    return 0 === Q3 ? void 0 : _AA.__wrap(Q3);
   }
-  static spring(I2, g2, C2, B2, Q2) {
-    K(B2, xA), K(Q2, xA);
-    const E2 = A.rawgenericjoint_spring(I2, g2, C2, B2.__wbg_ptr, Q2.__wbg_ptr);
+  static spring(I3, g4, C4, B3, Q3) {
+    K(B3, xA), K(Q3, xA);
+    const E2 = A.rawgenericjoint_spring(I3, g4, C4, B3.__wbg_ptr, Q3.__wbg_ptr);
     return _AA.__wrap(E2);
   }
-  static rope(I2, g2, C2) {
-    K(g2, xA), K(C2, xA);
-    const B2 = A.rawgenericjoint_rope(I2, g2.__wbg_ptr, C2.__wbg_ptr);
-    return _AA.__wrap(B2);
+  static rope(I3, g4, C4) {
+    K(g4, xA), K(C4, xA);
+    const B3 = A.rawgenericjoint_rope(I3, g4.__wbg_ptr, C4.__wbg_ptr);
+    return _AA.__wrap(B3);
   }
-  static spherical(I2, g2) {
-    K(I2, xA), K(g2, xA);
-    const C2 = A.rawgenericjoint_spherical(I2.__wbg_ptr, g2.__wbg_ptr);
-    return _AA.__wrap(C2);
+  static spherical(I3, g4) {
+    K(I3, xA), K(g4, xA);
+    const C4 = A.rawgenericjoint_spherical(I3.__wbg_ptr, g4.__wbg_ptr);
+    return _AA.__wrap(C4);
   }
-  static prismatic(I2, g2, C2, B2, Q2, E2) {
-    K(I2, xA), K(g2, xA), K(C2, xA);
-    const i2 = A.rawgenericjoint_prismatic(I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2, Q2, E2);
+  static prismatic(I3, g4, C4, B3, Q3, E2) {
+    K(I3, xA), K(g4, xA), K(C4, xA);
+    const i2 = A.rawgenericjoint_prismatic(I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3, Q3, E2);
     return 0 === i2 ? void 0 : _AA.__wrap(i2);
   }
-  static fixed(I2, g2, C2, B2) {
-    K(I2, xA), K(g2, HA), K(C2, xA), K(B2, HA);
-    const Q2 = A.rawgenericjoint_fixed(I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr);
-    return _AA.__wrap(Q2);
+  static fixed(I3, g4, C4, B3) {
+    K(I3, xA), K(g4, HA), K(C4, xA), K(B3, HA);
+    const Q3 = A.rawgenericjoint_fixed(I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr);
+    return _AA.__wrap(Q3);
   }
-  static revolute(I2, g2, C2) {
-    K(I2, xA), K(g2, xA), K(C2, xA);
-    const B2 = A.rawgenericjoint_revolute(I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr);
-    return 0 === B2 ? void 0 : _AA.__wrap(B2);
+  static revolute(I3, g4, C4) {
+    K(I3, xA), K(g4, xA), K(C4, xA);
+    const B3 = A.rawgenericjoint_revolute(I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr);
+    return 0 === B3 ? void 0 : _AA.__wrap(B3);
   }
 };
 var IA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawimpulsejointset_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawimpulsejointset_free(I3 >>> 0));
 var gA = class _gA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_gA.prototype);
-    return I2.__wbg_ptr = A2, IA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_gA.prototype);
+    return I3.__wbg_ptr = A3, IA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, IA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, IA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawimpulsejointset_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawimpulsejointset_free(I3);
   }
-  jointType(I2) {
-    return A.rawimpulsejointset_jointType(this.__wbg_ptr, I2);
+  jointType(I3) {
+    return A.rawimpulsejointset_jointType(this.__wbg_ptr, I3);
   }
-  jointBodyHandle1(I2) {
-    return A.rawimpulsejointset_jointBodyHandle1(this.__wbg_ptr, I2);
+  jointBodyHandle1(I3) {
+    return A.rawimpulsejointset_jointBodyHandle1(this.__wbg_ptr, I3);
   }
-  jointBodyHandle2(I2) {
-    return A.rawimpulsejointset_jointBodyHandle2(this.__wbg_ptr, I2);
+  jointBodyHandle2(I3) {
+    return A.rawimpulsejointset_jointBodyHandle2(this.__wbg_ptr, I3);
   }
-  jointFrameX1(I2) {
-    const g2 = A.rawimpulsejointset_jointFrameX1(this.__wbg_ptr, I2);
-    return HA.__wrap(g2);
+  jointFrameX1(I3) {
+    const g4 = A.rawimpulsejointset_jointFrameX1(this.__wbg_ptr, I3);
+    return HA.__wrap(g4);
   }
-  jointFrameX2(I2) {
-    const g2 = A.rawimpulsejointset_jointFrameX2(this.__wbg_ptr, I2);
-    return HA.__wrap(g2);
+  jointFrameX2(I3) {
+    const g4 = A.rawimpulsejointset_jointFrameX2(this.__wbg_ptr, I3);
+    return HA.__wrap(g4);
   }
-  jointAnchor1(I2) {
-    const g2 = A.rawimpulsejointset_jointAnchor1(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  jointAnchor1(I3) {
+    const g4 = A.rawimpulsejointset_jointAnchor1(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  jointAnchor2(I2) {
-    const g2 = A.rawimpulsejointset_jointAnchor2(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  jointAnchor2(I3) {
+    const g4 = A.rawimpulsejointset_jointAnchor2(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  jointSetAnchor1(I2, g2) {
-    K(g2, xA), A.rawimpulsejointset_jointSetAnchor1(this.__wbg_ptr, I2, g2.__wbg_ptr);
+  jointSetAnchor1(I3, g4) {
+    K(g4, xA), A.rawimpulsejointset_jointSetAnchor1(this.__wbg_ptr, I3, g4.__wbg_ptr);
   }
-  jointSetAnchor2(I2, g2) {
-    K(g2, xA), A.rawimpulsejointset_jointSetAnchor2(this.__wbg_ptr, I2, g2.__wbg_ptr);
+  jointSetAnchor2(I3, g4) {
+    K(g4, xA), A.rawimpulsejointset_jointSetAnchor2(this.__wbg_ptr, I3, g4.__wbg_ptr);
   }
-  jointContactsEnabled(I2) {
-    return 0 !== A.rawimpulsejointset_jointContactsEnabled(this.__wbg_ptr, I2);
+  jointContactsEnabled(I3) {
+    return 0 !== A.rawimpulsejointset_jointContactsEnabled(this.__wbg_ptr, I3);
   }
-  jointSetContactsEnabled(I2, g2) {
-    A.rawimpulsejointset_jointSetContactsEnabled(this.__wbg_ptr, I2, g2);
+  jointSetContactsEnabled(I3, g4) {
+    A.rawimpulsejointset_jointSetContactsEnabled(this.__wbg_ptr, I3, g4);
   }
-  jointLimitsEnabled(I2, g2) {
-    return 0 !== A.rawimpulsejointset_jointLimitsEnabled(this.__wbg_ptr, I2, g2);
+  jointLimitsEnabled(I3, g4) {
+    return 0 !== A.rawimpulsejointset_jointLimitsEnabled(this.__wbg_ptr, I3, g4);
   }
-  jointLimitsMin(I2, g2) {
-    return A.rawimpulsejointset_jointLimitsMin(this.__wbg_ptr, I2, g2);
+  jointLimitsMin(I3, g4) {
+    return A.rawimpulsejointset_jointLimitsMin(this.__wbg_ptr, I3, g4);
   }
-  jointLimitsMax(I2, g2) {
-    return A.rawimpulsejointset_jointLimitsMax(this.__wbg_ptr, I2, g2);
+  jointLimitsMax(I3, g4) {
+    return A.rawimpulsejointset_jointLimitsMax(this.__wbg_ptr, I3, g4);
   }
-  jointSetLimits(I2, g2, C2, B2) {
-    A.rawimpulsejointset_jointSetLimits(this.__wbg_ptr, I2, g2, C2, B2);
+  jointSetLimits(I3, g4, C4, B3) {
+    A.rawimpulsejointset_jointSetLimits(this.__wbg_ptr, I3, g4, C4, B3);
   }
-  jointConfigureMotorModel(I2, g2, C2) {
-    A.rawimpulsejointset_jointConfigureMotorModel(this.__wbg_ptr, I2, g2, C2);
+  jointConfigureMotorModel(I3, g4, C4) {
+    A.rawimpulsejointset_jointConfigureMotorModel(this.__wbg_ptr, I3, g4, C4);
   }
-  jointConfigureMotorVelocity(I2, g2, C2, B2) {
-    A.rawimpulsejointset_jointConfigureMotorVelocity(this.__wbg_ptr, I2, g2, C2, B2);
+  jointConfigureMotorVelocity(I3, g4, C4, B3) {
+    A.rawimpulsejointset_jointConfigureMotorVelocity(this.__wbg_ptr, I3, g4, C4, B3);
   }
-  jointConfigureMotorPosition(I2, g2, C2, B2, Q2) {
-    A.rawimpulsejointset_jointConfigureMotorPosition(this.__wbg_ptr, I2, g2, C2, B2, Q2);
+  jointConfigureMotorPosition(I3, g4, C4, B3, Q3) {
+    A.rawimpulsejointset_jointConfigureMotorPosition(this.__wbg_ptr, I3, g4, C4, B3, Q3);
   }
-  jointConfigureMotor(I2, g2, C2, B2, Q2, E2) {
-    A.rawimpulsejointset_jointConfigureMotor(this.__wbg_ptr, I2, g2, C2, B2, Q2, E2);
+  jointConfigureMotor(I3, g4, C4, B3, Q3, E2) {
+    A.rawimpulsejointset_jointConfigureMotor(this.__wbg_ptr, I3, g4, C4, B3, Q3, E2);
   }
   constructor() {
-    const I2 = A.rawimpulsejointset_new();
-    return this.__wbg_ptr = I2 >>> 0, this;
+    const I3 = A.rawimpulsejointset_new();
+    return this.__wbg_ptr = I3 >>> 0, this;
   }
-  createJoint(I2, g2, C2, B2) {
-    K(I2, AA);
-    return A.rawimpulsejointset_createJoint(this.__wbg_ptr, I2.__wbg_ptr, g2, C2, B2);
+  createJoint(I3, g4, C4, B3) {
+    K(I3, AA);
+    return A.rawimpulsejointset_createJoint(this.__wbg_ptr, I3.__wbg_ptr, g4, C4, B3);
   }
-  remove(I2, g2) {
-    A.rawimpulsejointset_remove(this.__wbg_ptr, I2, g2);
+  remove(I3, g4) {
+    A.rawimpulsejointset_remove(this.__wbg_ptr, I3, g4);
   }
   len() {
     return A.rawimpulsejointset_len(this.__wbg_ptr) >>> 0;
   }
-  contains(I2) {
-    return 0 !== A.rawimpulsejointset_contains(this.__wbg_ptr, I2);
+  contains(I3) {
+    return 0 !== A.rawimpulsejointset_contains(this.__wbg_ptr, I3);
   }
-  forEachJointHandle(g2) {
+  forEachJointHandle(g4) {
     try {
-      A.rawimpulsejointset_forEachJointHandle(this.__wbg_ptr, y(g2));
+      A.rawimpulsejointset_forEachJointHandle(this.__wbg_ptr, y(g4));
     } finally {
       I[h++] = void 0;
     }
   }
-  forEachJointAttachedToRigidBody(g2, C2) {
+  forEachJointAttachedToRigidBody(g4, C4) {
     try {
-      A.rawimpulsejointset_forEachJointAttachedToRigidBody(this.__wbg_ptr, g2, y(C2));
+      A.rawimpulsejointset_forEachJointAttachedToRigidBody(this.__wbg_ptr, g4, y(C4));
     } finally {
       I[h++] = void 0;
     }
@@ -27187,24 +29328,24 @@ var gA = class _gA {
 };
 var CA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawintegrationparameters_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawintegrationparameters_free(I3 >>> 0));
 var BA = class _BA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_BA.prototype);
-    return I2.__wbg_ptr = A2, CA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_BA.prototype);
+    return I3.__wbg_ptr = A3, CA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, CA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, CA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawintegrationparameters_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawintegrationparameters_free(I3);
   }
   constructor() {
-    const I2 = A.rawintegrationparameters_new();
-    return this.__wbg_ptr = I2 >>> 0, this;
+    const I3 = A.rawintegrationparameters_new();
+    return this.__wbg_ptr = I3 >>> 0, this;
   }
   get dt() {
     return A.rawintegrationparameters_dt(this.__wbg_ptr);
@@ -27236,35 +29377,35 @@ var BA = class _BA {
   get lengthUnit() {
     return A.rawintegrationparameters_lengthUnit(this.__wbg_ptr);
   }
-  set dt(I2) {
-    A.rawintegrationparameters_set_dt(this.__wbg_ptr, I2);
+  set dt(I3) {
+    A.rawintegrationparameters_set_dt(this.__wbg_ptr, I3);
   }
-  set contact_natural_frequency(I2) {
-    A.rawintegrationparameters_set_contact_natural_frequency(this.__wbg_ptr, I2);
+  set contact_natural_frequency(I3) {
+    A.rawintegrationparameters_set_contact_natural_frequency(this.__wbg_ptr, I3);
   }
-  set normalizedAllowedLinearError(I2) {
-    A.rawintegrationparameters_set_normalizedAllowedLinearError(this.__wbg_ptr, I2);
+  set normalizedAllowedLinearError(I3) {
+    A.rawintegrationparameters_set_normalizedAllowedLinearError(this.__wbg_ptr, I3);
   }
-  set normalizedPredictionDistance(I2) {
-    A.rawintegrationparameters_set_normalizedPredictionDistance(this.__wbg_ptr, I2);
+  set normalizedPredictionDistance(I3) {
+    A.rawintegrationparameters_set_normalizedPredictionDistance(this.__wbg_ptr, I3);
   }
-  set numSolverIterations(I2) {
-    A.rawintegrationparameters_set_numSolverIterations(this.__wbg_ptr, I2);
+  set numSolverIterations(I3) {
+    A.rawintegrationparameters_set_numSolverIterations(this.__wbg_ptr, I3);
   }
-  set numAdditionalFrictionIterations(I2) {
-    A.rawdynamicraycastvehiclecontroller_set_index_up_axis(this.__wbg_ptr, I2);
+  set numAdditionalFrictionIterations(I3) {
+    A.rawdynamicraycastvehiclecontroller_set_index_up_axis(this.__wbg_ptr, I3);
   }
-  set numInternalPgsIterations(I2) {
-    A.rawdynamicraycastvehiclecontroller_set_index_forward_axis(this.__wbg_ptr, I2);
+  set numInternalPgsIterations(I3) {
+    A.rawdynamicraycastvehiclecontroller_set_index_forward_axis(this.__wbg_ptr, I3);
   }
-  set minIslandSize(I2) {
-    A.rawintegrationparameters_set_minIslandSize(this.__wbg_ptr, I2);
+  set minIslandSize(I3) {
+    A.rawintegrationparameters_set_minIslandSize(this.__wbg_ptr, I3);
   }
-  set maxCcdSubsteps(I2) {
-    A.rawintegrationparameters_set_maxCcdSubsteps(this.__wbg_ptr, I2);
+  set maxCcdSubsteps(I3) {
+    A.rawintegrationparameters_set_maxCcdSubsteps(this.__wbg_ptr, I3);
   }
-  set lengthUnit(I2) {
-    A.rawintegrationparameters_set_lengthUnit(this.__wbg_ptr, I2);
+  set lengthUnit(I3) {
+    A.rawintegrationparameters_set_lengthUnit(this.__wbg_ptr, I3);
   }
   switchToStandardPgsSolver() {
     A.rawintegrationparameters_switchToStandardPgsSolver(this.__wbg_ptr);
@@ -27278,28 +29419,28 @@ var BA = class _BA {
 };
 var QA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawislandmanager_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawislandmanager_free(I3 >>> 0));
 var EA = class _EA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_EA.prototype);
-    return I2.__wbg_ptr = A2, QA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_EA.prototype);
+    return I3.__wbg_ptr = A3, QA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, QA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, QA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawislandmanager_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawislandmanager_free(I3);
   }
   constructor() {
-    const I2 = A.rawislandmanager_new();
-    return this.__wbg_ptr = I2 >>> 0, this;
+    const I3 = A.rawislandmanager_new();
+    return this.__wbg_ptr = I3 >>> 0, this;
   }
-  forEachActiveRigidBodyHandle(g2) {
+  forEachActiveRigidBodyHandle(g4) {
     try {
-      A.rawislandmanager_forEachActiveRigidBodyHandle(this.__wbg_ptr, y(g2));
+      A.rawislandmanager_forEachActiveRigidBodyHandle(this.__wbg_ptr, y(g4));
     } finally {
       I[h++] = void 0;
     }
@@ -27307,74 +29448,74 @@ var EA = class _EA {
 };
 var iA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawkinematiccharactercontroller_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawkinematiccharactercontroller_free(I3 >>> 0));
 var DA = class {
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, iA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, iA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawkinematiccharactercontroller_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawkinematiccharactercontroller_free(I3);
   }
-  constructor(I2) {
-    const g2 = A.rawkinematiccharactercontroller_new(I2);
-    return this.__wbg_ptr = g2 >>> 0, this;
+  constructor(I3) {
+    const g4 = A.rawkinematiccharactercontroller_new(I3);
+    return this.__wbg_ptr = g4 >>> 0, this;
   }
   up() {
-    const I2 = A.rawcharactercollision_translationDeltaApplied(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcharactercollision_translationDeltaApplied(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
-  setUp(I2) {
-    K(I2, xA), A.rawkinematiccharactercontroller_setUp(this.__wbg_ptr, I2.__wbg_ptr);
+  setUp(I3) {
+    K(I3, xA), A.rawkinematiccharactercontroller_setUp(this.__wbg_ptr, I3.__wbg_ptr);
   }
   normalNudgeFactor() {
     return A.rawkinematiccharactercontroller_normalNudgeFactor(this.__wbg_ptr);
   }
-  setNormalNudgeFactor(I2) {
-    A.rawkinematiccharactercontroller_setNormalNudgeFactor(this.__wbg_ptr, I2);
+  setNormalNudgeFactor(I3) {
+    A.rawkinematiccharactercontroller_setNormalNudgeFactor(this.__wbg_ptr, I3);
   }
   offset() {
     return A.rawintegrationparameters_dt(this.__wbg_ptr);
   }
-  setOffset(I2) {
-    A.rawkinematiccharactercontroller_setOffset(this.__wbg_ptr, I2);
+  setOffset(I3) {
+    A.rawkinematiccharactercontroller_setOffset(this.__wbg_ptr, I3);
   }
   slideEnabled() {
     return 0 !== A.rawkinematiccharactercontroller_slideEnabled(this.__wbg_ptr);
   }
-  setSlideEnabled(I2) {
-    A.rawkinematiccharactercontroller_setSlideEnabled(this.__wbg_ptr, I2);
+  setSlideEnabled(I3) {
+    A.rawkinematiccharactercontroller_setSlideEnabled(this.__wbg_ptr, I3);
   }
   autostepMaxHeight() {
     try {
-      const C2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawkinematiccharactercontroller_autostepMaxHeight(C2, this.__wbg_ptr);
-      var I2 = S()[C2 / 4 + 0], g2 = U()[C2 / 4 + 1];
-      return 0 === I2 ? void 0 : g2;
+      const C4 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawkinematiccharactercontroller_autostepMaxHeight(C4, this.__wbg_ptr);
+      var I3 = S()[C4 / 4 + 0], g4 = U()[C4 / 4 + 1];
+      return 0 === I3 ? void 0 : g4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
   autostepMinWidth() {
     try {
-      const C2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawkinematiccharactercontroller_autostepMinWidth(C2, this.__wbg_ptr);
-      var I2 = S()[C2 / 4 + 0], g2 = U()[C2 / 4 + 1];
-      return 0 === I2 ? void 0 : g2;
+      const C4 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawkinematiccharactercontroller_autostepMinWidth(C4, this.__wbg_ptr);
+      var I3 = S()[C4 / 4 + 0], g4 = U()[C4 / 4 + 1];
+      return 0 === I3 ? void 0 : g4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
   autostepIncludesDynamicBodies() {
-    const I2 = A.rawkinematiccharactercontroller_autostepIncludesDynamicBodies(this.__wbg_ptr);
-    return 16777215 === I2 ? void 0 : 0 !== I2;
+    const I3 = A.rawkinematiccharactercontroller_autostepIncludesDynamicBodies(this.__wbg_ptr);
+    return 16777215 === I3 ? void 0 : 0 !== I3;
   }
   autostepEnabled() {
     return 0 !== A.rawkinematiccharactercontroller_autostepEnabled(this.__wbg_ptr);
   }
-  enableAutostep(I2, g2, C2) {
-    A.rawkinematiccharactercontroller_enableAutostep(this.__wbg_ptr, I2, g2, C2);
+  enableAutostep(I3, g4, C4) {
+    A.rawkinematiccharactercontroller_enableAutostep(this.__wbg_ptr, I3, g4, C4);
   }
   disableAutostep() {
     A.rawkinematiccharactercontroller_disableAutostep(this.__wbg_ptr);
@@ -27382,27 +29523,27 @@ var DA = class {
   maxSlopeClimbAngle() {
     return A.rawkinematiccharactercontroller_maxSlopeClimbAngle(this.__wbg_ptr);
   }
-  setMaxSlopeClimbAngle(I2) {
-    A.rawkinematiccharactercontroller_setMaxSlopeClimbAngle(this.__wbg_ptr, I2);
+  setMaxSlopeClimbAngle(I3) {
+    A.rawkinematiccharactercontroller_setMaxSlopeClimbAngle(this.__wbg_ptr, I3);
   }
   minSlopeSlideAngle() {
     return A.rawkinematiccharactercontroller_minSlopeSlideAngle(this.__wbg_ptr);
   }
-  setMinSlopeSlideAngle(I2) {
-    A.rawkinematiccharactercontroller_setMinSlopeSlideAngle(this.__wbg_ptr, I2);
+  setMinSlopeSlideAngle(I3) {
+    A.rawkinematiccharactercontroller_setMinSlopeSlideAngle(this.__wbg_ptr, I3);
   }
   snapToGroundDistance() {
     try {
-      const C2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawkinematiccharactercontroller_snapToGroundDistance(C2, this.__wbg_ptr);
-      var I2 = S()[C2 / 4 + 0], g2 = U()[C2 / 4 + 1];
-      return 0 === I2 ? void 0 : g2;
+      const C4 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawkinematiccharactercontroller_snapToGroundDistance(C4, this.__wbg_ptr);
+      var I3 = S()[C4 / 4 + 0], g4 = U()[C4 / 4 + 1];
+      return 0 === I3 ? void 0 : g4;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
   }
-  enableSnapToGround(I2) {
-    A.rawkinematiccharactercontroller_enableSnapToGround(this.__wbg_ptr, I2);
+  enableSnapToGround(I3) {
+    A.rawkinematiccharactercontroller_enableSnapToGround(this.__wbg_ptr, I3);
   }
   disableSnapToGround() {
     A.rawkinematiccharactercontroller_disableSnapToGround(this.__wbg_ptr);
@@ -27410,16 +29551,16 @@ var DA = class {
   snapToGroundEnabled() {
     return 0 !== A.rawkinematiccharactercontroller_snapToGroundEnabled(this.__wbg_ptr);
   }
-  computeColliderMovement(g2, C2, B2, Q2, i2, D2, o2, S2, w2, G2, k2) {
+  computeColliderMovement(g4, C4, B3, Q3, i2, D2, o2, S2, w2, G2, k2) {
     try {
-      K(C2, lA), K(B2, d), K(Q2, MA), K(D2, xA), A.rawkinematiccharactercontroller_computeColliderMovement(this.__wbg_ptr, g2, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr, i2, D2.__wbg_ptr, o2, !E(S2), E(S2) ? 0 : S2, w2, !E(G2), E(G2) ? 0 : G2, y(k2));
+      K(C4, lA), K(B3, d), K(Q3, MA), K(D2, xA), A.rawkinematiccharactercontroller_computeColliderMovement(this.__wbg_ptr, g4, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr, i2, D2.__wbg_ptr, o2, !E(S2), E(S2) ? 0 : S2, w2, !E(G2), E(G2) ? 0 : G2, y(k2));
     } finally {
       I[h++] = void 0;
     }
   }
   computedMovement() {
-    const I2 = A.rawkinematiccharactercontroller_computedMovement(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawkinematiccharactercontroller_computedMovement(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   computedGrounded() {
     return 0 !== A.rawkinematiccharactercontroller_computedGrounded(this.__wbg_ptr);
@@ -27427,86 +29568,86 @@ var DA = class {
   numComputedCollisions() {
     return A.rawkinematiccharactercontroller_numComputedCollisions(this.__wbg_ptr) >>> 0;
   }
-  computedCollision(I2, g2) {
-    K(g2, r);
-    return 0 !== A.rawkinematiccharactercontroller_computedCollision(this.__wbg_ptr, I2, g2.__wbg_ptr);
+  computedCollision(I3, g4) {
+    K(g4, r);
+    return 0 !== A.rawkinematiccharactercontroller_computedCollision(this.__wbg_ptr, I3, g4.__wbg_ptr);
   }
 };
 var oA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawmultibodyjointset_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawmultibodyjointset_free(I3 >>> 0));
 var SA = class _SA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_SA.prototype);
-    return I2.__wbg_ptr = A2, oA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_SA.prototype);
+    return I3.__wbg_ptr = A3, oA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, oA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, oA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawmultibodyjointset_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawmultibodyjointset_free(I3);
   }
-  jointType(I2) {
-    return A.rawmultibodyjointset_jointType(this.__wbg_ptr, I2);
+  jointType(I3) {
+    return A.rawmultibodyjointset_jointType(this.__wbg_ptr, I3);
   }
-  jointFrameX1(I2) {
-    const g2 = A.rawmultibodyjointset_jointFrameX1(this.__wbg_ptr, I2);
-    return HA.__wrap(g2);
+  jointFrameX1(I3) {
+    const g4 = A.rawmultibodyjointset_jointFrameX1(this.__wbg_ptr, I3);
+    return HA.__wrap(g4);
   }
-  jointFrameX2(I2) {
-    const g2 = A.rawmultibodyjointset_jointFrameX2(this.__wbg_ptr, I2);
-    return HA.__wrap(g2);
+  jointFrameX2(I3) {
+    const g4 = A.rawmultibodyjointset_jointFrameX2(this.__wbg_ptr, I3);
+    return HA.__wrap(g4);
   }
-  jointAnchor1(I2) {
-    const g2 = A.rawmultibodyjointset_jointAnchor1(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  jointAnchor1(I3) {
+    const g4 = A.rawmultibodyjointset_jointAnchor1(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  jointAnchor2(I2) {
-    const g2 = A.rawmultibodyjointset_jointAnchor2(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  jointAnchor2(I3) {
+    const g4 = A.rawmultibodyjointset_jointAnchor2(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  jointContactsEnabled(I2) {
-    return 0 !== A.rawmultibodyjointset_jointContactsEnabled(this.__wbg_ptr, I2);
+  jointContactsEnabled(I3) {
+    return 0 !== A.rawmultibodyjointset_jointContactsEnabled(this.__wbg_ptr, I3);
   }
-  jointSetContactsEnabled(I2, g2) {
-    A.rawmultibodyjointset_jointSetContactsEnabled(this.__wbg_ptr, I2, g2);
+  jointSetContactsEnabled(I3, g4) {
+    A.rawmultibodyjointset_jointSetContactsEnabled(this.__wbg_ptr, I3, g4);
   }
-  jointLimitsEnabled(I2, g2) {
-    return 0 !== A.rawmultibodyjointset_jointLimitsEnabled(this.__wbg_ptr, I2, g2);
+  jointLimitsEnabled(I3, g4) {
+    return 0 !== A.rawmultibodyjointset_jointLimitsEnabled(this.__wbg_ptr, I3, g4);
   }
-  jointLimitsMin(I2, g2) {
-    return A.rawmultibodyjointset_jointLimitsMin(this.__wbg_ptr, I2, g2);
+  jointLimitsMin(I3, g4) {
+    return A.rawmultibodyjointset_jointLimitsMin(this.__wbg_ptr, I3, g4);
   }
-  jointLimitsMax(I2, g2) {
-    return A.rawmultibodyjointset_jointLimitsMax(this.__wbg_ptr, I2, g2);
+  jointLimitsMax(I3, g4) {
+    return A.rawmultibodyjointset_jointLimitsMax(this.__wbg_ptr, I3, g4);
   }
   constructor() {
-    const I2 = A.rawmultibodyjointset_new();
-    return this.__wbg_ptr = I2 >>> 0, this;
+    const I3 = A.rawmultibodyjointset_new();
+    return this.__wbg_ptr = I3 >>> 0, this;
   }
-  createJoint(I2, g2, C2, B2) {
-    K(I2, AA);
-    return A.rawmultibodyjointset_createJoint(this.__wbg_ptr, I2.__wbg_ptr, g2, C2, B2);
+  createJoint(I3, g4, C4, B3) {
+    K(I3, AA);
+    return A.rawmultibodyjointset_createJoint(this.__wbg_ptr, I3.__wbg_ptr, g4, C4, B3);
   }
-  remove(I2, g2) {
-    A.rawmultibodyjointset_remove(this.__wbg_ptr, I2, g2);
+  remove(I3, g4) {
+    A.rawmultibodyjointset_remove(this.__wbg_ptr, I3, g4);
   }
-  contains(I2) {
-    return 0 !== A.rawmultibodyjointset_contains(this.__wbg_ptr, I2);
+  contains(I3) {
+    return 0 !== A.rawmultibodyjointset_contains(this.__wbg_ptr, I3);
   }
-  forEachJointHandle(g2) {
+  forEachJointHandle(g4) {
     try {
-      A.rawmultibodyjointset_forEachJointHandle(this.__wbg_ptr, y(g2));
+      A.rawmultibodyjointset_forEachJointHandle(this.__wbg_ptr, y(g4));
     } finally {
       I[h++] = void 0;
     }
   }
-  forEachJointAttachedToRigidBody(g2, C2) {
+  forEachJointAttachedToRigidBody(g4, C4) {
     try {
-      A.rawmultibodyjointset_forEachJointAttachedToRigidBody(this.__wbg_ptr, g2, y(C2));
+      A.rawmultibodyjointset_forEachJointAttachedToRigidBody(this.__wbg_ptr, g4, y(C4));
     } finally {
       I[h++] = void 0;
     }
@@ -27514,85 +29655,85 @@ var SA = class _SA {
 };
 var wA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawnarrowphase_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawnarrowphase_free(I3 >>> 0));
 var GA = class _GA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_GA.prototype);
-    return I2.__wbg_ptr = A2, wA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_GA.prototype);
+    return I3.__wbg_ptr = A3, wA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, wA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, wA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawnarrowphase_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawnarrowphase_free(I3);
   }
   constructor() {
-    const I2 = A.rawnarrowphase_new();
-    return this.__wbg_ptr = I2 >>> 0, this;
+    const I3 = A.rawnarrowphase_new();
+    return this.__wbg_ptr = I3 >>> 0, this;
   }
-  contact_pairs_with(I2, g2) {
-    A.rawnarrowphase_contact_pairs_with(this.__wbg_ptr, I2, C(g2));
+  contact_pairs_with(I3, g4) {
+    A.rawnarrowphase_contact_pairs_with(this.__wbg_ptr, I3, C(g4));
   }
-  contact_pair(I2, g2) {
-    const C2 = A.rawnarrowphase_contact_pair(this.__wbg_ptr, I2, g2);
-    return 0 === C2 ? void 0 : j.__wrap(C2);
+  contact_pair(I3, g4) {
+    const C4 = A.rawnarrowphase_contact_pair(this.__wbg_ptr, I3, g4);
+    return 0 === C4 ? void 0 : j.__wrap(C4);
   }
-  intersection_pairs_with(I2, g2) {
-    A.rawnarrowphase_intersection_pairs_with(this.__wbg_ptr, I2, C(g2));
+  intersection_pairs_with(I3, g4) {
+    A.rawnarrowphase_intersection_pairs_with(this.__wbg_ptr, I3, C(g4));
   }
-  intersection_pair(I2, g2) {
-    return 0 !== A.rawnarrowphase_intersection_pair(this.__wbg_ptr, I2, g2);
+  intersection_pair(I3, g4) {
+    return 0 !== A.rawnarrowphase_intersection_pair(this.__wbg_ptr, I3, g4);
   }
 };
 var kA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawphysicspipeline_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawphysicspipeline_free(I3 >>> 0));
 var KA = class {
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, kA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, kA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawphysicspipeline_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawphysicspipeline_free(I3);
   }
   constructor() {
-    const I2 = A.rawphysicspipeline_new();
-    return this.__wbg_ptr = I2 >>> 0, this;
+    const I3 = A.rawphysicspipeline_new();
+    return this.__wbg_ptr = I3 >>> 0, this;
   }
-  step(I2, g2, C2, B2, Q2, E2, i2, D2, o2, S2) {
-    K(I2, xA), K(g2, BA), K(C2, EA), K(B2, H), K(Q2, GA), K(E2, lA), K(i2, d), K(D2, gA), K(o2, SA), K(S2, p), A.rawphysicspipeline_step(this.__wbg_ptr, I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr, E2.__wbg_ptr, i2.__wbg_ptr, D2.__wbg_ptr, o2.__wbg_ptr, S2.__wbg_ptr);
+  step(I3, g4, C4, B3, Q3, E2, i2, D2, o2, S2) {
+    K(I3, xA), K(g4, BA), K(C4, EA), K(B3, H), K(Q3, GA), K(E2, lA), K(i2, d), K(D2, gA), K(o2, SA), K(S2, p), A.rawphysicspipeline_step(this.__wbg_ptr, I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr, E2.__wbg_ptr, i2.__wbg_ptr, D2.__wbg_ptr, o2.__wbg_ptr, S2.__wbg_ptr);
   }
-  stepWithEvents(I2, g2, B2, Q2, E2, i2, D2, o2, S2, w2, G2, k2, J2, U2) {
-    K(I2, xA), K(g2, BA), K(B2, EA), K(Q2, H), K(E2, GA), K(i2, lA), K(D2, d), K(o2, gA), K(S2, SA), K(w2, p), K(G2, _), A.rawphysicspipeline_stepWithEvents(this.__wbg_ptr, I2.__wbg_ptr, g2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr, E2.__wbg_ptr, i2.__wbg_ptr, D2.__wbg_ptr, o2.__wbg_ptr, S2.__wbg_ptr, w2.__wbg_ptr, G2.__wbg_ptr, C(k2), C(J2), C(U2));
+  stepWithEvents(I3, g4, B3, Q3, E2, i2, D2, o2, S2, w2, G2, k2, J2, U2) {
+    K(I3, xA), K(g4, BA), K(B3, EA), K(Q3, H), K(E2, GA), K(i2, lA), K(D2, d), K(o2, gA), K(S2, SA), K(w2, p), K(G2, _), A.rawphysicspipeline_stepWithEvents(this.__wbg_ptr, I3.__wbg_ptr, g4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr, E2.__wbg_ptr, i2.__wbg_ptr, D2.__wbg_ptr, o2.__wbg_ptr, S2.__wbg_ptr, w2.__wbg_ptr, G2.__wbg_ptr, C(k2), C(J2), C(U2));
   }
 };
 var JA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawpointcolliderprojection_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawpointcolliderprojection_free(I3 >>> 0));
 var UA = class _UA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_UA.prototype);
-    return I2.__wbg_ptr = A2, JA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_UA.prototype);
+    return I3.__wbg_ptr = A3, JA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, JA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, JA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawpointcolliderprojection_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawpointcolliderprojection_free(I3);
   }
   colliderHandle() {
     return A.rawpointcolliderprojection_colliderHandle(this.__wbg_ptr);
   }
   point() {
-    const I2 = A.rawpointcolliderprojection_point(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawpointcolliderprojection_point(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   isInside() {
     return 0 !== A.rawpointcolliderprojection_isInside(this.__wbg_ptr);
@@ -27602,10 +29743,10 @@ var UA = class _UA {
   }
   featureId() {
     try {
-      const C2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawpointcolliderprojection_featureId(C2, this.__wbg_ptr);
-      var I2 = S()[C2 / 4 + 0], g2 = S()[C2 / 4 + 1];
-      return 0 === I2 ? void 0 : g2 >>> 0;
+      const C4 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawpointcolliderprojection_featureId(C4, this.__wbg_ptr);
+      var I3 = S()[C4 / 4 + 0], g4 = S()[C4 / 4 + 1];
+      return 0 === I3 ? void 0 : g4 >>> 0;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
@@ -27613,24 +29754,24 @@ var UA = class _UA {
 };
 var hA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawpointprojection_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawpointprojection_free(I3 >>> 0));
 var yA = class _yA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_yA.prototype);
-    return I2.__wbg_ptr = A2, hA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_yA.prototype);
+    return I3.__wbg_ptr = A3, hA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, hA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, hA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawpointprojection_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawpointprojection_free(I3);
   }
   point() {
-    const I2 = A.rawpointprojection_point(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawpointprojection_point(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   isInside() {
     return 0 !== A.rawpointprojection_isInside(this.__wbg_ptr);
@@ -27638,102 +29779,102 @@ var yA = class _yA {
 };
 var NA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawquerypipeline_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawquerypipeline_free(I3 >>> 0));
 var MA = class {
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, NA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, NA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawquerypipeline_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawquerypipeline_free(I3);
   }
   constructor() {
-    const I2 = A.rawquerypipeline_new();
-    return this.__wbg_ptr = I2 >>> 0, this;
+    const I3 = A.rawquerypipeline_new();
+    return this.__wbg_ptr = I3 >>> 0, this;
   }
-  update(I2) {
-    K(I2, d), A.rawquerypipeline_update(this.__wbg_ptr, I2.__wbg_ptr);
+  update(I3) {
+    K(I3, d), A.rawquerypipeline_update(this.__wbg_ptr, I3.__wbg_ptr);
   }
-  castRay(g2, C2, B2, Q2, i2, D2, o2, S2, w2, G2, k2) {
+  castRay(g4, C4, B3, Q3, i2, D2, o2, S2, w2, G2, k2) {
     try {
-      K(g2, lA), K(C2, d), K(B2, xA), K(Q2, xA);
-      const J2 = A.rawquerypipeline_castRay(this.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr, i2, D2, o2, !E(S2), E(S2) ? 0 : S2, !E(w2), E(w2) ? 0 : w2, !E(G2), E(G2) ? 0 : G2, y(k2));
+      K(g4, lA), K(C4, d), K(B3, xA), K(Q3, xA);
+      const J2 = A.rawquerypipeline_castRay(this.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr, i2, D2, o2, !E(S2), E(S2) ? 0 : S2, !E(w2), E(w2) ? 0 : w2, !E(G2), E(G2) ? 0 : G2, y(k2));
       return 0 === J2 ? void 0 : aA.__wrap(J2);
     } finally {
       I[h++] = void 0;
     }
   }
-  castRayAndGetNormal(g2, C2, B2, Q2, i2, D2, o2, S2, w2, G2, k2) {
+  castRayAndGetNormal(g4, C4, B3, Q3, i2, D2, o2, S2, w2, G2, k2) {
     try {
-      K(g2, lA), K(C2, d), K(B2, xA), K(Q2, xA);
-      const J2 = A.rawquerypipeline_castRayAndGetNormal(this.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr, i2, D2, o2, !E(S2), E(S2) ? 0 : S2, !E(w2), E(w2) ? 0 : w2, !E(G2), E(G2) ? 0 : G2, y(k2));
+      K(g4, lA), K(C4, d), K(B3, xA), K(Q3, xA);
+      const J2 = A.rawquerypipeline_castRayAndGetNormal(this.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr, i2, D2, o2, !E(S2), E(S2) ? 0 : S2, !E(w2), E(w2) ? 0 : w2, !E(G2), E(G2) ? 0 : G2, y(k2));
       return 0 === J2 ? void 0 : RA.__wrap(J2);
     } finally {
       I[h++] = void 0;
     }
   }
-  intersectionsWithRay(g2, C2, B2, Q2, i2, D2, o2, S2, w2, G2, k2, J2) {
+  intersectionsWithRay(g4, C4, B3, Q3, i2, D2, o2, S2, w2, G2, k2, J2) {
     try {
-      K(g2, lA), K(C2, d), K(B2, xA), K(Q2, xA), A.rawquerypipeline_intersectionsWithRay(this.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr, i2, D2, y(o2), S2, !E(w2), E(w2) ? 0 : w2, !E(G2), E(G2) ? 0 : G2, !E(k2), E(k2) ? 0 : k2, y(J2));
+      K(g4, lA), K(C4, d), K(B3, xA), K(Q3, xA), A.rawquerypipeline_intersectionsWithRay(this.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr, i2, D2, y(o2), S2, !E(w2), E(w2) ? 0 : w2, !E(G2), E(G2) ? 0 : G2, !E(k2), E(k2) ? 0 : k2, y(J2));
     } finally {
       I[h++] = void 0, I[h++] = void 0;
     }
   }
-  intersectionWithShape(g2, C2, B2, Q2, i2, o2, w2, G2, k2, J2) {
+  intersectionWithShape(g4, C4, B3, Q3, i2, o2, w2, G2, k2, J2) {
     try {
       const M2 = A.__wbindgen_add_to_stack_pointer(-16);
-      K(g2, lA), K(C2, d), K(B2, xA), K(Q2, HA), K(i2, dA), A.rawquerypipeline_intersectionWithShape(M2, this.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr, i2.__wbg_ptr, o2, !E(w2), E(w2) ? 0 : w2, !E(G2), E(G2) ? 0 : G2, !E(k2), E(k2) ? 0 : k2, y(J2));
+      K(g4, lA), K(C4, d), K(B3, xA), K(Q3, HA), K(i2, dA), A.rawquerypipeline_intersectionWithShape(M2, this.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr, i2.__wbg_ptr, o2, !E(w2), E(w2) ? 0 : w2, !E(G2), E(G2) ? 0 : G2, !E(k2), E(k2) ? 0 : k2, y(J2));
       var U2 = S()[M2 / 4 + 0], N2 = D()[M2 / 8 + 1];
       return 0 === U2 ? void 0 : N2;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16), I[h++] = void 0;
     }
   }
-  projectPoint(g2, C2, B2, Q2, i2, D2, o2, S2, w2) {
+  projectPoint(g4, C4, B3, Q3, i2, D2, o2, S2, w2) {
     try {
-      K(g2, lA), K(C2, d), K(B2, xA);
-      const G2 = A.rawquerypipeline_projectPoint(this.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2, i2, !E(D2), E(D2) ? 0 : D2, !E(o2), E(o2) ? 0 : o2, !E(S2), E(S2) ? 0 : S2, y(w2));
+      K(g4, lA), K(C4, d), K(B3, xA);
+      const G2 = A.rawquerypipeline_projectPoint(this.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3, i2, !E(D2), E(D2) ? 0 : D2, !E(o2), E(o2) ? 0 : o2, !E(S2), E(S2) ? 0 : S2, y(w2));
       return 0 === G2 ? void 0 : UA.__wrap(G2);
     } finally {
       I[h++] = void 0;
     }
   }
-  projectPointAndGetFeature(g2, C2, B2, Q2, i2, D2, o2, S2) {
+  projectPointAndGetFeature(g4, C4, B3, Q3, i2, D2, o2, S2) {
     try {
-      K(g2, lA), K(C2, d), K(B2, xA);
-      const w2 = A.rawquerypipeline_projectPointAndGetFeature(this.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2, !E(i2), E(i2) ? 0 : i2, !E(D2), E(D2) ? 0 : D2, !E(o2), E(o2) ? 0 : o2, y(S2));
+      K(g4, lA), K(C4, d), K(B3, xA);
+      const w2 = A.rawquerypipeline_projectPointAndGetFeature(this.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3, !E(i2), E(i2) ? 0 : i2, !E(D2), E(D2) ? 0 : D2, !E(o2), E(o2) ? 0 : o2, y(S2));
       return 0 === w2 ? void 0 : UA.__wrap(w2);
     } finally {
       I[h++] = void 0;
     }
   }
-  intersectionsWithPoint(g2, C2, B2, Q2, i2, D2, o2, S2, w2) {
+  intersectionsWithPoint(g4, C4, B3, Q3, i2, D2, o2, S2, w2) {
     try {
-      K(g2, lA), K(C2, d), K(B2, xA), A.rawquerypipeline_intersectionsWithPoint(this.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, y(Q2), i2, !E(D2), E(D2) ? 0 : D2, !E(o2), E(o2) ? 0 : o2, !E(S2), E(S2) ? 0 : S2, y(w2));
+      K(g4, lA), K(C4, d), K(B3, xA), A.rawquerypipeline_intersectionsWithPoint(this.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, y(Q3), i2, !E(D2), E(D2) ? 0 : D2, !E(o2), E(o2) ? 0 : o2, !E(S2), E(S2) ? 0 : S2, y(w2));
     } finally {
       I[h++] = void 0, I[h++] = void 0;
     }
   }
-  castShape(g2, C2, B2, Q2, i2, D2, o2, S2, w2, G2, k2, J2, U2, N2) {
+  castShape(g4, C4, B3, Q3, i2, D2, o2, S2, w2, G2, k2, J2, U2, N2) {
     try {
-      K(g2, lA), K(C2, d), K(B2, xA), K(Q2, HA), K(i2, xA), K(D2, dA);
-      const M2 = A.rawquerypipeline_castShape(this.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr, i2.__wbg_ptr, D2.__wbg_ptr, o2, S2, w2, G2, !E(k2), E(k2) ? 0 : k2, !E(J2), E(J2) ? 0 : J2, !E(U2), E(U2) ? 0 : U2, y(N2));
+      K(g4, lA), K(C4, d), K(B3, xA), K(Q3, HA), K(i2, xA), K(D2, dA);
+      const M2 = A.rawquerypipeline_castShape(this.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr, i2.__wbg_ptr, D2.__wbg_ptr, o2, S2, w2, G2, !E(k2), E(k2) ? 0 : k2, !E(J2), E(J2) ? 0 : J2, !E(U2), E(U2) ? 0 : U2, y(N2));
       return 0 === M2 ? void 0 : O.__wrap(M2);
     } finally {
       I[h++] = void 0;
     }
   }
-  intersectionsWithShape(g2, C2, B2, Q2, i2, D2, o2, S2, w2, G2, k2) {
+  intersectionsWithShape(g4, C4, B3, Q3, i2, D2, o2, S2, w2, G2, k2) {
     try {
-      K(g2, lA), K(C2, d), K(B2, xA), K(Q2, HA), K(i2, dA), A.rawquerypipeline_intersectionsWithShape(this.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr, i2.__wbg_ptr, y(D2), o2, !E(S2), E(S2) ? 0 : S2, !E(w2), E(w2) ? 0 : w2, !E(G2), E(G2) ? 0 : G2, y(k2));
+      K(g4, lA), K(C4, d), K(B3, xA), K(Q3, HA), K(i2, dA), A.rawquerypipeline_intersectionsWithShape(this.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr, i2.__wbg_ptr, y(D2), o2, !E(S2), E(S2) ? 0 : S2, !E(w2), E(w2) ? 0 : w2, !E(G2), E(G2) ? 0 : G2, y(k2));
     } finally {
       I[h++] = void 0, I[h++] = void 0;
     }
   }
-  collidersWithAabbIntersectingAabb(g2, C2, B2) {
+  collidersWithAabbIntersectingAabb(g4, C4, B3) {
     try {
-      K(g2, xA), K(C2, xA), A.rawquerypipeline_collidersWithAabbIntersectingAabb(this.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, y(B2));
+      K(g4, xA), K(C4, xA), A.rawquerypipeline_collidersWithAabbIntersectingAabb(this.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, y(B3));
     } finally {
       I[h++] = void 0;
     }
@@ -27741,20 +29882,20 @@ var MA = class {
 };
 var FA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawraycolliderhit_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawraycolliderhit_free(I3 >>> 0));
 var aA = class _aA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_aA.prototype);
-    return I2.__wbg_ptr = A2, FA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_aA.prototype);
+    return I3.__wbg_ptr = A3, FA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, FA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, FA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawraycolliderhit_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawraycolliderhit_free(I3);
   }
   colliderHandle() {
     return A.rawcharactercollision_handle(this.__wbg_ptr);
@@ -27765,27 +29906,27 @@ var aA = class _aA {
 };
 var sA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawraycolliderintersection_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawraycolliderintersection_free(I3 >>> 0));
 var RA = class _RA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_RA.prototype);
-    return I2.__wbg_ptr = A2, sA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_RA.prototype);
+    return I3.__wbg_ptr = A3, sA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, sA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, sA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawraycolliderintersection_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawraycolliderintersection_free(I3);
   }
   colliderHandle() {
     return A.rawpointcolliderprojection_colliderHandle(this.__wbg_ptr);
   }
   normal() {
-    const I2 = A.rawcollidershapecasthit_witness1(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcollidershapecasthit_witness1(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   time_of_impact() {
     return A.rawcollidershapecasthit_time_of_impact(this.__wbg_ptr);
@@ -27795,10 +29936,10 @@ var RA = class _RA {
   }
   featureId() {
     try {
-      const C2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawpointcolliderprojection_featureId(C2, this.__wbg_ptr);
-      var I2 = S()[C2 / 4 + 0], g2 = S()[C2 / 4 + 1];
-      return 0 === I2 ? void 0 : g2 >>> 0;
+      const C4 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawpointcolliderprojection_featureId(C4, this.__wbg_ptr);
+      var I3 = S()[C4 / 4 + 0], g4 = S()[C4 / 4 + 1];
+      return 0 === I3 ? void 0 : g4 >>> 0;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
@@ -27806,24 +29947,24 @@ var RA = class _RA {
 };
 var cA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawrayintersection_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawrayintersection_free(I3 >>> 0));
 var qA = class _qA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_qA.prototype);
-    return I2.__wbg_ptr = A2, cA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_qA.prototype);
+    return I3.__wbg_ptr = A3, cA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, cA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, cA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawrayintersection_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawrayintersection_free(I3);
   }
   normal() {
-    const I2 = A.rawcollidershapecasthit_witness1(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcollidershapecasthit_witness1(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   time_of_impact() {
     return A.rawcollidershapecasthit_time_of_impact(this.__wbg_ptr);
@@ -27833,10 +29974,10 @@ var qA = class _qA {
   }
   featureId() {
     try {
-      const C2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.rawpointcolliderprojection_featureId(C2, this.__wbg_ptr);
-      var I2 = S()[C2 / 4 + 0], g2 = S()[C2 / 4 + 1];
-      return 0 === I2 ? void 0 : g2 >>> 0;
+      const C4 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.rawpointcolliderprojection_featureId(C4, this.__wbg_ptr);
+      var I3 = S()[C4 / 4 + 0], g4 = S()[C4 / 4 + 1];
+      return 0 === I3 ? void 0 : g4 >>> 0;
     } finally {
       A.__wbindgen_add_to_stack_pointer(16);
     }
@@ -27844,293 +29985,293 @@ var qA = class _qA {
 };
 var YA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawrigidbodyset_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawrigidbodyset_free(I3 >>> 0));
 var lA = class _lA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_lA.prototype);
-    return I2.__wbg_ptr = A2, YA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_lA.prototype);
+    return I3.__wbg_ptr = A3, YA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, YA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, YA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawrigidbodyset_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawrigidbodyset_free(I3);
   }
-  rbTranslation(I2) {
-    const g2 = A.rawrigidbodyset_rbTranslation(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  rbTranslation(I3) {
+    const g4 = A.rawrigidbodyset_rbTranslation(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  rbRotation(I2) {
-    const g2 = A.rawrigidbodyset_rbRotation(this.__wbg_ptr, I2);
-    return HA.__wrap(g2);
+  rbRotation(I3) {
+    const g4 = A.rawrigidbodyset_rbRotation(this.__wbg_ptr, I3);
+    return HA.__wrap(g4);
   }
-  rbSleep(I2) {
-    A.rawrigidbodyset_rbSleep(this.__wbg_ptr, I2);
+  rbSleep(I3) {
+    A.rawrigidbodyset_rbSleep(this.__wbg_ptr, I3);
   }
-  rbIsSleeping(I2) {
-    return 0 !== A.rawrigidbodyset_rbIsSleeping(this.__wbg_ptr, I2);
+  rbIsSleeping(I3) {
+    return 0 !== A.rawrigidbodyset_rbIsSleeping(this.__wbg_ptr, I3);
   }
-  rbIsMoving(I2) {
-    return 0 !== A.rawrigidbodyset_rbIsMoving(this.__wbg_ptr, I2);
+  rbIsMoving(I3) {
+    return 0 !== A.rawrigidbodyset_rbIsMoving(this.__wbg_ptr, I3);
   }
-  rbNextTranslation(I2) {
-    const g2 = A.rawrigidbodyset_rbNextTranslation(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  rbNextTranslation(I3) {
+    const g4 = A.rawrigidbodyset_rbNextTranslation(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  rbNextRotation(I2) {
-    const g2 = A.rawrigidbodyset_rbNextRotation(this.__wbg_ptr, I2);
-    return HA.__wrap(g2);
+  rbNextRotation(I3) {
+    const g4 = A.rawrigidbodyset_rbNextRotation(this.__wbg_ptr, I3);
+    return HA.__wrap(g4);
   }
-  rbSetTranslation(I2, g2, C2, B2, Q2) {
-    A.rawrigidbodyset_rbSetTranslation(this.__wbg_ptr, I2, g2, C2, B2, Q2);
+  rbSetTranslation(I3, g4, C4, B3, Q3) {
+    A.rawrigidbodyset_rbSetTranslation(this.__wbg_ptr, I3, g4, C4, B3, Q3);
   }
-  rbSetRotation(I2, g2, C2, B2, Q2, E2) {
-    A.rawrigidbodyset_rbSetRotation(this.__wbg_ptr, I2, g2, C2, B2, Q2, E2);
+  rbSetRotation(I3, g4, C4, B3, Q3, E2) {
+    A.rawrigidbodyset_rbSetRotation(this.__wbg_ptr, I3, g4, C4, B3, Q3, E2);
   }
-  rbSetLinvel(I2, g2, C2) {
-    K(g2, xA), A.rawrigidbodyset_rbSetLinvel(this.__wbg_ptr, I2, g2.__wbg_ptr, C2);
+  rbSetLinvel(I3, g4, C4) {
+    K(g4, xA), A.rawrigidbodyset_rbSetLinvel(this.__wbg_ptr, I3, g4.__wbg_ptr, C4);
   }
-  rbSetAngvel(I2, g2, C2) {
-    K(g2, xA), A.rawrigidbodyset_rbSetAngvel(this.__wbg_ptr, I2, g2.__wbg_ptr, C2);
+  rbSetAngvel(I3, g4, C4) {
+    K(g4, xA), A.rawrigidbodyset_rbSetAngvel(this.__wbg_ptr, I3, g4.__wbg_ptr, C4);
   }
-  rbSetNextKinematicTranslation(I2, g2, C2, B2) {
-    A.rawrigidbodyset_rbSetNextKinematicTranslation(this.__wbg_ptr, I2, g2, C2, B2);
+  rbSetNextKinematicTranslation(I3, g4, C4, B3) {
+    A.rawrigidbodyset_rbSetNextKinematicTranslation(this.__wbg_ptr, I3, g4, C4, B3);
   }
-  rbSetNextKinematicRotation(I2, g2, C2, B2, Q2) {
-    A.rawrigidbodyset_rbSetNextKinematicRotation(this.__wbg_ptr, I2, g2, C2, B2, Q2);
+  rbSetNextKinematicRotation(I3, g4, C4, B3, Q3) {
+    A.rawrigidbodyset_rbSetNextKinematicRotation(this.__wbg_ptr, I3, g4, C4, B3, Q3);
   }
-  rbRecomputeMassPropertiesFromColliders(I2, g2) {
-    K(g2, d), A.rawrigidbodyset_rbRecomputeMassPropertiesFromColliders(this.__wbg_ptr, I2, g2.__wbg_ptr);
+  rbRecomputeMassPropertiesFromColliders(I3, g4) {
+    K(g4, d), A.rawrigidbodyset_rbRecomputeMassPropertiesFromColliders(this.__wbg_ptr, I3, g4.__wbg_ptr);
   }
-  rbSetAdditionalMass(I2, g2, C2) {
-    A.rawrigidbodyset_rbSetAdditionalMass(this.__wbg_ptr, I2, g2, C2);
+  rbSetAdditionalMass(I3, g4, C4) {
+    A.rawrigidbodyset_rbSetAdditionalMass(this.__wbg_ptr, I3, g4, C4);
   }
-  rbSetAdditionalMassProperties(I2, g2, C2, B2, Q2, E2) {
-    K(C2, xA), K(B2, xA), K(Q2, HA), A.rawrigidbodyset_rbSetAdditionalMassProperties(this.__wbg_ptr, I2, g2, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr, E2);
+  rbSetAdditionalMassProperties(I3, g4, C4, B3, Q3, E2) {
+    K(C4, xA), K(B3, xA), K(Q3, HA), A.rawrigidbodyset_rbSetAdditionalMassProperties(this.__wbg_ptr, I3, g4, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr, E2);
   }
-  rbLinvel(I2) {
-    const g2 = A.rawrigidbodyset_rbLinvel(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  rbLinvel(I3) {
+    const g4 = A.rawrigidbodyset_rbLinvel(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  rbAngvel(I2) {
-    const g2 = A.rawrigidbodyset_rbAngvel(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  rbAngvel(I3) {
+    const g4 = A.rawrigidbodyset_rbAngvel(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  rbLockTranslations(I2, g2, C2) {
-    A.rawrigidbodyset_rbLockTranslations(this.__wbg_ptr, I2, g2, C2);
+  rbLockTranslations(I3, g4, C4) {
+    A.rawrigidbodyset_rbLockTranslations(this.__wbg_ptr, I3, g4, C4);
   }
-  rbSetEnabledTranslations(I2, g2, C2, B2, Q2) {
-    A.rawrigidbodyset_rbSetEnabledTranslations(this.__wbg_ptr, I2, g2, C2, B2, Q2);
+  rbSetEnabledTranslations(I3, g4, C4, B3, Q3) {
+    A.rawrigidbodyset_rbSetEnabledTranslations(this.__wbg_ptr, I3, g4, C4, B3, Q3);
   }
-  rbLockRotations(I2, g2, C2) {
-    A.rawrigidbodyset_rbLockRotations(this.__wbg_ptr, I2, g2, C2);
+  rbLockRotations(I3, g4, C4) {
+    A.rawrigidbodyset_rbLockRotations(this.__wbg_ptr, I3, g4, C4);
   }
-  rbSetEnabledRotations(I2, g2, C2, B2, Q2) {
-    A.rawrigidbodyset_rbSetEnabledRotations(this.__wbg_ptr, I2, g2, C2, B2, Q2);
+  rbSetEnabledRotations(I3, g4, C4, B3, Q3) {
+    A.rawrigidbodyset_rbSetEnabledRotations(this.__wbg_ptr, I3, g4, C4, B3, Q3);
   }
-  rbDominanceGroup(I2) {
-    return A.rawrigidbodyset_rbDominanceGroup(this.__wbg_ptr, I2);
+  rbDominanceGroup(I3) {
+    return A.rawrigidbodyset_rbDominanceGroup(this.__wbg_ptr, I3);
   }
-  rbSetDominanceGroup(I2, g2) {
-    A.rawrigidbodyset_rbSetDominanceGroup(this.__wbg_ptr, I2, g2);
+  rbSetDominanceGroup(I3, g4) {
+    A.rawrigidbodyset_rbSetDominanceGroup(this.__wbg_ptr, I3, g4);
   }
-  rbEnableCcd(I2, g2) {
-    A.rawrigidbodyset_rbEnableCcd(this.__wbg_ptr, I2, g2);
+  rbEnableCcd(I3, g4) {
+    A.rawrigidbodyset_rbEnableCcd(this.__wbg_ptr, I3, g4);
   }
-  rbSetSoftCcdPrediction(I2, g2) {
-    A.rawrigidbodyset_rbSetSoftCcdPrediction(this.__wbg_ptr, I2, g2);
+  rbSetSoftCcdPrediction(I3, g4) {
+    A.rawrigidbodyset_rbSetSoftCcdPrediction(this.__wbg_ptr, I3, g4);
   }
-  rbMass(I2) {
-    return A.rawrigidbodyset_rbMass(this.__wbg_ptr, I2);
+  rbMass(I3) {
+    return A.rawrigidbodyset_rbMass(this.__wbg_ptr, I3);
   }
-  rbInvMass(I2) {
-    return A.rawrigidbodyset_rbInvMass(this.__wbg_ptr, I2);
+  rbInvMass(I3) {
+    return A.rawrigidbodyset_rbInvMass(this.__wbg_ptr, I3);
   }
-  rbEffectiveInvMass(I2) {
-    const g2 = A.rawrigidbodyset_rbEffectiveInvMass(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  rbEffectiveInvMass(I3) {
+    const g4 = A.rawrigidbodyset_rbEffectiveInvMass(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  rbLocalCom(I2) {
-    const g2 = A.rawrigidbodyset_rbLocalCom(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  rbLocalCom(I3) {
+    const g4 = A.rawrigidbodyset_rbLocalCom(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  rbWorldCom(I2) {
-    const g2 = A.rawrigidbodyset_rbWorldCom(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  rbWorldCom(I3) {
+    const g4 = A.rawrigidbodyset_rbWorldCom(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  rbInvPrincipalInertiaSqrt(I2) {
-    const g2 = A.rawrigidbodyset_rbInvPrincipalInertiaSqrt(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  rbInvPrincipalInertiaSqrt(I3) {
+    const g4 = A.rawrigidbodyset_rbInvPrincipalInertiaSqrt(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  rbPrincipalInertiaLocalFrame(I2) {
-    const g2 = A.rawrigidbodyset_rbPrincipalInertiaLocalFrame(this.__wbg_ptr, I2);
-    return HA.__wrap(g2);
+  rbPrincipalInertiaLocalFrame(I3) {
+    const g4 = A.rawrigidbodyset_rbPrincipalInertiaLocalFrame(this.__wbg_ptr, I3);
+    return HA.__wrap(g4);
   }
-  rbPrincipalInertia(I2) {
-    const g2 = A.rawrigidbodyset_rbPrincipalInertia(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  rbPrincipalInertia(I3) {
+    const g4 = A.rawrigidbodyset_rbPrincipalInertia(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  rbEffectiveWorldInvInertiaSqrt(I2) {
-    const g2 = A.rawrigidbodyset_rbEffectiveWorldInvInertiaSqrt(this.__wbg_ptr, I2);
-    return pA.__wrap(g2);
+  rbEffectiveWorldInvInertiaSqrt(I3) {
+    const g4 = A.rawrigidbodyset_rbEffectiveWorldInvInertiaSqrt(this.__wbg_ptr, I3);
+    return pA.__wrap(g4);
   }
-  rbEffectiveAngularInertia(I2) {
-    const g2 = A.rawrigidbodyset_rbEffectiveAngularInertia(this.__wbg_ptr, I2);
-    return pA.__wrap(g2);
+  rbEffectiveAngularInertia(I3) {
+    const g4 = A.rawrigidbodyset_rbEffectiveAngularInertia(this.__wbg_ptr, I3);
+    return pA.__wrap(g4);
   }
-  rbWakeUp(I2) {
-    A.rawrigidbodyset_rbWakeUp(this.__wbg_ptr, I2);
+  rbWakeUp(I3) {
+    A.rawrigidbodyset_rbWakeUp(this.__wbg_ptr, I3);
   }
-  rbIsCcdEnabled(I2) {
-    return 0 !== A.rawrigidbodyset_rbIsCcdEnabled(this.__wbg_ptr, I2);
+  rbIsCcdEnabled(I3) {
+    return 0 !== A.rawrigidbodyset_rbIsCcdEnabled(this.__wbg_ptr, I3);
   }
-  rbSoftCcdPrediction(I2) {
-    return A.rawrigidbodyset_rbSoftCcdPrediction(this.__wbg_ptr, I2);
+  rbSoftCcdPrediction(I3) {
+    return A.rawrigidbodyset_rbSoftCcdPrediction(this.__wbg_ptr, I3);
   }
-  rbNumColliders(I2) {
-    return A.rawrigidbodyset_rbNumColliders(this.__wbg_ptr, I2) >>> 0;
+  rbNumColliders(I3) {
+    return A.rawrigidbodyset_rbNumColliders(this.__wbg_ptr, I3) >>> 0;
   }
-  rbCollider(I2, g2) {
-    return A.rawrigidbodyset_rbCollider(this.__wbg_ptr, I2, g2);
+  rbCollider(I3, g4) {
+    return A.rawrigidbodyset_rbCollider(this.__wbg_ptr, I3, g4);
   }
-  rbBodyType(I2) {
-    return A.rawrigidbodyset_rbBodyType(this.__wbg_ptr, I2);
+  rbBodyType(I3) {
+    return A.rawrigidbodyset_rbBodyType(this.__wbg_ptr, I3);
   }
-  rbSetBodyType(I2, g2, C2) {
-    A.rawrigidbodyset_rbSetBodyType(this.__wbg_ptr, I2, g2, C2);
+  rbSetBodyType(I3, g4, C4) {
+    A.rawrigidbodyset_rbSetBodyType(this.__wbg_ptr, I3, g4, C4);
   }
-  rbIsFixed(I2) {
-    return 0 !== A.rawrigidbodyset_rbIsFixed(this.__wbg_ptr, I2);
+  rbIsFixed(I3) {
+    return 0 !== A.rawrigidbodyset_rbIsFixed(this.__wbg_ptr, I3);
   }
-  rbIsKinematic(I2) {
-    return 0 !== A.rawrigidbodyset_rbIsKinematic(this.__wbg_ptr, I2);
+  rbIsKinematic(I3) {
+    return 0 !== A.rawrigidbodyset_rbIsKinematic(this.__wbg_ptr, I3);
   }
-  rbIsDynamic(I2) {
-    return 0 !== A.rawrigidbodyset_rbIsDynamic(this.__wbg_ptr, I2);
+  rbIsDynamic(I3) {
+    return 0 !== A.rawrigidbodyset_rbIsDynamic(this.__wbg_ptr, I3);
   }
-  rbLinearDamping(I2) {
-    return A.rawrigidbodyset_rbLinearDamping(this.__wbg_ptr, I2);
+  rbLinearDamping(I3) {
+    return A.rawrigidbodyset_rbLinearDamping(this.__wbg_ptr, I3);
   }
-  rbAngularDamping(I2) {
-    return A.rawrigidbodyset_rbAngularDamping(this.__wbg_ptr, I2);
+  rbAngularDamping(I3) {
+    return A.rawrigidbodyset_rbAngularDamping(this.__wbg_ptr, I3);
   }
-  rbSetLinearDamping(I2, g2) {
-    A.rawrigidbodyset_rbSetLinearDamping(this.__wbg_ptr, I2, g2);
+  rbSetLinearDamping(I3, g4) {
+    A.rawrigidbodyset_rbSetLinearDamping(this.__wbg_ptr, I3, g4);
   }
-  rbSetAngularDamping(I2, g2) {
-    A.rawrigidbodyset_rbSetAngularDamping(this.__wbg_ptr, I2, g2);
+  rbSetAngularDamping(I3, g4) {
+    A.rawrigidbodyset_rbSetAngularDamping(this.__wbg_ptr, I3, g4);
   }
-  rbSetEnabled(I2, g2) {
-    A.rawrigidbodyset_rbSetEnabled(this.__wbg_ptr, I2, g2);
+  rbSetEnabled(I3, g4) {
+    A.rawrigidbodyset_rbSetEnabled(this.__wbg_ptr, I3, g4);
   }
-  rbIsEnabled(I2) {
-    return 0 !== A.rawrigidbodyset_rbIsEnabled(this.__wbg_ptr, I2);
+  rbIsEnabled(I3) {
+    return 0 !== A.rawrigidbodyset_rbIsEnabled(this.__wbg_ptr, I3);
   }
-  rbGravityScale(I2) {
-    return A.rawrigidbodyset_rbGravityScale(this.__wbg_ptr, I2);
+  rbGravityScale(I3) {
+    return A.rawrigidbodyset_rbGravityScale(this.__wbg_ptr, I3);
   }
-  rbSetGravityScale(I2, g2, C2) {
-    A.rawrigidbodyset_rbSetGravityScale(this.__wbg_ptr, I2, g2, C2);
+  rbSetGravityScale(I3, g4, C4) {
+    A.rawrigidbodyset_rbSetGravityScale(this.__wbg_ptr, I3, g4, C4);
   }
-  rbResetForces(I2, g2) {
-    A.rawrigidbodyset_rbResetForces(this.__wbg_ptr, I2, g2);
+  rbResetForces(I3, g4) {
+    A.rawrigidbodyset_rbResetForces(this.__wbg_ptr, I3, g4);
   }
-  rbResetTorques(I2, g2) {
-    A.rawrigidbodyset_rbResetTorques(this.__wbg_ptr, I2, g2);
+  rbResetTorques(I3, g4) {
+    A.rawrigidbodyset_rbResetTorques(this.__wbg_ptr, I3, g4);
   }
-  rbAddForce(I2, g2, C2) {
-    K(g2, xA), A.rawrigidbodyset_rbAddForce(this.__wbg_ptr, I2, g2.__wbg_ptr, C2);
+  rbAddForce(I3, g4, C4) {
+    K(g4, xA), A.rawrigidbodyset_rbAddForce(this.__wbg_ptr, I3, g4.__wbg_ptr, C4);
   }
-  rbApplyImpulse(I2, g2, C2) {
-    K(g2, xA), A.rawrigidbodyset_rbApplyImpulse(this.__wbg_ptr, I2, g2.__wbg_ptr, C2);
+  rbApplyImpulse(I3, g4, C4) {
+    K(g4, xA), A.rawrigidbodyset_rbApplyImpulse(this.__wbg_ptr, I3, g4.__wbg_ptr, C4);
   }
-  rbAddTorque(I2, g2, C2) {
-    K(g2, xA), A.rawrigidbodyset_rbAddTorque(this.__wbg_ptr, I2, g2.__wbg_ptr, C2);
+  rbAddTorque(I3, g4, C4) {
+    K(g4, xA), A.rawrigidbodyset_rbAddTorque(this.__wbg_ptr, I3, g4.__wbg_ptr, C4);
   }
-  rbApplyTorqueImpulse(I2, g2, C2) {
-    K(g2, xA), A.rawrigidbodyset_rbApplyTorqueImpulse(this.__wbg_ptr, I2, g2.__wbg_ptr, C2);
+  rbApplyTorqueImpulse(I3, g4, C4) {
+    K(g4, xA), A.rawrigidbodyset_rbApplyTorqueImpulse(this.__wbg_ptr, I3, g4.__wbg_ptr, C4);
   }
-  rbAddForceAtPoint(I2, g2, C2, B2) {
-    K(g2, xA), K(C2, xA), A.rawrigidbodyset_rbAddForceAtPoint(this.__wbg_ptr, I2, g2.__wbg_ptr, C2.__wbg_ptr, B2);
+  rbAddForceAtPoint(I3, g4, C4, B3) {
+    K(g4, xA), K(C4, xA), A.rawrigidbodyset_rbAddForceAtPoint(this.__wbg_ptr, I3, g4.__wbg_ptr, C4.__wbg_ptr, B3);
   }
-  rbApplyImpulseAtPoint(I2, g2, C2, B2) {
-    K(g2, xA), K(C2, xA), A.rawrigidbodyset_rbApplyImpulseAtPoint(this.__wbg_ptr, I2, g2.__wbg_ptr, C2.__wbg_ptr, B2);
+  rbApplyImpulseAtPoint(I3, g4, C4, B3) {
+    K(g4, xA), K(C4, xA), A.rawrigidbodyset_rbApplyImpulseAtPoint(this.__wbg_ptr, I3, g4.__wbg_ptr, C4.__wbg_ptr, B3);
   }
-  rbAdditionalSolverIterations(I2) {
-    return A.rawrigidbodyset_rbAdditionalSolverIterations(this.__wbg_ptr, I2) >>> 0;
+  rbAdditionalSolverIterations(I3) {
+    return A.rawrigidbodyset_rbAdditionalSolverIterations(this.__wbg_ptr, I3) >>> 0;
   }
-  rbSetAdditionalSolverIterations(I2, g2) {
-    A.rawrigidbodyset_rbSetAdditionalSolverIterations(this.__wbg_ptr, I2, g2);
+  rbSetAdditionalSolverIterations(I3, g4) {
+    A.rawrigidbodyset_rbSetAdditionalSolverIterations(this.__wbg_ptr, I3, g4);
   }
-  rbUserData(I2) {
-    return A.rawrigidbodyset_rbUserData(this.__wbg_ptr, I2) >>> 0;
+  rbUserData(I3) {
+    return A.rawrigidbodyset_rbUserData(this.__wbg_ptr, I3) >>> 0;
   }
-  rbSetUserData(I2, g2) {
-    A.rawrigidbodyset_rbSetUserData(this.__wbg_ptr, I2, g2);
+  rbSetUserData(I3, g4) {
+    A.rawrigidbodyset_rbSetUserData(this.__wbg_ptr, I3, g4);
   }
-  rbUserForce(I2) {
-    const g2 = A.rawrigidbodyset_rbUserForce(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  rbUserForce(I3) {
+    const g4 = A.rawrigidbodyset_rbUserForce(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
-  rbUserTorque(I2) {
-    const g2 = A.rawrigidbodyset_rbUserTorque(this.__wbg_ptr, I2);
-    return xA.__wrap(g2);
+  rbUserTorque(I3) {
+    const g4 = A.rawrigidbodyset_rbUserTorque(this.__wbg_ptr, I3);
+    return xA.__wrap(g4);
   }
   constructor() {
-    const I2 = A.rawrigidbodyset_new();
-    return this.__wbg_ptr = I2 >>> 0, this;
+    const I3 = A.rawrigidbodyset_new();
+    return this.__wbg_ptr = I3 >>> 0, this;
   }
-  createRigidBody(I2, g2, C2, B2, Q2, E2, i2, D2, o2, S2, w2, G2, k2, J2, U2, h2, y2, N2, M2, F2, a2, s2, R2, c2, q2, Y2) {
-    K(g2, xA), K(C2, HA), K(i2, xA), K(D2, xA), K(o2, xA), K(S2, xA), K(w2, HA);
-    return A.rawrigidbodyset_createRigidBody(this.__wbg_ptr, I2, g2.__wbg_ptr, C2.__wbg_ptr, B2, Q2, E2, i2.__wbg_ptr, D2.__wbg_ptr, o2.__wbg_ptr, S2.__wbg_ptr, w2.__wbg_ptr, G2, k2, J2, U2, h2, y2, N2, M2, F2, a2, s2, R2, c2, q2, Y2);
+  createRigidBody(I3, g4, C4, B3, Q3, E2, i2, D2, o2, S2, w2, G2, k2, J2, U2, h2, y2, N2, M2, F2, a2, s2, R3, c2, q2, Y2) {
+    K(g4, xA), K(C4, HA), K(i2, xA), K(D2, xA), K(o2, xA), K(S2, xA), K(w2, HA);
+    return A.rawrigidbodyset_createRigidBody(this.__wbg_ptr, I3, g4.__wbg_ptr, C4.__wbg_ptr, B3, Q3, E2, i2.__wbg_ptr, D2.__wbg_ptr, o2.__wbg_ptr, S2.__wbg_ptr, w2.__wbg_ptr, G2, k2, J2, U2, h2, y2, N2, M2, F2, a2, s2, R3, c2, q2, Y2);
   }
-  remove(I2, g2, C2, B2, Q2) {
-    K(g2, EA), K(C2, d), K(B2, gA), K(Q2, SA), A.rawrigidbodyset_remove(this.__wbg_ptr, I2, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr);
+  remove(I3, g4, C4, B3, Q3) {
+    K(g4, EA), K(C4, d), K(B3, gA), K(Q3, SA), A.rawrigidbodyset_remove(this.__wbg_ptr, I3, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr);
   }
   len() {
     return A.rawcolliderset_len(this.__wbg_ptr) >>> 0;
   }
-  contains(I2) {
-    return 0 !== A.rawrigidbodyset_contains(this.__wbg_ptr, I2);
+  contains(I3) {
+    return 0 !== A.rawrigidbodyset_contains(this.__wbg_ptr, I3);
   }
-  forEachRigidBodyHandle(g2) {
+  forEachRigidBodyHandle(g4) {
     try {
-      A.rawrigidbodyset_forEachRigidBodyHandle(this.__wbg_ptr, y(g2));
+      A.rawrigidbodyset_forEachRigidBodyHandle(this.__wbg_ptr, y(g4));
     } finally {
       I[h++] = void 0;
     }
   }
-  propagateModifiedBodyPositionsToColliders(I2) {
-    K(I2, d), A.rawrigidbodyset_propagateModifiedBodyPositionsToColliders(this.__wbg_ptr, I2.__wbg_ptr);
+  propagateModifiedBodyPositionsToColliders(I3) {
+    K(I3, d), A.rawrigidbodyset_propagateModifiedBodyPositionsToColliders(this.__wbg_ptr, I3.__wbg_ptr);
   }
 };
 var LA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawrotation_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawrotation_free(I3 >>> 0));
 var HA = class _HA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_HA.prototype);
-    return I2.__wbg_ptr = A2, LA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_HA.prototype);
+    return I3.__wbg_ptr = A3, LA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, LA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, LA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawrotation_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawrotation_free(I3);
   }
-  constructor(I2, g2, C2, B2) {
-    const Q2 = A.rawrotation_new(I2, g2, C2, B2);
-    return this.__wbg_ptr = Q2 >>> 0, this;
+  constructor(I3, g4, C4, B3) {
+    const Q3 = A.rawrotation_new(I3, g4, C4, B3);
+    return this.__wbg_ptr = Q3 >>> 0, this;
   }
   static identity() {
-    const I2 = A.rawrotation_identity();
-    return _HA.__wrap(I2);
+    const I3 = A.rawrotation_identity();
+    return _HA.__wrap(I3);
   }
   get x() {
     return A.rawrotation_x(this.__wbg_ptr);
@@ -28147,20 +30288,20 @@ var HA = class _HA {
 };
 var tA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawsdpmatrix3_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawsdpmatrix3_free(I3 >>> 0));
 var pA = class _pA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_pA.prototype);
-    return I2.__wbg_ptr = A2, tA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_pA.prototype);
+    return I3.__wbg_ptr = A3, tA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, tA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, tA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawsdpmatrix3_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawsdpmatrix3_free(I3);
   }
   elements() {
     return Q(A.rawsdpmatrix3_elements(this.__wbg_ptr));
@@ -28168,435 +30309,435 @@ var pA = class _pA {
 };
 var eA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawserializationpipeline_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawserializationpipeline_free(I3 >>> 0));
 var rA = class {
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, eA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, eA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawserializationpipeline_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawserializationpipeline_free(I3);
   }
   constructor() {
-    const I2 = A.rawserializationpipeline_new();
-    return this.__wbg_ptr = I2 >>> 0, this;
+    const I3 = A.rawserializationpipeline_new();
+    return this.__wbg_ptr = I3 >>> 0, this;
   }
-  serializeAll(I2, g2, C2, B2, E2, i2, D2, o2, S2) {
-    K(I2, xA), K(g2, BA), K(C2, EA), K(B2, H), K(E2, GA), K(i2, lA), K(D2, d), K(o2, gA), K(S2, SA);
-    return Q(A.rawserializationpipeline_serializeAll(this.__wbg_ptr, I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, E2.__wbg_ptr, i2.__wbg_ptr, D2.__wbg_ptr, o2.__wbg_ptr, S2.__wbg_ptr));
+  serializeAll(I3, g4, C4, B3, E2, i2, D2, o2, S2) {
+    K(I3, xA), K(g4, BA), K(C4, EA), K(B3, H), K(E2, GA), K(i2, lA), K(D2, d), K(o2, gA), K(S2, SA);
+    return Q(A.rawserializationpipeline_serializeAll(this.__wbg_ptr, I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, E2.__wbg_ptr, i2.__wbg_ptr, D2.__wbg_ptr, o2.__wbg_ptr, S2.__wbg_ptr));
   }
-  deserializeAll(I2) {
-    const g2 = A.rawserializationpipeline_deserializeAll(this.__wbg_ptr, C(I2));
-    return 0 === g2 ? void 0 : P.__wrap(g2);
+  deserializeAll(I3) {
+    const g4 = A.rawserializationpipeline_deserializeAll(this.__wbg_ptr, C(I3));
+    return 0 === g4 ? void 0 : P.__wrap(g4);
   }
 };
 var nA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawshape_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawshape_free(I3 >>> 0));
 var dA = class _dA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_dA.prototype);
-    return I2.__wbg_ptr = A2, nA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_dA.prototype);
+    return I3.__wbg_ptr = A3, nA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, nA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, nA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawshape_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawshape_free(I3);
   }
-  static cuboid(I2, g2, C2) {
-    const B2 = A.rawshape_cuboid(I2, g2, C2);
-    return _dA.__wrap(B2);
+  static cuboid(I3, g4, C4) {
+    const B3 = A.rawshape_cuboid(I3, g4, C4);
+    return _dA.__wrap(B3);
   }
-  static roundCuboid(I2, g2, C2, B2) {
-    const Q2 = A.rawshape_roundCuboid(I2, g2, C2, B2);
-    return _dA.__wrap(Q2);
+  static roundCuboid(I3, g4, C4, B3) {
+    const Q3 = A.rawshape_roundCuboid(I3, g4, C4, B3);
+    return _dA.__wrap(Q3);
   }
-  static ball(I2) {
-    const g2 = A.rawshape_ball(I2);
-    return _dA.__wrap(g2);
+  static ball(I3) {
+    const g4 = A.rawshape_ball(I3);
+    return _dA.__wrap(g4);
   }
-  static halfspace(I2) {
-    K(I2, xA);
-    const g2 = A.rawshape_halfspace(I2.__wbg_ptr);
-    return _dA.__wrap(g2);
+  static halfspace(I3) {
+    K(I3, xA);
+    const g4 = A.rawshape_halfspace(I3.__wbg_ptr);
+    return _dA.__wrap(g4);
   }
-  static capsule(I2, g2) {
-    const C2 = A.rawshape_capsule(I2, g2);
-    return _dA.__wrap(C2);
+  static capsule(I3, g4) {
+    const C4 = A.rawshape_capsule(I3, g4);
+    return _dA.__wrap(C4);
   }
-  static cylinder(I2, g2) {
-    const C2 = A.rawshape_cylinder(I2, g2);
-    return _dA.__wrap(C2);
+  static cylinder(I3, g4) {
+    const C4 = A.rawshape_cylinder(I3, g4);
+    return _dA.__wrap(C4);
   }
-  static roundCylinder(I2, g2, C2) {
-    const B2 = A.rawshape_roundCylinder(I2, g2, C2);
-    return _dA.__wrap(B2);
+  static roundCylinder(I3, g4, C4) {
+    const B3 = A.rawshape_roundCylinder(I3, g4, C4);
+    return _dA.__wrap(B3);
   }
-  static cone(I2, g2) {
-    const C2 = A.rawshape_cone(I2, g2);
-    return _dA.__wrap(C2);
+  static cone(I3, g4) {
+    const C4 = A.rawshape_cone(I3, g4);
+    return _dA.__wrap(C4);
   }
-  static roundCone(I2, g2, C2) {
-    const B2 = A.rawshape_roundCone(I2, g2, C2);
-    return _dA.__wrap(B2);
+  static roundCone(I3, g4, C4) {
+    const B3 = A.rawshape_roundCone(I3, g4, C4);
+    return _dA.__wrap(B3);
   }
-  static polyline(I2, g2) {
-    const C2 = s(I2, A.__wbindgen_malloc), B2 = a, Q2 = R(g2, A.__wbindgen_malloc), E2 = a, i2 = A.rawshape_polyline(C2, B2, Q2, E2);
+  static polyline(I3, g4) {
+    const C4 = s(I3, A.__wbindgen_malloc), B3 = a, Q3 = R(g4, A.__wbindgen_malloc), E2 = a, i2 = A.rawshape_polyline(C4, B3, Q3, E2);
     return _dA.__wrap(i2);
   }
-  static trimesh(I2, g2, C2) {
-    const B2 = s(I2, A.__wbindgen_malloc), Q2 = a, E2 = R(g2, A.__wbindgen_malloc), i2 = a, D2 = A.rawshape_trimesh(B2, Q2, E2, i2, C2);
+  static trimesh(I3, g4, C4) {
+    const B3 = s(I3, A.__wbindgen_malloc), Q3 = a, E2 = R(g4, A.__wbindgen_malloc), i2 = a, D2 = A.rawshape_trimesh(B3, Q3, E2, i2, C4);
     return _dA.__wrap(D2);
   }
-  static heightfield(I2, g2, C2, B2, Q2) {
-    const E2 = s(C2, A.__wbindgen_malloc), i2 = a;
-    K(B2, xA);
-    const D2 = A.rawshape_heightfield(I2, g2, E2, i2, B2.__wbg_ptr, Q2);
+  static heightfield(I3, g4, C4, B3, Q3) {
+    const E2 = s(C4, A.__wbindgen_malloc), i2 = a;
+    K(B3, xA);
+    const D2 = A.rawshape_heightfield(I3, g4, E2, i2, B3.__wbg_ptr, Q3);
     return _dA.__wrap(D2);
   }
-  static segment(I2, g2) {
-    K(I2, xA), K(g2, xA);
-    const C2 = A.rawshape_segment(I2.__wbg_ptr, g2.__wbg_ptr);
-    return _dA.__wrap(C2);
+  static segment(I3, g4) {
+    K(I3, xA), K(g4, xA);
+    const C4 = A.rawshape_segment(I3.__wbg_ptr, g4.__wbg_ptr);
+    return _dA.__wrap(C4);
   }
-  static triangle(I2, g2, C2) {
-    K(I2, xA), K(g2, xA), K(C2, xA);
-    const B2 = A.rawshape_triangle(I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr);
-    return _dA.__wrap(B2);
+  static triangle(I3, g4, C4) {
+    K(I3, xA), K(g4, xA), K(C4, xA);
+    const B3 = A.rawshape_triangle(I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr);
+    return _dA.__wrap(B3);
   }
-  static roundTriangle(I2, g2, C2, B2) {
-    K(I2, xA), K(g2, xA), K(C2, xA);
-    const Q2 = A.rawshape_roundTriangle(I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2);
-    return _dA.__wrap(Q2);
+  static roundTriangle(I3, g4, C4, B3) {
+    K(I3, xA), K(g4, xA), K(C4, xA);
+    const Q3 = A.rawshape_roundTriangle(I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3);
+    return _dA.__wrap(Q3);
   }
-  static convexHull(I2) {
-    const g2 = s(I2, A.__wbindgen_malloc), C2 = a, B2 = A.rawshape_convexHull(g2, C2);
-    return 0 === B2 ? void 0 : _dA.__wrap(B2);
+  static convexHull(I3) {
+    const g4 = s(I3, A.__wbindgen_malloc), C4 = a, B3 = A.rawshape_convexHull(g4, C4);
+    return 0 === B3 ? void 0 : _dA.__wrap(B3);
   }
-  static roundConvexHull(I2, g2) {
-    const C2 = s(I2, A.__wbindgen_malloc), B2 = a, Q2 = A.rawshape_roundConvexHull(C2, B2, g2);
-    return 0 === Q2 ? void 0 : _dA.__wrap(Q2);
+  static roundConvexHull(I3, g4) {
+    const C4 = s(I3, A.__wbindgen_malloc), B3 = a, Q3 = A.rawshape_roundConvexHull(C4, B3, g4);
+    return 0 === Q3 ? void 0 : _dA.__wrap(Q3);
   }
-  static convexMesh(I2, g2) {
-    const C2 = s(I2, A.__wbindgen_malloc), B2 = a, Q2 = R(g2, A.__wbindgen_malloc), E2 = a, i2 = A.rawshape_convexMesh(C2, B2, Q2, E2);
+  static convexMesh(I3, g4) {
+    const C4 = s(I3, A.__wbindgen_malloc), B3 = a, Q3 = R(g4, A.__wbindgen_malloc), E2 = a, i2 = A.rawshape_convexMesh(C4, B3, Q3, E2);
     return 0 === i2 ? void 0 : _dA.__wrap(i2);
   }
-  static roundConvexMesh(I2, g2, C2) {
-    const B2 = s(I2, A.__wbindgen_malloc), Q2 = a, E2 = R(g2, A.__wbindgen_malloc), i2 = a, D2 = A.rawshape_roundConvexMesh(B2, Q2, E2, i2, C2);
+  static roundConvexMesh(I3, g4, C4) {
+    const B3 = s(I3, A.__wbindgen_malloc), Q3 = a, E2 = R(g4, A.__wbindgen_malloc), i2 = a, D2 = A.rawshape_roundConvexMesh(B3, Q3, E2, i2, C4);
     return 0 === D2 ? void 0 : _dA.__wrap(D2);
   }
-  castShape(I2, g2, C2, B2, Q2, E2, i2, D2, o2, S2) {
-    K(I2, xA), K(g2, HA), K(C2, xA), K(B2, _dA), K(Q2, xA), K(E2, HA), K(i2, xA);
-    const w2 = A.rawshape_castShape(this.__wbg_ptr, I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr, E2.__wbg_ptr, i2.__wbg_ptr, D2, o2, S2);
+  castShape(I3, g4, C4, B3, Q3, E2, i2, D2, o2, S2) {
+    K(I3, xA), K(g4, HA), K(C4, xA), K(B3, _dA), K(Q3, xA), K(E2, HA), K(i2, xA);
+    const w2 = A.rawshape_castShape(this.__wbg_ptr, I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr, E2.__wbg_ptr, i2.__wbg_ptr, D2, o2, S2);
     return 0 === w2 ? void 0 : OA.__wrap(w2);
   }
-  intersectsShape(I2, g2, C2, B2, Q2) {
-    K(I2, xA), K(g2, HA), K(C2, _dA), K(B2, xA), K(Q2, HA);
-    return 0 !== A.rawshape_intersectsShape(this.__wbg_ptr, I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr);
+  intersectsShape(I3, g4, C4, B3, Q3) {
+    K(I3, xA), K(g4, HA), K(C4, _dA), K(B3, xA), K(Q3, HA);
+    return 0 !== A.rawshape_intersectsShape(this.__wbg_ptr, I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr);
   }
-  contactShape(I2, g2, C2, B2, Q2, E2) {
-    K(I2, xA), K(g2, HA), K(C2, _dA), K(B2, xA), K(Q2, HA);
-    const i2 = A.rawshape_contactShape(this.__wbg_ptr, I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2.__wbg_ptr, E2);
+  contactShape(I3, g4, C4, B3, Q3, E2) {
+    K(I3, xA), K(g4, HA), K(C4, _dA), K(B3, xA), K(Q3, HA);
+    const i2 = A.rawshape_contactShape(this.__wbg_ptr, I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3.__wbg_ptr, E2);
     return 0 === i2 ? void 0 : bA.__wrap(i2);
   }
-  containsPoint(I2, g2, C2) {
-    K(I2, xA), K(g2, HA), K(C2, xA);
-    return 0 !== A.rawshape_containsPoint(this.__wbg_ptr, I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr);
+  containsPoint(I3, g4, C4) {
+    K(I3, xA), K(g4, HA), K(C4, xA);
+    return 0 !== A.rawshape_containsPoint(this.__wbg_ptr, I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr);
   }
-  projectPoint(I2, g2, C2, B2) {
-    K(I2, xA), K(g2, HA), K(C2, xA);
-    const Q2 = A.rawshape_projectPoint(this.__wbg_ptr, I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2);
-    return yA.__wrap(Q2);
+  projectPoint(I3, g4, C4, B3) {
+    K(I3, xA), K(g4, HA), K(C4, xA);
+    const Q3 = A.rawshape_projectPoint(this.__wbg_ptr, I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3);
+    return yA.__wrap(Q3);
   }
-  intersectsRay(I2, g2, C2, B2, Q2) {
-    K(I2, xA), K(g2, HA), K(C2, xA), K(B2, xA);
-    return 0 !== A.rawshape_intersectsRay(this.__wbg_ptr, I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2);
+  intersectsRay(I3, g4, C4, B3, Q3) {
+    K(I3, xA), K(g4, HA), K(C4, xA), K(B3, xA);
+    return 0 !== A.rawshape_intersectsRay(this.__wbg_ptr, I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3);
   }
-  castRay(I2, g2, C2, B2, Q2, E2) {
-    K(I2, xA), K(g2, HA), K(C2, xA), K(B2, xA);
-    return A.rawshape_castRay(this.__wbg_ptr, I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2, E2);
+  castRay(I3, g4, C4, B3, Q3, E2) {
+    K(I3, xA), K(g4, HA), K(C4, xA), K(B3, xA);
+    return A.rawshape_castRay(this.__wbg_ptr, I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3, E2);
   }
-  castRayAndGetNormal(I2, g2, C2, B2, Q2, E2) {
-    K(I2, xA), K(g2, HA), K(C2, xA), K(B2, xA);
-    const i2 = A.rawshape_castRayAndGetNormal(this.__wbg_ptr, I2.__wbg_ptr, g2.__wbg_ptr, C2.__wbg_ptr, B2.__wbg_ptr, Q2, E2);
+  castRayAndGetNormal(I3, g4, C4, B3, Q3, E2) {
+    K(I3, xA), K(g4, HA), K(C4, xA), K(B3, xA);
+    const i2 = A.rawshape_castRayAndGetNormal(this.__wbg_ptr, I3.__wbg_ptr, g4.__wbg_ptr, C4.__wbg_ptr, B3.__wbg_ptr, Q3, E2);
     return 0 === i2 ? void 0 : qA.__wrap(i2);
   }
 };
 var TA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawshapecasthit_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawshapecasthit_free(I3 >>> 0));
 var OA = class _OA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_OA.prototype);
-    return I2.__wbg_ptr = A2, TA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_OA.prototype);
+    return I3.__wbg_ptr = A3, TA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, TA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, TA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawshapecasthit_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawshapecasthit_free(I3);
   }
   time_of_impact() {
     return A.rawrotation_x(this.__wbg_ptr);
   }
   witness1() {
-    const I2 = A.rawshapecasthit_witness1(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawshapecasthit_witness1(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   witness2() {
-    const I2 = A.rawcontactforceevent_total_force(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcontactforceevent_total_force(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   normal1() {
-    const I2 = A.rawshapecasthit_normal1(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawshapecasthit_normal1(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   normal2() {
-    const I2 = A.rawshapecasthit_normal2(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawshapecasthit_normal2(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
 };
 var ZA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawshapecontact_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawshapecontact_free(I3 >>> 0));
 var bA = class _bA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_bA.prototype);
-    return I2.__wbg_ptr = A2, ZA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_bA.prototype);
+    return I3.__wbg_ptr = A3, ZA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, ZA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, ZA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawshapecontact_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawshapecontact_free(I3);
   }
   distance() {
     return A.rawkinematiccharactercontroller_maxSlopeClimbAngle(this.__wbg_ptr);
   }
   point1() {
-    const I2 = A.rawpointprojection_point(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawpointprojection_point(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   point2() {
-    const I2 = A.rawcollidershapecasthit_witness1(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcollidershapecasthit_witness1(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   normal1() {
-    const I2 = A.rawcollidershapecasthit_witness2(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcollidershapecasthit_witness2(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
   normal2() {
-    const I2 = A.rawcharactercollision_translationDeltaApplied(this.__wbg_ptr);
-    return xA.__wrap(I2);
+    const I3 = A.rawcharactercollision_translationDeltaApplied(this.__wbg_ptr);
+    return xA.__wrap(I3);
   }
 };
 var WA = "undefined" == typeof FinalizationRegistry ? { register: () => {
 }, unregister: () => {
-} } : new FinalizationRegistry((I2) => A.__wbg_rawvector_free(I2 >>> 0));
+} } : new FinalizationRegistry((I3) => A.__wbg_rawvector_free(I3 >>> 0));
 var xA = class _xA {
-  static __wrap(A2) {
-    A2 >>>= 0;
-    const I2 = Object.create(_xA.prototype);
-    return I2.__wbg_ptr = A2, WA.register(I2, I2.__wbg_ptr, I2), I2;
+  static __wrap(A3) {
+    A3 >>>= 0;
+    const I3 = Object.create(_xA.prototype);
+    return I3.__wbg_ptr = A3, WA.register(I3, I3.__wbg_ptr, I3), I3;
   }
   __destroy_into_raw() {
-    const A2 = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, WA.unregister(this), A2;
+    const A3 = this.__wbg_ptr;
+    return this.__wbg_ptr = 0, WA.unregister(this), A3;
   }
   free() {
-    const I2 = this.__destroy_into_raw();
-    A.__wbg_rawvector_free(I2);
+    const I3 = this.__destroy_into_raw();
+    A.__wbg_rawvector_free(I3);
   }
   static zero() {
-    const I2 = A.rawvector_zero();
-    return _xA.__wrap(I2);
+    const I3 = A.rawvector_zero();
+    return _xA.__wrap(I3);
   }
-  constructor(I2, g2, C2) {
-    const B2 = A.rawvector_new(I2, g2, C2);
-    return this.__wbg_ptr = B2 >>> 0, this;
+  constructor(I3, g4, C4) {
+    const B3 = A.rawvector_new(I3, g4, C4);
+    return this.__wbg_ptr = B3 >>> 0, this;
   }
   get x() {
     return A.rawrotation_x(this.__wbg_ptr);
   }
-  set x(I2) {
-    A.rawvector_set_x(this.__wbg_ptr, I2);
+  set x(I3) {
+    A.rawvector_set_x(this.__wbg_ptr, I3);
   }
   get y() {
     return A.rawintegrationparameters_dt(this.__wbg_ptr);
   }
-  set y(I2) {
-    A.rawintegrationparameters_set_dt(this.__wbg_ptr, I2);
+  set y(I3) {
+    A.rawintegrationparameters_set_dt(this.__wbg_ptr, I3);
   }
   get z() {
     return A.rawcollidershapecasthit_time_of_impact(this.__wbg_ptr);
   }
-  set z(I2) {
-    A.rawvector_set_z(this.__wbg_ptr, I2);
+  set z(I3) {
+    A.rawvector_set_z(this.__wbg_ptr, I3);
   }
   xyz() {
-    const I2 = A.rawvector_xyz(this.__wbg_ptr);
-    return _xA.__wrap(I2);
+    const I3 = A.rawvector_xyz(this.__wbg_ptr);
+    return _xA.__wrap(I3);
   }
   yxz() {
-    const I2 = A.rawvector_yxz(this.__wbg_ptr);
-    return _xA.__wrap(I2);
+    const I3 = A.rawvector_yxz(this.__wbg_ptr);
+    return _xA.__wrap(I3);
   }
   zxy() {
-    const I2 = A.rawvector_zxy(this.__wbg_ptr);
-    return _xA.__wrap(I2);
+    const I3 = A.rawvector_zxy(this.__wbg_ptr);
+    return _xA.__wrap(I3);
   }
   xzy() {
-    const I2 = A.rawvector_xzy(this.__wbg_ptr);
-    return _xA.__wrap(I2);
+    const I3 = A.rawvector_xzy(this.__wbg_ptr);
+    return _xA.__wrap(I3);
   }
   yzx() {
-    const I2 = A.rawvector_yzx(this.__wbg_ptr);
-    return _xA.__wrap(I2);
+    const I3 = A.rawvector_yzx(this.__wbg_ptr);
+    return _xA.__wrap(I3);
   }
   zyx() {
-    const I2 = A.rawvector_zyx(this.__wbg_ptr);
-    return _xA.__wrap(I2);
+    const I3 = A.rawvector_zyx(this.__wbg_ptr);
+    return _xA.__wrap(I3);
   }
 };
-async function mA(I2) {
+async function mA(I3) {
   if (void 0 !== A) return A;
-  void 0 === I2 && (I2 = new URL("rapier_wasm3d_bg.wasm", "<deleted>"));
-  const g2 = function() {
-    const I3 = { wbg: {} };
-    return I3.wbg.__wbindgen_number_new = function(A2) {
-      return C(A2);
-    }, I3.wbg.__wbindgen_boolean_get = function(A2) {
-      const I4 = B(A2);
-      return "boolean" == typeof I4 ? I4 ? 1 : 0 : 2;
-    }, I3.wbg.__wbindgen_object_drop_ref = function(A2) {
-      Q(A2);
-    }, I3.wbg.__wbindgen_number_get = function(A2, I4) {
-      const g3 = B(I4), C2 = "number" == typeof g3 ? g3 : void 0;
-      D()[A2 / 8 + 1] = E(C2) ? 0 : C2, S()[A2 / 4 + 0] = !E(C2);
-    }, I3.wbg.__wbindgen_is_function = function(A2) {
-      return "function" == typeof B(A2);
-    }, I3.wbg.__wbg_rawraycolliderintersection_new = function(A2) {
-      return C(RA.__wrap(A2));
-    }, I3.wbg.__wbg_rawcontactforceevent_new = function(A2) {
-      return C(b.__wrap(A2));
-    }, I3.wbg.__wbg_call_b3ca7c6051f9bec1 = function() {
-      return c(function(A2, I4, g3) {
-        return C(B(A2).call(B(I4), B(g3)));
+  void 0 === I3 && (I3 = new URL("rapier_wasm3d_bg.wasm", "<deleted>"));
+  const g4 = function() {
+    const I4 = { wbg: {} };
+    return I4.wbg.__wbindgen_number_new = function(A3) {
+      return C(A3);
+    }, I4.wbg.__wbindgen_boolean_get = function(A3) {
+      const I5 = B(A3);
+      return "boolean" == typeof I5 ? I5 ? 1 : 0 : 2;
+    }, I4.wbg.__wbindgen_object_drop_ref = function(A3) {
+      Q(A3);
+    }, I4.wbg.__wbindgen_number_get = function(A3, I5) {
+      const g5 = B(I5), C4 = "number" == typeof g5 ? g5 : void 0;
+      D()[A3 / 8 + 1] = E(C4) ? 0 : C4, S()[A3 / 4 + 0] = !E(C4);
+    }, I4.wbg.__wbindgen_is_function = function(A3) {
+      return "function" == typeof B(A3);
+    }, I4.wbg.__wbg_rawraycolliderintersection_new = function(A3) {
+      return C(RA.__wrap(A3));
+    }, I4.wbg.__wbg_rawcontactforceevent_new = function(A3) {
+      return C(b.__wrap(A3));
+    }, I4.wbg.__wbg_call_b3ca7c6051f9bec1 = function() {
+      return c(function(A3, I5, g5) {
+        return C(B(A3).call(B(I5), B(g5)));
       }, arguments);
-    }, I3.wbg.__wbg_call_8e7cb608789c2528 = function() {
-      return c(function(A2, I4, g3, Q2) {
-        return C(B(A2).call(B(I4), B(g3), B(Q2)));
+    }, I4.wbg.__wbg_call_8e7cb608789c2528 = function() {
+      return c(function(A3, I5, g5, Q3) {
+        return C(B(A3).call(B(I5), B(g5), B(Q3)));
       }, arguments);
-    }, I3.wbg.__wbg_call_938992c832f74314 = function() {
-      return c(function(A2, I4, g3, Q2, E2) {
-        return C(B(A2).call(B(I4), B(g3), B(Q2), B(E2)));
+    }, I4.wbg.__wbg_call_938992c832f74314 = function() {
+      return c(function(A3, I5, g5, Q3, E2) {
+        return C(B(A3).call(B(I5), B(g5), B(Q3), B(E2)));
       }, arguments);
-    }, I3.wbg.__wbg_bind_4d857b598695205e = function(A2, I4, g3, Q2) {
-      return C(B(A2).bind(B(I4), B(g3), B(Q2)));
-    }, I3.wbg.__wbg_buffer_12d079cc21e14bdb = function(A2) {
-      return C(B(A2).buffer);
-    }, I3.wbg.__wbg_newwithbyteoffsetandlength_aa4a17c33a06e5cb = function(A2, I4, g3) {
-      return C(new Uint8Array(B(A2), I4 >>> 0, g3 >>> 0));
-    }, I3.wbg.__wbg_new_63b92bc8671ed464 = function(A2) {
-      return C(new Uint8Array(B(A2)));
-    }, I3.wbg.__wbg_set_a47bac70306a19a7 = function(A2, I4, g3) {
-      B(A2).set(B(I4), g3 >>> 0);
-    }, I3.wbg.__wbg_length_c20a40f15020d68a = function(A2) {
-      return B(A2).length;
-    }, I3.wbg.__wbg_newwithbyteoffsetandlength_4a659d079a1650e0 = function(A2, I4, g3) {
-      return C(new Float32Array(B(A2), I4 >>> 0, g3 >>> 0));
-    }, I3.wbg.__wbg_set_bd975934d1b1fddb = function(A2, I4, g3) {
-      B(A2).set(B(I4), g3 >>> 0);
-    }, I3.wbg.__wbg_length_d25bbcbc3367f684 = function(A2) {
-      return B(A2).length;
-    }, I3.wbg.__wbg_newwithlength_1e8b839a06de01c5 = function(A2) {
-      return C(new Float32Array(A2 >>> 0));
-    }, I3.wbg.__wbindgen_throw = function(A2, I4) {
-      throw new Error(k(A2, I4));
-    }, I3.wbg.__wbindgen_memory = function() {
+    }, I4.wbg.__wbg_bind_4d857b598695205e = function(A3, I5, g5, Q3) {
+      return C(B(A3).bind(B(I5), B(g5), B(Q3)));
+    }, I4.wbg.__wbg_buffer_12d079cc21e14bdb = function(A3) {
+      return C(B(A3).buffer);
+    }, I4.wbg.__wbg_newwithbyteoffsetandlength_aa4a17c33a06e5cb = function(A3, I5, g5) {
+      return C(new Uint8Array(B(A3), I5 >>> 0, g5 >>> 0));
+    }, I4.wbg.__wbg_new_63b92bc8671ed464 = function(A3) {
+      return C(new Uint8Array(B(A3)));
+    }, I4.wbg.__wbg_set_a47bac70306a19a7 = function(A3, I5, g5) {
+      B(A3).set(B(I5), g5 >>> 0);
+    }, I4.wbg.__wbg_length_c20a40f15020d68a = function(A3) {
+      return B(A3).length;
+    }, I4.wbg.__wbg_newwithbyteoffsetandlength_4a659d079a1650e0 = function(A3, I5, g5) {
+      return C(new Float32Array(B(A3), I5 >>> 0, g5 >>> 0));
+    }, I4.wbg.__wbg_set_bd975934d1b1fddb = function(A3, I5, g5) {
+      B(A3).set(B(I5), g5 >>> 0);
+    }, I4.wbg.__wbg_length_d25bbcbc3367f684 = function(A3) {
+      return B(A3).length;
+    }, I4.wbg.__wbg_newwithlength_1e8b839a06de01c5 = function(A3) {
+      return C(new Float32Array(A3 >>> 0));
+    }, I4.wbg.__wbindgen_throw = function(A3, I5) {
+      throw new Error(k(A3, I5));
+    }, I4.wbg.__wbindgen_memory = function() {
       return C(A.memory);
-    }, I3;
+    }, I4;
   }();
-  ("string" == typeof I2 || "function" == typeof Request && I2 instanceof Request || "function" == typeof URL && I2 instanceof URL) && (I2 = fetch(I2));
-  const { instance: w2, module: K2 } = await async function(A2, I3) {
-    if ("function" == typeof Response && A2 instanceof Response) {
+  ("string" == typeof I3 || "function" == typeof Request && I3 instanceof Request || "function" == typeof URL && I3 instanceof URL) && (I3 = fetch(I3));
+  const { instance: w2, module: K2 } = await async function(A3, I4) {
+    if ("function" == typeof Response && A3 instanceof Response) {
       if ("function" == typeof WebAssembly.instantiateStreaming) try {
-        return await WebAssembly.instantiateStreaming(A2, I3);
-      } catch (I4) {
-        if ("application/wasm" == A2.headers.get("Content-Type")) throw I4;
-        console.warn("`WebAssembly.instantiateStreaming` failed because your server does not serve wasm with `application/wasm` MIME type. Falling back to `WebAssembly.instantiate` which is slower. Original error:\n", I4);
+        return await WebAssembly.instantiateStreaming(A3, I4);
+      } catch (I5) {
+        if ("application/wasm" == A3.headers.get("Content-Type")) throw I5;
+        console.warn("`WebAssembly.instantiateStreaming` failed because your server does not serve wasm with `application/wasm` MIME type. Falling back to `WebAssembly.instantiate` which is slower. Original error:\n", I5);
       }
-      const g3 = await A2.arrayBuffer();
-      return await WebAssembly.instantiate(g3, I3);
+      const g5 = await A3.arrayBuffer();
+      return await WebAssembly.instantiate(g5, I4);
     }
     {
-      const g3 = await WebAssembly.instantiate(A2, I3);
-      return g3 instanceof WebAssembly.Instance ? { instance: g3, module: A2 } : g3;
+      const g5 = await WebAssembly.instantiate(A3, I4);
+      return g5 instanceof WebAssembly.Instance ? { instance: g5, module: A3 } : g5;
     }
-  }(await I2, g2);
-  return function(I3, g3) {
-    return A = I3.exports, mA.__wbindgen_wasm_module = g3, J = null, i = null, o = null, M = null, G = null, A;
+  }(await I3, g4);
+  return function(I4, g5) {
+    return A = I4.exports, mA.__wbindgen_wasm_module = g5, J = null, i = null, o = null, M = null, G = null, A;
   }(w2, K2);
 }
 var jA = class {
-  constructor(A2, I2, g2) {
-    this.x = A2, this.y = I2, this.z = g2;
+  constructor(A3, I3, g4) {
+    this.x = A3, this.y = I3, this.z = g4;
   }
 };
 var fA = class _fA {
-  static new(A2, I2, g2) {
-    return new jA(A2, I2, g2);
+  static new(A3, I3, g4) {
+    return new jA(A3, I3, g4);
   }
-  static intoRaw(A2) {
-    return new xA(A2.x, A2.y, A2.z);
+  static intoRaw(A3) {
+    return new xA(A3.x, A3.y, A3.z);
   }
   static zeros() {
     return _fA.new(0, 0, 0);
   }
-  static fromRaw(A2) {
-    if (!A2) return null;
-    let I2 = _fA.new(A2.x, A2.y, A2.z);
-    return A2.free(), I2;
+  static fromRaw(A3) {
+    if (!A3) return null;
+    let I3 = _fA.new(A3.x, A3.y, A3.z);
+    return A3.free(), I3;
   }
-  static copy(A2, I2) {
-    A2.x = I2.x, A2.y = I2.y, A2.z = I2.z;
+  static copy(A3, I3) {
+    A3.x = I3.x, A3.y = I3.y, A3.z = I3.z;
   }
 };
 var VA = class {
-  constructor(A2, I2, g2, C2) {
-    this.x = A2, this.y = I2, this.z = g2, this.w = C2;
+  constructor(A3, I3, g4, C4) {
+    this.x = A3, this.y = I3, this.z = g4, this.w = C4;
   }
 };
 var XA = class {
   static identity() {
     return new VA(0, 0, 0, 1);
   }
-  static fromRaw(A2) {
-    if (!A2) return null;
-    let I2 = new VA(A2.x, A2.y, A2.z, A2.w);
-    return A2.free(), I2;
+  static fromRaw(A3) {
+    if (!A3) return null;
+    let I3 = new VA(A3.x, A3.y, A3.z, A3.w);
+    return A3.free(), I3;
   }
-  static intoRaw(A2) {
-    return new HA(A2.x, A2.y, A2.z, A2.w);
+  static intoRaw(A3) {
+    return new HA(A3.x, A3.y, A3.z, A3.w);
   }
-  static copy(A2, I2) {
-    A2.x = I2.x, A2.y = I2.y, A2.z = I2.z, A2.w = I2.w;
+  static copy(A3, I3) {
+    A3.x = I3.x, A3.y = I3.y, A3.z = I3.z, A3.w = I3.w;
   }
 };
 var PA = class {
-  constructor(A2) {
-    this.elements = A2;
+  constructor(A3) {
+    this.elements = A3;
   }
   get m11() {
     return this.elements[0];
@@ -28627,9 +30768,9 @@ var PA = class {
   }
 };
 var uA = class {
-  static fromRaw(A2) {
-    const I2 = new PA(A2.elements());
-    return A2.free(), I2;
+  static fromRaw(A3) {
+    const I3 = new PA(A3.elements());
+    return A3.free(), I3;
   }
 };
 var vA;
@@ -28647,99 +30788,99 @@ var iI;
 var DI;
 var oI;
 var SI;
-!function(A2) {
-  A2[A2.Dynamic = 0] = "Dynamic", A2[A2.Fixed = 1] = "Fixed", A2[A2.KinematicPositionBased = 2] = "KinematicPositionBased", A2[A2.KinematicVelocityBased = 3] = "KinematicVelocityBased";
+!function(A3) {
+  A3[A3.Dynamic = 0] = "Dynamic", A3[A3.Fixed = 1] = "Fixed", A3[A3.KinematicPositionBased = 2] = "KinematicPositionBased", A3[A3.KinematicVelocityBased = 3] = "KinematicVelocityBased";
 }(vA || (vA = {}));
 var wI = class {
-  constructor(A2, I2, g2) {
-    this.rawSet = A2, this.colliderSet = I2, this.handle = g2;
+  constructor(A3, I3, g4) {
+    this.rawSet = A3, this.colliderSet = I3, this.handle = g4;
   }
-  finalizeDeserialization(A2) {
-    this.colliderSet = A2;
+  finalizeDeserialization(A3) {
+    this.colliderSet = A3;
   }
   isValid() {
     return this.rawSet.contains(this.handle);
   }
-  lockTranslations(A2, I2) {
-    return this.rawSet.rbLockTranslations(this.handle, A2, I2);
+  lockTranslations(A3, I3) {
+    return this.rawSet.rbLockTranslations(this.handle, A3, I3);
   }
-  lockRotations(A2, I2) {
-    return this.rawSet.rbLockRotations(this.handle, A2, I2);
+  lockRotations(A3, I3) {
+    return this.rawSet.rbLockRotations(this.handle, A3, I3);
   }
-  setEnabledTranslations(A2, I2, g2, C2) {
-    return this.rawSet.rbSetEnabledTranslations(this.handle, A2, I2, g2, C2);
+  setEnabledTranslations(A3, I3, g4, C4) {
+    return this.rawSet.rbSetEnabledTranslations(this.handle, A3, I3, g4, C4);
   }
-  restrictTranslations(A2, I2, g2, C2) {
-    this.setEnabledTranslations(A2, I2, g2, C2);
+  restrictTranslations(A3, I3, g4, C4) {
+    this.setEnabledTranslations(A3, I3, g4, C4);
   }
-  setEnabledRotations(A2, I2, g2, C2) {
-    return this.rawSet.rbSetEnabledRotations(this.handle, A2, I2, g2, C2);
+  setEnabledRotations(A3, I3, g4, C4) {
+    return this.rawSet.rbSetEnabledRotations(this.handle, A3, I3, g4, C4);
   }
-  restrictRotations(A2, I2, g2, C2) {
-    this.setEnabledRotations(A2, I2, g2, C2);
+  restrictRotations(A3, I3, g4, C4) {
+    this.setEnabledRotations(A3, I3, g4, C4);
   }
   dominanceGroup() {
     return this.rawSet.rbDominanceGroup(this.handle);
   }
-  setDominanceGroup(A2) {
-    this.rawSet.rbSetDominanceGroup(this.handle, A2);
+  setDominanceGroup(A3) {
+    this.rawSet.rbSetDominanceGroup(this.handle, A3);
   }
   additionalSolverIterations() {
     return this.rawSet.rbAdditionalSolverIterations(this.handle);
   }
-  setAdditionalSolverIterations(A2) {
-    this.rawSet.rbSetAdditionalSolverIterations(this.handle, A2);
+  setAdditionalSolverIterations(A3) {
+    this.rawSet.rbSetAdditionalSolverIterations(this.handle, A3);
   }
-  enableCcd(A2) {
-    this.rawSet.rbEnableCcd(this.handle, A2);
+  enableCcd(A3) {
+    this.rawSet.rbEnableCcd(this.handle, A3);
   }
-  setSoftCcdPrediction(A2) {
-    this.rawSet.rbSetSoftCcdPrediction(this.handle, A2);
+  setSoftCcdPrediction(A3) {
+    this.rawSet.rbSetSoftCcdPrediction(this.handle, A3);
   }
   softCcdPrediction() {
     return this.rawSet.rbSoftCcdPrediction(this.handle);
   }
   translation() {
-    let A2 = this.rawSet.rbTranslation(this.handle);
-    return fA.fromRaw(A2);
+    let A3 = this.rawSet.rbTranslation(this.handle);
+    return fA.fromRaw(A3);
   }
   rotation() {
-    let A2 = this.rawSet.rbRotation(this.handle);
-    return XA.fromRaw(A2);
+    let A3 = this.rawSet.rbRotation(this.handle);
+    return XA.fromRaw(A3);
   }
   nextTranslation() {
-    let A2 = this.rawSet.rbNextTranslation(this.handle);
-    return fA.fromRaw(A2);
+    let A3 = this.rawSet.rbNextTranslation(this.handle);
+    return fA.fromRaw(A3);
   }
   nextRotation() {
-    let A2 = this.rawSet.rbNextRotation(this.handle);
-    return XA.fromRaw(A2);
+    let A3 = this.rawSet.rbNextRotation(this.handle);
+    return XA.fromRaw(A3);
   }
-  setTranslation(A2, I2) {
-    this.rawSet.rbSetTranslation(this.handle, A2.x, A2.y, A2.z, I2);
+  setTranslation(A3, I3) {
+    this.rawSet.rbSetTranslation(this.handle, A3.x, A3.y, A3.z, I3);
   }
-  setLinvel(A2, I2) {
-    let g2 = fA.intoRaw(A2);
-    this.rawSet.rbSetLinvel(this.handle, g2, I2), g2.free();
+  setLinvel(A3, I3) {
+    let g4 = fA.intoRaw(A3);
+    this.rawSet.rbSetLinvel(this.handle, g4, I3), g4.free();
   }
   gravityScale() {
     return this.rawSet.rbGravityScale(this.handle);
   }
-  setGravityScale(A2, I2) {
-    this.rawSet.rbSetGravityScale(this.handle, A2, I2);
+  setGravityScale(A3, I3) {
+    this.rawSet.rbSetGravityScale(this.handle, A3, I3);
   }
-  setRotation(A2, I2) {
-    this.rawSet.rbSetRotation(this.handle, A2.x, A2.y, A2.z, A2.w, I2);
+  setRotation(A3, I3) {
+    this.rawSet.rbSetRotation(this.handle, A3.x, A3.y, A3.z, A3.w, I3);
   }
-  setAngvel(A2, I2) {
-    let g2 = fA.intoRaw(A2);
-    this.rawSet.rbSetAngvel(this.handle, g2, I2), g2.free();
+  setAngvel(A3, I3) {
+    let g4 = fA.intoRaw(A3);
+    this.rawSet.rbSetAngvel(this.handle, g4, I3), g4.free();
   }
-  setNextKinematicTranslation(A2) {
-    this.rawSet.rbSetNextKinematicTranslation(this.handle, A2.x, A2.y, A2.z);
+  setNextKinematicTranslation(A3) {
+    this.rawSet.rbSetNextKinematicTranslation(this.handle, A3.x, A3.y, A3.z);
   }
-  setNextKinematicRotation(A2) {
-    this.rawSet.rbSetNextKinematicRotation(this.handle, A2.x, A2.y, A2.z, A2.w);
+  setNextKinematicRotation(A3) {
+    this.rawSet.rbSetNextKinematicRotation(this.handle, A3.x, A3.y, A3.z, A3.w);
   }
   linvel() {
     return fA.fromRaw(this.rawSet.rbLinvel(this.handle));
@@ -28789,11 +30930,11 @@ var wI = class {
   numColliders() {
     return this.rawSet.rbNumColliders(this.handle);
   }
-  collider(A2) {
-    return this.colliderSet.get(this.rawSet.rbCollider(this.handle, A2));
+  collider(A3) {
+    return this.colliderSet.get(this.rawSet.rbCollider(this.handle, A3));
   }
-  setEnabled(A2) {
-    this.rawSet.rbSetEnabled(this.handle, A2);
+  setEnabled(A3) {
+    this.rawSet.rbSetEnabled(this.handle, A3);
   }
   isEnabled() {
     return this.rawSet.rbIsEnabled(this.handle);
@@ -28801,8 +30942,8 @@ var wI = class {
   bodyType() {
     return this.rawSet.rbBodyType(this.handle);
   }
-  setBodyType(A2, I2) {
-    return this.rawSet.rbSetBodyType(this.handle, A2, I2);
+  setBodyType(A3, I3) {
+    return this.rawSet.rbSetBodyType(this.handle, A3, I3);
   }
   isSleeping() {
     return this.rawSet.rbIsSleeping(this.handle);
@@ -28825,51 +30966,51 @@ var wI = class {
   angularDamping() {
     return this.rawSet.rbAngularDamping(this.handle);
   }
-  setLinearDamping(A2) {
-    this.rawSet.rbSetLinearDamping(this.handle, A2);
+  setLinearDamping(A3) {
+    this.rawSet.rbSetLinearDamping(this.handle, A3);
   }
   recomputeMassPropertiesFromColliders() {
     this.rawSet.rbRecomputeMassPropertiesFromColliders(this.handle, this.colliderSet.raw);
   }
-  setAdditionalMass(A2, I2) {
-    this.rawSet.rbSetAdditionalMass(this.handle, A2, I2);
+  setAdditionalMass(A3, I3) {
+    this.rawSet.rbSetAdditionalMass(this.handle, A3, I3);
   }
-  setAdditionalMassProperties(A2, I2, g2, C2, B2) {
-    let Q2 = fA.intoRaw(I2), E2 = fA.intoRaw(g2), i2 = XA.intoRaw(C2);
-    this.rawSet.rbSetAdditionalMassProperties(this.handle, A2, Q2, E2, i2, B2), Q2.free(), E2.free(), i2.free();
+  setAdditionalMassProperties(A3, I3, g4, C4, B3) {
+    let Q3 = fA.intoRaw(I3), E2 = fA.intoRaw(g4), i2 = XA.intoRaw(C4);
+    this.rawSet.rbSetAdditionalMassProperties(this.handle, A3, Q3, E2, i2, B3), Q3.free(), E2.free(), i2.free();
   }
-  setAngularDamping(A2) {
-    this.rawSet.rbSetAngularDamping(this.handle, A2);
+  setAngularDamping(A3) {
+    this.rawSet.rbSetAngularDamping(this.handle, A3);
   }
-  resetForces(A2) {
-    this.rawSet.rbResetForces(this.handle, A2);
+  resetForces(A3) {
+    this.rawSet.rbResetForces(this.handle, A3);
   }
-  resetTorques(A2) {
-    this.rawSet.rbResetTorques(this.handle, A2);
+  resetTorques(A3) {
+    this.rawSet.rbResetTorques(this.handle, A3);
   }
-  addForce(A2, I2) {
-    const g2 = fA.intoRaw(A2);
-    this.rawSet.rbAddForce(this.handle, g2, I2), g2.free();
+  addForce(A3, I3) {
+    const g4 = fA.intoRaw(A3);
+    this.rawSet.rbAddForce(this.handle, g4, I3), g4.free();
   }
-  applyImpulse(A2, I2) {
-    const g2 = fA.intoRaw(A2);
-    this.rawSet.rbApplyImpulse(this.handle, g2, I2), g2.free();
+  applyImpulse(A3, I3) {
+    const g4 = fA.intoRaw(A3);
+    this.rawSet.rbApplyImpulse(this.handle, g4, I3), g4.free();
   }
-  addTorque(A2, I2) {
-    const g2 = fA.intoRaw(A2);
-    this.rawSet.rbAddTorque(this.handle, g2, I2), g2.free();
+  addTorque(A3, I3) {
+    const g4 = fA.intoRaw(A3);
+    this.rawSet.rbAddTorque(this.handle, g4, I3), g4.free();
   }
-  applyTorqueImpulse(A2, I2) {
-    const g2 = fA.intoRaw(A2);
-    this.rawSet.rbApplyTorqueImpulse(this.handle, g2, I2), g2.free();
+  applyTorqueImpulse(A3, I3) {
+    const g4 = fA.intoRaw(A3);
+    this.rawSet.rbApplyTorqueImpulse(this.handle, g4, I3), g4.free();
   }
-  addForceAtPoint(A2, I2, g2) {
-    const C2 = fA.intoRaw(A2), B2 = fA.intoRaw(I2);
-    this.rawSet.rbAddForceAtPoint(this.handle, C2, B2, g2), C2.free(), B2.free();
+  addForceAtPoint(A3, I3, g4) {
+    const C4 = fA.intoRaw(A3), B3 = fA.intoRaw(I3);
+    this.rawSet.rbAddForceAtPoint(this.handle, C4, B3, g4), C4.free(), B3.free();
   }
-  applyImpulseAtPoint(A2, I2, g2) {
-    const C2 = fA.intoRaw(A2), B2 = fA.intoRaw(I2);
-    this.rawSet.rbApplyImpulseAtPoint(this.handle, C2, B2, g2), C2.free(), B2.free();
+  applyImpulseAtPoint(A3, I3, g4) {
+    const C4 = fA.intoRaw(A3), B3 = fA.intoRaw(I3);
+    this.rawSet.rbApplyImpulseAtPoint(this.handle, C4, B3, g4), C4.free(), B3.free();
   }
   userForce() {
     return fA.fromRaw(this.rawSet.rbUserForce(this.handle));
@@ -28879,8 +31020,8 @@ var wI = class {
   }
 };
 var GI = class _GI {
-  constructor(A2) {
-    this.enabled = true, this.status = A2, this.translation = fA.zeros(), this.rotation = XA.identity(), this.gravityScale = 1, this.linvel = fA.zeros(), this.mass = 0, this.massOnly = false, this.centerOfMass = fA.zeros(), this.translationsEnabledX = true, this.translationsEnabledY = true, this.angvel = fA.zeros(), this.principalAngularInertia = fA.zeros(), this.angularInertiaLocalFrame = XA.identity(), this.translationsEnabledZ = true, this.rotationsEnabledX = true, this.rotationsEnabledY = true, this.rotationsEnabledZ = true, this.linearDamping = 0, this.angularDamping = 0, this.canSleep = true, this.sleeping = false, this.ccdEnabled = false, this.softCcdPrediction = 0, this.dominanceGroup = 0, this.additionalSolverIterations = 0;
+  constructor(A3) {
+    this.enabled = true, this.status = A3, this.translation = fA.zeros(), this.rotation = XA.identity(), this.gravityScale = 1, this.linvel = fA.zeros(), this.mass = 0, this.massOnly = false, this.centerOfMass = fA.zeros(), this.translationsEnabledX = true, this.translationsEnabledY = true, this.angvel = fA.zeros(), this.principalAngularInertia = fA.zeros(), this.angularInertiaLocalFrame = XA.identity(), this.translationsEnabledZ = true, this.rotationsEnabledX = true, this.rotationsEnabledY = true, this.rotationsEnabledZ = true, this.linearDamping = 0, this.angularDamping = 0, this.canSleep = true, this.sleeping = false, this.ccdEnabled = false, this.softCcdPrediction = 0, this.dominanceGroup = 0, this.additionalSolverIterations = 0;
   }
   static dynamic() {
     return new _GI(vA.Dynamic);
@@ -28906,148 +31047,148 @@ var GI = class _GI {
   static newStatic() {
     return new _GI(vA.Fixed);
   }
-  setDominanceGroup(A2) {
-    return this.dominanceGroup = A2, this;
+  setDominanceGroup(A3) {
+    return this.dominanceGroup = A3, this;
   }
-  setAdditionalSolverIterations(A2) {
-    return this.additionalSolverIterations = A2, this;
+  setAdditionalSolverIterations(A3) {
+    return this.additionalSolverIterations = A3, this;
   }
-  setEnabled(A2) {
-    return this.enabled = A2, this;
+  setEnabled(A3) {
+    return this.enabled = A3, this;
   }
-  setTranslation(A2, I2, g2) {
-    if ("number" != typeof A2 || "number" != typeof I2 || "number" != typeof g2) throw TypeError("The translation components must be numbers.");
-    return this.translation = { x: A2, y: I2, z: g2 }, this;
+  setTranslation(A3, I3, g4) {
+    if ("number" != typeof A3 || "number" != typeof I3 || "number" != typeof g4) throw TypeError("The translation components must be numbers.");
+    return this.translation = { x: A3, y: I3, z: g4 }, this;
   }
-  setRotation(A2) {
-    return XA.copy(this.rotation, A2), this;
+  setRotation(A3) {
+    return XA.copy(this.rotation, A3), this;
   }
-  setGravityScale(A2) {
-    return this.gravityScale = A2, this;
+  setGravityScale(A3) {
+    return this.gravityScale = A3, this;
   }
-  setAdditionalMass(A2) {
-    return this.mass = A2, this.massOnly = true, this;
+  setAdditionalMass(A3) {
+    return this.mass = A3, this.massOnly = true, this;
   }
-  setLinvel(A2, I2, g2) {
-    if ("number" != typeof A2 || "number" != typeof I2 || "number" != typeof g2) throw TypeError("The linvel components must be numbers.");
-    return this.linvel = { x: A2, y: I2, z: g2 }, this;
+  setLinvel(A3, I3, g4) {
+    if ("number" != typeof A3 || "number" != typeof I3 || "number" != typeof g4) throw TypeError("The linvel components must be numbers.");
+    return this.linvel = { x: A3, y: I3, z: g4 }, this;
   }
-  setAngvel(A2) {
-    return fA.copy(this.angvel, A2), this;
+  setAngvel(A3) {
+    return fA.copy(this.angvel, A3), this;
   }
-  setAdditionalMassProperties(A2, I2, g2, C2) {
-    return this.mass = A2, fA.copy(this.centerOfMass, I2), fA.copy(this.principalAngularInertia, g2), XA.copy(this.angularInertiaLocalFrame, C2), this.massOnly = false, this;
+  setAdditionalMassProperties(A3, I3, g4, C4) {
+    return this.mass = A3, fA.copy(this.centerOfMass, I3), fA.copy(this.principalAngularInertia, g4), XA.copy(this.angularInertiaLocalFrame, C4), this.massOnly = false, this;
   }
-  enabledTranslations(A2, I2, g2) {
-    return this.translationsEnabledX = A2, this.translationsEnabledY = I2, this.translationsEnabledZ = g2, this;
+  enabledTranslations(A3, I3, g4) {
+    return this.translationsEnabledX = A3, this.translationsEnabledY = I3, this.translationsEnabledZ = g4, this;
   }
-  restrictTranslations(A2, I2, g2) {
-    return this.enabledTranslations(A2, I2, g2);
+  restrictTranslations(A3, I3, g4) {
+    return this.enabledTranslations(A3, I3, g4);
   }
   lockTranslations() {
     return this.enabledTranslations(false, false, false);
   }
-  enabledRotations(A2, I2, g2) {
-    return this.rotationsEnabledX = A2, this.rotationsEnabledY = I2, this.rotationsEnabledZ = g2, this;
+  enabledRotations(A3, I3, g4) {
+    return this.rotationsEnabledX = A3, this.rotationsEnabledY = I3, this.rotationsEnabledZ = g4, this;
   }
-  restrictRotations(A2, I2, g2) {
-    return this.enabledRotations(A2, I2, g2);
+  restrictRotations(A3, I3, g4) {
+    return this.enabledRotations(A3, I3, g4);
   }
   lockRotations() {
     return this.restrictRotations(false, false, false);
   }
-  setLinearDamping(A2) {
-    return this.linearDamping = A2, this;
+  setLinearDamping(A3) {
+    return this.linearDamping = A3, this;
   }
-  setAngularDamping(A2) {
-    return this.angularDamping = A2, this;
+  setAngularDamping(A3) {
+    return this.angularDamping = A3, this;
   }
-  setCanSleep(A2) {
-    return this.canSleep = A2, this;
+  setCanSleep(A3) {
+    return this.canSleep = A3, this;
   }
-  setSleeping(A2) {
-    return this.sleeping = A2, this;
+  setSleeping(A3) {
+    return this.sleeping = A3, this;
   }
-  setCcdEnabled(A2) {
-    return this.ccdEnabled = A2, this;
+  setCcdEnabled(A3) {
+    return this.ccdEnabled = A3, this;
   }
-  setSoftCcdPrediction(A2) {
-    return this.softCcdPrediction = A2, this;
+  setSoftCcdPrediction(A3) {
+    return this.softCcdPrediction = A3, this;
   }
-  setUserData(A2) {
-    return this.userData = A2, this;
+  setUserData(A3) {
+    return this.userData = A3, this;
   }
 };
 var kI = class {
   constructor() {
     this.fconv = new Float64Array(1), this.uconv = new Uint32Array(this.fconv.buffer), this.data = new Array(), this.size = 0;
   }
-  set(A2, I2) {
-    let g2 = this.index(A2);
-    for (; this.data.length <= g2; ) this.data.push(null);
-    null == this.data[g2] && (this.size += 1), this.data[g2] = I2;
+  set(A3, I3) {
+    let g4 = this.index(A3);
+    for (; this.data.length <= g4; ) this.data.push(null);
+    null == this.data[g4] && (this.size += 1), this.data[g4] = I3;
   }
   len() {
     return this.size;
   }
-  delete(A2) {
-    let I2 = this.index(A2);
-    I2 < this.data.length && (null != this.data[I2] && (this.size -= 1), this.data[I2] = null);
+  delete(A3) {
+    let I3 = this.index(A3);
+    I3 < this.data.length && (null != this.data[I3] && (this.size -= 1), this.data[I3] = null);
   }
   clear() {
     this.data = new Array();
   }
-  get(A2) {
-    let I2 = this.index(A2);
-    return I2 < this.data.length ? this.data[I2] : null;
+  get(A3) {
+    let I3 = this.index(A3);
+    return I3 < this.data.length ? this.data[I3] : null;
   }
-  forEach(A2) {
-    for (const I2 of this.data) null != I2 && A2(I2);
+  forEach(A3) {
+    for (const I3 of this.data) null != I3 && A3(I3);
   }
   getAll() {
-    return this.data.filter((A2) => null != A2);
+    return this.data.filter((A3) => null != A3);
   }
-  index(A2) {
-    return this.fconv[0] = A2, this.uconv[0];
+  index(A3) {
+    return this.fconv[0] = A3, this.uconv[0];
   }
 };
 var KI = class {
-  constructor(A2) {
-    this.raw = A2 || new lA(), this.map = new kI(), A2 && A2.forEachRigidBodyHandle((I2) => {
-      this.map.set(I2, new wI(A2, null, I2));
+  constructor(A3) {
+    this.raw = A3 || new lA(), this.map = new kI(), A3 && A3.forEachRigidBodyHandle((I3) => {
+      this.map.set(I3, new wI(A3, null, I3));
     });
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0, this.map && this.map.clear(), this.map = void 0;
   }
-  finalizeDeserialization(A2) {
-    this.map.forEach((I2) => I2.finalizeDeserialization(A2));
+  finalizeDeserialization(A3) {
+    this.map.forEach((I3) => I3.finalizeDeserialization(A3));
   }
-  createRigidBody(A2, I2) {
-    let g2 = fA.intoRaw(I2.translation), C2 = XA.intoRaw(I2.rotation), B2 = fA.intoRaw(I2.linvel), Q2 = fA.intoRaw(I2.centerOfMass), E2 = fA.intoRaw(I2.angvel), i2 = fA.intoRaw(I2.principalAngularInertia), D2 = XA.intoRaw(I2.angularInertiaLocalFrame), o2 = this.raw.createRigidBody(I2.enabled, g2, C2, I2.gravityScale, I2.mass, I2.massOnly, Q2, B2, E2, i2, D2, I2.translationsEnabledX, I2.translationsEnabledY, I2.translationsEnabledZ, I2.rotationsEnabledX, I2.rotationsEnabledY, I2.rotationsEnabledZ, I2.linearDamping, I2.angularDamping, I2.status, I2.canSleep, I2.sleeping, I2.softCcdPrediction, I2.ccdEnabled, I2.dominanceGroup, I2.additionalSolverIterations);
-    g2.free(), C2.free(), B2.free(), Q2.free(), E2.free(), i2.free(), D2.free();
-    const S2 = new wI(this.raw, A2, o2);
-    return S2.userData = I2.userData, this.map.set(o2, S2), S2;
+  createRigidBody(A3, I3) {
+    let g4 = fA.intoRaw(I3.translation), C4 = XA.intoRaw(I3.rotation), B3 = fA.intoRaw(I3.linvel), Q3 = fA.intoRaw(I3.centerOfMass), E2 = fA.intoRaw(I3.angvel), i2 = fA.intoRaw(I3.principalAngularInertia), D2 = XA.intoRaw(I3.angularInertiaLocalFrame), o2 = this.raw.createRigidBody(I3.enabled, g4, C4, I3.gravityScale, I3.mass, I3.massOnly, Q3, B3, E2, i2, D2, I3.translationsEnabledX, I3.translationsEnabledY, I3.translationsEnabledZ, I3.rotationsEnabledX, I3.rotationsEnabledY, I3.rotationsEnabledZ, I3.linearDamping, I3.angularDamping, I3.status, I3.canSleep, I3.sleeping, I3.softCcdPrediction, I3.ccdEnabled, I3.dominanceGroup, I3.additionalSolverIterations);
+    g4.free(), C4.free(), B3.free(), Q3.free(), E2.free(), i2.free(), D2.free();
+    const S2 = new wI(this.raw, A3, o2);
+    return S2.userData = I3.userData, this.map.set(o2, S2), S2;
   }
-  remove(A2, I2, g2, C2, B2) {
-    for (let I3 = 0; I3 < this.raw.rbNumColliders(A2); I3 += 1) g2.unmap(this.raw.rbCollider(A2, I3));
-    C2.forEachJointHandleAttachedToRigidBody(A2, (A3) => C2.unmap(A3)), B2.forEachJointHandleAttachedToRigidBody(A2, (A3) => B2.unmap(A3)), this.raw.remove(A2, I2.raw, g2.raw, C2.raw, B2.raw), this.map.delete(A2);
+  remove(A3, I3, g4, C4, B3) {
+    for (let I4 = 0; I4 < this.raw.rbNumColliders(A3); I4 += 1) g4.unmap(this.raw.rbCollider(A3, I4));
+    C4.forEachJointHandleAttachedToRigidBody(A3, (A4) => C4.unmap(A4)), B3.forEachJointHandleAttachedToRigidBody(A3, (A4) => B3.unmap(A4)), this.raw.remove(A3, I3.raw, g4.raw, C4.raw, B3.raw), this.map.delete(A3);
   }
   len() {
     return this.map.len();
   }
-  contains(A2) {
-    return null != this.get(A2);
+  contains(A3) {
+    return null != this.get(A3);
   }
-  get(A2) {
-    return this.map.get(A2);
+  get(A3) {
+    return this.map.get(A3);
   }
-  forEach(A2) {
-    this.map.forEach(A2);
+  forEach(A3) {
+    this.map.forEach(A3);
   }
-  forEachActiveRigidBody(A2, I2) {
-    A2.forEachActiveRigidBodyHandle((A3) => {
-      I2(this.get(A3));
+  forEachActiveRigidBody(A3, I3) {
+    A3.forEachActiveRigidBodyHandle((A4) => {
+      I3(this.get(A4));
     });
   }
   getAll() {
@@ -29055,8 +31196,8 @@ var KI = class {
   }
 };
 var JI = class {
-  constructor(A2) {
-    this.raw = A2 || new BA();
+  constructor(A3) {
+    this.raw = A3 || new BA();
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0;
@@ -29091,35 +31232,35 @@ var JI = class {
   get maxCcdSubsteps() {
     return this.raw.maxCcdSubsteps;
   }
-  set dt(A2) {
-    this.raw.dt = A2;
+  set dt(A3) {
+    this.raw.dt = A3;
   }
-  set contact_natural_frequency(A2) {
-    this.raw.contact_natural_frequency = A2;
+  set contact_natural_frequency(A3) {
+    this.raw.contact_natural_frequency = A3;
   }
-  set lengthUnit(A2) {
-    this.raw.lengthUnit = A2;
+  set lengthUnit(A3) {
+    this.raw.lengthUnit = A3;
   }
-  set normalizedAllowedLinearError(A2) {
-    this.raw.normalizedAllowedLinearError = A2;
+  set normalizedAllowedLinearError(A3) {
+    this.raw.normalizedAllowedLinearError = A3;
   }
-  set normalizedPredictionDistance(A2) {
-    this.raw.normalizedPredictionDistance = A2;
+  set normalizedPredictionDistance(A3) {
+    this.raw.normalizedPredictionDistance = A3;
   }
-  set numSolverIterations(A2) {
-    this.raw.numSolverIterations = A2;
+  set numSolverIterations(A3) {
+    this.raw.numSolverIterations = A3;
   }
-  set numAdditionalFrictionIterations(A2) {
-    this.raw.numAdditionalFrictionIterations = A2;
+  set numAdditionalFrictionIterations(A3) {
+    this.raw.numAdditionalFrictionIterations = A3;
   }
-  set numInternalPgsIterations(A2) {
-    this.raw.numInternalPgsIterations = A2;
+  set numInternalPgsIterations(A3) {
+    this.raw.numInternalPgsIterations = A3;
   }
-  set minIslandSize(A2) {
-    this.raw.minIslandSize = A2;
+  set minIslandSize(A3) {
+    this.raw.minIslandSize = A3;
   }
-  set maxCcdSubsteps(A2) {
-    this.raw.maxCcdSubsteps = A2;
+  set maxCcdSubsteps(A3) {
+    this.raw.maxCcdSubsteps = A3;
   }
   switchToStandardPgsSolver() {
     this.raw.switchToStandardPgsSolver();
@@ -29131,39 +31272,39 @@ var JI = class {
     this.raw.switchToSmallStepsPgsSolverWithoutWarmstart();
   }
 };
-!function(A2) {
-  A2[A2.Revolute = 0] = "Revolute", A2[A2.Fixed = 1] = "Fixed", A2[A2.Prismatic = 2] = "Prismatic", A2[A2.Rope = 3] = "Rope", A2[A2.Spring = 4] = "Spring", A2[A2.Spherical = 5] = "Spherical", A2[A2.Generic = 6] = "Generic";
-}(zA || (zA = {})), function(A2) {
-  A2[A2.AccelerationBased = 0] = "AccelerationBased", A2[A2.ForceBased = 1] = "ForceBased";
-}(_A || (_A = {})), function(A2) {
-  A2[A2.LinX = 1] = "LinX", A2[A2.LinY = 2] = "LinY", A2[A2.LinZ = 4] = "LinZ", A2[A2.AngX = 8] = "AngX", A2[A2.AngY = 16] = "AngY", A2[A2.AngZ = 32] = "AngZ";
+!function(A3) {
+  A3[A3.Revolute = 0] = "Revolute", A3[A3.Fixed = 1] = "Fixed", A3[A3.Prismatic = 2] = "Prismatic", A3[A3.Rope = 3] = "Rope", A3[A3.Spring = 4] = "Spring", A3[A3.Spherical = 5] = "Spherical", A3[A3.Generic = 6] = "Generic";
+}(zA || (zA = {})), function(A3) {
+  A3[A3.AccelerationBased = 0] = "AccelerationBased", A3[A3.ForceBased = 1] = "ForceBased";
+}(_A || (_A = {})), function(A3) {
+  A3[A3.LinX = 1] = "LinX", A3[A3.LinY = 2] = "LinY", A3[A3.LinZ = 4] = "LinZ", A3[A3.AngX = 8] = "AngX", A3[A3.AngY = 16] = "AngY", A3[A3.AngZ = 32] = "AngZ";
 }($A || ($A = {}));
 var UI = class _UI {
-  constructor(A2, I2, g2) {
-    this.rawSet = A2, this.bodySet = I2, this.handle = g2;
+  constructor(A3, I3, g4) {
+    this.rawSet = A3, this.bodySet = I3, this.handle = g4;
   }
-  static newTyped(A2, I2, g2) {
-    switch (A2.jointType(g2)) {
+  static newTyped(A3, I3, g4) {
+    switch (A3.jointType(g4)) {
       case Y.Revolute:
-        return new aI(A2, I2, g2);
+        return new aI(A3, I3, g4);
       case Y.Prismatic:
-        return new FI(A2, I2, g2);
+        return new FI(A3, I3, g4);
       case Y.Fixed:
-        return new yI(A2, I2, g2);
+        return new yI(A3, I3, g4);
       case Y.Spring:
-        return new MI(A2, I2, g2);
+        return new MI(A3, I3, g4);
       case Y.Rope:
-        return new NI(A2, I2, g2);
+        return new NI(A3, I3, g4);
       case Y.Spherical:
-        return new RI(A2, I2, g2);
+        return new RI(A3, I3, g4);
       case Y.Generic:
-        return new sI(A2, I2, g2);
+        return new sI(A3, I3, g4);
       default:
-        return new _UI(A2, I2, g2);
+        return new _UI(A3, I3, g4);
     }
   }
-  finalizeDeserialization(A2) {
-    this.bodySet = A2;
+  finalizeDeserialization(A3) {
+    this.bodySet = A3;
   }
   isValid() {
     return this.rawSet.contains(this.handle);
@@ -29189,16 +31330,16 @@ var UI = class _UI {
   anchor2() {
     return fA.fromRaw(this.rawSet.jointAnchor2(this.handle));
   }
-  setAnchor1(A2) {
-    const I2 = fA.intoRaw(A2);
-    this.rawSet.jointSetAnchor1(this.handle, I2), I2.free();
+  setAnchor1(A3) {
+    const I3 = fA.intoRaw(A3);
+    this.rawSet.jointSetAnchor1(this.handle, I3), I3.free();
   }
-  setAnchor2(A2) {
-    const I2 = fA.intoRaw(A2);
-    this.rawSet.jointSetAnchor2(this.handle, I2), I2.free();
+  setAnchor2(A3) {
+    const I3 = fA.intoRaw(A3);
+    this.rawSet.jointSetAnchor2(this.handle, I3), I3.free();
   }
-  setContactsEnabled(A2) {
-    this.rawSet.jointSetContactsEnabled(this.handle, A2);
+  setContactsEnabled(A3) {
+    this.rawSet.jointSetContactsEnabled(this.handle, A3);
   }
   contactsEnabled() {
     return this.rawSet.jointContactsEnabled(this.handle);
@@ -29214,20 +31355,20 @@ var hI = class extends UI {
   limitsMax() {
     return this.rawSet.jointLimitsMax(this.handle, this.rawAxis());
   }
-  setLimits(A2, I2) {
-    this.rawSet.jointSetLimits(this.handle, this.rawAxis(), A2, I2);
+  setLimits(A3, I3) {
+    this.rawSet.jointSetLimits(this.handle, this.rawAxis(), A3, I3);
   }
-  configureMotorModel(A2) {
-    this.rawSet.jointConfigureMotorModel(this.handle, this.rawAxis(), A2);
+  configureMotorModel(A3) {
+    this.rawSet.jointConfigureMotorModel(this.handle, this.rawAxis(), A3);
   }
-  configureMotorVelocity(A2, I2) {
-    this.rawSet.jointConfigureMotorVelocity(this.handle, this.rawAxis(), A2, I2);
+  configureMotorVelocity(A3, I3) {
+    this.rawSet.jointConfigureMotorVelocity(this.handle, this.rawAxis(), A3, I3);
   }
-  configureMotorPosition(A2, I2, g2) {
-    this.rawSet.jointConfigureMotorPosition(this.handle, this.rawAxis(), A2, I2, g2);
+  configureMotorPosition(A3, I3, g4) {
+    this.rawSet.jointConfigureMotorPosition(this.handle, this.rawAxis(), A3, I3, g4);
   }
-  configureMotor(A2, I2, g2, C2) {
-    this.rawSet.jointConfigureMotor(this.handle, this.rawAxis(), A2, I2, g2, C2);
+  configureMotor(A3, I3, g4, C4) {
+    this.rawSet.jointConfigureMotor(this.handle, this.rawAxis(), A3, I3, g4, C4);
   }
 };
 var yI = class extends UI {
@@ -29253,130 +31394,130 @@ var RI = class extends UI {
 var cI = class _cI {
   constructor() {
   }
-  static fixed(A2, I2, g2, C2) {
-    let B2 = new _cI();
-    return B2.anchor1 = A2, B2.anchor2 = g2, B2.frame1 = I2, B2.frame2 = C2, B2.jointType = zA.Fixed, B2;
+  static fixed(A3, I3, g4, C4) {
+    let B3 = new _cI();
+    return B3.anchor1 = A3, B3.anchor2 = g4, B3.frame1 = I3, B3.frame2 = C4, B3.jointType = zA.Fixed, B3;
   }
-  static spring(A2, I2, g2, C2, B2) {
-    let Q2 = new _cI();
-    return Q2.anchor1 = C2, Q2.anchor2 = B2, Q2.length = A2, Q2.stiffness = I2, Q2.damping = g2, Q2.jointType = zA.Spring, Q2;
+  static spring(A3, I3, g4, C4, B3) {
+    let Q3 = new _cI();
+    return Q3.anchor1 = C4, Q3.anchor2 = B3, Q3.length = A3, Q3.stiffness = I3, Q3.damping = g4, Q3.jointType = zA.Spring, Q3;
   }
-  static rope(A2, I2, g2) {
-    let C2 = new _cI();
-    return C2.anchor1 = I2, C2.anchor2 = g2, C2.length = A2, C2.jointType = zA.Rope, C2;
+  static rope(A3, I3, g4) {
+    let C4 = new _cI();
+    return C4.anchor1 = I3, C4.anchor2 = g4, C4.length = A3, C4.jointType = zA.Rope, C4;
   }
-  static generic(A2, I2, g2, C2) {
-    let B2 = new _cI();
-    return B2.anchor1 = A2, B2.anchor2 = I2, B2.axis = g2, B2.axesMask = C2, B2.jointType = zA.Generic, B2;
+  static generic(A3, I3, g4, C4) {
+    let B3 = new _cI();
+    return B3.anchor1 = A3, B3.anchor2 = I3, B3.axis = g4, B3.axesMask = C4, B3.jointType = zA.Generic, B3;
   }
-  static spherical(A2, I2) {
-    let g2 = new _cI();
-    return g2.anchor1 = A2, g2.anchor2 = I2, g2.jointType = zA.Spherical, g2;
+  static spherical(A3, I3) {
+    let g4 = new _cI();
+    return g4.anchor1 = A3, g4.anchor2 = I3, g4.jointType = zA.Spherical, g4;
   }
-  static prismatic(A2, I2, g2) {
-    let C2 = new _cI();
-    return C2.anchor1 = A2, C2.anchor2 = I2, C2.axis = g2, C2.jointType = zA.Prismatic, C2;
+  static prismatic(A3, I3, g4) {
+    let C4 = new _cI();
+    return C4.anchor1 = A3, C4.anchor2 = I3, C4.axis = g4, C4.jointType = zA.Prismatic, C4;
   }
-  static revolute(A2, I2, g2) {
-    let C2 = new _cI();
-    return C2.anchor1 = A2, C2.anchor2 = I2, C2.axis = g2, C2.jointType = zA.Revolute, C2;
+  static revolute(A3, I3, g4) {
+    let C4 = new _cI();
+    return C4.anchor1 = A3, C4.anchor2 = I3, C4.axis = g4, C4.jointType = zA.Revolute, C4;
   }
   intoRaw() {
-    let A2, I2, g2 = fA.intoRaw(this.anchor1), C2 = fA.intoRaw(this.anchor2), B2 = false, Q2 = 0, E2 = 0;
+    let A3, I3, g4 = fA.intoRaw(this.anchor1), C4 = fA.intoRaw(this.anchor2), B3 = false, Q3 = 0, E2 = 0;
     switch (this.jointType) {
       case zA.Fixed:
         let i2 = XA.intoRaw(this.frame1), D2 = XA.intoRaw(this.frame2);
-        I2 = AA.fixed(g2, i2, C2, D2), i2.free(), D2.free();
+        I3 = AA.fixed(g4, i2, C4, D2), i2.free(), D2.free();
         break;
       case zA.Spring:
-        I2 = AA.spring(this.length, this.stiffness, this.damping, g2, C2);
+        I3 = AA.spring(this.length, this.stiffness, this.damping, g4, C4);
         break;
       case zA.Rope:
-        I2 = AA.rope(this.length, g2, C2);
+        I3 = AA.rope(this.length, g4, C4);
         break;
       case zA.Prismatic:
-        A2 = fA.intoRaw(this.axis), this.limitsEnabled && (B2 = true, Q2 = this.limits[0], E2 = this.limits[1]), I2 = AA.prismatic(g2, C2, A2, B2, Q2, E2), A2.free();
+        A3 = fA.intoRaw(this.axis), this.limitsEnabled && (B3 = true, Q3 = this.limits[0], E2 = this.limits[1]), I3 = AA.prismatic(g4, C4, A3, B3, Q3, E2), A3.free();
         break;
       case zA.Generic:
-        A2 = fA.intoRaw(this.axis);
+        A3 = fA.intoRaw(this.axis);
         let o2 = this.axesMask;
-        I2 = AA.generic(g2, C2, A2, o2);
+        I3 = AA.generic(g4, C4, A3, o2);
         break;
       case zA.Spherical:
-        I2 = AA.spherical(g2, C2);
+        I3 = AA.spherical(g4, C4);
         break;
       case zA.Revolute:
-        A2 = fA.intoRaw(this.axis), I2 = AA.revolute(g2, C2, A2), A2.free();
+        A3 = fA.intoRaw(this.axis), I3 = AA.revolute(g4, C4, A3), A3.free();
     }
-    return g2.free(), C2.free(), I2;
+    return g4.free(), C4.free(), I3;
   }
 };
 var qI = class {
-  constructor(A2) {
-    this.raw = A2 || new gA(), this.map = new kI(), A2 && A2.forEachJointHandle((I2) => {
-      this.map.set(I2, UI.newTyped(A2, null, I2));
+  constructor(A3) {
+    this.raw = A3 || new gA(), this.map = new kI(), A3 && A3.forEachJointHandle((I3) => {
+      this.map.set(I3, UI.newTyped(A3, null, I3));
     });
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0, this.map && this.map.clear(), this.map = void 0;
   }
-  finalizeDeserialization(A2) {
-    this.map.forEach((I2) => I2.finalizeDeserialization(A2));
+  finalizeDeserialization(A3) {
+    this.map.forEach((I3) => I3.finalizeDeserialization(A3));
   }
-  createJoint(A2, I2, g2, C2, B2) {
-    const Q2 = I2.intoRaw(), E2 = this.raw.createJoint(Q2, g2, C2, B2);
-    Q2.free();
-    let i2 = UI.newTyped(this.raw, A2, E2);
+  createJoint(A3, I3, g4, C4, B3) {
+    const Q3 = I3.intoRaw(), E2 = this.raw.createJoint(Q3, g4, C4, B3);
+    Q3.free();
+    let i2 = UI.newTyped(this.raw, A3, E2);
     return this.map.set(E2, i2), i2;
   }
-  remove(A2, I2) {
-    this.raw.remove(A2, I2), this.unmap(A2);
+  remove(A3, I3) {
+    this.raw.remove(A3, I3), this.unmap(A3);
   }
-  forEachJointHandleAttachedToRigidBody(A2, I2) {
-    this.raw.forEachJointAttachedToRigidBody(A2, I2);
+  forEachJointHandleAttachedToRigidBody(A3, I3) {
+    this.raw.forEachJointAttachedToRigidBody(A3, I3);
   }
-  unmap(A2) {
-    this.map.delete(A2);
+  unmap(A3) {
+    this.map.delete(A3);
   }
   len() {
     return this.map.len();
   }
-  contains(A2) {
-    return null != this.get(A2);
+  contains(A3) {
+    return null != this.get(A3);
   }
-  get(A2) {
-    return this.map.get(A2);
+  get(A3) {
+    return this.map.get(A3);
   }
-  forEach(A2) {
-    this.map.forEach(A2);
+  forEach(A3) {
+    this.map.forEach(A3);
   }
   getAll() {
     return this.map.getAll();
   }
 };
 var YI = class _YI {
-  constructor(A2, I2) {
-    this.rawSet = A2, this.handle = I2;
+  constructor(A3, I3) {
+    this.rawSet = A3, this.handle = I3;
   }
-  static newTyped(A2, I2) {
-    switch (A2.jointType(I2)) {
+  static newTyped(A3, I3) {
+    switch (A3.jointType(I3)) {
       case Y.Revolute:
-        return new tI(A2, I2);
+        return new tI(A3, I3);
       case Y.Prismatic:
-        return new HI(A2, I2);
+        return new HI(A3, I3);
       case Y.Fixed:
-        return new LI(A2, I2);
+        return new LI(A3, I3);
       case Y.Spherical:
-        return new pI(A2, I2);
+        return new pI(A3, I3);
       default:
-        return new _YI(A2, I2);
+        return new _YI(A3, I3);
     }
   }
   isValid() {
     return this.rawSet.contains(this.handle);
   }
-  setContactsEnabled(A2) {
-    this.rawSet.jointSetContactsEnabled(this.handle, A2);
+  setContactsEnabled(A3) {
+    this.rawSet.jointSetContactsEnabled(this.handle, A3);
   }
   contactsEnabled() {
     return this.rawSet.jointContactsEnabled(this.handle);
@@ -29399,104 +31540,104 @@ var tI = class extends lI {
 var pI = class extends YI {
 };
 var eI = class {
-  constructor(A2) {
-    this.raw = A2 || new SA(), this.map = new kI(), A2 && A2.forEachJointHandle((A3) => {
-      this.map.set(A3, YI.newTyped(this.raw, A3));
+  constructor(A3) {
+    this.raw = A3 || new SA(), this.map = new kI(), A3 && A3.forEachJointHandle((A4) => {
+      this.map.set(A4, YI.newTyped(this.raw, A4));
     });
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0, this.map && this.map.clear(), this.map = void 0;
   }
-  createJoint(A2, I2, g2, C2) {
-    const B2 = A2.intoRaw(), Q2 = this.raw.createJoint(B2, I2, g2, C2);
-    B2.free();
-    let E2 = YI.newTyped(this.raw, Q2);
-    return this.map.set(Q2, E2), E2;
+  createJoint(A3, I3, g4, C4) {
+    const B3 = A3.intoRaw(), Q3 = this.raw.createJoint(B3, I3, g4, C4);
+    B3.free();
+    let E2 = YI.newTyped(this.raw, Q3);
+    return this.map.set(Q3, E2), E2;
   }
-  remove(A2, I2) {
-    this.raw.remove(A2, I2), this.map.delete(A2);
+  remove(A3, I3) {
+    this.raw.remove(A3, I3), this.map.delete(A3);
   }
-  unmap(A2) {
-    this.map.delete(A2);
+  unmap(A3) {
+    this.map.delete(A3);
   }
   len() {
     return this.map.len();
   }
-  contains(A2) {
-    return null != this.get(A2);
+  contains(A3) {
+    return null != this.get(A3);
   }
-  get(A2) {
-    return this.map.get(A2);
+  get(A3) {
+    return this.map.get(A3);
   }
-  forEach(A2) {
-    this.map.forEach(A2);
+  forEach(A3) {
+    this.map.forEach(A3);
   }
-  forEachJointHandleAttachedToRigidBody(A2, I2) {
-    this.raw.forEachJointAttachedToRigidBody(A2, I2);
+  forEachJointHandleAttachedToRigidBody(A3, I3) {
+    this.raw.forEachJointAttachedToRigidBody(A3, I3);
   }
   getAll() {
     return this.map.getAll();
   }
 };
-!function(A2) {
-  A2[A2.Average = 0] = "Average", A2[A2.Min = 1] = "Min", A2[A2.Multiply = 2] = "Multiply", A2[A2.Max = 3] = "Max";
+!function(A3) {
+  A3[A3.Average = 0] = "Average", A3[A3.Min = 1] = "Min", A3[A3.Multiply = 2] = "Multiply", A3[A3.Max = 3] = "Max";
 }(AI || (AI = {}));
 var rI = class {
-  constructor(A2) {
-    this.raw = A2 || new p();
+  constructor(A3) {
+    this.raw = A3 || new p();
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0;
   }
 };
 var nI = class {
-  constructor(A2) {
-    this.raw = A2 || new EA();
+  constructor(A3) {
+    this.raw = A3 || new EA();
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0;
   }
-  forEachActiveRigidBodyHandle(A2) {
-    this.raw.forEachActiveRigidBodyHandle(A2);
+  forEachActiveRigidBodyHandle(A3) {
+    this.raw.forEachActiveRigidBodyHandle(A3);
   }
 };
 var dI = class {
-  constructor(A2) {
-    this.raw = A2 || new H();
+  constructor(A3) {
+    this.raw = A3 || new H();
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0;
   }
 };
 var TI = class {
-  constructor(A2) {
-    this.raw = A2 || new GA(), this.tempManifold = new OI(null);
+  constructor(A3) {
+    this.raw = A3 || new GA(), this.tempManifold = new OI(null);
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0;
   }
-  contactPairsWith(A2, I2) {
-    this.raw.contact_pairs_with(A2, I2);
+  contactPairsWith(A3, I3) {
+    this.raw.contact_pairs_with(A3, I3);
   }
-  intersectionPairsWith(A2, I2) {
-    this.raw.intersection_pairs_with(A2, I2);
+  intersectionPairsWith(A3, I3) {
+    this.raw.intersection_pairs_with(A3, I3);
   }
-  contactPair(A2, I2, g2) {
-    const C2 = this.raw.contact_pair(A2, I2);
-    if (C2) {
-      const I3 = C2.collider1() != A2;
-      let B2;
-      for (B2 = 0; B2 < C2.numContactManifolds(); ++B2) this.tempManifold.raw = C2.contactManifold(B2), this.tempManifold.raw && g2(this.tempManifold, I3), this.tempManifold.free();
-      C2.free();
+  contactPair(A3, I3, g4) {
+    const C4 = this.raw.contact_pair(A3, I3);
+    if (C4) {
+      const I4 = C4.collider1() != A3;
+      let B3;
+      for (B3 = 0; B3 < C4.numContactManifolds(); ++B3) this.tempManifold.raw = C4.contactManifold(B3), this.tempManifold.raw && g4(this.tempManifold, I4), this.tempManifold.free();
+      C4.free();
     }
   }
-  intersectionPair(A2, I2) {
-    return this.raw.intersection_pair(A2, I2);
+  intersectionPair(A3, I3) {
+    return this.raw.intersection_pair(A3, I3);
   }
 };
 var OI = class {
-  constructor(A2) {
-    this.raw = A2;
+  constructor(A3) {
+    this.raw = A3;
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0;
@@ -29519,470 +31660,470 @@ var OI = class {
   numContacts() {
     return this.raw.num_contacts();
   }
-  localContactPoint1(A2) {
-    return fA.fromRaw(this.raw.contact_local_p1(A2));
+  localContactPoint1(A3) {
+    return fA.fromRaw(this.raw.contact_local_p1(A3));
   }
-  localContactPoint2(A2) {
-    return fA.fromRaw(this.raw.contact_local_p2(A2));
+  localContactPoint2(A3) {
+    return fA.fromRaw(this.raw.contact_local_p2(A3));
   }
-  contactDist(A2) {
-    return this.raw.contact_dist(A2);
+  contactDist(A3) {
+    return this.raw.contact_dist(A3);
   }
-  contactFid1(A2) {
-    return this.raw.contact_fid1(A2);
+  contactFid1(A3) {
+    return this.raw.contact_fid1(A3);
   }
-  contactFid2(A2) {
-    return this.raw.contact_fid2(A2);
+  contactFid2(A3) {
+    return this.raw.contact_fid2(A3);
   }
-  contactImpulse(A2) {
-    return this.raw.contact_impulse(A2);
+  contactImpulse(A3) {
+    return this.raw.contact_impulse(A3);
   }
-  contactTangentImpulseX(A2) {
-    return this.raw.contact_tangent_impulse_x(A2);
+  contactTangentImpulseX(A3) {
+    return this.raw.contact_tangent_impulse_x(A3);
   }
-  contactTangentImpulseY(A2) {
-    return this.raw.contact_tangent_impulse_y(A2);
+  contactTangentImpulseY(A3) {
+    return this.raw.contact_tangent_impulse_y(A3);
   }
   numSolverContacts() {
     return this.raw.num_solver_contacts();
   }
-  solverContactPoint(A2) {
-    return fA.fromRaw(this.raw.solver_contact_point(A2));
+  solverContactPoint(A3) {
+    return fA.fromRaw(this.raw.solver_contact_point(A3));
   }
-  solverContactDist(A2) {
-    return this.raw.solver_contact_dist(A2);
+  solverContactDist(A3) {
+    return this.raw.solver_contact_dist(A3);
   }
-  solverContactFriction(A2) {
-    return this.raw.solver_contact_friction(A2);
+  solverContactFriction(A3) {
+    return this.raw.solver_contact_friction(A3);
   }
-  solverContactRestitution(A2) {
-    return this.raw.solver_contact_restitution(A2);
+  solverContactRestitution(A3) {
+    return this.raw.solver_contact_restitution(A3);
   }
-  solverContactTangentVelocity(A2) {
-    return fA.fromRaw(this.raw.solver_contact_tangent_velocity(A2));
+  solverContactTangentVelocity(A3) {
+    return fA.fromRaw(this.raw.solver_contact_tangent_velocity(A3));
   }
 };
 var ZI = class _ZI {
-  constructor(A2, I2, g2, C2, B2) {
-    this.distance = A2, this.point1 = I2, this.point2 = g2, this.normal1 = C2, this.normal2 = B2;
+  constructor(A3, I3, g4, C4, B3) {
+    this.distance = A3, this.point1 = I3, this.point2 = g4, this.normal1 = C4, this.normal2 = B3;
   }
-  static fromRaw(A2) {
-    if (!A2) return null;
-    const I2 = new _ZI(A2.distance(), fA.fromRaw(A2.point1()), fA.fromRaw(A2.point2()), fA.fromRaw(A2.normal1()), fA.fromRaw(A2.normal2()));
-    return A2.free(), I2;
+  static fromRaw(A3) {
+    if (!A3) return null;
+    const I3 = new _ZI(A3.distance(), fA.fromRaw(A3.point1()), fA.fromRaw(A3.point2()), fA.fromRaw(A3.normal1()), fA.fromRaw(A3.normal2()));
+    return A3.free(), I3;
   }
 };
-!function(A2) {
-  A2[A2.Vertex = 0] = "Vertex", A2[A2.Edge = 1] = "Edge", A2[A2.Face = 2] = "Face", A2[A2.Unknown = 3] = "Unknown";
+!function(A3) {
+  A3[A3.Vertex = 0] = "Vertex", A3[A3.Edge = 1] = "Edge", A3[A3.Face = 2] = "Face", A3[A3.Unknown = 3] = "Unknown";
 }(II || (II = {}));
 var bI = class _bI {
-  constructor(A2, I2) {
-    this.point = A2, this.isInside = I2;
+  constructor(A3, I3) {
+    this.point = A3, this.isInside = I3;
   }
-  static fromRaw(A2) {
-    if (!A2) return null;
-    const I2 = new _bI(fA.fromRaw(A2.point()), A2.isInside());
-    return A2.free(), I2;
+  static fromRaw(A3) {
+    if (!A3) return null;
+    const I3 = new _bI(fA.fromRaw(A3.point()), A3.isInside());
+    return A3.free(), I3;
   }
 };
 var WI = class _WI {
-  constructor(A2, I2, g2, C2, B2) {
-    this.featureType = II.Unknown, this.featureId = void 0, this.collider = A2, this.point = I2, this.isInside = g2, void 0 !== B2 && (this.featureId = B2), void 0 !== C2 && (this.featureType = C2);
+  constructor(A3, I3, g4, C4, B3) {
+    this.featureType = II.Unknown, this.featureId = void 0, this.collider = A3, this.point = I3, this.isInside = g4, void 0 !== B3 && (this.featureId = B3), void 0 !== C4 && (this.featureType = C4);
   }
-  static fromRaw(A2, I2) {
-    if (!I2) return null;
-    const g2 = new _WI(A2.get(I2.colliderHandle()), fA.fromRaw(I2.point()), I2.isInside(), I2.featureType(), I2.featureId());
-    return I2.free(), g2;
+  static fromRaw(A3, I3) {
+    if (!I3) return null;
+    const g4 = new _WI(A3.get(I3.colliderHandle()), fA.fromRaw(I3.point()), I3.isInside(), I3.featureType(), I3.featureId());
+    return I3.free(), g4;
   }
 };
 var xI = class {
-  constructor(A2, I2) {
-    this.origin = A2, this.dir = I2;
+  constructor(A3, I3) {
+    this.origin = A3, this.dir = I3;
   }
-  pointAt(A2) {
-    return { x: this.origin.x + this.dir.x * A2, y: this.origin.y + this.dir.y * A2, z: this.origin.z + this.dir.z * A2 };
+  pointAt(A3) {
+    return { x: this.origin.x + this.dir.x * A3, y: this.origin.y + this.dir.y * A3, z: this.origin.z + this.dir.z * A3 };
   }
 };
 var mI = class _mI {
-  constructor(A2, I2, g2, C2) {
-    this.featureType = II.Unknown, this.featureId = void 0, this.timeOfImpact = A2, this.normal = I2, void 0 !== C2 && (this.featureId = C2), void 0 !== g2 && (this.featureType = g2);
+  constructor(A3, I3, g4, C4) {
+    this.featureType = II.Unknown, this.featureId = void 0, this.timeOfImpact = A3, this.normal = I3, void 0 !== C4 && (this.featureId = C4), void 0 !== g4 && (this.featureType = g4);
   }
-  static fromRaw(A2) {
-    if (!A2) return null;
-    const I2 = new _mI(A2.time_of_impact(), fA.fromRaw(A2.normal()), A2.featureType(), A2.featureId());
-    return A2.free(), I2;
+  static fromRaw(A3) {
+    if (!A3) return null;
+    const I3 = new _mI(A3.time_of_impact(), fA.fromRaw(A3.normal()), A3.featureType(), A3.featureId());
+    return A3.free(), I3;
   }
 };
 var jI = class _jI {
-  constructor(A2, I2, g2, C2, B2) {
-    this.featureType = II.Unknown, this.featureId = void 0, this.collider = A2, this.timeOfImpact = I2, this.normal = g2, void 0 !== B2 && (this.featureId = B2), void 0 !== C2 && (this.featureType = C2);
+  constructor(A3, I3, g4, C4, B3) {
+    this.featureType = II.Unknown, this.featureId = void 0, this.collider = A3, this.timeOfImpact = I3, this.normal = g4, void 0 !== B3 && (this.featureId = B3), void 0 !== C4 && (this.featureType = C4);
   }
-  static fromRaw(A2, I2) {
-    if (!I2) return null;
-    const g2 = new _jI(A2.get(I2.colliderHandle()), I2.time_of_impact(), fA.fromRaw(I2.normal()), I2.featureType(), I2.featureId());
-    return I2.free(), g2;
+  static fromRaw(A3, I3) {
+    if (!I3) return null;
+    const g4 = new _jI(A3.get(I3.colliderHandle()), I3.time_of_impact(), fA.fromRaw(I3.normal()), I3.featureType(), I3.featureId());
+    return I3.free(), g4;
   }
 };
 var fI = class _fI {
-  constructor(A2, I2) {
-    this.collider = A2, this.timeOfImpact = I2;
+  constructor(A3, I3) {
+    this.collider = A3, this.timeOfImpact = I3;
   }
-  static fromRaw(A2, I2) {
-    if (!I2) return null;
-    const g2 = new _fI(A2.get(I2.colliderHandle()), I2.timeOfImpact());
-    return I2.free(), g2;
+  static fromRaw(A3, I3) {
+    if (!I3) return null;
+    const g4 = new _fI(A3.get(I3.colliderHandle()), I3.timeOfImpact());
+    return I3.free(), g4;
   }
 };
 var VI = class _VI {
-  constructor(A2, I2, g2, C2, B2) {
-    this.time_of_impact = A2, this.witness1 = I2, this.witness2 = g2, this.normal1 = C2, this.normal2 = B2;
+  constructor(A3, I3, g4, C4, B3) {
+    this.time_of_impact = A3, this.witness1 = I3, this.witness2 = g4, this.normal1 = C4, this.normal2 = B3;
   }
-  static fromRaw(A2, I2) {
-    if (!I2) return null;
-    const g2 = new _VI(I2.time_of_impact(), fA.fromRaw(I2.witness1()), fA.fromRaw(I2.witness2()), fA.fromRaw(I2.normal1()), fA.fromRaw(I2.normal2()));
-    return I2.free(), g2;
+  static fromRaw(A3, I3) {
+    if (!I3) return null;
+    const g4 = new _VI(I3.time_of_impact(), fA.fromRaw(I3.witness1()), fA.fromRaw(I3.witness2()), fA.fromRaw(I3.normal1()), fA.fromRaw(I3.normal2()));
+    return I3.free(), g4;
   }
 };
 var XI = class _XI extends VI {
-  constructor(A2, I2, g2, C2, B2, Q2) {
-    super(I2, g2, C2, B2, Q2), this.collider = A2;
+  constructor(A3, I3, g4, C4, B3, Q3) {
+    super(I3, g4, C4, B3, Q3), this.collider = A3;
   }
-  static fromRaw(A2, I2) {
-    if (!I2) return null;
-    const g2 = new _XI(A2.get(I2.colliderHandle()), I2.time_of_impact(), fA.fromRaw(I2.witness1()), fA.fromRaw(I2.witness2()), fA.fromRaw(I2.normal1()), fA.fromRaw(I2.normal2()));
-    return I2.free(), g2;
+  static fromRaw(A3, I3) {
+    if (!I3) return null;
+    const g4 = new _XI(A3.get(I3.colliderHandle()), I3.time_of_impact(), fA.fromRaw(I3.witness1()), fA.fromRaw(I3.witness2()), fA.fromRaw(I3.normal1()), fA.fromRaw(I3.normal2()));
+    return I3.free(), g4;
   }
 };
 var PI = class {
-  static fromRaw(A2, I2) {
-    const g2 = A2.coShapeType(I2);
-    let C2, B2, Q2, E2, i2, D2, o2;
-    switch (g2) {
+  static fromRaw(A3, I3) {
+    const g4 = A3.coShapeType(I3);
+    let C4, B3, Q3, E2, i2, D2, o2;
+    switch (g4) {
       case l.Ball:
-        return new uI(A2.coRadius(I2));
+        return new uI(A3.coRadius(I3));
       case l.Cuboid:
-        return C2 = A2.coHalfExtents(I2), new zI(C2.x, C2.y, C2.z);
+        return C4 = A3.coHalfExtents(I3), new zI(C4.x, C4.y, C4.z);
       case l.RoundCuboid:
-        return C2 = A2.coHalfExtents(I2), B2 = A2.coRoundRadius(I2), new _I(C2.x, C2.y, C2.z, B2);
+        return C4 = A3.coHalfExtents(I3), B3 = A3.coRoundRadius(I3), new _I(C4.x, C4.y, C4.z, B3);
       case l.Capsule:
-        return i2 = A2.coHalfHeight(I2), D2 = A2.coRadius(I2), new $I(i2, D2);
+        return i2 = A3.coHalfHeight(I3), D2 = A3.coRadius(I3), new $I(i2, D2);
       case l.Segment:
-        return Q2 = A2.coVertices(I2), new Ag(fA.new(Q2[0], Q2[1], Q2[2]), fA.new(Q2[3], Q2[4], Q2[5]));
+        return Q3 = A3.coVertices(I3), new Ag(fA.new(Q3[0], Q3[1], Q3[2]), fA.new(Q3[3], Q3[4], Q3[5]));
       case l.Polyline:
-        return Q2 = A2.coVertices(I2), E2 = A2.coIndices(I2), new Cg(Q2, E2);
+        return Q3 = A3.coVertices(I3), E2 = A3.coIndices(I3), new Cg(Q3, E2);
       case l.Triangle:
-        return Q2 = A2.coVertices(I2), new Ig(fA.new(Q2[0], Q2[1], Q2[2]), fA.new(Q2[3], Q2[4], Q2[5]), fA.new(Q2[6], Q2[7], Q2[8]));
+        return Q3 = A3.coVertices(I3), new Ig(fA.new(Q3[0], Q3[1], Q3[2]), fA.new(Q3[3], Q3[4], Q3[5]), fA.new(Q3[6], Q3[7], Q3[8]));
       case l.RoundTriangle:
-        return Q2 = A2.coVertices(I2), B2 = A2.coRoundRadius(I2), new gg(fA.new(Q2[0], Q2[1], Q2[2]), fA.new(Q2[3], Q2[4], Q2[5]), fA.new(Q2[6], Q2[7], Q2[8]), B2);
+        return Q3 = A3.coVertices(I3), B3 = A3.coRoundRadius(I3), new gg(fA.new(Q3[0], Q3[1], Q3[2]), fA.new(Q3[3], Q3[4], Q3[5]), fA.new(Q3[6], Q3[7], Q3[8]), B3);
       case l.HalfSpace:
-        return o2 = fA.fromRaw(A2.coHalfspaceNormal(I2)), new vI(o2);
+        return o2 = fA.fromRaw(A3.coHalfspaceNormal(I3)), new vI(o2);
       case l.TriMesh:
-        Q2 = A2.coVertices(I2), E2 = A2.coIndices(I2);
-        const S2 = A2.coTriMeshFlags(I2);
-        return new Bg(Q2, E2, S2);
+        Q3 = A3.coVertices(I3), E2 = A3.coIndices(I3);
+        const S2 = A3.coTriMeshFlags(I3);
+        return new Bg(Q3, E2, S2);
       case l.HeightField:
-        const w2 = A2.coHeightfieldScale(I2), G2 = A2.coHeightfieldHeights(I2), k2 = A2.coHeightfieldNRows(I2), K2 = A2.coHeightfieldNCols(I2), J2 = A2.coHeightFieldFlags(I2);
+        const w2 = A3.coHeightfieldScale(I3), G2 = A3.coHeightfieldHeights(I3), k2 = A3.coHeightfieldNRows(I3), K2 = A3.coHeightfieldNCols(I3), J2 = A3.coHeightFieldFlags(I3);
         return new ig(k2, K2, G2, w2, J2);
       case l.ConvexPolyhedron:
-        return Q2 = A2.coVertices(I2), E2 = A2.coIndices(I2), new Qg(Q2, E2);
+        return Q3 = A3.coVertices(I3), E2 = A3.coIndices(I3), new Qg(Q3, E2);
       case l.RoundConvexPolyhedron:
-        return Q2 = A2.coVertices(I2), E2 = A2.coIndices(I2), B2 = A2.coRoundRadius(I2), new Eg(Q2, E2, B2);
+        return Q3 = A3.coVertices(I3), E2 = A3.coIndices(I3), B3 = A3.coRoundRadius(I3), new Eg(Q3, E2, B3);
       case l.Cylinder:
-        return i2 = A2.coHalfHeight(I2), D2 = A2.coRadius(I2), new Dg(i2, D2);
+        return i2 = A3.coHalfHeight(I3), D2 = A3.coRadius(I3), new Dg(i2, D2);
       case l.RoundCylinder:
-        return i2 = A2.coHalfHeight(I2), D2 = A2.coRadius(I2), B2 = A2.coRoundRadius(I2), new og(i2, D2, B2);
+        return i2 = A3.coHalfHeight(I3), D2 = A3.coRadius(I3), B3 = A3.coRoundRadius(I3), new og(i2, D2, B3);
       case l.Cone:
-        return i2 = A2.coHalfHeight(I2), D2 = A2.coRadius(I2), new Sg(i2, D2);
+        return i2 = A3.coHalfHeight(I3), D2 = A3.coRadius(I3), new Sg(i2, D2);
       case l.RoundCone:
-        return i2 = A2.coHalfHeight(I2), D2 = A2.coRadius(I2), B2 = A2.coRoundRadius(I2), new wg(i2, D2, B2);
+        return i2 = A3.coHalfHeight(I3), D2 = A3.coRadius(I3), B3 = A3.coRoundRadius(I3), new wg(i2, D2, B3);
       default:
-        throw new Error("unknown shape type: " + g2);
+        throw new Error("unknown shape type: " + g4);
     }
   }
-  castShape(A2, I2, g2, C2, B2, Q2, E2, i2, D2, o2) {
-    let S2 = fA.intoRaw(A2), w2 = XA.intoRaw(I2), G2 = fA.intoRaw(g2), k2 = fA.intoRaw(B2), K2 = XA.intoRaw(Q2), J2 = fA.intoRaw(E2), U2 = this.intoRaw(), h2 = C2.intoRaw(), y2 = VI.fromRaw(null, U2.castShape(S2, w2, G2, h2, k2, K2, J2, i2, D2, o2));
+  castShape(A3, I3, g4, C4, B3, Q3, E2, i2, D2, o2) {
+    let S2 = fA.intoRaw(A3), w2 = XA.intoRaw(I3), G2 = fA.intoRaw(g4), k2 = fA.intoRaw(B3), K2 = XA.intoRaw(Q3), J2 = fA.intoRaw(E2), U2 = this.intoRaw(), h2 = C4.intoRaw(), y2 = VI.fromRaw(null, U2.castShape(S2, w2, G2, h2, k2, K2, J2, i2, D2, o2));
     return S2.free(), w2.free(), G2.free(), k2.free(), K2.free(), J2.free(), U2.free(), h2.free(), y2;
   }
-  intersectsShape(A2, I2, g2, C2, B2) {
-    let Q2 = fA.intoRaw(A2), E2 = XA.intoRaw(I2), i2 = fA.intoRaw(C2), D2 = XA.intoRaw(B2), o2 = this.intoRaw(), S2 = g2.intoRaw(), w2 = o2.intersectsShape(Q2, E2, S2, i2, D2);
-    return Q2.free(), E2.free(), i2.free(), D2.free(), o2.free(), S2.free(), w2;
+  intersectsShape(A3, I3, g4, C4, B3) {
+    let Q3 = fA.intoRaw(A3), E2 = XA.intoRaw(I3), i2 = fA.intoRaw(C4), D2 = XA.intoRaw(B3), o2 = this.intoRaw(), S2 = g4.intoRaw(), w2 = o2.intersectsShape(Q3, E2, S2, i2, D2);
+    return Q3.free(), E2.free(), i2.free(), D2.free(), o2.free(), S2.free(), w2;
   }
-  contactShape(A2, I2, g2, C2, B2, Q2) {
-    let E2 = fA.intoRaw(A2), i2 = XA.intoRaw(I2), D2 = fA.intoRaw(C2), o2 = XA.intoRaw(B2), S2 = this.intoRaw(), w2 = g2.intoRaw(), G2 = ZI.fromRaw(S2.contactShape(E2, i2, w2, D2, o2, Q2));
+  contactShape(A3, I3, g4, C4, B3, Q3) {
+    let E2 = fA.intoRaw(A3), i2 = XA.intoRaw(I3), D2 = fA.intoRaw(C4), o2 = XA.intoRaw(B3), S2 = this.intoRaw(), w2 = g4.intoRaw(), G2 = ZI.fromRaw(S2.contactShape(E2, i2, w2, D2, o2, Q3));
     return E2.free(), i2.free(), D2.free(), o2.free(), S2.free(), w2.free(), G2;
   }
-  containsPoint(A2, I2, g2) {
-    let C2 = fA.intoRaw(A2), B2 = XA.intoRaw(I2), Q2 = fA.intoRaw(g2), E2 = this.intoRaw(), i2 = E2.containsPoint(C2, B2, Q2);
-    return C2.free(), B2.free(), Q2.free(), E2.free(), i2;
+  containsPoint(A3, I3, g4) {
+    let C4 = fA.intoRaw(A3), B3 = XA.intoRaw(I3), Q3 = fA.intoRaw(g4), E2 = this.intoRaw(), i2 = E2.containsPoint(C4, B3, Q3);
+    return C4.free(), B3.free(), Q3.free(), E2.free(), i2;
   }
-  projectPoint(A2, I2, g2, C2) {
-    let B2 = fA.intoRaw(A2), Q2 = XA.intoRaw(I2), E2 = fA.intoRaw(g2), i2 = this.intoRaw(), D2 = bI.fromRaw(i2.projectPoint(B2, Q2, E2, C2));
-    return B2.free(), Q2.free(), E2.free(), i2.free(), D2;
+  projectPoint(A3, I3, g4, C4) {
+    let B3 = fA.intoRaw(A3), Q3 = XA.intoRaw(I3), E2 = fA.intoRaw(g4), i2 = this.intoRaw(), D2 = bI.fromRaw(i2.projectPoint(B3, Q3, E2, C4));
+    return B3.free(), Q3.free(), E2.free(), i2.free(), D2;
   }
-  intersectsRay(A2, I2, g2, C2) {
-    let B2 = fA.intoRaw(I2), Q2 = XA.intoRaw(g2), E2 = fA.intoRaw(A2.origin), i2 = fA.intoRaw(A2.dir), D2 = this.intoRaw(), o2 = D2.intersectsRay(B2, Q2, E2, i2, C2);
-    return B2.free(), Q2.free(), E2.free(), i2.free(), D2.free(), o2;
+  intersectsRay(A3, I3, g4, C4) {
+    let B3 = fA.intoRaw(I3), Q3 = XA.intoRaw(g4), E2 = fA.intoRaw(A3.origin), i2 = fA.intoRaw(A3.dir), D2 = this.intoRaw(), o2 = D2.intersectsRay(B3, Q3, E2, i2, C4);
+    return B3.free(), Q3.free(), E2.free(), i2.free(), D2.free(), o2;
   }
-  castRay(A2, I2, g2, C2, B2) {
-    let Q2 = fA.intoRaw(I2), E2 = XA.intoRaw(g2), i2 = fA.intoRaw(A2.origin), D2 = fA.intoRaw(A2.dir), o2 = this.intoRaw(), S2 = o2.castRay(Q2, E2, i2, D2, C2, B2);
-    return Q2.free(), E2.free(), i2.free(), D2.free(), o2.free(), S2;
+  castRay(A3, I3, g4, C4, B3) {
+    let Q3 = fA.intoRaw(I3), E2 = XA.intoRaw(g4), i2 = fA.intoRaw(A3.origin), D2 = fA.intoRaw(A3.dir), o2 = this.intoRaw(), S2 = o2.castRay(Q3, E2, i2, D2, C4, B3);
+    return Q3.free(), E2.free(), i2.free(), D2.free(), o2.free(), S2;
   }
-  castRayAndGetNormal(A2, I2, g2, C2, B2) {
-    let Q2 = fA.intoRaw(I2), E2 = XA.intoRaw(g2), i2 = fA.intoRaw(A2.origin), D2 = fA.intoRaw(A2.dir), o2 = this.intoRaw(), S2 = mI.fromRaw(o2.castRayAndGetNormal(Q2, E2, i2, D2, C2, B2));
-    return Q2.free(), E2.free(), i2.free(), D2.free(), o2.free(), S2;
+  castRayAndGetNormal(A3, I3, g4, C4, B3) {
+    let Q3 = fA.intoRaw(I3), E2 = XA.intoRaw(g4), i2 = fA.intoRaw(A3.origin), D2 = fA.intoRaw(A3.dir), o2 = this.intoRaw(), S2 = mI.fromRaw(o2.castRayAndGetNormal(Q3, E2, i2, D2, C4, B3));
+    return Q3.free(), E2.free(), i2.free(), D2.free(), o2.free(), S2;
   }
 };
-!function(A2) {
-  A2[A2.Ball = 0] = "Ball", A2[A2.Cuboid = 1] = "Cuboid", A2[A2.Capsule = 2] = "Capsule", A2[A2.Segment = 3] = "Segment", A2[A2.Polyline = 4] = "Polyline", A2[A2.Triangle = 5] = "Triangle", A2[A2.TriMesh = 6] = "TriMesh", A2[A2.HeightField = 7] = "HeightField", A2[A2.ConvexPolyhedron = 9] = "ConvexPolyhedron", A2[A2.Cylinder = 10] = "Cylinder", A2[A2.Cone = 11] = "Cone", A2[A2.RoundCuboid = 12] = "RoundCuboid", A2[A2.RoundTriangle = 13] = "RoundTriangle", A2[A2.RoundCylinder = 14] = "RoundCylinder", A2[A2.RoundCone = 15] = "RoundCone", A2[A2.RoundConvexPolyhedron = 16] = "RoundConvexPolyhedron", A2[A2.HalfSpace = 17] = "HalfSpace";
-}(gI || (gI = {})), function(A2) {
-  A2[A2.FIX_INTERNAL_EDGES = 1] = "FIX_INTERNAL_EDGES";
-}(CI || (CI = {})), function(A2) {
-  A2[A2.DELETE_BAD_TOPOLOGY_TRIANGLES = 4] = "DELETE_BAD_TOPOLOGY_TRIANGLES", A2[A2.ORIENTED = 8] = "ORIENTED", A2[A2.MERGE_DUPLICATE_VERTICES = 16] = "MERGE_DUPLICATE_VERTICES", A2[A2.DELETE_DEGENERATE_TRIANGLES = 32] = "DELETE_DEGENERATE_TRIANGLES", A2[A2.DELETE_DUPLICATE_TRIANGLES = 64] = "DELETE_DUPLICATE_TRIANGLES", A2[A2.FIX_INTERNAL_EDGES = 152] = "FIX_INTERNAL_EDGES";
+!function(A3) {
+  A3[A3.Ball = 0] = "Ball", A3[A3.Cuboid = 1] = "Cuboid", A3[A3.Capsule = 2] = "Capsule", A3[A3.Segment = 3] = "Segment", A3[A3.Polyline = 4] = "Polyline", A3[A3.Triangle = 5] = "Triangle", A3[A3.TriMesh = 6] = "TriMesh", A3[A3.HeightField = 7] = "HeightField", A3[A3.ConvexPolyhedron = 9] = "ConvexPolyhedron", A3[A3.Cylinder = 10] = "Cylinder", A3[A3.Cone = 11] = "Cone", A3[A3.RoundCuboid = 12] = "RoundCuboid", A3[A3.RoundTriangle = 13] = "RoundTriangle", A3[A3.RoundCylinder = 14] = "RoundCylinder", A3[A3.RoundCone = 15] = "RoundCone", A3[A3.RoundConvexPolyhedron = 16] = "RoundConvexPolyhedron", A3[A3.HalfSpace = 17] = "HalfSpace";
+}(gI || (gI = {})), function(A3) {
+  A3[A3.FIX_INTERNAL_EDGES = 1] = "FIX_INTERNAL_EDGES";
+}(CI || (CI = {})), function(A3) {
+  A3[A3.DELETE_BAD_TOPOLOGY_TRIANGLES = 4] = "DELETE_BAD_TOPOLOGY_TRIANGLES", A3[A3.ORIENTED = 8] = "ORIENTED", A3[A3.MERGE_DUPLICATE_VERTICES = 16] = "MERGE_DUPLICATE_VERTICES", A3[A3.DELETE_DEGENERATE_TRIANGLES = 32] = "DELETE_DEGENERATE_TRIANGLES", A3[A3.DELETE_DUPLICATE_TRIANGLES = 64] = "DELETE_DUPLICATE_TRIANGLES", A3[A3.FIX_INTERNAL_EDGES = 152] = "FIX_INTERNAL_EDGES";
 }(BI || (BI = {}));
 var uI = class extends PI {
-  constructor(A2) {
-    super(), this.type = gI.Ball, this.radius = A2;
+  constructor(A3) {
+    super(), this.type = gI.Ball, this.radius = A3;
   }
   intoRaw() {
     return dA.ball(this.radius);
   }
 };
 var vI = class extends PI {
-  constructor(A2) {
-    super(), this.type = gI.HalfSpace, this.normal = A2;
+  constructor(A3) {
+    super(), this.type = gI.HalfSpace, this.normal = A3;
   }
   intoRaw() {
-    let A2 = fA.intoRaw(this.normal), I2 = dA.halfspace(A2);
-    return A2.free(), I2;
+    let A3 = fA.intoRaw(this.normal), I3 = dA.halfspace(A3);
+    return A3.free(), I3;
   }
 };
 var zI = class extends PI {
-  constructor(A2, I2, g2) {
-    super(), this.type = gI.Cuboid, this.halfExtents = fA.new(A2, I2, g2);
+  constructor(A3, I3, g4) {
+    super(), this.type = gI.Cuboid, this.halfExtents = fA.new(A3, I3, g4);
   }
   intoRaw() {
     return dA.cuboid(this.halfExtents.x, this.halfExtents.y, this.halfExtents.z);
   }
 };
 var _I = class extends PI {
-  constructor(A2, I2, g2, C2) {
-    super(), this.type = gI.RoundCuboid, this.halfExtents = fA.new(A2, I2, g2), this.borderRadius = C2;
+  constructor(A3, I3, g4, C4) {
+    super(), this.type = gI.RoundCuboid, this.halfExtents = fA.new(A3, I3, g4), this.borderRadius = C4;
   }
   intoRaw() {
     return dA.roundCuboid(this.halfExtents.x, this.halfExtents.y, this.halfExtents.z, this.borderRadius);
   }
 };
 var $I = class extends PI {
-  constructor(A2, I2) {
-    super(), this.type = gI.Capsule, this.halfHeight = A2, this.radius = I2;
+  constructor(A3, I3) {
+    super(), this.type = gI.Capsule, this.halfHeight = A3, this.radius = I3;
   }
   intoRaw() {
     return dA.capsule(this.halfHeight, this.radius);
   }
 };
 var Ag = class extends PI {
-  constructor(A2, I2) {
-    super(), this.type = gI.Segment, this.a = A2, this.b = I2;
+  constructor(A3, I3) {
+    super(), this.type = gI.Segment, this.a = A3, this.b = I3;
   }
   intoRaw() {
-    let A2 = fA.intoRaw(this.a), I2 = fA.intoRaw(this.b), g2 = dA.segment(A2, I2);
-    return A2.free(), I2.free(), g2;
+    let A3 = fA.intoRaw(this.a), I3 = fA.intoRaw(this.b), g4 = dA.segment(A3, I3);
+    return A3.free(), I3.free(), g4;
   }
 };
 var Ig = class extends PI {
-  constructor(A2, I2, g2) {
-    super(), this.type = gI.Triangle, this.a = A2, this.b = I2, this.c = g2;
+  constructor(A3, I3, g4) {
+    super(), this.type = gI.Triangle, this.a = A3, this.b = I3, this.c = g4;
   }
   intoRaw() {
-    let A2 = fA.intoRaw(this.a), I2 = fA.intoRaw(this.b), g2 = fA.intoRaw(this.c), C2 = dA.triangle(A2, I2, g2);
-    return A2.free(), I2.free(), g2.free(), C2;
+    let A3 = fA.intoRaw(this.a), I3 = fA.intoRaw(this.b), g4 = fA.intoRaw(this.c), C4 = dA.triangle(A3, I3, g4);
+    return A3.free(), I3.free(), g4.free(), C4;
   }
 };
 var gg = class extends PI {
-  constructor(A2, I2, g2, C2) {
-    super(), this.type = gI.RoundTriangle, this.a = A2, this.b = I2, this.c = g2, this.borderRadius = C2;
+  constructor(A3, I3, g4, C4) {
+    super(), this.type = gI.RoundTriangle, this.a = A3, this.b = I3, this.c = g4, this.borderRadius = C4;
   }
   intoRaw() {
-    let A2 = fA.intoRaw(this.a), I2 = fA.intoRaw(this.b), g2 = fA.intoRaw(this.c), C2 = dA.roundTriangle(A2, I2, g2, this.borderRadius);
-    return A2.free(), I2.free(), g2.free(), C2;
+    let A3 = fA.intoRaw(this.a), I3 = fA.intoRaw(this.b), g4 = fA.intoRaw(this.c), C4 = dA.roundTriangle(A3, I3, g4, this.borderRadius);
+    return A3.free(), I3.free(), g4.free(), C4;
   }
 };
 var Cg = class extends PI {
-  constructor(A2, I2) {
-    super(), this.type = gI.Polyline, this.vertices = A2, this.indices = null != I2 ? I2 : new Uint32Array(0);
+  constructor(A3, I3) {
+    super(), this.type = gI.Polyline, this.vertices = A3, this.indices = null != I3 ? I3 : new Uint32Array(0);
   }
   intoRaw() {
     return dA.polyline(this.vertices, this.indices);
   }
 };
 var Bg = class extends PI {
-  constructor(A2, I2, g2) {
-    super(), this.type = gI.TriMesh, this.vertices = A2, this.indices = I2, this.flags = g2;
+  constructor(A3, I3, g4) {
+    super(), this.type = gI.TriMesh, this.vertices = A3, this.indices = I3, this.flags = g4;
   }
   intoRaw() {
     return dA.trimesh(this.vertices, this.indices, this.flags);
   }
 };
 var Qg = class extends PI {
-  constructor(A2, I2) {
-    super(), this.type = gI.ConvexPolyhedron, this.vertices = A2, this.indices = I2;
+  constructor(A3, I3) {
+    super(), this.type = gI.ConvexPolyhedron, this.vertices = A3, this.indices = I3;
   }
   intoRaw() {
     return this.indices ? dA.convexMesh(this.vertices, this.indices) : dA.convexHull(this.vertices);
   }
 };
 var Eg = class extends PI {
-  constructor(A2, I2, g2) {
-    super(), this.type = gI.RoundConvexPolyhedron, this.vertices = A2, this.indices = I2, this.borderRadius = g2;
+  constructor(A3, I3, g4) {
+    super(), this.type = gI.RoundConvexPolyhedron, this.vertices = A3, this.indices = I3, this.borderRadius = g4;
   }
   intoRaw() {
     return this.indices ? dA.roundConvexMesh(this.vertices, this.indices, this.borderRadius) : dA.roundConvexHull(this.vertices, this.borderRadius);
   }
 };
 var ig = class extends PI {
-  constructor(A2, I2, g2, C2, B2) {
-    super(), this.type = gI.HeightField, this.nrows = A2, this.ncols = I2, this.heights = g2, this.scale = C2, this.flags = B2;
+  constructor(A3, I3, g4, C4, B3) {
+    super(), this.type = gI.HeightField, this.nrows = A3, this.ncols = I3, this.heights = g4, this.scale = C4, this.flags = B3;
   }
   intoRaw() {
-    let A2 = fA.intoRaw(this.scale), I2 = dA.heightfield(this.nrows, this.ncols, this.heights, A2, this.flags);
-    return A2.free(), I2;
+    let A3 = fA.intoRaw(this.scale), I3 = dA.heightfield(this.nrows, this.ncols, this.heights, A3, this.flags);
+    return A3.free(), I3;
   }
 };
 var Dg = class extends PI {
-  constructor(A2, I2) {
-    super(), this.type = gI.Cylinder, this.halfHeight = A2, this.radius = I2;
+  constructor(A3, I3) {
+    super(), this.type = gI.Cylinder, this.halfHeight = A3, this.radius = I3;
   }
   intoRaw() {
     return dA.cylinder(this.halfHeight, this.radius);
   }
 };
 var og = class extends PI {
-  constructor(A2, I2, g2) {
-    super(), this.type = gI.RoundCylinder, this.borderRadius = g2, this.halfHeight = A2, this.radius = I2;
+  constructor(A3, I3, g4) {
+    super(), this.type = gI.RoundCylinder, this.borderRadius = g4, this.halfHeight = A3, this.radius = I3;
   }
   intoRaw() {
     return dA.roundCylinder(this.halfHeight, this.radius, this.borderRadius);
   }
 };
 var Sg = class extends PI {
-  constructor(A2, I2) {
-    super(), this.type = gI.Cone, this.halfHeight = A2, this.radius = I2;
+  constructor(A3, I3) {
+    super(), this.type = gI.Cone, this.halfHeight = A3, this.radius = I3;
   }
   intoRaw() {
     return dA.cone(this.halfHeight, this.radius);
   }
 };
 var wg = class extends PI {
-  constructor(A2, I2, g2) {
-    super(), this.type = gI.RoundCone, this.halfHeight = A2, this.radius = I2, this.borderRadius = g2;
+  constructor(A3, I3, g4) {
+    super(), this.type = gI.RoundCone, this.halfHeight = A3, this.radius = I3, this.borderRadius = g4;
   }
   intoRaw() {
     return dA.roundCone(this.halfHeight, this.radius, this.borderRadius);
   }
 };
 var Gg = class {
-  constructor(A2) {
-    this.raw = A2 || new KA();
+  constructor(A3) {
+    this.raw = A3 || new KA();
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0;
   }
-  step(A2, I2, g2, C2, B2, Q2, E2, i2, D2, o2, S2, w2) {
-    let G2 = fA.intoRaw(A2);
-    S2 ? this.raw.stepWithEvents(G2, I2.raw, g2.raw, C2.raw, B2.raw, Q2.raw, E2.raw, i2.raw, D2.raw, o2.raw, S2.raw, w2, w2 ? w2.filterContactPair : null, w2 ? w2.filterIntersectionPair : null) : this.raw.step(G2, I2.raw, g2.raw, C2.raw, B2.raw, Q2.raw, E2.raw, i2.raw, D2.raw, o2.raw), G2.free();
+  step(A3, I3, g4, C4, B3, Q3, E2, i2, D2, o2, S2, w2) {
+    let G2 = fA.intoRaw(A3);
+    S2 ? this.raw.stepWithEvents(G2, I3.raw, g4.raw, C4.raw, B3.raw, Q3.raw, E2.raw, i2.raw, D2.raw, o2.raw, S2.raw, w2, w2 ? w2.filterContactPair : null, w2 ? w2.filterIntersectionPair : null) : this.raw.step(G2, I3.raw, g4.raw, C4.raw, B3.raw, Q3.raw, E2.raw, i2.raw, D2.raw, o2.raw), G2.free();
   }
 };
-!function(A2) {
-  A2[A2.EXCLUDE_FIXED = 1] = "EXCLUDE_FIXED", A2[A2.EXCLUDE_KINEMATIC = 2] = "EXCLUDE_KINEMATIC", A2[A2.EXCLUDE_DYNAMIC = 4] = "EXCLUDE_DYNAMIC", A2[A2.EXCLUDE_SENSORS = 8] = "EXCLUDE_SENSORS", A2[A2.EXCLUDE_SOLIDS = 16] = "EXCLUDE_SOLIDS", A2[A2.ONLY_DYNAMIC = 3] = "ONLY_DYNAMIC", A2[A2.ONLY_KINEMATIC = 5] = "ONLY_KINEMATIC", A2[A2.ONLY_FIXED = 6] = "ONLY_FIXED";
+!function(A3) {
+  A3[A3.EXCLUDE_FIXED = 1] = "EXCLUDE_FIXED", A3[A3.EXCLUDE_KINEMATIC = 2] = "EXCLUDE_KINEMATIC", A3[A3.EXCLUDE_DYNAMIC = 4] = "EXCLUDE_DYNAMIC", A3[A3.EXCLUDE_SENSORS = 8] = "EXCLUDE_SENSORS", A3[A3.EXCLUDE_SOLIDS = 16] = "EXCLUDE_SOLIDS", A3[A3.ONLY_DYNAMIC = 3] = "ONLY_DYNAMIC", A3[A3.ONLY_KINEMATIC = 5] = "ONLY_KINEMATIC", A3[A3.ONLY_FIXED = 6] = "ONLY_FIXED";
 }(QI || (QI = {}));
 var kg = class {
-  constructor(A2) {
-    this.raw = A2 || new MA();
+  constructor(A3) {
+    this.raw = A3 || new MA();
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0;
   }
-  update(A2) {
-    this.raw.update(A2.raw);
+  update(A3) {
+    this.raw.update(A3.raw);
   }
-  castRay(A2, I2, g2, C2, B2, Q2, E2, i2, D2, o2) {
-    let S2 = fA.intoRaw(g2.origin), w2 = fA.intoRaw(g2.dir), G2 = fI.fromRaw(I2, this.raw.castRay(A2.raw, I2.raw, S2, w2, C2, B2, Q2, E2, i2, D2, o2));
+  castRay(A3, I3, g4, C4, B3, Q3, E2, i2, D2, o2) {
+    let S2 = fA.intoRaw(g4.origin), w2 = fA.intoRaw(g4.dir), G2 = fI.fromRaw(I3, this.raw.castRay(A3.raw, I3.raw, S2, w2, C4, B3, Q3, E2, i2, D2, o2));
     return S2.free(), w2.free(), G2;
   }
-  castRayAndGetNormal(A2, I2, g2, C2, B2, Q2, E2, i2, D2, o2) {
-    let S2 = fA.intoRaw(g2.origin), w2 = fA.intoRaw(g2.dir), G2 = jI.fromRaw(I2, this.raw.castRayAndGetNormal(A2.raw, I2.raw, S2, w2, C2, B2, Q2, E2, i2, D2, o2));
+  castRayAndGetNormal(A3, I3, g4, C4, B3, Q3, E2, i2, D2, o2) {
+    let S2 = fA.intoRaw(g4.origin), w2 = fA.intoRaw(g4.dir), G2 = jI.fromRaw(I3, this.raw.castRayAndGetNormal(A3.raw, I3.raw, S2, w2, C4, B3, Q3, E2, i2, D2, o2));
     return S2.free(), w2.free(), G2;
   }
-  intersectionsWithRay(A2, I2, g2, C2, B2, Q2, E2, i2, D2, o2, S2) {
-    let w2 = fA.intoRaw(g2.origin), G2 = fA.intoRaw(g2.dir);
-    this.raw.intersectionsWithRay(A2.raw, I2.raw, w2, G2, C2, B2, (A3) => Q2(jI.fromRaw(I2, A3)), E2, i2, D2, o2, S2), w2.free(), G2.free();
+  intersectionsWithRay(A3, I3, g4, C4, B3, Q3, E2, i2, D2, o2, S2) {
+    let w2 = fA.intoRaw(g4.origin), G2 = fA.intoRaw(g4.dir);
+    this.raw.intersectionsWithRay(A3.raw, I3.raw, w2, G2, C4, B3, (A4) => Q3(jI.fromRaw(I3, A4)), E2, i2, D2, o2, S2), w2.free(), G2.free();
   }
-  intersectionWithShape(A2, I2, g2, C2, B2, Q2, E2, i2, D2, o2) {
-    let S2 = fA.intoRaw(g2), w2 = XA.intoRaw(C2), G2 = B2.intoRaw(), k2 = this.raw.intersectionWithShape(A2.raw, I2.raw, S2, w2, G2, Q2, E2, i2, D2, o2);
+  intersectionWithShape(A3, I3, g4, C4, B3, Q3, E2, i2, D2, o2) {
+    let S2 = fA.intoRaw(g4), w2 = XA.intoRaw(C4), G2 = B3.intoRaw(), k2 = this.raw.intersectionWithShape(A3.raw, I3.raw, S2, w2, G2, Q3, E2, i2, D2, o2);
     return S2.free(), w2.free(), G2.free(), k2;
   }
-  projectPoint(A2, I2, g2, C2, B2, Q2, E2, i2, D2) {
-    let o2 = fA.intoRaw(g2), S2 = WI.fromRaw(I2, this.raw.projectPoint(A2.raw, I2.raw, o2, C2, B2, Q2, E2, i2, D2));
+  projectPoint(A3, I3, g4, C4, B3, Q3, E2, i2, D2) {
+    let o2 = fA.intoRaw(g4), S2 = WI.fromRaw(I3, this.raw.projectPoint(A3.raw, I3.raw, o2, C4, B3, Q3, E2, i2, D2));
     return o2.free(), S2;
   }
-  projectPointAndGetFeature(A2, I2, g2, C2, B2, Q2, E2, i2) {
-    let D2 = fA.intoRaw(g2), o2 = WI.fromRaw(I2, this.raw.projectPointAndGetFeature(A2.raw, I2.raw, D2, C2, B2, Q2, E2, i2));
+  projectPointAndGetFeature(A3, I3, g4, C4, B3, Q3, E2, i2) {
+    let D2 = fA.intoRaw(g4), o2 = WI.fromRaw(I3, this.raw.projectPointAndGetFeature(A3.raw, I3.raw, D2, C4, B3, Q3, E2, i2));
     return D2.free(), o2;
   }
-  intersectionsWithPoint(A2, I2, g2, C2, B2, Q2, E2, i2, D2) {
-    let o2 = fA.intoRaw(g2);
-    this.raw.intersectionsWithPoint(A2.raw, I2.raw, o2, C2, B2, Q2, E2, i2, D2), o2.free();
+  intersectionsWithPoint(A3, I3, g4, C4, B3, Q3, E2, i2, D2) {
+    let o2 = fA.intoRaw(g4);
+    this.raw.intersectionsWithPoint(A3.raw, I3.raw, o2, C4, B3, Q3, E2, i2, D2), o2.free();
   }
-  castShape(A2, I2, g2, C2, B2, Q2, E2, i2, D2, o2, S2, w2, G2, k2) {
-    let K2 = fA.intoRaw(g2), J2 = XA.intoRaw(C2), U2 = fA.intoRaw(B2), h2 = Q2.intoRaw(), y2 = XI.fromRaw(I2, this.raw.castShape(A2.raw, I2.raw, K2, J2, U2, h2, E2, i2, D2, o2, S2, w2, G2, k2));
+  castShape(A3, I3, g4, C4, B3, Q3, E2, i2, D2, o2, S2, w2, G2, k2) {
+    let K2 = fA.intoRaw(g4), J2 = XA.intoRaw(C4), U2 = fA.intoRaw(B3), h2 = Q3.intoRaw(), y2 = XI.fromRaw(I3, this.raw.castShape(A3.raw, I3.raw, K2, J2, U2, h2, E2, i2, D2, o2, S2, w2, G2, k2));
     return K2.free(), J2.free(), U2.free(), h2.free(), y2;
   }
-  intersectionsWithShape(A2, I2, g2, C2, B2, Q2, E2, i2, D2, o2, S2) {
-    let w2 = fA.intoRaw(g2), G2 = XA.intoRaw(C2), k2 = B2.intoRaw();
-    this.raw.intersectionsWithShape(A2.raw, I2.raw, w2, G2, k2, Q2, E2, i2, D2, o2, S2), w2.free(), G2.free(), k2.free();
+  intersectionsWithShape(A3, I3, g4, C4, B3, Q3, E2, i2, D2, o2, S2) {
+    let w2 = fA.intoRaw(g4), G2 = XA.intoRaw(C4), k2 = B3.intoRaw();
+    this.raw.intersectionsWithShape(A3.raw, I3.raw, w2, G2, k2, Q3, E2, i2, D2, o2, S2), w2.free(), G2.free(), k2.free();
   }
-  collidersWithAabbIntersectingAabb(A2, I2, g2) {
-    let C2 = fA.intoRaw(A2), B2 = fA.intoRaw(I2);
-    this.raw.collidersWithAabbIntersectingAabb(C2, B2, g2), C2.free(), B2.free();
+  collidersWithAabbIntersectingAabb(A3, I3, g4) {
+    let C4 = fA.intoRaw(A3), B3 = fA.intoRaw(I3);
+    this.raw.collidersWithAabbIntersectingAabb(C4, B3, g4), C4.free(), B3.free();
   }
 };
 var Kg = class {
-  constructor(A2) {
-    this.raw = A2 || new rA();
+  constructor(A3) {
+    this.raw = A3 || new rA();
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0;
   }
-  serializeAll(A2, I2, g2, C2, B2, Q2, E2, i2, D2) {
-    let o2 = fA.intoRaw(A2);
-    const S2 = this.raw.serializeAll(o2, I2.raw, g2.raw, C2.raw, B2.raw, Q2.raw, E2.raw, i2.raw, D2.raw);
+  serializeAll(A3, I3, g4, C4, B3, Q3, E2, i2, D2) {
+    let o2 = fA.intoRaw(A3);
+    const S2 = this.raw.serializeAll(o2, I3.raw, g4.raw, C4.raw, B3.raw, Q3.raw, E2.raw, i2.raw, D2.raw);
     return o2.free(), S2;
   }
-  deserializeAll(A2) {
-    return Mg.fromRaw(this.raw.deserializeAll(A2));
+  deserializeAll(A3) {
+    return Mg.fromRaw(this.raw.deserializeAll(A3));
   }
 };
 var Jg = class {
-  constructor(A2, I2) {
-    this.vertices = A2, this.colors = I2;
+  constructor(A3, I3) {
+    this.vertices = A3, this.colors = I3;
   }
 };
 var Ug = class {
-  constructor(A2) {
-    this.raw = A2 || new V();
+  constructor(A3) {
+    this.raw = A3 || new V();
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0, this.vertices = void 0, this.colors = void 0;
   }
-  render(A2, I2, g2, C2, B2) {
-    this.raw.render(A2.raw, I2.raw, g2.raw, C2.raw, B2.raw), this.vertices = this.raw.vertices(), this.colors = this.raw.colors();
+  render(A3, I3, g4, C4, B3) {
+    this.raw.render(A3.raw, I3.raw, g4.raw, C4.raw, B3.raw), this.vertices = this.raw.vertices(), this.colors = this.raw.colors();
   }
 };
 var hg = class {
 };
 var yg = class {
-  constructor(A2, I2, g2, C2, B2) {
-    this.params = I2, this.bodies = g2, this.colliders = C2, this.queries = B2, this.raw = new DA(A2), this.rawCharacterCollision = new r(), this._applyImpulsesToDynamicBodies = false, this._characterMass = null;
+  constructor(A3, I3, g4, C4, B3) {
+    this.params = I3, this.bodies = g4, this.colliders = C4, this.queries = B3, this.raw = new DA(A3), this.rawCharacterCollision = new r(), this._applyImpulsesToDynamicBodies = false, this._characterMass = null;
   }
   free() {
     this.raw && (this.raw.free(), this.rawCharacterCollision.free()), this.raw = void 0, this.rawCharacterCollision = void 0;
@@ -29990,39 +32131,39 @@ var yg = class {
   up() {
     return this.raw.up();
   }
-  setUp(A2) {
-    let I2 = fA.intoRaw(A2);
-    return this.raw.setUp(I2);
+  setUp(A3) {
+    let I3 = fA.intoRaw(A3);
+    return this.raw.setUp(I3);
   }
   applyImpulsesToDynamicBodies() {
     return this._applyImpulsesToDynamicBodies;
   }
-  setApplyImpulsesToDynamicBodies(A2) {
-    this._applyImpulsesToDynamicBodies = A2;
+  setApplyImpulsesToDynamicBodies(A3) {
+    this._applyImpulsesToDynamicBodies = A3;
   }
   characterMass() {
     return this._characterMass;
   }
-  setCharacterMass(A2) {
-    this._characterMass = A2;
+  setCharacterMass(A3) {
+    this._characterMass = A3;
   }
   offset() {
     return this.raw.offset();
   }
-  setOffset(A2) {
-    this.raw.setOffset(A2);
+  setOffset(A3) {
+    this.raw.setOffset(A3);
   }
   normalNudgeFactor() {
     return this.raw.normalNudgeFactor();
   }
-  setNormalNudgeFactor(A2) {
-    this.raw.setNormalNudgeFactor(A2);
+  setNormalNudgeFactor(A3) {
+    this.raw.setNormalNudgeFactor(A3);
   }
   slideEnabled() {
     return this.raw.slideEnabled();
   }
-  setSlideEnabled(A2) {
-    this.raw.setSlideEnabled(A2);
+  setSlideEnabled(A3) {
+    this.raw.setSlideEnabled(A3);
   }
   autostepMaxHeight() {
     return this.raw.autostepMaxHeight();
@@ -30036,8 +32177,8 @@ var yg = class {
   autostepEnabled() {
     return this.raw.autostepEnabled();
   }
-  enableAutostep(A2, I2, g2) {
-    this.raw.enableAutostep(A2, I2, g2);
+  enableAutostep(A3, I3, g4) {
+    this.raw.enableAutostep(A3, I3, g4);
   }
   disableAutostep() {
     return this.raw.disableAutostep();
@@ -30045,20 +32186,20 @@ var yg = class {
   maxSlopeClimbAngle() {
     return this.raw.maxSlopeClimbAngle();
   }
-  setMaxSlopeClimbAngle(A2) {
-    this.raw.setMaxSlopeClimbAngle(A2);
+  setMaxSlopeClimbAngle(A3) {
+    this.raw.setMaxSlopeClimbAngle(A3);
   }
   minSlopeSlideAngle() {
     return this.raw.minSlopeSlideAngle();
   }
-  setMinSlopeSlideAngle(A2) {
-    this.raw.setMinSlopeSlideAngle(A2);
+  setMinSlopeSlideAngle(A3) {
+    this.raw.setMinSlopeSlideAngle(A3);
   }
   snapToGroundDistance() {
     return this.raw.snapToGroundDistance();
   }
-  enableSnapToGround(A2) {
-    this.raw.enableSnapToGround(A2);
+  enableSnapToGround(A3) {
+    this.raw.enableSnapToGround(A3);
   }
   disableSnapToGround() {
     this.raw.disableSnapToGround();
@@ -30066,9 +32207,9 @@ var yg = class {
   snapToGroundEnabled() {
     return this.raw.snapToGroundEnabled();
   }
-  computeColliderMovement(A2, I2, g2, C2, B2) {
-    let Q2 = fA.intoRaw(I2);
-    this.raw.computeColliderMovement(this.params.dt, this.bodies.raw, this.colliders.raw, this.queries.raw, A2.handle, Q2, this._applyImpulsesToDynamicBodies, this._characterMass, g2, C2, this.colliders.castClosure(B2)), Q2.free();
+  computeColliderMovement(A3, I3, g4, C4, B3) {
+    let Q3 = fA.intoRaw(I3);
+    this.raw.computeColliderMovement(this.params.dt, this.bodies.raw, this.colliders.raw, this.queries.raw, A3.handle, Q3, this._applyImpulsesToDynamicBodies, this._characterMass, g4, C4, this.colliders.castClosure(B3)), Q3.free();
   }
   computedMovement() {
     return fA.fromRaw(this.raw.computedMovement());
@@ -30079,23 +32220,23 @@ var yg = class {
   numComputedCollisions() {
     return this.raw.numComputedCollisions();
   }
-  computedCollision(A2, I2) {
-    if (this.raw.computedCollision(A2, this.rawCharacterCollision)) {
-      let A3 = this.rawCharacterCollision;
-      return (I2 = null != I2 ? I2 : new hg()).translationDeltaApplied = fA.fromRaw(A3.translationDeltaApplied()), I2.translationDeltaRemaining = fA.fromRaw(A3.translationDeltaRemaining()), I2.toi = A3.toi(), I2.witness1 = fA.fromRaw(A3.worldWitness1()), I2.witness2 = fA.fromRaw(A3.worldWitness2()), I2.normal1 = fA.fromRaw(A3.worldNormal1()), I2.normal2 = fA.fromRaw(A3.worldNormal2()), I2.collider = this.colliders.get(A3.handle()), I2;
+  computedCollision(A3, I3) {
+    if (this.raw.computedCollision(A3, this.rawCharacterCollision)) {
+      let A4 = this.rawCharacterCollision;
+      return (I3 = null != I3 ? I3 : new hg()).translationDeltaApplied = fA.fromRaw(A4.translationDeltaApplied()), I3.translationDeltaRemaining = fA.fromRaw(A4.translationDeltaRemaining()), I3.toi = A4.toi(), I3.witness1 = fA.fromRaw(A4.worldWitness1()), I3.witness2 = fA.fromRaw(A4.worldWitness2()), I3.normal1 = fA.fromRaw(A4.worldNormal1()), I3.normal2 = fA.fromRaw(A4.worldNormal2()), I3.collider = this.colliders.get(A4.handle()), I3;
     }
     return null;
   }
 };
 var Ng = class {
-  constructor(A2, I2, g2, C2) {
-    this.raw = new v(A2.handle), this.bodies = I2, this.colliders = g2, this.queries = C2, this._chassis = A2;
+  constructor(A3, I3, g4, C4) {
+    this.raw = new v(A3.handle), this.bodies = I3, this.colliders = g4, this.queries = C4, this._chassis = A3;
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0;
   }
-  updateVehicle(A2, I2, g2, C2) {
-    this.raw.update_vehicle(A2, this.bodies.raw, this.colliders.raw, this.queries.raw, I2, g2, this.colliders.castClosure(C2));
+  updateVehicle(A3, I3, g4, C4) {
+    this.raw.update_vehicle(A3, this.bodies.raw, this.colliders.raw, this.queries.raw, I3, g4, this.colliders.castClosure(C4));
   }
   currentVehicleSpeed() {
     return this.raw.current_vehicle_speed();
@@ -30106,167 +32247,167 @@ var Ng = class {
   get indexUpAxis() {
     return this.raw.index_up_axis();
   }
-  set indexUpAxis(A2) {
-    this.raw.set_index_up_axis(A2);
+  set indexUpAxis(A3) {
+    this.raw.set_index_up_axis(A3);
   }
   get indexForwardAxis() {
     return this.raw.index_forward_axis();
   }
-  set setIndexForwardAxis(A2) {
-    this.raw.set_index_forward_axis(A2);
+  set setIndexForwardAxis(A3) {
+    this.raw.set_index_forward_axis(A3);
   }
-  addWheel(A2, I2, g2, C2, B2) {
-    let Q2 = fA.intoRaw(A2), E2 = fA.intoRaw(I2), i2 = fA.intoRaw(g2);
-    this.raw.add_wheel(Q2, E2, i2, C2, B2), Q2.free(), E2.free(), i2.free();
+  addWheel(A3, I3, g4, C4, B3) {
+    let Q3 = fA.intoRaw(A3), E2 = fA.intoRaw(I3), i2 = fA.intoRaw(g4);
+    this.raw.add_wheel(Q3, E2, i2, C4, B3), Q3.free(), E2.free(), i2.free();
   }
   numWheels() {
     return this.raw.num_wheels();
   }
-  wheelChassisConnectionPointCs(A2) {
-    return fA.fromRaw(this.raw.wheel_chassis_connection_point_cs(A2));
+  wheelChassisConnectionPointCs(A3) {
+    return fA.fromRaw(this.raw.wheel_chassis_connection_point_cs(A3));
   }
-  setWheelChassisConnectionPointCs(A2, I2) {
-    let g2 = fA.intoRaw(I2);
-    this.raw.set_wheel_chassis_connection_point_cs(A2, g2), g2.free();
+  setWheelChassisConnectionPointCs(A3, I3) {
+    let g4 = fA.intoRaw(I3);
+    this.raw.set_wheel_chassis_connection_point_cs(A3, g4), g4.free();
   }
-  wheelSuspensionRestLength(A2) {
-    return this.raw.wheel_suspension_rest_length(A2);
+  wheelSuspensionRestLength(A3) {
+    return this.raw.wheel_suspension_rest_length(A3);
   }
-  setWheelSuspensionRestLength(A2, I2) {
-    this.raw.set_wheel_suspension_rest_length(A2, I2);
+  setWheelSuspensionRestLength(A3, I3) {
+    this.raw.set_wheel_suspension_rest_length(A3, I3);
   }
-  wheelMaxSuspensionTravel(A2) {
-    return this.raw.wheel_max_suspension_travel(A2);
+  wheelMaxSuspensionTravel(A3) {
+    return this.raw.wheel_max_suspension_travel(A3);
   }
-  setWheelMaxSuspensionTravel(A2, I2) {
-    this.raw.set_wheel_max_suspension_travel(A2, I2);
+  setWheelMaxSuspensionTravel(A3, I3) {
+    this.raw.set_wheel_max_suspension_travel(A3, I3);
   }
-  wheelRadius(A2) {
-    return this.raw.wheel_radius(A2);
+  wheelRadius(A3) {
+    return this.raw.wheel_radius(A3);
   }
-  setWheelRadius(A2, I2) {
-    this.raw.set_wheel_radius(A2, I2);
+  setWheelRadius(A3, I3) {
+    this.raw.set_wheel_radius(A3, I3);
   }
-  wheelSuspensionStiffness(A2) {
-    return this.raw.wheel_suspension_stiffness(A2);
+  wheelSuspensionStiffness(A3) {
+    return this.raw.wheel_suspension_stiffness(A3);
   }
-  setWheelSuspensionStiffness(A2, I2) {
-    this.raw.set_wheel_suspension_stiffness(A2, I2);
+  setWheelSuspensionStiffness(A3, I3) {
+    this.raw.set_wheel_suspension_stiffness(A3, I3);
   }
-  wheelSuspensionCompression(A2) {
-    return this.raw.wheel_suspension_compression(A2);
+  wheelSuspensionCompression(A3) {
+    return this.raw.wheel_suspension_compression(A3);
   }
-  setWheelSuspensionCompression(A2, I2) {
-    this.raw.set_wheel_suspension_compression(A2, I2);
+  setWheelSuspensionCompression(A3, I3) {
+    this.raw.set_wheel_suspension_compression(A3, I3);
   }
-  wheelSuspensionRelaxation(A2) {
-    return this.raw.wheel_suspension_relaxation(A2);
+  wheelSuspensionRelaxation(A3) {
+    return this.raw.wheel_suspension_relaxation(A3);
   }
-  setWheelSuspensionRelaxation(A2, I2) {
-    this.raw.set_wheel_suspension_relaxation(A2, I2);
+  setWheelSuspensionRelaxation(A3, I3) {
+    this.raw.set_wheel_suspension_relaxation(A3, I3);
   }
-  wheelMaxSuspensionForce(A2) {
-    return this.raw.wheel_max_suspension_force(A2);
+  wheelMaxSuspensionForce(A3) {
+    return this.raw.wheel_max_suspension_force(A3);
   }
-  setWheelMaxSuspensionForce(A2, I2) {
-    this.raw.set_wheel_max_suspension_force(A2, I2);
+  setWheelMaxSuspensionForce(A3, I3) {
+    this.raw.set_wheel_max_suspension_force(A3, I3);
   }
-  wheelBrake(A2) {
-    return this.raw.wheel_brake(A2);
+  wheelBrake(A3) {
+    return this.raw.wheel_brake(A3);
   }
-  setWheelBrake(A2, I2) {
-    this.raw.set_wheel_brake(A2, I2);
+  setWheelBrake(A3, I3) {
+    this.raw.set_wheel_brake(A3, I3);
   }
-  wheelSteering(A2) {
-    return this.raw.wheel_steering(A2);
+  wheelSteering(A3) {
+    return this.raw.wheel_steering(A3);
   }
-  setWheelSteering(A2, I2) {
-    this.raw.set_wheel_steering(A2, I2);
+  setWheelSteering(A3, I3) {
+    this.raw.set_wheel_steering(A3, I3);
   }
-  wheelEngineForce(A2) {
-    return this.raw.wheel_engine_force(A2);
+  wheelEngineForce(A3) {
+    return this.raw.wheel_engine_force(A3);
   }
-  setWheelEngineForce(A2, I2) {
-    this.raw.set_wheel_engine_force(A2, I2);
+  setWheelEngineForce(A3, I3) {
+    this.raw.set_wheel_engine_force(A3, I3);
   }
-  wheelDirectionCs(A2) {
-    return fA.fromRaw(this.raw.wheel_direction_cs(A2));
+  wheelDirectionCs(A3) {
+    return fA.fromRaw(this.raw.wheel_direction_cs(A3));
   }
-  setWheelDirectionCs(A2, I2) {
-    let g2 = fA.intoRaw(I2);
-    this.raw.set_wheel_direction_cs(A2, g2), g2.free();
+  setWheelDirectionCs(A3, I3) {
+    let g4 = fA.intoRaw(I3);
+    this.raw.set_wheel_direction_cs(A3, g4), g4.free();
   }
-  wheelAxleCs(A2) {
-    return fA.fromRaw(this.raw.wheel_axle_cs(A2));
+  wheelAxleCs(A3) {
+    return fA.fromRaw(this.raw.wheel_axle_cs(A3));
   }
-  setWheelAxleCs(A2, I2) {
-    let g2 = fA.intoRaw(I2);
-    this.raw.set_wheel_axle_cs(A2, g2), g2.free();
+  setWheelAxleCs(A3, I3) {
+    let g4 = fA.intoRaw(I3);
+    this.raw.set_wheel_axle_cs(A3, g4), g4.free();
   }
-  wheelFrictionSlip(A2) {
-    return this.raw.wheel_friction_slip(A2);
+  wheelFrictionSlip(A3) {
+    return this.raw.wheel_friction_slip(A3);
   }
-  setWheelFrictionSlip(A2, I2) {
-    this.raw.set_wheel_friction_slip(A2, I2);
+  setWheelFrictionSlip(A3, I3) {
+    this.raw.set_wheel_friction_slip(A3, I3);
   }
-  wheelSideFrictionStiffness(A2) {
-    return this.raw.wheel_side_friction_stiffness(A2);
+  wheelSideFrictionStiffness(A3) {
+    return this.raw.wheel_side_friction_stiffness(A3);
   }
-  setWheelSideFrictionStiffness(A2, I2) {
-    this.raw.set_wheel_side_friction_stiffness(A2, I2);
+  setWheelSideFrictionStiffness(A3, I3) {
+    this.raw.set_wheel_side_friction_stiffness(A3, I3);
   }
-  wheelRotation(A2) {
-    return this.raw.wheel_rotation(A2);
+  wheelRotation(A3) {
+    return this.raw.wheel_rotation(A3);
   }
-  wheelForwardImpulse(A2) {
-    return this.raw.wheel_forward_impulse(A2);
+  wheelForwardImpulse(A3) {
+    return this.raw.wheel_forward_impulse(A3);
   }
-  wheelSideImpulse(A2) {
-    return this.raw.wheel_side_impulse(A2);
+  wheelSideImpulse(A3) {
+    return this.raw.wheel_side_impulse(A3);
   }
-  wheelSuspensionForce(A2) {
-    return this.raw.wheel_suspension_force(A2);
+  wheelSuspensionForce(A3) {
+    return this.raw.wheel_suspension_force(A3);
   }
-  wheelContactNormal(A2) {
-    return fA.fromRaw(this.raw.wheel_contact_normal_ws(A2));
+  wheelContactNormal(A3) {
+    return fA.fromRaw(this.raw.wheel_contact_normal_ws(A3));
   }
-  wheelContactPoint(A2) {
-    return fA.fromRaw(this.raw.wheel_contact_point_ws(A2));
+  wheelContactPoint(A3) {
+    return fA.fromRaw(this.raw.wheel_contact_point_ws(A3));
   }
-  wheelSuspensionLength(A2) {
-    return this.raw.wheel_suspension_length(A2);
+  wheelSuspensionLength(A3) {
+    return this.raw.wheel_suspension_length(A3);
   }
-  wheelHardPoint(A2) {
-    return fA.fromRaw(this.raw.wheel_hard_point_ws(A2));
+  wheelHardPoint(A3) {
+    return fA.fromRaw(this.raw.wheel_hard_point_ws(A3));
   }
-  wheelIsInContact(A2) {
-    return this.raw.wheel_is_in_contact(A2);
+  wheelIsInContact(A3) {
+    return this.raw.wheel_is_in_contact(A3);
   }
-  wheelGroundObject(A2) {
-    return this.colliders.get(this.raw.wheel_ground_object(A2));
+  wheelGroundObject(A3) {
+    return this.colliders.get(this.raw.wheel_ground_object(A3));
   }
 };
 var Mg = class _Mg {
-  constructor(A2, I2, g2, C2, B2, Q2, E2, i2, D2, o2, S2, w2, G2, k2) {
-    this.gravity = A2, this.integrationParameters = new JI(I2), this.islands = new nI(g2), this.broadPhase = new dI(C2), this.narrowPhase = new TI(B2), this.bodies = new KI(Q2), this.colliders = new cg(E2), this.impulseJoints = new qI(i2), this.multibodyJoints = new eI(D2), this.ccdSolver = new rI(o2), this.queryPipeline = new kg(S2), this.physicsPipeline = new Gg(w2), this.serializationPipeline = new Kg(G2), this.debugRenderPipeline = new Ug(k2), this.characterControllers = /* @__PURE__ */ new Set(), this.vehicleControllers = /* @__PURE__ */ new Set(), this.impulseJoints.finalizeDeserialization(this.bodies), this.bodies.finalizeDeserialization(this.colliders), this.colliders.finalizeDeserialization(this.bodies);
+  constructor(A3, I3, g4, C4, B3, Q3, E2, i2, D2, o2, S2, w2, G2, k2) {
+    this.gravity = A3, this.integrationParameters = new JI(I3), this.islands = new nI(g4), this.broadPhase = new dI(C4), this.narrowPhase = new TI(B3), this.bodies = new KI(Q3), this.colliders = new cg(E2), this.impulseJoints = new qI(i2), this.multibodyJoints = new eI(D2), this.ccdSolver = new rI(o2), this.queryPipeline = new kg(S2), this.physicsPipeline = new Gg(w2), this.serializationPipeline = new Kg(G2), this.debugRenderPipeline = new Ug(k2), this.characterControllers = /* @__PURE__ */ new Set(), this.vehicleControllers = /* @__PURE__ */ new Set(), this.impulseJoints.finalizeDeserialization(this.bodies), this.bodies.finalizeDeserialization(this.colliders), this.colliders.finalizeDeserialization(this.bodies);
   }
   free() {
-    this.integrationParameters.free(), this.islands.free(), this.broadPhase.free(), this.narrowPhase.free(), this.bodies.free(), this.colliders.free(), this.impulseJoints.free(), this.multibodyJoints.free(), this.ccdSolver.free(), this.queryPipeline.free(), this.physicsPipeline.free(), this.serializationPipeline.free(), this.debugRenderPipeline.free(), this.characterControllers.forEach((A2) => A2.free()), this.vehicleControllers.forEach((A2) => A2.free()), this.integrationParameters = void 0, this.islands = void 0, this.broadPhase = void 0, this.narrowPhase = void 0, this.bodies = void 0, this.colliders = void 0, this.ccdSolver = void 0, this.impulseJoints = void 0, this.multibodyJoints = void 0, this.queryPipeline = void 0, this.physicsPipeline = void 0, this.serializationPipeline = void 0, this.debugRenderPipeline = void 0, this.characterControllers = void 0, this.vehicleControllers = void 0;
+    this.integrationParameters.free(), this.islands.free(), this.broadPhase.free(), this.narrowPhase.free(), this.bodies.free(), this.colliders.free(), this.impulseJoints.free(), this.multibodyJoints.free(), this.ccdSolver.free(), this.queryPipeline.free(), this.physicsPipeline.free(), this.serializationPipeline.free(), this.debugRenderPipeline.free(), this.characterControllers.forEach((A3) => A3.free()), this.vehicleControllers.forEach((A3) => A3.free()), this.integrationParameters = void 0, this.islands = void 0, this.broadPhase = void 0, this.narrowPhase = void 0, this.bodies = void 0, this.colliders = void 0, this.ccdSolver = void 0, this.impulseJoints = void 0, this.multibodyJoints = void 0, this.queryPipeline = void 0, this.physicsPipeline = void 0, this.serializationPipeline = void 0, this.debugRenderPipeline = void 0, this.characterControllers = void 0, this.vehicleControllers = void 0;
   }
-  static fromRaw(A2) {
-    return A2 ? new _Mg(fA.fromRaw(A2.takeGravity()), A2.takeIntegrationParameters(), A2.takeIslandManager(), A2.takeBroadPhase(), A2.takeNarrowPhase(), A2.takeBodies(), A2.takeColliders(), A2.takeImpulseJoints(), A2.takeMultibodyJoints()) : null;
+  static fromRaw(A3) {
+    return A3 ? new _Mg(fA.fromRaw(A3.takeGravity()), A3.takeIntegrationParameters(), A3.takeIslandManager(), A3.takeBroadPhase(), A3.takeNarrowPhase(), A3.takeBodies(), A3.takeColliders(), A3.takeImpulseJoints(), A3.takeMultibodyJoints()) : null;
   }
   takeSnapshot() {
     return this.serializationPipeline.serializeAll(this.gravity, this.integrationParameters, this.islands, this.broadPhase, this.narrowPhase, this.bodies, this.colliders, this.impulseJoints, this.multibodyJoints);
   }
-  static restoreSnapshot(A2) {
-    return new Kg().deserializeAll(A2);
+  static restoreSnapshot(A3) {
+    return new Kg().deserializeAll(A3);
   }
   debugRender() {
     return this.debugRenderPipeline.render(this.bodies, this.colliders, this.impulseJoints, this.multibodyJoints, this.narrowPhase), new Jg(this.debugRenderPipeline.vertices, this.debugRenderPipeline.colors);
   }
-  step(A2, I2) {
-    this.physicsPipeline.step(this.gravity, this.integrationParameters, this.islands, this.broadPhase, this.narrowPhase, this.bodies, this.colliders, this.impulseJoints, this.multibodyJoints, this.ccdSolver, A2, I2), this.queryPipeline.update(this.colliders);
+  step(A3, I3) {
+    this.physicsPipeline.step(this.gravity, this.integrationParameters, this.islands, this.broadPhase, this.narrowPhase, this.bodies, this.colliders, this.impulseJoints, this.multibodyJoints, this.ccdSolver, A3, I3), this.queryPipeline.update(this.colliders);
   }
   propagateModifiedBodyPositionsToColliders() {
     this.bodies.raw.propagateModifiedBodyPositionsToColliders(this.colliders.raw);
@@ -30277,32 +32418,32 @@ var Mg = class _Mg {
   get timestep() {
     return this.integrationParameters.dt;
   }
-  set timestep(A2) {
-    this.integrationParameters.dt = A2;
+  set timestep(A3) {
+    this.integrationParameters.dt = A3;
   }
   get lengthUnit() {
     return this.integrationParameters.lengthUnit;
   }
-  set lengthUnit(A2) {
-    this.integrationParameters.lengthUnit = A2;
+  set lengthUnit(A3) {
+    this.integrationParameters.lengthUnit = A3;
   }
   get numSolverIterations() {
     return this.integrationParameters.numSolverIterations;
   }
-  set numSolverIterations(A2) {
-    this.integrationParameters.numSolverIterations = A2;
+  set numSolverIterations(A3) {
+    this.integrationParameters.numSolverIterations = A3;
   }
   get numAdditionalFrictionIterations() {
     return this.integrationParameters.numAdditionalFrictionIterations;
   }
-  set numAdditionalFrictionIterations(A2) {
-    this.integrationParameters.numAdditionalFrictionIterations = A2;
+  set numAdditionalFrictionIterations(A3) {
+    this.integrationParameters.numAdditionalFrictionIterations = A3;
   }
   get numInternalPgsIterations() {
     return this.integrationParameters.numInternalPgsIterations;
   }
-  set numInternalPgsIterations(A2) {
-    this.integrationParameters.numInternalPgsIterations = A2;
+  set numInternalPgsIterations(A3) {
+    this.integrationParameters.numInternalPgsIterations = A3;
   }
   switchToStandardPgsSolver() {
     this.integrationParameters.switchToStandardPgsSolver();
@@ -30313,112 +32454,112 @@ var Mg = class _Mg {
   switchToSmallStepsPgsSolverWithoutWarmstart() {
     this.integrationParameters.switchToSmallStepsPgsSolverWithoutWarmstart();
   }
-  createRigidBody(A2) {
-    return this.bodies.createRigidBody(this.colliders, A2);
+  createRigidBody(A3) {
+    return this.bodies.createRigidBody(this.colliders, A3);
   }
-  createCharacterController(A2) {
-    let I2 = new yg(A2, this.integrationParameters, this.bodies, this.colliders, this.queryPipeline);
-    return this.characterControllers.add(I2), I2;
+  createCharacterController(A3) {
+    let I3 = new yg(A3, this.integrationParameters, this.bodies, this.colliders, this.queryPipeline);
+    return this.characterControllers.add(I3), I3;
   }
-  removeCharacterController(A2) {
-    this.characterControllers.delete(A2), A2.free();
+  removeCharacterController(A3) {
+    this.characterControllers.delete(A3), A3.free();
   }
-  createVehicleController(A2) {
-    let I2 = new Ng(A2, this.bodies, this.colliders, this.queryPipeline);
-    return this.vehicleControllers.add(I2), I2;
+  createVehicleController(A3) {
+    let I3 = new Ng(A3, this.bodies, this.colliders, this.queryPipeline);
+    return this.vehicleControllers.add(I3), I3;
   }
-  removeVehicleController(A2) {
-    this.vehicleControllers.delete(A2), A2.free();
+  removeVehicleController(A3) {
+    this.vehicleControllers.delete(A3), A3.free();
   }
-  createCollider(A2, I2) {
-    let g2 = I2 ? I2.handle : void 0;
-    return this.colliders.createCollider(this.bodies, A2, g2);
+  createCollider(A3, I3) {
+    let g4 = I3 ? I3.handle : void 0;
+    return this.colliders.createCollider(this.bodies, A3, g4);
   }
-  createImpulseJoint(A2, I2, g2, C2) {
-    return this.impulseJoints.createJoint(this.bodies, A2, I2.handle, g2.handle, C2);
+  createImpulseJoint(A3, I3, g4, C4) {
+    return this.impulseJoints.createJoint(this.bodies, A3, I3.handle, g4.handle, C4);
   }
-  createMultibodyJoint(A2, I2, g2, C2) {
-    return this.multibodyJoints.createJoint(A2, I2.handle, g2.handle, C2);
+  createMultibodyJoint(A3, I3, g4, C4) {
+    return this.multibodyJoints.createJoint(A3, I3.handle, g4.handle, C4);
   }
-  getRigidBody(A2) {
-    return this.bodies.get(A2);
+  getRigidBody(A3) {
+    return this.bodies.get(A3);
   }
-  getCollider(A2) {
-    return this.colliders.get(A2);
+  getCollider(A3) {
+    return this.colliders.get(A3);
   }
-  getImpulseJoint(A2) {
-    return this.impulseJoints.get(A2);
+  getImpulseJoint(A3) {
+    return this.impulseJoints.get(A3);
   }
-  getMultibodyJoint(A2) {
-    return this.multibodyJoints.get(A2);
+  getMultibodyJoint(A3) {
+    return this.multibodyJoints.get(A3);
   }
-  removeRigidBody(A2) {
-    this.bodies && this.bodies.remove(A2.handle, this.islands, this.colliders, this.impulseJoints, this.multibodyJoints);
+  removeRigidBody(A3) {
+    this.bodies && this.bodies.remove(A3.handle, this.islands, this.colliders, this.impulseJoints, this.multibodyJoints);
   }
-  removeCollider(A2, I2) {
-    this.colliders && this.colliders.remove(A2.handle, this.islands, this.bodies, I2);
+  removeCollider(A3, I3) {
+    this.colliders && this.colliders.remove(A3.handle, this.islands, this.bodies, I3);
   }
-  removeImpulseJoint(A2, I2) {
-    this.impulseJoints && this.impulseJoints.remove(A2.handle, I2);
+  removeImpulseJoint(A3, I3) {
+    this.impulseJoints && this.impulseJoints.remove(A3.handle, I3);
   }
-  removeMultibodyJoint(A2, I2) {
-    this.impulseJoints && this.multibodyJoints.remove(A2.handle, I2);
+  removeMultibodyJoint(A3, I3) {
+    this.impulseJoints && this.multibodyJoints.remove(A3.handle, I3);
   }
-  forEachCollider(A2) {
-    this.colliders.forEach(A2);
+  forEachCollider(A3) {
+    this.colliders.forEach(A3);
   }
-  forEachRigidBody(A2) {
-    this.bodies.forEach(A2);
+  forEachRigidBody(A3) {
+    this.bodies.forEach(A3);
   }
-  forEachActiveRigidBody(A2) {
-    this.bodies.forEachActiveRigidBody(this.islands, A2);
+  forEachActiveRigidBody(A3) {
+    this.bodies.forEachActiveRigidBody(this.islands, A3);
   }
-  castRay(A2, I2, g2, C2, B2, Q2, E2, i2) {
-    return this.queryPipeline.castRay(this.bodies, this.colliders, A2, I2, g2, C2, B2, Q2 ? Q2.handle : null, E2 ? E2.handle : null, this.colliders.castClosure(i2));
+  castRay(A3, I3, g4, C4, B3, Q3, E2, i2) {
+    return this.queryPipeline.castRay(this.bodies, this.colliders, A3, I3, g4, C4, B3, Q3 ? Q3.handle : null, E2 ? E2.handle : null, this.colliders.castClosure(i2));
   }
-  castRayAndGetNormal(A2, I2, g2, C2, B2, Q2, E2, i2) {
-    return this.queryPipeline.castRayAndGetNormal(this.bodies, this.colliders, A2, I2, g2, C2, B2, Q2 ? Q2.handle : null, E2 ? E2.handle : null, this.colliders.castClosure(i2));
+  castRayAndGetNormal(A3, I3, g4, C4, B3, Q3, E2, i2) {
+    return this.queryPipeline.castRayAndGetNormal(this.bodies, this.colliders, A3, I3, g4, C4, B3, Q3 ? Q3.handle : null, E2 ? E2.handle : null, this.colliders.castClosure(i2));
   }
-  intersectionsWithRay(A2, I2, g2, C2, B2, Q2, E2, i2, D2) {
-    this.queryPipeline.intersectionsWithRay(this.bodies, this.colliders, A2, I2, g2, C2, B2, Q2, E2 ? E2.handle : null, i2 ? i2.handle : null, this.colliders.castClosure(D2));
+  intersectionsWithRay(A3, I3, g4, C4, B3, Q3, E2, i2, D2) {
+    this.queryPipeline.intersectionsWithRay(this.bodies, this.colliders, A3, I3, g4, C4, B3, Q3, E2 ? E2.handle : null, i2 ? i2.handle : null, this.colliders.castClosure(D2));
   }
-  intersectionWithShape(A2, I2, g2, C2, B2, Q2, E2, i2) {
-    let D2 = this.queryPipeline.intersectionWithShape(this.bodies, this.colliders, A2, I2, g2, C2, B2, Q2 ? Q2.handle : null, E2 ? E2.handle : null, this.colliders.castClosure(i2));
+  intersectionWithShape(A3, I3, g4, C4, B3, Q3, E2, i2) {
+    let D2 = this.queryPipeline.intersectionWithShape(this.bodies, this.colliders, A3, I3, g4, C4, B3, Q3 ? Q3.handle : null, E2 ? E2.handle : null, this.colliders.castClosure(i2));
     return null != D2 ? this.colliders.get(D2) : null;
   }
-  projectPoint(A2, I2, g2, C2, B2, Q2, E2) {
-    return this.queryPipeline.projectPoint(this.bodies, this.colliders, A2, I2, g2, C2, B2 ? B2.handle : null, Q2 ? Q2.handle : null, this.colliders.castClosure(E2));
+  projectPoint(A3, I3, g4, C4, B3, Q3, E2) {
+    return this.queryPipeline.projectPoint(this.bodies, this.colliders, A3, I3, g4, C4, B3 ? B3.handle : null, Q3 ? Q3.handle : null, this.colliders.castClosure(E2));
   }
-  projectPointAndGetFeature(A2, I2, g2, C2, B2, Q2) {
-    return this.queryPipeline.projectPointAndGetFeature(this.bodies, this.colliders, A2, I2, g2, C2 ? C2.handle : null, B2 ? B2.handle : null, this.colliders.castClosure(Q2));
+  projectPointAndGetFeature(A3, I3, g4, C4, B3, Q3) {
+    return this.queryPipeline.projectPointAndGetFeature(this.bodies, this.colliders, A3, I3, g4, C4 ? C4.handle : null, B3 ? B3.handle : null, this.colliders.castClosure(Q3));
   }
-  intersectionsWithPoint(A2, I2, g2, C2, B2, Q2, E2) {
-    this.queryPipeline.intersectionsWithPoint(this.bodies, this.colliders, A2, this.colliders.castClosure(I2), g2, C2, B2 ? B2.handle : null, Q2 ? Q2.handle : null, this.colliders.castClosure(E2));
+  intersectionsWithPoint(A3, I3, g4, C4, B3, Q3, E2) {
+    this.queryPipeline.intersectionsWithPoint(this.bodies, this.colliders, A3, this.colliders.castClosure(I3), g4, C4, B3 ? B3.handle : null, Q3 ? Q3.handle : null, this.colliders.castClosure(E2));
   }
-  castShape(A2, I2, g2, C2, B2, Q2, E2, i2, D2, o2, S2, w2) {
-    return this.queryPipeline.castShape(this.bodies, this.colliders, A2, I2, g2, C2, B2, Q2, E2, i2, D2, o2 ? o2.handle : null, S2 ? S2.handle : null, this.colliders.castClosure(w2));
+  castShape(A3, I3, g4, C4, B3, Q3, E2, i2, D2, o2, S2, w2) {
+    return this.queryPipeline.castShape(this.bodies, this.colliders, A3, I3, g4, C4, B3, Q3, E2, i2, D2, o2 ? o2.handle : null, S2 ? S2.handle : null, this.colliders.castClosure(w2));
   }
-  intersectionsWithShape(A2, I2, g2, C2, B2, Q2, E2, i2, D2) {
-    this.queryPipeline.intersectionsWithShape(this.bodies, this.colliders, A2, I2, g2, this.colliders.castClosure(C2), B2, Q2, E2 ? E2.handle : null, i2 ? i2.handle : null, this.colliders.castClosure(D2));
+  intersectionsWithShape(A3, I3, g4, C4, B3, Q3, E2, i2, D2) {
+    this.queryPipeline.intersectionsWithShape(this.bodies, this.colliders, A3, I3, g4, this.colliders.castClosure(C4), B3, Q3, E2 ? E2.handle : null, i2 ? i2.handle : null, this.colliders.castClosure(D2));
   }
-  collidersWithAabbIntersectingAabb(A2, I2, g2) {
-    this.queryPipeline.collidersWithAabbIntersectingAabb(A2, I2, this.colliders.castClosure(g2));
+  collidersWithAabbIntersectingAabb(A3, I3, g4) {
+    this.queryPipeline.collidersWithAabbIntersectingAabb(A3, I3, this.colliders.castClosure(g4));
   }
-  contactPairsWith(A2, I2) {
-    this.narrowPhase.contactPairsWith(A2.handle, this.colliders.castClosure(I2));
+  contactPairsWith(A3, I3) {
+    this.narrowPhase.contactPairsWith(A3.handle, this.colliders.castClosure(I3));
   }
-  intersectionPairsWith(A2, I2) {
-    this.narrowPhase.intersectionPairsWith(A2.handle, this.colliders.castClosure(I2));
+  intersectionPairsWith(A3, I3) {
+    this.narrowPhase.intersectionPairsWith(A3.handle, this.colliders.castClosure(I3));
   }
-  contactPair(A2, I2, g2) {
-    this.narrowPhase.contactPair(A2.handle, I2.handle, g2);
+  contactPair(A3, I3, g4) {
+    this.narrowPhase.contactPair(A3.handle, I3.handle, g4);
   }
-  intersectionPair(A2, I2) {
-    return this.narrowPhase.intersectionPair(A2.handle, I2.handle);
+  intersectionPair(A3, I3) {
+    return this.narrowPhase.intersectionPair(A3.handle, I3.handle);
   }
 };
-!function(A2) {
-  A2[A2.NONE = 0] = "NONE", A2[A2.COLLISION_EVENTS = 1] = "COLLISION_EVENTS", A2[A2.CONTACT_FORCE_EVENTS = 2] = "CONTACT_FORCE_EVENTS";
+!function(A3) {
+  A3[A3.NONE = 0] = "NONE", A3[A3.COLLISION_EVENTS = 1] = "COLLISION_EVENTS", A3[A3.CONTACT_FORCE_EVENTS = 2] = "CONTACT_FORCE_EVENTS";
 }(EI || (EI = {}));
 var Fg = class {
   free() {
@@ -30444,38 +32585,38 @@ var Fg = class {
   }
 };
 var ag = class {
-  constructor(A2, I2) {
-    this.raw = I2 || new _(A2);
+  constructor(A3, I3) {
+    this.raw = I3 || new _(A3);
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0;
   }
-  drainCollisionEvents(A2) {
-    this.raw.drainCollisionEvents(A2);
+  drainCollisionEvents(A3) {
+    this.raw.drainCollisionEvents(A3);
   }
-  drainContactForceEvents(A2) {
-    let I2 = new Fg();
-    this.raw.drainContactForceEvents((g2) => {
-      I2.raw = g2, A2(I2), I2.free();
+  drainContactForceEvents(A3) {
+    let I3 = new Fg();
+    this.raw.drainContactForceEvents((g4) => {
+      I3.raw = g4, A3(I3), I3.free();
     });
   }
   clear() {
     this.raw.clear();
   }
 };
-!function(A2) {
-  A2[A2.NONE = 0] = "NONE", A2[A2.FILTER_CONTACT_PAIRS = 1] = "FILTER_CONTACT_PAIRS", A2[A2.FILTER_INTERSECTION_PAIRS = 2] = "FILTER_INTERSECTION_PAIRS";
-}(iI || (iI = {})), function(A2) {
-  A2[A2.EMPTY = 0] = "EMPTY", A2[A2.COMPUTE_IMPULSE = 1] = "COMPUTE_IMPULSE";
-}(DI || (DI = {})), function(A2) {
-  A2[A2.DYNAMIC_DYNAMIC = 1] = "DYNAMIC_DYNAMIC", A2[A2.DYNAMIC_KINEMATIC = 12] = "DYNAMIC_KINEMATIC", A2[A2.DYNAMIC_FIXED = 2] = "DYNAMIC_FIXED", A2[A2.KINEMATIC_KINEMATIC = 52224] = "KINEMATIC_KINEMATIC", A2[A2.KINEMATIC_FIXED = 8704] = "KINEMATIC_FIXED", A2[A2.FIXED_FIXED = 32] = "FIXED_FIXED", A2[A2.DEFAULT = 15] = "DEFAULT", A2[A2.ALL = 60943] = "ALL";
+!function(A3) {
+  A3[A3.NONE = 0] = "NONE", A3[A3.FILTER_CONTACT_PAIRS = 1] = "FILTER_CONTACT_PAIRS", A3[A3.FILTER_INTERSECTION_PAIRS = 2] = "FILTER_INTERSECTION_PAIRS";
+}(iI || (iI = {})), function(A3) {
+  A3[A3.EMPTY = 0] = "EMPTY", A3[A3.COMPUTE_IMPULSE = 1] = "COMPUTE_IMPULSE";
+}(DI || (DI = {})), function(A3) {
+  A3[A3.DYNAMIC_DYNAMIC = 1] = "DYNAMIC_DYNAMIC", A3[A3.DYNAMIC_KINEMATIC = 12] = "DYNAMIC_KINEMATIC", A3[A3.DYNAMIC_FIXED = 2] = "DYNAMIC_FIXED", A3[A3.KINEMATIC_KINEMATIC = 52224] = "KINEMATIC_KINEMATIC", A3[A3.KINEMATIC_FIXED = 8704] = "KINEMATIC_FIXED", A3[A3.FIXED_FIXED = 32] = "FIXED_FIXED", A3[A3.DEFAULT = 15] = "DEFAULT", A3[A3.ALL = 60943] = "ALL";
 }(oI || (oI = {}));
 var sg = class {
-  constructor(A2, I2, g2, C2) {
-    this.colliderSet = A2, this.handle = I2, this._parent = g2, this._shape = C2;
+  constructor(A3, I3, g4, C4) {
+    this.colliderSet = A3, this.handle = I3, this._parent = g4, this._shape = C4;
   }
-  finalizeDeserialization(A2) {
-    null != this.handle && (this._parent = A2.get(this.colliderSet.raw.coParent(this.handle)));
+  finalizeDeserialization(A3) {
+    null != this.handle && (this._parent = A3.get(this.colliderSet.raw.coParent(this.handle)));
   }
   ensureShapeIsCached() {
     this._shape || (this._shape = PI.fromRaw(this.colliderSet.raw, this.handle));
@@ -30495,94 +32636,94 @@ var sg = class {
   isSensor() {
     return this.colliderSet.raw.coIsSensor(this.handle);
   }
-  setSensor(A2) {
-    this.colliderSet.raw.coSetSensor(this.handle, A2);
+  setSensor(A3) {
+    this.colliderSet.raw.coSetSensor(this.handle, A3);
   }
-  setShape(A2) {
-    let I2 = A2.intoRaw();
-    this.colliderSet.raw.coSetShape(this.handle, I2), I2.free(), this._shape = A2;
+  setShape(A3) {
+    let I3 = A3.intoRaw();
+    this.colliderSet.raw.coSetShape(this.handle, I3), I3.free(), this._shape = A3;
   }
-  setEnabled(A2) {
-    this.colliderSet.raw.coSetEnabled(this.handle, A2);
+  setEnabled(A3) {
+    this.colliderSet.raw.coSetEnabled(this.handle, A3);
   }
   isEnabled() {
     return this.colliderSet.raw.coIsEnabled(this.handle);
   }
-  setRestitution(A2) {
-    this.colliderSet.raw.coSetRestitution(this.handle, A2);
+  setRestitution(A3) {
+    this.colliderSet.raw.coSetRestitution(this.handle, A3);
   }
-  setFriction(A2) {
-    this.colliderSet.raw.coSetFriction(this.handle, A2);
+  setFriction(A3) {
+    this.colliderSet.raw.coSetFriction(this.handle, A3);
   }
   frictionCombineRule() {
     return this.colliderSet.raw.coFrictionCombineRule(this.handle);
   }
-  setFrictionCombineRule(A2) {
-    this.colliderSet.raw.coSetFrictionCombineRule(this.handle, A2);
+  setFrictionCombineRule(A3) {
+    this.colliderSet.raw.coSetFrictionCombineRule(this.handle, A3);
   }
   restitutionCombineRule() {
     return this.colliderSet.raw.coRestitutionCombineRule(this.handle);
   }
-  setRestitutionCombineRule(A2) {
-    this.colliderSet.raw.coSetRestitutionCombineRule(this.handle, A2);
+  setRestitutionCombineRule(A3) {
+    this.colliderSet.raw.coSetRestitutionCombineRule(this.handle, A3);
   }
-  setCollisionGroups(A2) {
-    this.colliderSet.raw.coSetCollisionGroups(this.handle, A2);
+  setCollisionGroups(A3) {
+    this.colliderSet.raw.coSetCollisionGroups(this.handle, A3);
   }
-  setSolverGroups(A2) {
-    this.colliderSet.raw.coSetSolverGroups(this.handle, A2);
+  setSolverGroups(A3) {
+    this.colliderSet.raw.coSetSolverGroups(this.handle, A3);
   }
   contactSkin() {
     return this.colliderSet.raw.coContactSkin(this.handle);
   }
-  setContactSkin(A2) {
-    return this.colliderSet.raw.coSetContactSkin(this.handle, A2);
+  setContactSkin(A3) {
+    return this.colliderSet.raw.coSetContactSkin(this.handle, A3);
   }
   activeHooks() {
     return this.colliderSet.raw.coActiveHooks(this.handle);
   }
-  setActiveHooks(A2) {
-    this.colliderSet.raw.coSetActiveHooks(this.handle, A2);
+  setActiveHooks(A3) {
+    this.colliderSet.raw.coSetActiveHooks(this.handle, A3);
   }
   activeEvents() {
     return this.colliderSet.raw.coActiveEvents(this.handle);
   }
-  setActiveEvents(A2) {
-    this.colliderSet.raw.coSetActiveEvents(this.handle, A2);
+  setActiveEvents(A3) {
+    this.colliderSet.raw.coSetActiveEvents(this.handle, A3);
   }
   activeCollisionTypes() {
     return this.colliderSet.raw.coActiveCollisionTypes(this.handle);
   }
-  setContactForceEventThreshold(A2) {
-    return this.colliderSet.raw.coSetContactForceEventThreshold(this.handle, A2);
+  setContactForceEventThreshold(A3) {
+    return this.colliderSet.raw.coSetContactForceEventThreshold(this.handle, A3);
   }
   contactForceEventThreshold() {
     return this.colliderSet.raw.coContactForceEventThreshold(this.handle);
   }
-  setActiveCollisionTypes(A2) {
-    this.colliderSet.raw.coSetActiveCollisionTypes(this.handle, A2);
+  setActiveCollisionTypes(A3) {
+    this.colliderSet.raw.coSetActiveCollisionTypes(this.handle, A3);
   }
-  setDensity(A2) {
-    this.colliderSet.raw.coSetDensity(this.handle, A2);
+  setDensity(A3) {
+    this.colliderSet.raw.coSetDensity(this.handle, A3);
   }
-  setMass(A2) {
-    this.colliderSet.raw.coSetMass(this.handle, A2);
+  setMass(A3) {
+    this.colliderSet.raw.coSetMass(this.handle, A3);
   }
-  setMassProperties(A2, I2, g2, C2) {
-    let B2 = fA.intoRaw(I2), Q2 = fA.intoRaw(g2), E2 = XA.intoRaw(C2);
-    this.colliderSet.raw.coSetMassProperties(this.handle, A2, B2, Q2, E2), B2.free(), Q2.free(), E2.free();
+  setMassProperties(A3, I3, g4, C4) {
+    let B3 = fA.intoRaw(I3), Q3 = fA.intoRaw(g4), E2 = XA.intoRaw(C4);
+    this.colliderSet.raw.coSetMassProperties(this.handle, A3, B3, Q3, E2), B3.free(), Q3.free(), E2.free();
   }
-  setTranslation(A2) {
-    this.colliderSet.raw.coSetTranslation(this.handle, A2.x, A2.y, A2.z);
+  setTranslation(A3) {
+    this.colliderSet.raw.coSetTranslation(this.handle, A3.x, A3.y, A3.z);
   }
-  setTranslationWrtParent(A2) {
-    this.colliderSet.raw.coSetTranslationWrtParent(this.handle, A2.x, A2.y, A2.z);
+  setTranslationWrtParent(A3) {
+    this.colliderSet.raw.coSetTranslationWrtParent(this.handle, A3.x, A3.y, A3.z);
   }
-  setRotation(A2) {
-    this.colliderSet.raw.coSetRotation(this.handle, A2.x, A2.y, A2.z, A2.w);
+  setRotation(A3) {
+    this.colliderSet.raw.coSetRotation(this.handle, A3.x, A3.y, A3.z, A3.w);
   }
-  setRotationWrtParent(A2) {
-    this.colliderSet.raw.coSetRotationWrtParent(this.handle, A2.x, A2.y, A2.z, A2.w);
+  setRotationWrtParent(A3) {
+    this.colliderSet.raw.coSetRotationWrtParent(this.handle, A3.x, A3.y, A3.z, A3.w);
   }
   shapeType() {
     return this.colliderSet.raw.coShapeType(this.handle);
@@ -30590,27 +32731,27 @@ var sg = class {
   halfExtents() {
     return fA.fromRaw(this.colliderSet.raw.coHalfExtents(this.handle));
   }
-  setHalfExtents(A2) {
-    const I2 = fA.intoRaw(A2);
-    this.colliderSet.raw.coSetHalfExtents(this.handle, I2);
+  setHalfExtents(A3) {
+    const I3 = fA.intoRaw(A3);
+    this.colliderSet.raw.coSetHalfExtents(this.handle, I3);
   }
   radius() {
     return this.colliderSet.raw.coRadius(this.handle);
   }
-  setRadius(A2) {
-    this.colliderSet.raw.coSetRadius(this.handle, A2);
+  setRadius(A3) {
+    this.colliderSet.raw.coSetRadius(this.handle, A3);
   }
   roundRadius() {
     return this.colliderSet.raw.coRoundRadius(this.handle);
   }
-  setRoundRadius(A2) {
-    this.colliderSet.raw.coSetRoundRadius(this.handle, A2);
+  setRoundRadius(A3) {
+    this.colliderSet.raw.coSetRoundRadius(this.handle, A3);
   }
   halfHeight() {
     return this.colliderSet.raw.coHalfHeight(this.handle);
   }
-  setHalfHeight(A2) {
-    this.colliderSet.raw.coSetHalfHeight(this.handle, A2);
+  setHalfHeight(A3) {
+    this.colliderSet.raw.coSetHalfHeight(this.handle, A3);
   }
   vertices() {
     return this.colliderSet.raw.coVertices(this.handle);
@@ -30622,8 +32763,8 @@ var sg = class {
     return this.colliderSet.raw.coHeightfieldHeights(this.handle);
   }
   heightfieldScale() {
-    let A2 = this.colliderSet.raw.coHeightfieldScale(this.handle);
-    return fA.fromRaw(A2);
+    let A3 = this.colliderSet.raw.coHeightfieldScale(this.handle);
+    return fA.fromRaw(A3);
   }
   heightfieldNRows() {
     return this.colliderSet.raw.coHeightfieldNRows(this.handle);
@@ -30655,266 +32796,266 @@ var sg = class {
   solverGroups() {
     return this.colliderSet.raw.coSolverGroups(this.handle);
   }
-  containsPoint(A2) {
-    let I2 = fA.intoRaw(A2), g2 = this.colliderSet.raw.coContainsPoint(this.handle, I2);
-    return I2.free(), g2;
+  containsPoint(A3) {
+    let I3 = fA.intoRaw(A3), g4 = this.colliderSet.raw.coContainsPoint(this.handle, I3);
+    return I3.free(), g4;
   }
-  projectPoint(A2, I2) {
-    let g2 = fA.intoRaw(A2), C2 = bI.fromRaw(this.colliderSet.raw.coProjectPoint(this.handle, g2, I2));
-    return g2.free(), C2;
+  projectPoint(A3, I3) {
+    let g4 = fA.intoRaw(A3), C4 = bI.fromRaw(this.colliderSet.raw.coProjectPoint(this.handle, g4, I3));
+    return g4.free(), C4;
   }
-  intersectsRay(A2, I2) {
-    let g2 = fA.intoRaw(A2.origin), C2 = fA.intoRaw(A2.dir), B2 = this.colliderSet.raw.coIntersectsRay(this.handle, g2, C2, I2);
-    return g2.free(), C2.free(), B2;
+  intersectsRay(A3, I3) {
+    let g4 = fA.intoRaw(A3.origin), C4 = fA.intoRaw(A3.dir), B3 = this.colliderSet.raw.coIntersectsRay(this.handle, g4, C4, I3);
+    return g4.free(), C4.free(), B3;
   }
-  castShape(A2, I2, g2, C2, B2, Q2, E2, i2) {
-    let D2 = fA.intoRaw(A2), o2 = fA.intoRaw(g2), S2 = XA.intoRaw(C2), w2 = fA.intoRaw(B2), G2 = I2.intoRaw(), k2 = VI.fromRaw(this.colliderSet, this.colliderSet.raw.coCastShape(this.handle, D2, G2, o2, S2, w2, Q2, E2, i2));
+  castShape(A3, I3, g4, C4, B3, Q3, E2, i2) {
+    let D2 = fA.intoRaw(A3), o2 = fA.intoRaw(g4), S2 = XA.intoRaw(C4), w2 = fA.intoRaw(B3), G2 = I3.intoRaw(), k2 = VI.fromRaw(this.colliderSet, this.colliderSet.raw.coCastShape(this.handle, D2, G2, o2, S2, w2, Q3, E2, i2));
     return D2.free(), o2.free(), S2.free(), w2.free(), G2.free(), k2;
   }
-  castCollider(A2, I2, g2, C2, B2, Q2) {
-    let E2 = fA.intoRaw(A2), i2 = fA.intoRaw(g2), D2 = XI.fromRaw(this.colliderSet, this.colliderSet.raw.coCastCollider(this.handle, E2, I2.handle, i2, C2, B2, Q2));
+  castCollider(A3, I3, g4, C4, B3, Q3) {
+    let E2 = fA.intoRaw(A3), i2 = fA.intoRaw(g4), D2 = XI.fromRaw(this.colliderSet, this.colliderSet.raw.coCastCollider(this.handle, E2, I3.handle, i2, C4, B3, Q3));
     return E2.free(), i2.free(), D2;
   }
-  intersectsShape(A2, I2, g2) {
-    let C2 = fA.intoRaw(I2), B2 = XA.intoRaw(g2), Q2 = A2.intoRaw(), E2 = this.colliderSet.raw.coIntersectsShape(this.handle, Q2, C2, B2);
-    return C2.free(), B2.free(), Q2.free(), E2;
+  intersectsShape(A3, I3, g4) {
+    let C4 = fA.intoRaw(I3), B3 = XA.intoRaw(g4), Q3 = A3.intoRaw(), E2 = this.colliderSet.raw.coIntersectsShape(this.handle, Q3, C4, B3);
+    return C4.free(), B3.free(), Q3.free(), E2;
   }
-  contactShape(A2, I2, g2, C2) {
-    let B2 = fA.intoRaw(I2), Q2 = XA.intoRaw(g2), E2 = A2.intoRaw(), i2 = ZI.fromRaw(this.colliderSet.raw.coContactShape(this.handle, E2, B2, Q2, C2));
-    return B2.free(), Q2.free(), E2.free(), i2;
+  contactShape(A3, I3, g4, C4) {
+    let B3 = fA.intoRaw(I3), Q3 = XA.intoRaw(g4), E2 = A3.intoRaw(), i2 = ZI.fromRaw(this.colliderSet.raw.coContactShape(this.handle, E2, B3, Q3, C4));
+    return B3.free(), Q3.free(), E2.free(), i2;
   }
-  contactCollider(A2, I2) {
-    return ZI.fromRaw(this.colliderSet.raw.coContactCollider(this.handle, A2.handle, I2));
+  contactCollider(A3, I3) {
+    return ZI.fromRaw(this.colliderSet.raw.coContactCollider(this.handle, A3.handle, I3));
   }
-  castRay(A2, I2, g2) {
-    let C2 = fA.intoRaw(A2.origin), B2 = fA.intoRaw(A2.dir), Q2 = this.colliderSet.raw.coCastRay(this.handle, C2, B2, I2, g2);
-    return C2.free(), B2.free(), Q2;
+  castRay(A3, I3, g4) {
+    let C4 = fA.intoRaw(A3.origin), B3 = fA.intoRaw(A3.dir), Q3 = this.colliderSet.raw.coCastRay(this.handle, C4, B3, I3, g4);
+    return C4.free(), B3.free(), Q3;
   }
-  castRayAndGetNormal(A2, I2, g2) {
-    let C2 = fA.intoRaw(A2.origin), B2 = fA.intoRaw(A2.dir), Q2 = mI.fromRaw(this.colliderSet.raw.coCastRayAndGetNormal(this.handle, C2, B2, I2, g2));
-    return C2.free(), B2.free(), Q2;
+  castRayAndGetNormal(A3, I3, g4) {
+    let C4 = fA.intoRaw(A3.origin), B3 = fA.intoRaw(A3.dir), Q3 = mI.fromRaw(this.colliderSet.raw.coCastRayAndGetNormal(this.handle, C4, B3, I3, g4));
+    return C4.free(), B3.free(), Q3;
   }
 };
-!function(A2) {
-  A2[A2.Density = 0] = "Density", A2[A2.Mass = 1] = "Mass", A2[A2.MassProps = 2] = "MassProps";
+!function(A3) {
+  A3[A3.Density = 0] = "Density", A3[A3.Mass = 1] = "Mass", A3[A3.MassProps = 2] = "MassProps";
 }(SI || (SI = {}));
 var Rg = class _Rg {
-  constructor(A2) {
-    this.enabled = true, this.shape = A2, this.massPropsMode = SI.Density, this.density = 1, this.friction = 0.5, this.restitution = 0, this.rotation = XA.identity(), this.translation = fA.zeros(), this.isSensor = false, this.collisionGroups = 4294967295, this.solverGroups = 4294967295, this.frictionCombineRule = AI.Average, this.restitutionCombineRule = AI.Average, this.activeCollisionTypes = oI.DEFAULT, this.activeEvents = EI.NONE, this.activeHooks = iI.NONE, this.mass = 0, this.centerOfMass = fA.zeros(), this.contactForceEventThreshold = 0, this.contactSkin = 0, this.principalAngularInertia = fA.zeros(), this.angularInertiaLocalFrame = XA.identity();
+  constructor(A3) {
+    this.enabled = true, this.shape = A3, this.massPropsMode = SI.Density, this.density = 1, this.friction = 0.5, this.restitution = 0, this.rotation = XA.identity(), this.translation = fA.zeros(), this.isSensor = false, this.collisionGroups = 4294967295, this.solverGroups = 4294967295, this.frictionCombineRule = AI.Average, this.restitutionCombineRule = AI.Average, this.activeCollisionTypes = oI.DEFAULT, this.activeEvents = EI.NONE, this.activeHooks = iI.NONE, this.mass = 0, this.centerOfMass = fA.zeros(), this.contactForceEventThreshold = 0, this.contactSkin = 0, this.principalAngularInertia = fA.zeros(), this.angularInertiaLocalFrame = XA.identity();
   }
-  static ball(A2) {
-    const I2 = new uI(A2);
-    return new _Rg(I2);
+  static ball(A3) {
+    const I3 = new uI(A3);
+    return new _Rg(I3);
   }
-  static capsule(A2, I2) {
-    const g2 = new $I(A2, I2);
-    return new _Rg(g2);
+  static capsule(A3, I3) {
+    const g4 = new $I(A3, I3);
+    return new _Rg(g4);
   }
-  static segment(A2, I2) {
-    const g2 = new Ag(A2, I2);
-    return new _Rg(g2);
+  static segment(A3, I3) {
+    const g4 = new Ag(A3, I3);
+    return new _Rg(g4);
   }
-  static triangle(A2, I2, g2) {
-    const C2 = new Ig(A2, I2, g2);
-    return new _Rg(C2);
+  static triangle(A3, I3, g4) {
+    const C4 = new Ig(A3, I3, g4);
+    return new _Rg(C4);
   }
-  static roundTriangle(A2, I2, g2, C2) {
-    const B2 = new gg(A2, I2, g2, C2);
-    return new _Rg(B2);
+  static roundTriangle(A3, I3, g4, C4) {
+    const B3 = new gg(A3, I3, g4, C4);
+    return new _Rg(B3);
   }
-  static polyline(A2, I2) {
-    const g2 = new Cg(A2, I2);
-    return new _Rg(g2);
+  static polyline(A3, I3) {
+    const g4 = new Cg(A3, I3);
+    return new _Rg(g4);
   }
-  static trimesh(A2, I2, g2) {
-    const C2 = new Bg(A2, I2, g2);
-    return new _Rg(C2);
+  static trimesh(A3, I3, g4) {
+    const C4 = new Bg(A3, I3, g4);
+    return new _Rg(C4);
   }
-  static cuboid(A2, I2, g2) {
-    const C2 = new zI(A2, I2, g2);
-    return new _Rg(C2);
+  static cuboid(A3, I3, g4) {
+    const C4 = new zI(A3, I3, g4);
+    return new _Rg(C4);
   }
-  static roundCuboid(A2, I2, g2, C2) {
-    const B2 = new _I(A2, I2, g2, C2);
-    return new _Rg(B2);
+  static roundCuboid(A3, I3, g4, C4) {
+    const B3 = new _I(A3, I3, g4, C4);
+    return new _Rg(B3);
   }
-  static heightfield(A2, I2, g2, C2, B2) {
-    const Q2 = new ig(A2, I2, g2, C2, B2);
-    return new _Rg(Q2);
+  static heightfield(A3, I3, g4, C4, B3) {
+    const Q3 = new ig(A3, I3, g4, C4, B3);
+    return new _Rg(Q3);
   }
-  static cylinder(A2, I2) {
-    const g2 = new Dg(A2, I2);
-    return new _Rg(g2);
+  static cylinder(A3, I3) {
+    const g4 = new Dg(A3, I3);
+    return new _Rg(g4);
   }
-  static roundCylinder(A2, I2, g2) {
-    const C2 = new og(A2, I2, g2);
-    return new _Rg(C2);
+  static roundCylinder(A3, I3, g4) {
+    const C4 = new og(A3, I3, g4);
+    return new _Rg(C4);
   }
-  static cone(A2, I2) {
-    const g2 = new Sg(A2, I2);
-    return new _Rg(g2);
+  static cone(A3, I3) {
+    const g4 = new Sg(A3, I3);
+    return new _Rg(g4);
   }
-  static roundCone(A2, I2, g2) {
-    const C2 = new wg(A2, I2, g2);
-    return new _Rg(C2);
+  static roundCone(A3, I3, g4) {
+    const C4 = new wg(A3, I3, g4);
+    return new _Rg(C4);
   }
-  static convexHull(A2) {
-    const I2 = new Qg(A2, null);
-    return new _Rg(I2);
+  static convexHull(A3) {
+    const I3 = new Qg(A3, null);
+    return new _Rg(I3);
   }
-  static convexMesh(A2, I2) {
-    const g2 = new Qg(A2, I2);
-    return new _Rg(g2);
+  static convexMesh(A3, I3) {
+    const g4 = new Qg(A3, I3);
+    return new _Rg(g4);
   }
-  static roundConvexHull(A2, I2) {
-    const g2 = new Eg(A2, null, I2);
-    return new _Rg(g2);
+  static roundConvexHull(A3, I3) {
+    const g4 = new Eg(A3, null, I3);
+    return new _Rg(g4);
   }
-  static roundConvexMesh(A2, I2, g2) {
-    const C2 = new Eg(A2, I2, g2);
-    return new _Rg(C2);
+  static roundConvexMesh(A3, I3, g4) {
+    const C4 = new Eg(A3, I3, g4);
+    return new _Rg(C4);
   }
-  setTranslation(A2, I2, g2) {
-    if ("number" != typeof A2 || "number" != typeof I2 || "number" != typeof g2) throw TypeError("The translation components must be numbers.");
-    return this.translation = { x: A2, y: I2, z: g2 }, this;
+  setTranslation(A3, I3, g4) {
+    if ("number" != typeof A3 || "number" != typeof I3 || "number" != typeof g4) throw TypeError("The translation components must be numbers.");
+    return this.translation = { x: A3, y: I3, z: g4 }, this;
   }
-  setRotation(A2) {
-    return XA.copy(this.rotation, A2), this;
+  setRotation(A3) {
+    return XA.copy(this.rotation, A3), this;
   }
-  setSensor(A2) {
-    return this.isSensor = A2, this;
+  setSensor(A3) {
+    return this.isSensor = A3, this;
   }
-  setEnabled(A2) {
-    return this.enabled = A2, this;
+  setEnabled(A3) {
+    return this.enabled = A3, this;
   }
-  setContactSkin(A2) {
-    return this.contactSkin = A2, this;
+  setContactSkin(A3) {
+    return this.contactSkin = A3, this;
   }
-  setDensity(A2) {
-    return this.massPropsMode = SI.Density, this.density = A2, this;
+  setDensity(A3) {
+    return this.massPropsMode = SI.Density, this.density = A3, this;
   }
-  setMass(A2) {
-    return this.massPropsMode = SI.Mass, this.mass = A2, this;
+  setMass(A3) {
+    return this.massPropsMode = SI.Mass, this.mass = A3, this;
   }
-  setMassProperties(A2, I2, g2, C2) {
-    return this.massPropsMode = SI.MassProps, this.mass = A2, fA.copy(this.centerOfMass, I2), fA.copy(this.principalAngularInertia, g2), XA.copy(this.angularInertiaLocalFrame, C2), this;
+  setMassProperties(A3, I3, g4, C4) {
+    return this.massPropsMode = SI.MassProps, this.mass = A3, fA.copy(this.centerOfMass, I3), fA.copy(this.principalAngularInertia, g4), XA.copy(this.angularInertiaLocalFrame, C4), this;
   }
-  setRestitution(A2) {
-    return this.restitution = A2, this;
+  setRestitution(A3) {
+    return this.restitution = A3, this;
   }
-  setFriction(A2) {
-    return this.friction = A2, this;
+  setFriction(A3) {
+    return this.friction = A3, this;
   }
-  setFrictionCombineRule(A2) {
-    return this.frictionCombineRule = A2, this;
+  setFrictionCombineRule(A3) {
+    return this.frictionCombineRule = A3, this;
   }
-  setRestitutionCombineRule(A2) {
-    return this.restitutionCombineRule = A2, this;
+  setRestitutionCombineRule(A3) {
+    return this.restitutionCombineRule = A3, this;
   }
-  setCollisionGroups(A2) {
-    return this.collisionGroups = A2, this;
+  setCollisionGroups(A3) {
+    return this.collisionGroups = A3, this;
   }
-  setSolverGroups(A2) {
-    return this.solverGroups = A2, this;
+  setSolverGroups(A3) {
+    return this.solverGroups = A3, this;
   }
-  setActiveHooks(A2) {
-    return this.activeHooks = A2, this;
+  setActiveHooks(A3) {
+    return this.activeHooks = A3, this;
   }
-  setActiveEvents(A2) {
-    return this.activeEvents = A2, this;
+  setActiveEvents(A3) {
+    return this.activeEvents = A3, this;
   }
-  setActiveCollisionTypes(A2) {
-    return this.activeCollisionTypes = A2, this;
+  setActiveCollisionTypes(A3) {
+    return this.activeCollisionTypes = A3, this;
   }
-  setContactForceEventThreshold(A2) {
-    return this.contactForceEventThreshold = A2, this;
+  setContactForceEventThreshold(A3) {
+    return this.contactForceEventThreshold = A3, this;
   }
 };
 var cg = class {
-  constructor(A2) {
-    this.raw = A2 || new d(), this.map = new kI(), A2 && A2.forEachColliderHandle((A3) => {
-      this.map.set(A3, new sg(this, A3, null));
+  constructor(A3) {
+    this.raw = A3 || new d(), this.map = new kI(), A3 && A3.forEachColliderHandle((A4) => {
+      this.map.set(A4, new sg(this, A4, null));
     });
   }
   free() {
     this.raw && this.raw.free(), this.raw = void 0, this.map && this.map.clear(), this.map = void 0;
   }
-  castClosure(A2) {
-    return (I2) => A2 ? A2(this.get(I2)) : void 0;
+  castClosure(A3) {
+    return (I3) => A3 ? A3(this.get(I3)) : void 0;
   }
-  finalizeDeserialization(A2) {
-    this.map.forEach((I2) => I2.finalizeDeserialization(A2));
+  finalizeDeserialization(A3) {
+    this.map.forEach((I3) => I3.finalizeDeserialization(A3));
   }
-  createCollider(A2, I2, g2) {
-    let C2 = null != g2 && null != g2;
-    if (C2 && isNaN(g2)) throw Error("Cannot create a collider with a parent rigid-body handle that is not a number.");
-    let B2 = I2.shape.intoRaw(), Q2 = fA.intoRaw(I2.translation), E2 = XA.intoRaw(I2.rotation), i2 = fA.intoRaw(I2.centerOfMass), D2 = fA.intoRaw(I2.principalAngularInertia), o2 = XA.intoRaw(I2.angularInertiaLocalFrame), S2 = this.raw.createCollider(I2.enabled, B2, Q2, E2, I2.massPropsMode, I2.mass, i2, D2, o2, I2.density, I2.friction, I2.restitution, I2.frictionCombineRule, I2.restitutionCombineRule, I2.isSensor, I2.collisionGroups, I2.solverGroups, I2.activeCollisionTypes, I2.activeHooks, I2.activeEvents, I2.contactForceEventThreshold, I2.contactSkin, C2, C2 ? g2 : 0, A2.raw);
-    B2.free(), Q2.free(), E2.free(), i2.free(), D2.free(), o2.free();
-    let w2 = C2 ? A2.get(g2) : null, G2 = new sg(this, S2, w2, I2.shape);
+  createCollider(A3, I3, g4) {
+    let C4 = null != g4 && null != g4;
+    if (C4 && isNaN(g4)) throw Error("Cannot create a collider with a parent rigid-body handle that is not a number.");
+    let B3 = I3.shape.intoRaw(), Q3 = fA.intoRaw(I3.translation), E2 = XA.intoRaw(I3.rotation), i2 = fA.intoRaw(I3.centerOfMass), D2 = fA.intoRaw(I3.principalAngularInertia), o2 = XA.intoRaw(I3.angularInertiaLocalFrame), S2 = this.raw.createCollider(I3.enabled, B3, Q3, E2, I3.massPropsMode, I3.mass, i2, D2, o2, I3.density, I3.friction, I3.restitution, I3.frictionCombineRule, I3.restitutionCombineRule, I3.isSensor, I3.collisionGroups, I3.solverGroups, I3.activeCollisionTypes, I3.activeHooks, I3.activeEvents, I3.contactForceEventThreshold, I3.contactSkin, C4, C4 ? g4 : 0, A3.raw);
+    B3.free(), Q3.free(), E2.free(), i2.free(), D2.free(), o2.free();
+    let w2 = C4 ? A3.get(g4) : null, G2 = new sg(this, S2, w2, I3.shape);
     return this.map.set(S2, G2), G2;
   }
-  remove(A2, I2, g2, C2) {
-    this.raw.remove(A2, I2.raw, g2.raw, C2), this.unmap(A2);
+  remove(A3, I3, g4, C4) {
+    this.raw.remove(A3, I3.raw, g4.raw, C4), this.unmap(A3);
   }
-  unmap(A2) {
-    this.map.delete(A2);
+  unmap(A3) {
+    this.map.delete(A3);
   }
-  get(A2) {
-    return this.map.get(A2);
+  get(A3) {
+    return this.map.get(A3);
   }
   len() {
     return this.map.len();
   }
-  contains(A2) {
-    return null != this.get(A2);
+  contains(A3) {
+    return null != this.get(A3);
   }
-  forEach(A2) {
-    this.map.forEach(A2);
+  forEach(A3) {
+    this.map.forEach(A3);
   }
   getAll() {
     return this.map.getAll();
   }
 };
-function qg(A2, I2, g2, C2) {
-  return new (g2 || (g2 = Promise))(function(B2, Q2) {
-    function E2(A3) {
+function qg(A3, I3, g4, C4) {
+  return new (g4 || (g4 = Promise))(function(B3, Q3) {
+    function E2(A4) {
       try {
-        D2(C2.next(A3));
-      } catch (A4) {
-        Q2(A4);
+        D2(C4.next(A4));
+      } catch (A5) {
+        Q3(A5);
       }
     }
-    function i2(A3) {
+    function i2(A4) {
       try {
-        D2(C2.throw(A3));
-      } catch (A4) {
-        Q2(A4);
+        D2(C4.throw(A4));
+      } catch (A5) {
+        Q3(A5);
       }
     }
-    function D2(A3) {
-      var I3;
-      A3.done ? B2(A3.value) : (I3 = A3.value, I3 instanceof g2 ? I3 : new g2(function(A4) {
-        A4(I3);
+    function D2(A4) {
+      var I4;
+      A4.done ? B3(A4.value) : (I4 = A4.value, I4 instanceof g4 ? I4 : new g4(function(A5) {
+        A5(I4);
       })).then(E2, i2);
     }
-    D2((C2 = C2.apply(A2, I2 || [])).next());
+    D2((C4 = C4.apply(A3, I3 || [])).next());
   });
 }
-for (Yg = { byteLength: function(A2) {
-  var I2 = rg(A2), g2 = I2[0], C2 = I2[1];
-  return 3 * (g2 + C2) / 4 - C2;
-}, toByteArray: function(A2) {
-  var I2, g2, C2 = rg(A2), B2 = C2[0], Q2 = C2[1], E2 = new Hg(function(A3, I3, g3) {
-    return 3 * (I3 + g3) / 4 - g3;
-  }(0, B2, Q2)), i2 = 0, D2 = Q2 > 0 ? B2 - 4 : B2;
-  for (g2 = 0; g2 < D2; g2 += 4) I2 = Lg[A2.charCodeAt(g2)] << 18 | Lg[A2.charCodeAt(g2 + 1)] << 12 | Lg[A2.charCodeAt(g2 + 2)] << 6 | Lg[A2.charCodeAt(g2 + 3)], E2[i2++] = I2 >> 16 & 255, E2[i2++] = I2 >> 8 & 255, E2[i2++] = 255 & I2;
-  2 === Q2 && (I2 = Lg[A2.charCodeAt(g2)] << 2 | Lg[A2.charCodeAt(g2 + 1)] >> 4, E2[i2++] = 255 & I2);
-  1 === Q2 && (I2 = Lg[A2.charCodeAt(g2)] << 10 | Lg[A2.charCodeAt(g2 + 1)] << 4 | Lg[A2.charCodeAt(g2 + 2)] >> 2, E2[i2++] = I2 >> 8 & 255, E2[i2++] = 255 & I2);
+for (Yg = { byteLength: function(A3) {
+  var I3 = rg(A3), g4 = I3[0], C4 = I3[1];
+  return 3 * (g4 + C4) / 4 - C4;
+}, toByteArray: function(A3) {
+  var I3, g4, C4 = rg(A3), B3 = C4[0], Q3 = C4[1], E2 = new Hg(function(A4, I4, g5) {
+    return 3 * (I4 + g5) / 4 - g5;
+  }(0, B3, Q3)), i2 = 0, D2 = Q3 > 0 ? B3 - 4 : B3;
+  for (g4 = 0; g4 < D2; g4 += 4) I3 = Lg[A3.charCodeAt(g4)] << 18 | Lg[A3.charCodeAt(g4 + 1)] << 12 | Lg[A3.charCodeAt(g4 + 2)] << 6 | Lg[A3.charCodeAt(g4 + 3)], E2[i2++] = I3 >> 16 & 255, E2[i2++] = I3 >> 8 & 255, E2[i2++] = 255 & I3;
+  2 === Q3 && (I3 = Lg[A3.charCodeAt(g4)] << 2 | Lg[A3.charCodeAt(g4 + 1)] >> 4, E2[i2++] = 255 & I3);
+  1 === Q3 && (I3 = Lg[A3.charCodeAt(g4)] << 10 | Lg[A3.charCodeAt(g4 + 1)] << 4 | Lg[A3.charCodeAt(g4 + 2)] >> 2, E2[i2++] = I3 >> 8 & 255, E2[i2++] = 255 & I3);
   return E2;
-}, fromByteArray: function(A2) {
-  for (var I2, g2 = A2.length, C2 = g2 % 3, B2 = [], Q2 = 16383, E2 = 0, i2 = g2 - C2; E2 < i2; E2 += Q2) B2.push(ng(A2, E2, E2 + Q2 > i2 ? i2 : E2 + Q2));
-  1 === C2 ? (I2 = A2[g2 - 1], B2.push(lg[I2 >> 2] + lg[I2 << 4 & 63] + "==")) : 2 === C2 && (I2 = (A2[g2 - 2] << 8) + A2[g2 - 1], B2.push(lg[I2 >> 10] + lg[I2 >> 4 & 63] + lg[I2 << 2 & 63] + "="));
-  return B2.join("");
+}, fromByteArray: function(A3) {
+  for (var I3, g4 = A3.length, C4 = g4 % 3, B3 = [], Q3 = 16383, E2 = 0, i2 = g4 - C4; E2 < i2; E2 += Q3) B3.push(ng(A3, E2, E2 + Q3 > i2 ? i2 : E2 + Q3));
+  1 === C4 ? (I3 = A3[g4 - 1], B3.push(lg[I3 >> 2] + lg[I3 << 4 & 63] + "==")) : 2 === C4 && (I3 = (A3[g4 - 2] << 8) + A3[g4 - 1], B3.push(lg[I3 >> 10] + lg[I3 >> 4 & 63] + lg[I3 << 2 & 63] + "="));
+  return B3.join("");
 } }, lg = [], Lg = [], Hg = "undefined" != typeof Uint8Array ? Uint8Array : Array, tg = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", pg = 0, eg = tg.length; pg < eg; ++pg) lg[pg] = tg[pg], Lg[tg.charCodeAt(pg)] = pg;
 var Yg;
 var lg;
@@ -30923,15 +33064,15 @@ var Hg;
 var tg;
 var pg;
 var eg;
-function rg(A2) {
-  var I2 = A2.length;
-  if (I2 % 4 > 0) throw new Error("Invalid string. Length must be a multiple of 4");
-  var g2 = A2.indexOf("=");
-  return -1 === g2 && (g2 = I2), [g2, g2 === I2 ? 0 : 4 - g2 % 4];
+function rg(A3) {
+  var I3 = A3.length;
+  if (I3 % 4 > 0) throw new Error("Invalid string. Length must be a multiple of 4");
+  var g4 = A3.indexOf("=");
+  return -1 === g4 && (g4 = I3), [g4, g4 === I3 ? 0 : 4 - g4 % 4];
 }
-function ng(A2, I2, g2) {
-  for (var C2, B2, Q2 = [], E2 = I2; E2 < g2; E2 += 3) C2 = (A2[E2] << 16 & 16711680) + (A2[E2 + 1] << 8 & 65280) + (255 & A2[E2 + 2]), Q2.push(lg[(B2 = C2) >> 18 & 63] + lg[B2 >> 12 & 63] + lg[B2 >> 6 & 63] + lg[63 & B2]);
-  return Q2.join("");
+function ng(A3, I3, g4) {
+  for (var C4, B3, Q3 = [], E2 = I3; E2 < g4; E2 += 3) C4 = (A3[E2] << 16 & 16711680) + (A3[E2 + 1] << 8 & 65280) + (255 & A3[E2 + 2]), Q3.push(lg[(B3 = C4) >> 18 & 63] + lg[B3 >> 12 & 63] + lg[B3 >> 6 & 63] + lg[63 & B3]);
+  return Q3.join("");
 }
 function dg() {
   return qg(this, void 0, void 0, function* () {
@@ -30940,14 +33081,14 @@ function dg() {
 }
 function Tg() {
   return function() {
-    let I2, g2;
+    let I3, g4;
     try {
-      const Q2 = A.__wbindgen_add_to_stack_pointer(-16);
-      A.version(Q2);
-      var C2 = S()[Q2 / 4 + 0], B2 = S()[Q2 / 4 + 1];
-      return I2 = C2, g2 = B2, k(C2, B2);
+      const Q3 = A.__wbindgen_add_to_stack_pointer(-16);
+      A.version(Q3);
+      var C4 = S()[Q3 / 4 + 0], B3 = S()[Q3 / 4 + 1];
+      return I3 = C4, g4 = B3, k(C4, B3);
     } finally {
-      A.__wbindgen_add_to_stack_pointer(16), A.__wbindgen_free(I2, g2, 1);
+      A.__wbindgen_add_to_stack_pointer(16), A.__wbindgen_free(I3, g4, 1);
     }
   }();
 }
@@ -31039,8 +33180,8 @@ function quatFromYaw(yawRad) {
     w: Math.cos(half)
   };
 }
-function slerpQuat(a2, b2, t2) {
-  const clampedT = Math.max(0, Math.min(1, t2));
+function slerpQuat(a2, b2, t3) {
+  const clampedT = Math.max(0, Math.min(1, t3));
   let bx = b2.x;
   let by = b2.y;
   let bz = b2.z;
@@ -31441,7 +33582,7 @@ function decodePhase6Snapshot(buffer, byteOffset = 0, byteLength) {
     derbyTimerSec: v2.getFloat32(o2 + 8, true),
     clashTimerSec: v2.getFloat32(o2 + 12, true)
   };
-  const nonnegative = (n2) => Number.isFinite(n2) && n2 >= 0;
+  const nonnegative = (n3) => Number.isFinite(n3) && n3 >= 0;
   const finiteVec = (p2) => [p2.x, p2.y, p2.z].every(Number.isFinite);
   if (arena.derbyState > 3 || arena.clashState > 3 || arena.derbyLaps !== 2 || !nonnegative(arena.derbyTimerSec) || !nonnegative(arena.clashTimerSec)) return null;
   o2 += PET_ARENA_HEADER_BYTE_LENGTH;
@@ -31512,18 +33653,31 @@ function decodePhase6Snapshot(buffer, byteOffset = 0, byteLength) {
   return { serverTick: v2.getUint32(8, true), arena, pets, racers, fighters, dreadnought };
 }
 
+// shared/combat/weaponPresentation.ts
+var WEAPON_PROFILES = [
+  { key: "carbine", receiver: 0.32, barrel: 0.28, muzzleZ: -0.55, width: 0.12, stock: 0.18, color: 2538495 },
+  { key: "marksman", receiver: 0.4, barrel: 0.46, muzzleZ: -0.79, width: 0.1, stock: 0.24, color: 4714398 },
+  { key: "heavy", receiver: 0.46, barrel: 0.34, muzzleZ: -0.67, width: 0.17, stock: 0.21, color: 16751656 }
+];
+function weaponForStyle(style) {
+  if (style === "PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */ || style === 1) return 1 /* MARKSMAN */;
+  if (style === "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */ || style === 2 || style === 3) return 2 /* HEAVY */;
+  return 0 /* CARBINE */;
+}
+
 // shared/combat/combatPresentation.ts
 var WARDEN_RIG_SCALE = 3.2 / 1.88;
 var COMBAT_PRESENTATION_PACKET = 8;
 var HEADER = 8;
 var RECORD = 48;
-var DROP = 32;
+var DROP = 40;
 function decodeCombatPresentation(buffer) {
   if (buffer.byteLength < HEADER) return null;
-  const v2 = new DataView(buffer);
-  if (v2.getUint8(0) !== COMBAT_PRESENTATION_PACKET || v2.getUint8(1) !== 1) return null;
+  const v2 = new DataView(buffer), version = v2.getUint8(1);
+  if (v2.getUint8(0) !== COMBAT_PRESENTATION_PACKET || version !== 1 && version !== 2) return null;
+  const dropSize = version === 1 ? 32 : DROP;
   const count = v2.getUint16(2, true), dropped = v2.getUint16(4, true);
-  if (buffer.byteLength !== HEADER + count * RECORD + dropped * DROP) return null;
+  if (buffer.byteLength !== HEADER + count * RECORD + dropped * dropSize) return null;
   const states = [], drops = [], ids = /* @__PURE__ */ new Set();
   for (let i2 = 0; i2 < count; i2++) {
     const b2 = HEADER + i2 * RECORD, f2 = (j2) => v2.getFloat32(b2 + 8 + j2 * 4, true);
@@ -31547,11 +33701,13 @@ function decodeCombatPresentation(buffer) {
   }
   ids.clear();
   for (let i2 = 0; i2 < dropped; i2++) {
-    const b2 = HEADER + count * RECORD + i2 * DROP, n2 = Array.from({ length: 7 }, (_2, j2) => v2.getFloat32(b2 + 4 + j2 * 4, true));
+    const b2 = HEADER + count * RECORD + i2 * dropSize, n3 = Array.from({ length: 7 }, (_2, j2) => v2.getFloat32(b2 + 4 + j2 * 4, true));
     const id = v2.getUint32(b2, true);
-    if (ids.has(id) || !n2.every(Number.isFinite)) return null;
+    if (ids.has(id) || !n3.every(Number.isFinite)) return null;
     ids.add(id);
-    drops.push({ id, position: { x: n2[0], y: n2[1], z: n2[2] }, rotation: { x: n2[3], y: n2[4], z: n2[5], w: n2[6] } });
+    const variant = version === 1 ? 0 /* CARBINE */ : v2.getUint8(b2 + 32), scale = version === 1 ? 1 : v2.getFloat32(b2 + 36, true);
+    if (variant > 2 /* HEAVY */ || !Number.isFinite(scale) || scale < 0.5 || scale > 2 || Math.abs(Math.hypot(...n3.slice(3)) - 1) > 0.01) return null;
+    drops.push({ id, position: { x: n3[0], y: n3[1], z: n3[2] }, rotation: { x: n3[3], y: n3[4], z: n3[5], w: n3[6] }, variant, scale });
   }
   return { states, drops };
 }
@@ -31623,6 +33779,7 @@ var EnemyCombatManager = class {
   constructor(world) {
     this.world = world;
   }
+  onEffect = null;
   weaponObstacleProbes = /* @__PURE__ */ new Map();
   weaponObstacleResolver = null;
   extraSolidCollider = null;
@@ -31635,7 +33792,7 @@ var EnemyCombatManager = class {
     return [...this.enemies.values()].map((e2) => e2.presentation);
   }
   getDroppedWeaponStates() {
-    return [...this.drops].map(([id, d2]) => ({ id, position: { ...d2.body.translation() }, rotation: { ...d2.body.rotation() } }));
+    return [...this.drops].map(([id, d2]) => ({ id, position: { ...d2.body.translation() }, rotation: { ...d2.body.rotation() }, variant: d2.variant, scale: d2.scale }));
   }
   isPaired(agent) {
     return this.pairs.has(agent.entityId);
@@ -31667,11 +33824,13 @@ var EnemyCombatManager = class {
     const arm = enemy.limbs[3 /* RIGHT_ARM */].worldPosition;
     const scale = enemy.presentation.archetype === 3 /* SECTOR_WARDEN */ ? WARDEN_RIG_SCALE : 1;
     const hand = { x: arm.x, y: arm.y - 0.28 * scale, z: arm.z };
-    const body = this.world.createRigidBody(Og.RigidBodyDesc.dynamic().setTranslation(hand.x, hand.y, hand.z).setCcdEnabled(true));
-    this.world.createCollider(Og.ColliderDesc.cuboid(0.07, 0.09, 0.3).setMass(3).setRestitution(0.25), body);
+    const variant = weaponForStyle(enemy.presentation.archetype), profile = WEAPON_PROFILES[variant];
+    const body = this.world.createRigidBody(Og.RigidBodyDesc.dynamic().setTranslation(hand.x, hand.y, hand.z).setRotation(quatFromYaw(enemy.yaw)).setCcdEnabled(true));
+    const rear = 0.13 + profile.stock / 2;
+    this.world.createCollider(Og.ColliderDesc.cuboid(profile.width * 0.6 * scale, 0.24 * scale, (rear - profile.muzzleZ) / 2 * scale).setTranslation(0, 0, (rear + profile.muzzleZ) / 2 * scale).setMass(3).setRestitution(0.25), body);
     body.setLinvel({ x: enemy.presentation.direction.x * 4, y: 4.5, z: enemy.presentation.direction.z * 4 }, true);
     body.setAngvel({ x: 3, y: 7, z: 4 }, true);
-    this.drops.set(this.nextDropId++, { body, life: 12 });
+    this.drops.set(this.nextDropId++, { body, life: 12, variant, scale });
   }
   /** All damage paths enter here; AI movement is suspended while the physical impulse resolves. */
   reactToHit(enemy, origin, heavy = false, reaction = 1 /* FLINCH */) {
@@ -31740,6 +33899,9 @@ var EnemyCombatManager = class {
       enemy.position.x += direction.x * travel;
       enemy.position.z += direction.z * travel;
       if (hit && speed > 8 && Math.abs(hit.normal1.y) < 0.6 && r2.reaction !== 5 /* WALL_SPLAT */) {
+        const origin = { x: enemy.position.x, y: enemy.position.y + 0.96, z: enemy.position.z };
+        const contact = hit.collider.castRayAndGetNormal(new Og.Ray(origin, direction), 2, true);
+        if (contact) this.onEffect?.(effectSpec(4 /* WALL */, { x: origin.x + direction.x * contact.timeOfImpact, y: origin.y, z: origin.z + direction.z * contact.timeOfImpact }, { actor: enemy.lastAttacker?.entityId ?? 0, target: enemy.enemyId, normal: contact.normal }));
         r2.reaction = 5 /* WALL_SPLAT */;
         r2.timer = 1.8;
         r2.impulse = { x: 0, y: 0, z: 0 };
@@ -32194,6 +34356,7 @@ var EnemyCombatManager = class {
               const effectiveDmg = enemy.armsCrippledTimer > 0 ? rawDmg * 0.5 : rawDmg;
               const damage = effectiveDmg * (1 - nearestAgent.buildModifiers.incomingDamageReduction);
               nearestAgent.hp = Math.max(0, nearestAgent.hp - damage);
+              this.onEffect?.(effectSpec(1 /* HIT */, { ...nearestAgent.position, y: nearestAgent.position.y + 1 }, { actor: enemy.enemyId, target: nearestAgent.entityId }));
               if (nearestAgent.hp === 0) {
                 nearestAgent.telemetry.agentDowns = (nearestAgent.telemetry.agentDowns || 0) + 1;
               }
@@ -32357,7 +34520,7 @@ var EnemyCombatManager = class {
       };
     }
     const ray = new Og.Ray(shooterOrigin, rayDir);
-    const envHit = this.world.castRay(
+    const envHit = this.world.castRayAndGetNormal(
       ray,
       effectiveLockOnRange,
       true,
@@ -32369,6 +34532,7 @@ var EnemyCombatManager = class {
     let hitEnemy = null;
     let hitLimbId = targetedLimbId;
     let bestToi = maxUnblockedToi;
+    let impactToi = bestToi, impactNormal = envHit?.normal ?? { x: -rayDir.x, y: -rayDir.y, z: -rayDir.z };
     this.world.intersectionsWithRay(
       ray,
       maxUnblockedToi,
@@ -32382,6 +34546,8 @@ var EnemyCombatManager = class {
             const effectiveToi = isTargetLimb ? intersection.timeOfImpact - 0.15 : intersection.timeOfImpact;
             if (effectiveToi < bestToi) {
               bestToi = effectiveToi;
+              impactToi = intersection.timeOfImpact;
+              impactNormal = intersection.normal;
               hitEnemy = e2;
               hitLimbId = match.limbId;
             }
@@ -32395,12 +34561,21 @@ var EnemyCombatManager = class {
       const hit = probe(agent, shooterOrigin, rayDir, Math.max(0, bestToi));
       if (hit && (!nearest || hit.distance < nearest.distance)) nearest = hit;
     }
-    if (nearest) return nearest.resolve();
+    const decorate = (event2, hit = true) => {
+      event2.shotOrigin = { ...shooterOrigin };
+      event2.impactNormal = { ...impactNormal };
+      event2.surfaceHit = hit;
+      return event2;
+    };
+    if (nearest) return decorate(nearest.resolve());
     const obstacle = this.weaponObstacleResolver?.(agent, shooterOrigin, rayDir, Math.max(0, bestToi));
-    if (obstacle) return obstacle;
+    if (obstacle) return decorate(obstacle);
     if (!hitEnemy) {
       return {
         type: "WEAPON_MISS",
+        shotOrigin: { ...shooterOrigin },
+        impactNormal: { ...impactNormal },
+        surfaceHit: !!envHit,
         attackerEntityId: agent.entityId,
         targetEnemyId: 0,
         damageDealt: 0,
@@ -32418,7 +34593,9 @@ var EnemyCombatManager = class {
     }
     const resolvedEnemy = hitEnemy;
     const weaponDmg = WEAPON_BASE_DAMAGE * (agent.buildModifiers?.weaponDamageMultiplier ?? 1);
-    return this.applyLimbDamage(agent, resolvedEnemy, hitLimbId, weaponDmg);
+    const event = this.applyLimbDamage(agent, resolvedEnemy, hitLimbId, weaponDmg);
+    event.impactPoint = { x: shooterOrigin.x + rayDir.x * impactToi, y: shooterOrigin.y + rayDir.y * impactToi, z: shooterOrigin.z + rayDir.z * impactToi };
+    return decorate(event);
   }
   /**
    * Applies damage & PRD Section 4.2 Bone-Collider effects to a specific Enemy Limb
@@ -32749,475 +34926,6 @@ var EnemyCombatManager = class {
   }
 };
 
-// shared/progression/skillTreeSystem.ts
-function earnedSkillPoints(xp) {
-  return Object.values(xp).reduce((sum, value) => sum + computeAttributeLevelFromXP(value) - 1, 0);
-}
-function availableSkillPoints(xp, unlocked) {
-  const spent = new Set(Array.from(unlocked).filter((id) => SKILL_NODE_BY_ID.has(id))).size;
-  return Math.max(0, earnedSkillPoints(xp) - spent);
-}
-function skillUnlockError(id, xp, unlocked) {
-  const node = SKILL_NODE_BY_ID.get(id);
-  if (!node) return "Unknown upgrade.";
-  if (unlocked.has(id)) return "Upgrade already installed.";
-  if (availableSkillPoints(xp, unlocked) < 1) return "Earn an attribute level to gain an upgrade point.";
-  const previous = SKILL_TREE_NODES.find((entry) => entry.branch === node.branch && entry.tier === node.tier - 1);
-  if (previous && !unlocked.has(previous.id)) return "Install the previous upgrade in this branch first.";
-  return null;
-}
-var AUGMENT_CHASSIS_CATALOG = {
-  ["TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */]: {
-    id: "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */,
-    name: "Titan Juggernaut Exo-Frame",
-    branchName: "Titan Juggernaut",
-    description: "Heavy kinetic exo-chassis (+15% Max HP, +20% Throw Mass Limit baseline).",
-    accentHex: "#ff9d00"
-  },
-  ["PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */]: {
-    id: "PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */,
-    name: "Phantom Neural Optic Rig",
-    branchName: "Phantom Sharpshooter",
-    description: "Precision V.A.T.S. targeting chassis (-15% Spread Cone, +10m Lock-On Range baseline).",
-    accentHex: "#00f2ff"
-  },
-  ["AERO_VALKYRIE" /* AERO_VALKYRIE */]: {
-    id: "AERO_VALKYRIE" /* AERO_VALKYRIE */,
-    name: "Aero-Valkyrie Thruster Harness",
-    branchName: "Aero-Valkyrie",
-    description: "High-altitude parkour & grapple harness (+10m Grapple Range, +10% Air-Dash Speed baseline).",
-    accentHex: "#38ef7d"
-  },
-  ["DEMOLITION_SAVANT" /* DEMOLITION_SAVANT */]: {
-    id: "DEMOLITION_SAVANT" /* DEMOLITION_SAVANT */,
-    name: "Demolition Ordnance Rig",
-    branchName: "Demolition Savant",
-    description: "Thermobaric ordnance chassis (+15% Blast Radius & Impulse baseline).",
-    accentHex: "#ff2a6d"
-  },
-  ["PACK_VANGUARD" /* PACK_VANGUARD */]: {
-    id: "PACK_VANGUARD" /* PACK_VANGUARD */,
-    name: "Pack Vanguard Command Core",
-    branchName: "Pack Vanguard",
-    description: "Co-op interceptor & counter-parry chassis (+10% Vehicle Top Speed, +60ms Parry Window baseline).",
-    accentHex: "#b56bff"
-  }
-};
-var SKILL_TREE_NODES = [
-  // Branch 1: Titan Juggernaut (4 nodes)
-  {
-    id: "titan_1_kinetic_plating",
-    branch: "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */,
-    tier: 1,
-    name: "Ablative Kinetic Plating",
-    description: "+25% Max HP and -15% incoming melee & ballistic damage."
-  },
-  {
-    id: "titan_2_hydraulic_grip",
-    branch: "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */,
-    tier: 2,
-    name: "Hydraulic Servo Grip",
-    description: "+35% Throw Mass Limit (kg) and +20% thrown 3D prop launch velocity."
-  },
-  {
-    id: "titan_3_seismic_slam",
-    branch: "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */,
-    tier: 3,
-    name: "Seismic Parry Overdrive",
-    description: "Expands Q Counter-Parry radial shockwave radius by +2.5m (to 8.5m) and +30% parry damage."
-  },
-  {
-    id: "titan_4_unstoppable_momentum",
-    branch: "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */,
-    tier: 4,
-    name: "Unstoppable Root-Motion",
-    description: "Extends motion-warped melee range by +1.7m (to 6.2m) and pierces 50% of Elite Counter-Stance shields."
-  },
-  // Branch 2: Phantom Sharpshooter (4 nodes)
-  {
-    id: "phantom_1_neural_stabilizer",
-    branch: "PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */,
-    tier: 1,
-    name: "Neural Recoil Stabilizer",
-    description: "Reduces 3D weapon spread cone by 30% and adds +12% V.A.T.S. limb hit probability."
-  },
-  {
-    id: "phantom_2_hyper_velocity_rounds",
-    branch: "PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */,
-    tier: 2,
-    name: "Hyper-Velocity Sabot",
-    description: "Boosts Headshot Crit multiplier by +0.45x (to 2.65x) and extends lock-on range by +15m."
-  },
-  {
-    id: "phantom_3_tendon_sever",
-    branch: "PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */,
-    tier: 3,
-    name: "Sub-Collider Tendon Sever",
-    description: "Extends Arm & Leg cripple duration from 8.0s to 12.0s and deals +25% limb damage."
-  },
-  {
-    id: "phantom_4_phase_ricochet",
-    branch: "PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */,
-    tier: 4,
-    name: "Phase-Core Shatter",
-    description: "Torso shots strip ablative armor +30% faster (1.6x total) and crippling any limb restores 1 Air-Dash."
-  },
-  // Branch 3: Aero-Valkyrie (4 nodes)
-  {
-    id: "aero_1_grapnel_overdrive",
-    branch: "AERO_VALKYRIE" /* AERO_VALKYRIE */,
-    tier: 1,
-    name: "High-Tension Grapnel Winch",
-    description: "Extends 3D Grapple-Hook range by +15m (to 60m) and increases reel-in tension speed by +30%."
-  },
-  {
-    id: "aero_2_slipstream_capacitors",
-    branch: "AERO_VALKYRIE" /* AERO_VALKYRIE */,
-    tier: 2,
-    name: "Slipstream Thruster Capacitors",
-    description: "Grants +1 bonus mid-air dash and +15% horizontal air-dash burst velocity."
-  },
-  {
-    id: "aero_3_vector_wingsuit",
-    branch: "AERO_VALKYRIE" /* AERO_VALKYRIE */,
-    tier: 3,
-    name: "Vector-Lift Foil Membrane",
-    description: "Reduces airborne descent gravity by 25% and increases ledge-mantle reach by +0.4m."
-  },
-  {
-    id: "aero_4_supersonic_divebomb",
-    branch: "AERO_VALKYRIE" /* AERO_VALKYRIE */,
-    tier: 4,
-    name: "Supersonic Dive-Bomb Impact",
-    description: "Ground impact from high vertical descent emits a 15.0m kinetic shockwave damaging enemies."
-  },
-  // Branch 4: Demolition Savant (4 nodes)
-  {
-    id: "demo_1_shaped_charges",
-    branch: "DEMOLITION_SAVANT" /* DEMOLITION_SAVANT */,
-    tier: 1,
-    name: "High-Yield Shaped Charges",
-    description: "Increases 3D spherical explosive blast radius by +25%."
-  },
-  {
-    id: "demo_2_thermobaric_core",
-    branch: "DEMOLITION_SAVANT" /* DEMOLITION_SAVANT */,
-    tier: 2,
-    name: "Thermobaric Impulse Core",
-    description: "Increases 3D radial ragdoll/rigidbody blast impulse (N*s) by +35%."
-  },
-  {
-    id: "demo_3_volatile_scavenger",
-    branch: "DEMOLITION_SAVANT" /* DEMOLITION_SAVANT */,
-    tier: 3,
-    name: "Kinetic Ordnance Fuse",
-    description: "Every thrown 3D physics prop detonates with a concussive 6.0m blast wave on high-speed impact."
-  },
-  {
-    id: "demo_4_chain_detonation",
-    branch: "DEMOLITION_SAVANT" /* DEMOLITION_SAVANT */,
-    tier: 4,
-    name: "Chain Reaction Cascade",
-    description: "Enemies defeated by explosions or thrown props trigger a secondary 5.0m blast wave."
-  },
-  // Branch 5: Pack Vanguard (4 nodes)
-  {
-    id: "vanguard_1_tactical_relay",
-    branch: "PACK_VANGUARD" /* PACK_VANGUARD */,
-    tier: 1,
-    name: "Vigilante Telemetry Relay",
-    description: "Expands 3D spherical co-op Vigilante buff aura radius by +30%."
-  },
-  {
-    id: "vanguard_2_reflex_chronometer",
-    branch: "PACK_VANGUARD" /* PACK_VANGUARD */,
-    tier: 2,
-    name: "Combat Reflex Chronometer",
-    description: "Widens lag-compensated Q Counter-Parry timing window by +120ms."
-  },
-  {
-    id: "vanguard_3_interceptor_overclock",
-    branch: "PACK_VANGUARD" /* PACK_VANGUARD */,
-    tier: 3,
-    name: "Interceptor Suspension Overclock",
-    description: "Increases 4-wheel vehicle top speed by +20% and unlocks Wall-Thruster Hops at Driving Lv 3."
-  },
-  {
-    id: "vanguard_4_nanite_siphon",
-    branch: "PACK_VANGUARD" /* PACK_VANGUARD */,
-    tier: 4,
-    name: "Nanite Triage Siphon",
-    description: "Counter-parries and limb cripples restore +35 HP to the Agent."
-  }
-];
-var SKILL_NODE_BY_ID = new Map(
-  SKILL_TREE_NODES.map((n2) => [n2.id, n2])
-);
-var PROTOTYPE_RELIC_SPECS = [
-  {
-    id: "CHRONO_SHIFT_ANCHOR" /* CHRONO_SHIFT_ANCHOR */,
-    name: "Chrono-Shift Anchor",
-    district: "HELIOS_SPIRE" /* HELIOS_SPIRE */,
-    // Placed on the Central/Helios calibration terrace so players can also reach it during tests/exploration
-    position: { x: 0, y: 7, z: -20 },
-    description: "Experimental temporal phase anchor recovered from Helios Spire. Continuously buffers 3.0 seconds of 3D transform, velocity, and HP state.",
-    activeAbilityDesc: "Press [R] to rewind 3D Position, Velocity, Rotation & HP by 3.0 seconds.",
-    colorHex: 62207
-  },
-  {
-    id: "GRAV_FLUX_CORE" /* GRAV_FLUX_CORE */,
-    name: "Aegis Grav-Flux Core",
-    district: "AEGIS_CITADEL" /* AEGIS_CITADEL */,
-    position: { x: -32, y: 8.5, z: -36 },
-    description: "Zero-point gravimetric stabilizer from Aegis Citadel. Reduces downward gravity by 20% and amplifies Grapple-Hook pendulum swing impulse by +25%.",
-    activeAbilityDesc: "Passive: -20% Gravity & +25% Grapple Pendulum Swing Impulse.",
-    colorHex: 11889663
-  },
-  {
-    id: "HYPERION_COIL" /* HYPERION_COIL */,
-    name: "Hyperion Arc Coil",
-    district: "NEON_DOCKS" /* NEON_DOCKS */,
-    position: { x: -35, y: 0.5, z: 32 },
-    description: "Superconducting magnetic railgun coil from Neon Docks. Boosts V.A.T.S. headshot crit multiplier (+0.3x) and armor-strip efficiency (+25%).",
-    activeAbilityDesc: "Passive: +0.3x Headshot Crit & +25% Armor Strip.",
-    colorHex: 16765286
-  },
-  {
-    id: "TITAN_GYRO" /* TITAN_GYRO */,
-    name: "Foundry Titan Gyroscope",
-    district: "FOUNDRY_SLUMS" /* FOUNDRY_SLUMS */,
-    position: { x: 35, y: 0.5, z: 32 },
-    description: "Heavy industrial inertial gyroscope from Foundry Slums. Increases dynamic 3D object throw mass limit by +1,000 kg and vehicle ramming impulse by +40%.",
-    activeAbilityDesc: "Passive: +1,000 kg Throw Mass Limit & +40% Vehicle Ram Impulse.",
-    colorHex: 16722541
-  }
-];
-function computeAgentBuildModifiers(chassis = "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */, unlockedSkillIds = [], unlockedRelicIds = [], unlockedDistrictRewards = [], activeNeuralDrifts = []) {
-  const skills = new Set(unlockedSkillIds);
-  const relics = new Set(unlockedRelicIds);
-  const loopRewards = new Set(unlockedDistrictRewards);
-  const drifts = new Set(activeNeuralDrifts);
-  const mods = {
-    maxHpMultiplier: 1,
-    incomingDamageReduction: 0,
-    throwMassBonusMultiplier: 1,
-    throwVelocityMultiplier: 1,
-    parryShockwaveRadiusBonusM: 0,
-    parryDamageMultiplier: 1,
-    meleeEngageRangeBonusM: 0,
-    penetrateCounterStanceRatio: 0,
-    spreadConeMultiplier: 1,
-    vatsHitProbBonusPct: 0,
-    headshotCritMultiplierBonus: 0,
-    lockOnRangeBonusM: 0,
-    limbCrippleDurationBonusSec: 0,
-    limbDamageMultiplier: 1,
-    torsoArmorStripBonus: 0,
-    restoreAirDashOnCripple: false,
-    grappleRangeBonusM: 0,
-    grappleReelSpeedMultiplier: 1,
-    bonusAirDashes: 0,
-    airDashSpeedMultiplier: 1,
-    glideGravityMultiplier: 1,
-    mantleReachBonusM: 0,
-    unlockDiveBombShockwave: false,
-    blastRadiusMultiplier: 1,
-    blastImpulseMultiplier: 1,
-    thrownPropConcussiveBlast: false,
-    chainDetonationOnKill: false,
-    vigilanteAuraMultiplier: 1,
-    parryWindowBonusMs: 0,
-    vehicleTopSpeedMultiplier: 1,
-    wallThrusterMinDrivingLevel: 4,
-    siphonHpOnParryOrCripple: 0,
-    chronoRewindUnlocked: relics.has("CHRONO_SHIFT_ANCHOR" /* CHRONO_SHIFT_ANCHOR */),
-    gravityScaleMultiplier: 1,
-    grappleSwingImpulseMultiplier: 1,
-    flatThrowMassBonusKg: 0,
-    vehicleRamImpulseMultiplier: 1,
-    jetpackFuelBonusSec: 0,
-    jetpackAccelMultiplier: 1,
-    weaponDamageMultiplier: 1,
-    vigilanteAuraRadiusBonusM: 0,
-    vigilanteTriageRegenHpPerSec: 0
-  };
-  switch (chassis) {
-    case "TITAN_JUGGERNAUT" /* TITAN_JUGGERNAUT */:
-      mods.maxHpMultiplier += 0.15;
-      mods.throwMassBonusMultiplier += 0.2;
-      break;
-    case "PHANTOM_SHARPSHOOTER" /* PHANTOM_SHARPSHOOTER */:
-      mods.spreadConeMultiplier *= 0.85;
-      mods.lockOnRangeBonusM += 10;
-      break;
-    case "AERO_VALKYRIE" /* AERO_VALKYRIE */:
-      mods.grappleRangeBonusM += 10;
-      mods.airDashSpeedMultiplier += 0.1;
-      break;
-    case "DEMOLITION_SAVANT" /* DEMOLITION_SAVANT */:
-      mods.blastRadiusMultiplier += 0.15;
-      mods.blastImpulseMultiplier += 0.15;
-      break;
-    case "PACK_VANGUARD" /* PACK_VANGUARD */:
-      mods.vehicleTopSpeedMultiplier += 0.1;
-      mods.parryWindowBonusMs += 60;
-      break;
-  }
-  if (skills.has("titan_1_kinetic_plating")) {
-    mods.maxHpMultiplier += 0.25;
-    mods.incomingDamageReduction += 0.15;
-  }
-  if (skills.has("titan_2_hydraulic_grip")) {
-    mods.throwMassBonusMultiplier += 0.35;
-    mods.throwVelocityMultiplier += 0.2;
-  }
-  if (skills.has("titan_3_seismic_slam")) {
-    mods.parryShockwaveRadiusBonusM += 2.5;
-    mods.parryDamageMultiplier += 0.3;
-  }
-  if (skills.has("titan_4_unstoppable_momentum")) {
-    mods.meleeEngageRangeBonusM += 1.7;
-    mods.penetrateCounterStanceRatio = 0.5;
-  }
-  if (skills.has("phantom_1_neural_stabilizer")) {
-    mods.spreadConeMultiplier *= 0.7;
-    mods.vatsHitProbBonusPct += 12;
-  }
-  if (skills.has("phantom_2_hyper_velocity_rounds")) {
-    mods.headshotCritMultiplierBonus += 0.45;
-    mods.lockOnRangeBonusM += 15;
-  }
-  if (skills.has("phantom_3_tendon_sever")) {
-    mods.limbCrippleDurationBonusSec += 4;
-    mods.limbDamageMultiplier += 0.25;
-  }
-  if (skills.has("phantom_4_phase_ricochet")) {
-    mods.torsoArmorStripBonus += 0.3;
-    mods.restoreAirDashOnCripple = true;
-  }
-  if (skills.has("aero_1_grapnel_overdrive")) {
-    mods.grappleRangeBonusM += 15;
-    mods.grappleReelSpeedMultiplier += 0.3;
-  }
-  if (skills.has("aero_2_slipstream_capacitors")) {
-    mods.bonusAirDashes += 1;
-    mods.airDashSpeedMultiplier += 0.15;
-  }
-  if (skills.has("aero_3_vector_wingsuit")) {
-    mods.glideGravityMultiplier *= 0.75;
-    mods.mantleReachBonusM += 0.4;
-  }
-  if (skills.has("aero_4_supersonic_divebomb")) {
-    mods.unlockDiveBombShockwave = true;
-  }
-  if (skills.has("demo_1_shaped_charges")) {
-    mods.blastRadiusMultiplier += 0.25;
-  }
-  if (skills.has("demo_2_thermobaric_core")) {
-    mods.blastImpulseMultiplier += 0.35;
-  }
-  if (skills.has("demo_3_volatile_scavenger")) {
-    mods.thrownPropConcussiveBlast = true;
-  }
-  if (skills.has("demo_4_chain_detonation")) {
-    mods.chainDetonationOnKill = true;
-  }
-  if (skills.has("vanguard_1_tactical_relay")) {
-    mods.vigilanteAuraMultiplier += 0.3;
-  }
-  if (skills.has("vanguard_2_reflex_chronometer")) {
-    mods.parryWindowBonusMs += 120;
-  }
-  if (skills.has("vanguard_3_interceptor_overclock")) {
-    mods.vehicleTopSpeedMultiplier += 0.2;
-    mods.wallThrusterMinDrivingLevel = 3;
-  }
-  if (skills.has("vanguard_4_nanite_siphon")) {
-    mods.siphonHpOnParryOrCripple += 35;
-  }
-  if (relics.has("GRAV_FLUX_CORE" /* GRAV_FLUX_CORE */)) {
-    mods.gravityScaleMultiplier *= 0.8;
-    mods.grappleSwingImpulseMultiplier += 0.25;
-  }
-  if (relics.has("HYPERION_COIL" /* HYPERION_COIL */)) {
-    mods.headshotCritMultiplierBonus += 0.3;
-    mods.torsoArmorStripBonus += 0.25;
-  }
-  if (relics.has("TITAN_GYRO" /* TITAN_GYRO */)) {
-    mods.flatThrowMassBonusKg += 1e3;
-    mods.vehicleRamImpulseMultiplier += 0.4;
-  }
-  if (loopRewards.has("UNLOCK_GRAPPLE_OVERDRIVE" /* UNLOCK_GRAPPLE_OVERDRIVE */)) {
-    mods.grappleRangeBonusM += 20;
-    mods.grappleReelSpeedMultiplier += 0.35;
-  }
-  if (loopRewards.has("UNLOCK_PLASMA_RAILGUN" /* UNLOCK_PLASMA_RAILGUN */)) {
-    mods.weaponDamageMultiplier *= 1.65;
-    mods.torsoArmorStripBonus += 0.5;
-  }
-  if (loopRewards.has("UNLOCK_GRAV_FLIGHT_OVERDRIVE" /* UNLOCK_GRAV_FLIGHT_OVERDRIVE */)) {
-    mods.jetpackFuelBonusSec += 6;
-    mods.jetpackAccelMultiplier *= 1.4;
-    mods.glideGravityMultiplier *= 0.65;
-  }
-  if (loopRewards.has("UNLOCK_PROTOCOL_ECLIPSE_OVERRIDE" /* UNLOCK_PROTOCOL_ECLIPSE_OVERRIDE */)) {
-    mods.maxHpMultiplier += 0.3;
-    mods.vigilanteAuraRadiusBonusM += 15;
-    mods.penetrateCounterStanceRatio = Math.max(mods.penetrateCounterStanceRatio, 1);
-  }
-  if (drifts.has("PYRO_NEUROSIS" /* PYRO_NEUROSIS */)) {
-    mods.blastRadiusMultiplier += 0.3;
-    mods.blastImpulseMultiplier += 0.35;
-  }
-  if (drifts.has("SURGICAL_COLDNESS" /* SURGICAL_COLDNESS */)) {
-    mods.headshotCritMultiplierBonus += 0.5;
-    mods.limbDamageMultiplier += 0.25;
-    mods.spreadConeMultiplier *= 0.75;
-  }
-  if (drifts.has("HOLLOW_FRAME_ADAPTATION" /* HOLLOW_FRAME_ADAPTATION */)) {
-    mods.gravityScaleMultiplier *= 0.75;
-    mods.jetpackFuelBonusSec += 3;
-    mods.airDashSpeedMultiplier += 0.15;
-  }
-  if (drifts.has("GHOST_CONSCIENCE" /* GHOST_CONSCIENCE */)) {
-    mods.vigilanteAuraRadiusBonusM += 15;
-    mods.vigilanteTriageRegenHpPerSec += 20;
-    mods.parryWindowBonusMs += 100;
-  }
-  return mods;
-}
-function computeNearestRelicRadarPing(agentPos, collectedRelics) {
-  let nearest = null;
-  let bestDist = Infinity;
-  for (const r2 of PROTOTYPE_RELIC_SPECS) {
-    if (collectedRelics.has(r2.id)) continue;
-    const d2 = Math.hypot(
-      r2.position.x - agentPos.x,
-      r2.position.y - agentPos.y,
-      r2.position.z - agentPos.z
-    );
-    if (d2 < bestDist) {
-      bestDist = d2;
-      nearest = r2;
-    }
-  }
-  if (!nearest) return null;
-  const dx = nearest.position.x - agentPos.x;
-  const dz = nearest.position.z - agentPos.z;
-  const bearingYawRad = Math.atan2(-dx, -dz);
-  const elevationDeltaMeters = nearest.position.y - agentPos.y;
-  const pingIntervalSec = Math.max(0.25, Math.min(2.4, bestDist / 45));
-  return {
-    relicId: nearest.id,
-    name: nearest.name,
-    distanceMeters: bestDist,
-    bearingYawRad,
-    elevationDeltaMeters,
-    pingIntervalSec,
-    position: { ...nearest.position }
-  };
-}
-
 // shared/world/architecture.ts
 var ARCHITECTURE_REPRESENTATIVES = ["crane_alpha", "foundry_stack_01", "helios_tower_01", "aegis_bastion_south"];
 var ARCHITECTURE_ROLLOUT = "citywide";
@@ -33250,7 +34958,7 @@ function getArchitecturePlans(structures, rollout = "citywide") {
       anchors: {},
       sign: district === "NEON_DOCKS" /* NEON_DOCKS */ ? "PORT / 07" : district === "FOUNDRY_SLUMS" /* FOUNDRY_SLUMS */ ? "FORGE / 12" : district === "HELIOS_SPIRE" /* HELIOS_SPIRE */ ? "HELIOS" : "AEGIS"
     };
-    const add = (name, local, half, material) => {
+    const add2 = (name, local, half, material) => {
       const part = {
         id: `arch3a_${id}_${name}`,
         center: { x: origin.x + local.x, y: local.y, z: origin.z + local.z },
@@ -33277,25 +34985,25 @@ function getArchitecturePlans(structures, rollout = "citywide") {
       for (const [face, center, half] of candidates) {
         const blocksRoute = members.some((p2) => p2.id.includes("_hvac_") && Math.abs(p2.center.y + p2.halfExtents.y - y2) < 2.4 && Math.abs(p2.center.x - origin.x - center.x) < p2.halfExtents.x + half.x + 0.45 && Math.abs(p2.center.z - origin.z - center.z) < p2.halfExtents.z + half.z + 0.45);
         const crossesConnection = neighboringStructures.some((p2) => p2.center.y - p2.halfExtents.y < y2 + 2.2 && p2.center.y + p2.halfExtents.y > y2 - thickness * 2 && Math.abs(p2.center.x - origin.x - center.x) < p2.halfExtents.x + half.x + 0.45 && Math.abs(p2.center.z - origin.z - center.z) < p2.halfExtents.z + half.z + 0.45);
-        if (!blocksRoute && !crossesConnection) add(`ledge_${y2}_${face}`, center, half, "ledge_trim");
+        if (!blocksRoute && !crossesConnection) add2(`ledge_${y2}_${face}`, center, half, "ledge_trim");
       }
     }
     const roofHalf = crown?.halfExtents.x ?? plan.upperHalfWidth;
     const parapet = 0.2;
-    add("parapet_north", { x: 0, y: height + 0.45, z: -roofHalf + parapet }, { x: roofHalf, y: 0.45, z: parapet }, "brutalist_concrete");
+    add2("parapet_north", { x: 0, y: height + 0.45, z: -roofHalf + parapet }, { x: roofHalf, y: 0.45, z: parapet }, "brutalist_concrete");
     for (const side of [-1, 1]) {
-      add(`parapet_${side}_side`, { x: side * (roofHalf - parapet), y: height + 0.45, z: 0 }, { x: parapet, y: 0.45, z: roofHalf }, "brutalist_concrete");
+      add2(`parapet_${side}_side`, { x: side * (roofHalf - parapet), y: height + 0.45, z: 0 }, { x: parapet, y: 0.45, z: roofHalf }, "brutalist_concrete");
       const width = Math.max(0.5, (roofHalf - 1.5) / 2);
-      add(`parapet_south_${side}`, { x: side * (1.5 + width), y: height + 0.45, z: roofHalf - parapet }, { x: width, y: 0.45, z: parapet }, "brutalist_concrete");
+      add2(`parapet_south_${side}`, { x: side * (1.5 + width), y: height + 0.45, z: roofHalf - parapet }, { x: width, y: 0.45, z: parapet }, "brutalist_concrete");
     }
     const front = podium.halfExtents.z, columnX = Math.min(6, podium.halfExtents.x - 1);
     for (const side of [-1, 1]) {
-      add(`lobby_column_${side}`, { x: side * columnX, y: 2.7, z: -front - 1.5 }, { x: 0.3, y: 2.7, z: 0.3 }, "brutalist_concrete");
-      if (podium.halfExtents.x >= 12) add(`outer_lobby_column_${side}`, { x: side * (podium.halfExtents.x - 1.5), y: 2.7, z: -front - 1.5 }, { x: 0.3, y: 2.7, z: 0.3 }, "brutalist_concrete");
+      add2(`lobby_column_${side}`, { x: side * columnX, y: 2.7, z: -front - 1.5 }, { x: 0.3, y: 2.7, z: 0.3 }, "brutalist_concrete");
+      if (podium.halfExtents.x >= 12) add2(`outer_lobby_column_${side}`, { x: side * (podium.halfExtents.x - 1.5), y: 2.7, z: -front - 1.5 }, { x: 0.3, y: 2.7, z: 0.3 }, "brutalist_concrete");
     }
-    add("lobby_awning", { x: 0, y: 5.6, z: -front - 1.2 }, { x: columnX + 0.6, y: 0.2, z: 2 }, "obsidian_steel");
-    add("roof_hvac_left", { x: -roofHalf * 0.5, y: height + 0.4, z: -roofHalf * 0.4 }, { x: 1.35, y: 0.4, z: 1.6 }, "industrial_grate");
-    add("roof_hvac_right", { x: roofHalf * 0.5, y: height + 0.4, z: -roofHalf * 0.4 }, { x: 1.35, y: 0.4, z: 1.6 }, "industrial_grate");
+    add2("lobby_awning", { x: 0, y: 5.6, z: -front - 1.2 }, { x: columnX + 0.6, y: 0.2, z: 2 }, "obsidian_steel");
+    add2("roof_hvac_left", { x: -roofHalf * 0.5, y: height + 0.4, z: -roofHalf * 0.4 }, { x: 1.35, y: 0.4, z: 1.6 }, "industrial_grate");
+    add2("roof_hvac_right", { x: roofHalf * 0.5, y: height + 0.4, z: -roofHalf * 0.4 }, { x: 1.35, y: 0.4, z: 1.6 }, "industrial_grate");
     plan.anchors = {
       Entrance: { x: 0, y: 0, z: -front - 3.5 },
       RoofEntry: { x: 0, y: height, z: roofHalf - 1 },
@@ -34036,611 +35744,17 @@ function getElevatedOrbSurfaces() {
   return surfaces;
 }
 function findActiveThermalUpdraft(pos) {
-  for (const u2 of getNeoVeridiaThermalUpdrafts()) {
-    if (pos.y >= u2.baseY && pos.y <= u2.topY) {
-      const dx = pos.x - u2.center.x;
-      const dz = pos.z - u2.center.z;
-      if (dx * dx + dz * dz <= u2.radius * u2.radius) {
-        return u2;
+  for (const u3 of getNeoVeridiaThermalUpdrafts()) {
+    if (pos.y >= u3.baseY && pos.y <= u3.topY) {
+      const dx = pos.x - u3.center.x;
+      const dz = pos.z - u3.center.z;
+      if (dx * dx + dz * dz <= u3.radius * u3.radius) {
+        return u3;
       }
     }
   }
   return null;
 }
-
-// shared/world/phase5Systems.ts
-var DISTRICT_LOOP_SPECS = [
-  {
-    district: "NEON_DOCKS" /* NEON_DOCKS */,
-    districtIndex: 0,
-    name: "Neon Docks Smuggler Grid",
-    faction: "NEON_SYNDICATE" /* NEON_SYNDICATE */,
-    rewardId: "UNLOCK_GRAPPLE_OVERDRIVE" /* UNLOCK_GRAPPLE_OVERDRIVE */,
-    rewardName: "3D Grapple-Hook Overdrive (+20m Range & +35% Winch Speed)",
-    stage1Terminals: [
-      { x: -24, y: 0, z: 20 },
-      { x: -34, y: 0, z: 26 }
-    ],
-    lieutenantEnemyId: 501,
-    lieutenantCallsign: "SYNDICATE-LT-VEX",
-    lieutenantSpawnPos: { x: -30, y: 0, z: 24 },
-    kingpinEnemyId: 511,
-    kingpinCallsign: "KINGPIN-KRAKEN",
-    kingpinSpawnPos: { x: -38, y: 0, z: 32 },
-    coreOverridePos: { x: -38, y: 0, z: 32 }
-  },
-  {
-    district: "FOUNDRY_SLUMS" /* FOUNDRY_SLUMS */,
-    districtIndex: 1,
-    name: "Foundry Slums Thermobaric Core",
-    faction: "FOUNDRY_IRONCLAD" /* FOUNDRY_IRONCLAD */,
-    rewardId: "UNLOCK_PLASMA_RAILGUN" /* UNLOCK_PLASMA_RAILGUN */,
-    rewardName: "Hyperion Plasma Railgun (1.65x Weapon DMG & +50% Armor Strip)",
-    stage1Terminals: [
-      { x: 24, y: 0, z: 20 },
-      { x: 34, y: 0, z: 26 }
-    ],
-    lieutenantEnemyId: 502,
-    lieutenantCallsign: "IRONCLAD-LT-VULCAN",
-    lieutenantSpawnPos: { x: 30, y: 0, z: 24 },
-    kingpinEnemyId: 512,
-    kingpinCallsign: "KINGPIN-SLAG",
-    kingpinSpawnPos: { x: 38, y: 0, z: 32 },
-    coreOverridePos: { x: 38, y: 0, z: 32 }
-  },
-  {
-    district: "HELIOS_SPIRE" /* HELIOS_SPIRE */,
-    districtIndex: 2,
-    name: "Helios Spire Orbital Telemetry",
-    faction: "HELIOS_EXECUTIVE_GUARD" /* HELIOS_EXECUTIVE_GUARD */,
-    rewardId: "UNLOCK_GRAV_FLIGHT_OVERDRIVE" /* UNLOCK_GRAV_FLIGHT_OVERDRIVE */,
-    rewardName: "Grav-Flight Overdrive (+6s Jetpack Fuel & +40% Vector Thrust)",
-    stage1Terminals: [
-      { x: 24, y: 0, z: -20 },
-      { x: 34, y: 0, z: -26 }
-    ],
-    lieutenantEnemyId: 503,
-    lieutenantCallsign: "HELIOS-LT-SOLARIS",
-    lieutenantSpawnPos: { x: 30, y: 0, z: -24 },
-    kingpinEnemyId: 513,
-    kingpinCallsign: "KINGPIN-HELIO",
-    kingpinSpawnPos: { x: 38, y: 0, z: -32 },
-    coreOverridePos: { x: 38, y: 0, z: -32 }
-  },
-  {
-    district: "AEGIS_CITADEL" /* AEGIS_CITADEL */,
-    districtIndex: 3,
-    name: "Aegis Citadel Eclipse Bastion",
-    faction: "AEGIS_DIRECTORATE" /* AEGIS_DIRECTORATE */,
-    rewardId: "UNLOCK_PROTOCOL_ECLIPSE_OVERRIDE" /* UNLOCK_PROTOCOL_ECLIPSE_OVERRIDE */,
-    rewardName: "Protocol Eclipse Override (+30% Max HP, +15m Vigilante Sphere & Shield Pierce)",
-    stage1Terminals: [
-      { x: -24, y: 0, z: -20 },
-      { x: -34, y: 0, z: -26 }
-    ],
-    lieutenantEnemyId: 504,
-    lieutenantCallsign: "AEGIS-LT-PRAETOR",
-    lieutenantSpawnPos: { x: -30, y: 0, z: -24 },
-    kingpinEnemyId: 514,
-    kingpinCallsign: "COMMANDER-KRONOS",
-    kingpinSpawnPos: { x: -38, y: 0, z: -32 },
-    coreOverridePos: { x: -38, y: 0, z: -32 }
-  }
-];
-var OMEGA_EXTRACTION_WAYPOINTS = [
-  { x: -16, y: 0, z: 22 },
-  { x: 16, y: 0, z: 22 },
-  { x: 30, y: 0, z: 10 },
-  { x: 30, y: 0, z: -12 },
-  { x: 16, y: 0, z: -26 },
-  { x: -16, y: 0, z: -26 },
-  { x: -32, y: 0, z: -14 },
-  { x: -46, y: 0, z: -40 }
-];
-var NEURAL_DRIFT_CATALOG = {
-  ["PYRO_NEUROSIS" /* PYRO_NEUROSIS */]: {
-    id: "PYRO_NEUROSIS" /* PYRO_NEUROSIS */,
-    index: 0,
-    name: "Pyro-Neurosis",
-    description: "+30% Explosive Blast Radius & +35% Radial Blast Impulse (N*s).",
-    consequenceDesc: "Aegis Firebreak Auditor Airship & Suppression Hit-Squad deployed!"
-  },
-  ["SURGICAL_COLDNESS" /* SURGICAL_COLDNESS */]: {
-    id: "SURGICAL_COLDNESS" /* SURGICAL_COLDNESS */,
-    index: 1,
-    name: "Surgical Coldness",
-    description: "+0.5x Headshot Crit Multiplier, +25% Limb Damage & -25% Spread Cone.",
-    consequenceDesc: "Aegis Neural-Hunter Auditor Airship & Precision Hit-Squad deployed!"
-  },
-  ["HOLLOW_FRAME_ADAPTATION" /* HOLLOW_FRAME_ADAPTATION */]: {
-    id: "HOLLOW_FRAME_ADAPTATION" /* HOLLOW_FRAME_ADAPTATION */,
-    index: 2,
-    name: "Hollow-Frame Adaptation",
-    description: "-25% Airborne Gravity, +3.0s Jetpack Fuel & +15% Air-Dash Speed.",
-    consequenceDesc: "Aegis Sky-Interceptor Auditor Airship & Aerial Hit-Squad deployed!"
-  },
-  ["GHOST_CONSCIENCE" /* GHOST_CONSCIENCE */]: {
-    id: "GHOST_CONSCIENCE" /* GHOST_CONSCIENCE */,
-    index: 3,
-    name: "Ghost Conscience",
-    description: "+15m Vigilante Co-op Buff Sphere, +20 HP/s Triage Aura & +100ms Parry Window.",
-    consequenceDesc: "Aegis Directorate marks Agent Rogue \u2014 Inquisitor Airship deployed!"
-  }
-};
-function computeNeuralDriftRatios(telemetry) {
-  const totalDmg = Math.max(1, telemetry.totalDamageDealt || 0);
-  const blastDmg = telemetry.collateralBlastDamageDealt || 0;
-  const kills = Math.max(1, telemetry.enemiesDefeated || 0);
-  const cripples = telemetry.limbsCrippled || 0;
-  const playSec = Math.max(1, telemetry.playTimeSeconds || 0);
-  const airSec = telemetry.airborneTimeSeconds || 0;
-  const revivesAndNonLethal = telemetry.squadRevivesAndNonLethalCount || 0;
-  const totalEncounters = Math.max(1, (telemetry.enemiesDefeated || 0) + revivesAndNonLethal);
-  return {
-    collateral_blast_damage_ratio: Math.min(1, blastDmg / totalDmg),
-    limb_cripple_to_kill_ratio: Math.min(2, cripples / kills),
-    airborne_time_ratio: Math.min(1, airSec / playSec),
-    squad_revive_and_nonlethal_ratio: Math.min(1, revivesAndNonLethal / totalEncounters)
-  };
-}
-var Phase5WorldDirector = class {
-  constructor(combatManager) {
-    this.combatManager = combatManager;
-    for (const spec of DISTRICT_LOOP_SPECS) {
-      this.districtLoops.set(spec.district, {
-        spec,
-        currentStage: 1,
-        terminal1Hacked: false,
-        terminal2Hacked: false,
-        lieutenantDefeated: false,
-        kingpinDefeated: false
-      });
-    }
-    this.omegaBounty = {
-      active: false,
-      escaped: false,
-      completed: false,
-      enemyId: 800,
-      waypointIndex: 0,
-      waypoints: OMEGA_EXTRACTION_WAYPOINTS.map((w2) => ({ ...w2 })),
-      timeRemainingSec: OMEGA_BOUNTY_DURATION_SEC,
-      cooldownBeforeNextSec: 2,
-      position: { ...OMEGA_EXTRACTION_WAYPOINTS[0] },
-      hp: 900,
-      maxHp: 900
-    };
-    this.startOmegaBounty();
-  }
-  districtLoops = /* @__PURE__ */ new Map();
-  unlockedDistrictRewards = /* @__PURE__ */ new Set();
-  omegaBounty;
-  auditorAirships = /* @__PURE__ */ new Map();
-  pendingNotifications = [];
-  nextAirshipId = 1;
-  nextAuditorEnemyId = 700;
-  /**
-   * Spawns or restarts the 90-second Omega Bounty HVT Convoy across the 3D city waypoint path (REQ-BOUNTIES)
-   */
-  startOmegaBounty() {
-    const startPos = { ...OMEGA_EXTRACTION_WAYPOINTS[0] };
-    const hvt = this.combatManager.spawnEnemy(
-      800,
-      "OMEGA-CONVOY-VALKYRIE",
-      startPos,
-      true,
-      {
-        faction: "AEGIS_DIRECTORATE" /* AEGIS_DIRECTORATE */,
-        rank: "OMEGA_HVT",
-        maxHp: 900,
-        maxArmor: 220,
-        disableAutoRespawn: true
-      }
-    );
-    this.omegaBounty.active = true;
-    this.omegaBounty.escaped = false;
-    this.omegaBounty.completed = false;
-    this.omegaBounty.enemyId = hvt.enemyId;
-    this.omegaBounty.waypointIndex = 1;
-    this.omegaBounty.timeRemainingSec = OMEGA_BOUNTY_DURATION_SEC;
-    this.omegaBounty.position = { ...startPos };
-    this.omegaBounty.hp = hvt.hp;
-    this.omegaBounty.maxHp = hvt.maxHp;
-    this.pendingNotifications.push({
-      type: "OMEGA_BOUNTY_STARTED",
-      message: `OMEGA BOUNTY DEPLOYED: Intercept HVT #800 along 3D extraction route (${OMEGA_BOUNTY_DURATION_SEC}s remaining)!`
-    });
-    return hvt;
-  }
-  /**
-   * Interacts with the nearest District Operational Loop 3D Terminal or Core Override Beacon (REQ-LOOPS)
-   * Also supports Co-op Squad Triage/Revive when near an injured co-op Agent!
-   */
-  tryInteractObjectiveOrRevive(agent, allAgents) {
-    let interacted = false;
-    for (const ally of allAgents.values()) {
-      if (ally.entityId === agent.entityId) continue;
-      const d2 = Math.hypot(
-        ally.position.x - agent.position.x,
-        ally.position.y - agent.position.y,
-        ally.position.z - agent.position.z
-      );
-      if (d2 <= 4.5 && ally.hp < ally.maxHp) {
-        ally.hp = Math.min(ally.maxHp, ally.hp + 75);
-        agent.telemetry.squadRevivesAndNonLethalCount = (agent.telemetry.squadRevivesAndNonLethalCount || 0) + 1;
-        interacted = true;
-      }
-    }
-    for (const loop of this.districtLoops.values()) {
-      const { spec } = loop;
-      if (loop.currentStage === 1) {
-        const d1 = Math.hypot(
-          spec.stage1Terminals[0].x - agent.position.x,
-          spec.stage1Terminals[0].y - agent.position.y,
-          spec.stage1Terminals[0].z - agent.position.z
-        );
-        const d2 = Math.hypot(
-          spec.stage1Terminals[1].x - agent.position.x,
-          spec.stage1Terminals[1].y - agent.position.y,
-          spec.stage1Terminals[1].z - agent.position.z
-        );
-        if (!loop.terminal1Hacked && d1 <= DISTRICT_OBJECTIVE_INTERACT_RADIUS_M) {
-          loop.terminal1Hacked = true;
-          interacted = true;
-        }
-        if (!loop.terminal2Hacked && d2 <= DISTRICT_OBJECTIVE_INTERACT_RADIUS_M) {
-          loop.terminal2Hacked = true;
-          interacted = true;
-        }
-        if (loop.terminal1Hacked && loop.terminal2Hacked) {
-          this.advanceDistrictLoopToStage2(loop);
-        }
-      } else if (loop.currentStage === 3) {
-        const dCore = Math.hypot(
-          spec.coreOverridePos.x - agent.position.x,
-          spec.coreOverridePos.y - agent.position.y,
-          spec.coreOverridePos.z - agent.position.z
-        );
-        const kingpin = this.combatManager.enemies.get(spec.kingpinEnemyId);
-        if (dCore <= DISTRICT_OBJECTIVE_INTERACT_RADIUS_M && kingpin?.combatState === 7 /* DEAD */) {
-          this.completeDistrictLoop(loop, agent, allAgents);
-          interacted = true;
-        }
-      }
-    }
-    return interacted;
-  }
-  advanceDistrictLoopToStage2(loop) {
-    if (loop.currentStage !== 1) return;
-    loop.currentStage = 2;
-    const { spec } = loop;
-    this.combatManager.spawnEnemy(
-      spec.lieutenantEnemyId,
-      spec.lieutenantCallsign,
-      spec.lieutenantSpawnPos,
-      true,
-      {
-        faction: spec.faction,
-        rank: "LIEUTENANT",
-        maxHp: 480,
-        maxArmor: 180,
-        disableAutoRespawn: true
-      }
-    );
-    this.pendingNotifications.push({
-      type: "DISTRICT_STAGE_ADVANCED",
-      district: spec.district,
-      stage: 2,
-      message: `[${spec.district}] STAGE 2: Faction Lieutenant ${spec.lieutenantCallsign} deployed!`
-    });
-  }
-  advanceDistrictLoopToStage3(loop) {
-    if (loop.currentStage !== 2) return;
-    loop.currentStage = 3;
-    loop.lieutenantDefeated = true;
-    const { spec } = loop;
-    this.combatManager.spawnEnemy(
-      spec.kingpinEnemyId,
-      spec.kingpinCallsign,
-      spec.kingpinSpawnPos,
-      true,
-      {
-        faction: spec.faction,
-        rank: "KINGPIN",
-        maxHp: 750,
-        maxArmor: 260,
-        disableAutoRespawn: true
-      }
-    );
-    this.pendingNotifications.push({
-      type: "DISTRICT_STAGE_ADVANCED",
-      district: spec.district,
-      stage: 3,
-      message: `[${spec.district}] STAGE 3: District Kingpin ${spec.kingpinCallsign} & Core Override exposed!`
-    });
-  }
-  completeDistrictLoop(loop, triggeringAgent, allAgents) {
-    if (loop.currentStage === 4) return;
-    loop.currentStage = 4;
-    loop.kingpinDefeated = true;
-    const { spec } = loop;
-    this.unlockedDistrictRewards.add(spec.rewardId);
-    if (triggeringAgent) {
-      triggeringAgent.telemetry.districtLoopsCompleted = (triggeringAgent.telemetry.districtLoopsCompleted || 0) + 1;
-    }
-    for (const a2 of allAgents.values()) {
-      a2.unlockedDistrictRewards.add(spec.rewardId);
-      a2.buildModifiers = computeAgentBuildModifiers(
-        a2.augmentChassis,
-        a2.unlockedSkills,
-        a2.unlockedRelics,
-        a2.unlockedDistrictRewards,
-        a2.activeNeuralDrifts
-      );
-    }
-    this.pendingNotifications.push({
-      type: "DISTRICT_LOOP_COMPLETED",
-      district: spec.district,
-      stage: 4,
-      rewardId: spec.rewardId,
-      rewardName: spec.rewardName,
-      message: `[${spec.district}] OPERATIONAL LOOP COMPLETE! Unlocked ${spec.rewardName}!`
-    });
-  }
-  /**
-   * Evaluates the 4 rolling telemetry ratios for an Agent and organically triggers
-   * Secret Neural Drift mutations + 3D Aegis Auditor Airship Hit-Squads (PRD Section 4.4 REQ-SECRET)
-   */
-  evaluateAgentNeuralDrift(agent) {
-    const ratios = computeNeuralDriftRatios(agent.telemetry);
-    agent.neuralDriftRatios = ratios;
-    const newlyActivated = [];
-    const checkAndActivate = (id, condition) => {
-      if (condition && !agent.activeNeuralDrifts.has(id)) {
-        agent.activeNeuralDrifts.add(id);
-        newlyActivated.push(id);
-        agent.buildModifiers = computeAgentBuildModifiers(
-          agent.augmentChassis,
-          agent.unlockedSkills,
-          agent.unlockedRelics,
-          agent.unlockedDistrictRewards,
-          agent.activeNeuralDrifts
-        );
-        this.spawnAegisAuditorAirshipAndSquad(agent, id);
-        const info = NEURAL_DRIFT_CATALOG[id];
-        this.pendingNotifications.push({
-          type: "NEURAL_DRIFT_ACTIVATED",
-          mutationId: id,
-          mutationName: info.name,
-          agentCallsign: agent.callsign,
-          message: `SECRET NEURAL DRIFT [${info.name}] ACTIVATED ON ${agent.callsign}! ${info.consequenceDesc}`
-        });
-      }
-    };
-    checkAndActivate(
-      "PYRO_NEUROSIS" /* PYRO_NEUROSIS */,
-      ratios.collateral_blast_damage_ratio >= 0.38 && (agent.telemetry.collateralBlastDamageDealt || 0) >= 200
-    );
-    checkAndActivate(
-      "SURGICAL_COLDNESS" /* SURGICAL_COLDNESS */,
-      ratios.limb_cripple_to_kill_ratio >= 0.75 && (agent.telemetry.limbsCrippled || 0) >= 2
-    );
-    checkAndActivate(
-      "HOLLOW_FRAME_ADAPTATION" /* HOLLOW_FRAME_ADAPTATION */,
-      ratios.airborne_time_ratio >= 0.35 && (agent.telemetry.airborneTimeSeconds || 0) >= 3
-    );
-    checkAndActivate(
-      "GHOST_CONSCIENCE" /* GHOST_CONSCIENCE */,
-      ratios.squad_revive_and_nonlethal_ratio >= 0.4 && (agent.telemetry.squadRevivesAndNonLethalCount || 0) >= 2
-    );
-    return newlyActivated;
-  }
-  spawnAegisAuditorAirshipAndSquad(targetAgent, mutationId) {
-    const airshipId = this.nextAirshipId++;
-    const info = NEURAL_DRIFT_CATALOG[mutationId];
-    const airshipPos = {
-      x: targetAgent.position.x + 8,
-      y: Math.max(24, targetAgent.position.y + 22),
-      z: targetAgent.position.z - 10
-    };
-    const auditorIds = [];
-    for (let i2 = 0; i2 < 2; i2++) {
-      const enemyId = this.nextAuditorEnemyId++;
-      const offsetX = i2 === 0 ? -3.5 : 3.5;
-      this.combatManager.spawnEnemy(
-        enemyId,
-        `AEGIS-AUDITOR-${airshipId}-${i2 + 1}`,
-        {
-          x: targetAgent.position.x + offsetX,
-          y: targetAgent.position.y,
-          z: targetAgent.position.z - 5.5
-        },
-        true,
-        {
-          faction: "AEGIS_AUDITOR_HIT_SQUAD" /* AEGIS_AUDITOR_HIT_SQUAD */,
-          rank: "AUDITOR",
-          maxHp: 380,
-          maxArmor: 150,
-          disableAutoRespawn: true
-        }
-      );
-      auditorIds.push(enemyId);
-    }
-    const airship = {
-      airshipId,
-      targetEntityId: targetAgent.entityId,
-      mutationId,
-      mutationIndex: info.index,
-      active: true,
-      position: airshipPos,
-      yaw: 0,
-      orbitAngle: 0,
-      auditorEnemyIds: auditorIds
-    };
-    this.auditorAirships.set(airshipId, airship);
-    return airship;
-  }
-  /**
-   * Steps all Phase 5 World Systems at 60Hz:
-   * - 4 District 3-Stage Operational Loops
-   * - 90s Omega Bounty 3D Waypoint Extraction Convoy
-   * - 3D Aegis Auditor Airships & Secret Neural Drift evaluations
-   */
-  stepPhase5Systems(agents, dt) {
-    for (const loop of this.districtLoops.values()) {
-      if (loop.currentStage === 2) {
-        const lt = this.combatManager.enemies.get(loop.spec.lieutenantEnemyId);
-        if (lt && lt.combatState === 7 /* DEAD */) {
-          this.advanceDistrictLoopToStage3(loop);
-        }
-      } else if (loop.currentStage === 3) {
-        const kp = this.combatManager.enemies.get(loop.spec.kingpinEnemyId);
-        if (kp && kp.combatState === 7 /* DEAD */) {
-          loop.kingpinDefeated = true;
-        }
-      }
-    }
-    if (this.omegaBounty.active) {
-      const hvt = this.combatManager.enemies.get(this.omegaBounty.enemyId);
-      this.omegaBounty.timeRemainingSec = Math.max(0, this.omegaBounty.timeRemainingSec - dt);
-      if (!hvt || hvt.combatState === 7 /* DEAD */ || hvt.hp <= 0 || hvt.capturedByEntityId) {
-        this.omegaBounty.active = false;
-        this.omegaBounty.completed = true;
-        this.omegaBounty.hp = 0;
-        this.omegaBounty.cooldownBeforeNextSec = 25;
-        for (const a2 of agents.values()) {
-          a2.telemetry.omegaBountiesCompleted = (a2.telemetry.omegaBountiesCompleted || 0) + 1;
-          if (hvt?.capturedByEntityId === a2.entityId) a2.telemetry.nonLethalBountiesCompleted = (a2.telemetry.nonLethalBountiesCompleted ?? 0) + 1;
-        }
-        this.pendingNotifications.push({
-          type: "OMEGA_BOUNTY_COMPLETED",
-          message: hvt?.capturedByEntityId ? "OMEGA BOUNTY CAPTURED! Non-lethal extraction confirmed. Encrypted witness testimony recovered." : "OMEGA BOUNTY ELIMINATED! Extraction Convoy destroyed in 3D space!"
-        });
-        if (hvt?.capturedByEntityId) this.combatManager.removeEnemy(hvt.enemyId);
-      } else if (this.omegaBounty.timeRemainingSec <= 0) {
-        this.omegaBounty.active = false;
-        this.omegaBounty.escaped = true;
-        this.omegaBounty.cooldownBeforeNextSec = 20;
-        this.combatManager.removeEnemy(this.omegaBounty.enemyId);
-        this.pendingNotifications.push({
-          type: "OMEGA_BOUNTY_ESCAPED",
-          message: "OMEGA BOUNTY ESCAPED! 90s extraction window expired."
-        });
-      } else {
-        this.omegaBounty.hp = hvt.hp;
-        this.omegaBounty.maxHp = hvt.maxHp;
-        const targetWp = this.omegaBounty.waypoints[Math.min(this.omegaBounty.waypointIndex, this.omegaBounty.waypoints.length - 1)];
-        const dx = targetWp.x - hvt.position.x;
-        const dy = targetWp.y - hvt.position.y;
-        const dz = targetWp.z - hvt.position.z;
-        const dist = Math.hypot(dx, dy, dz);
-        if (dist <= 1.2) {
-          this.omegaBounty.waypointIndex += 1;
-          if (this.omegaBounty.waypointIndex >= this.omegaBounty.waypoints.length) {
-            this.omegaBounty.active = false;
-            this.omegaBounty.escaped = true;
-            this.omegaBounty.cooldownBeforeNextSec = 20;
-            this.combatManager.removeEnemy(this.omegaBounty.enemyId);
-            this.pendingNotifications.push({
-              type: "OMEGA_BOUNTY_ESCAPED",
-              message: "OMEGA BOUNTY ESCAPED! Reached final Aegis Extraction Pad."
-            });
-          }
-        } else if (hvt.staggerTimer <= 0 && hvt.presentation.timer <= 0) {
-          const baseConvoySpeed = 7.2;
-          const speed = hvt.legsCrippledTimer > 0 ? baseConvoySpeed * 0.3 : baseConvoySpeed;
-          hvt.yaw = Math.atan2(-dx, -dz);
-          hvt.velocity.x = dx / dist * speed;
-          hvt.velocity.y = dy / dist * speed;
-          hvt.velocity.z = dz / dist * speed;
-          hvt.position.x += hvt.velocity.x * dt;
-          hvt.position.y += hvt.velocity.y * dt;
-          hvt.position.z += hvt.velocity.z * dt;
-          this.omegaBounty.position = { ...hvt.position };
-          this.combatManager.syncEnemyBoneColliders(hvt);
-        }
-      }
-    }
-    for (const a2 of agents.values()) {
-      this.evaluateAgentNeuralDrift(a2);
-    }
-    for (const airship of this.auditorAirships.values()) {
-      if (!airship.active) continue;
-      const anyAlive = airship.auditorEnemyIds.some((id) => {
-        const e2 = this.combatManager.enemies.get(id);
-        return e2 && e2.combatState !== 7 /* DEAD */;
-      });
-      if (!anyAlive) {
-        airship.active = false;
-        continue;
-      }
-      const target = agents.get(airship.targetEntityId);
-      airship.orbitAngle += 0.55 * dt;
-      const centerX = target ? target.position.x : airship.position.x;
-      const centerZ = target ? target.position.z : airship.position.z;
-      const desiredY = target ? Math.max(24, target.position.y + 22) : 24;
-      airship.position.x = centerX + Math.cos(airship.orbitAngle) * 14;
-      airship.position.z = centerZ + Math.sin(airship.orbitAngle) * 14;
-      airship.position.y += (desiredY - airship.position.y) * Math.min(1, 2 * dt);
-      airship.yaw = airship.orbitAngle + Math.PI * 0.5;
-    }
-  }
-  toBinaryOmegaBountySnapshot() {
-    const targetWp = this.omegaBounty.waypoints[Math.min(this.omegaBounty.waypointIndex, this.omegaBounty.waypoints.length - 1)] || this.omegaBounty.position;
-    return {
-      active: this.omegaBounty.active,
-      escaped: this.omegaBounty.escaped,
-      completed: this.omegaBounty.completed,
-      enemyId: this.omegaBounty.enemyId,
-      waypointIndex: this.omegaBounty.waypointIndex,
-      totalWaypoints: this.omegaBounty.waypoints.length,
-      timeRemainingSec: this.omegaBounty.timeRemainingSec,
-      position: { ...this.omegaBounty.position },
-      targetWaypoint: { ...targetWp },
-      hp: this.omegaBounty.hp,
-      maxHp: this.omegaBounty.maxHp
-    };
-  }
-  toBinaryDistrictLoopSnapshots() {
-    const out = [];
-    for (const spec of DISTRICT_LOOP_SPECS) {
-      const loop = this.districtLoops.get(spec.district);
-      const terminalsHacked = (loop.terminal1Hacked ? 1 : 0) + (loop.terminal2Hacked ? 1 : 0);
-      let activeObjectivePos = spec.coreOverridePos;
-      if (loop.currentStage === 1) {
-        activeObjectivePos = !loop.terminal1Hacked ? spec.stage1Terminals[0] : spec.stage1Terminals[1];
-      } else if (loop.currentStage === 2) {
-        const lt = this.combatManager.enemies.get(spec.lieutenantEnemyId);
-        activeObjectivePos = lt ? lt.position : spec.lieutenantSpawnPos;
-      } else if (loop.currentStage === 3) {
-        const kp = this.combatManager.enemies.get(spec.kingpinEnemyId);
-        activeObjectivePos = kp ? kp.position : spec.coreOverridePos;
-      }
-      out.push({
-        districtIndex: spec.districtIndex,
-        currentStage: loop.currentStage,
-        terminalsHacked,
-        totalTerminals: 2,
-        activeObjectivePos: { ...activeObjectivePos }
-      });
-    }
-    return out;
-  }
-  toBinaryAuditorAirshipSnapshots() {
-    const out = [];
-    for (const a2 of this.auditorAirships.values()) {
-      if (!a2.active) continue;
-      out.push({
-        airshipId: a2.airshipId,
-        targetEntityId: a2.targetEntityId,
-        mutationIndex: a2.mutationIndex,
-        active: a2.active,
-        position: { ...a2.position },
-        yaw: a2.yaw
-      });
-    }
-    return out;
-  }
-};
 
 // shared/vehicles/vehicleDefinition.ts
 var VEHICLE_MAX_HP = 1e3;
@@ -34722,6 +35836,8 @@ var VehicleAndPropManager = class {
     this.combatManager.weaponObstacleProbes.set("vehicle", (agent, origin, direction, distance) => this.resolveVehicleWeaponShot(agent, origin, direction, distance));
     this.combatManager.extraSolidCollider = (collider) => this.colliderHandleToVehicleId.has(collider.handle);
   }
+  onEffect = null;
+  skidPoints = /* @__PURE__ */ new Map();
   authoritativeDamage = true;
   vehicleDebris = /* @__PURE__ */ new Map();
   nextDebrisId = 1;
@@ -34836,6 +35952,7 @@ var VehicleAndPropManager = class {
     if (v2.hp < v2.maxHp * 0.5) this.detachPanel(v2, 0 /* HOOD */);
     if (v2.hp < v2.maxHp * 0.25) for (const part of [1 /* LEFT_DOOR */, 2 /* RIGHT_DOOR */, 3 /* TRUNK */]) this.detachPanel(v2, part);
     if (v2.hp === 0) {
+      this.onEffect?.(effectSpec(7 /* DESTRUCTION */, v2.position, { actor: attackerEntityId, target: vehicleId, radius: 4 }));
       v2.destroyed = true;
       v2.respawnSec = VEHICLE_RESPAWN_SEC;
       v2.wallThrusterActive = false;
@@ -35314,6 +36431,28 @@ var VehicleAndPropManager = class {
       v2.rotation = eulerToQuat(v2.pitch, v2.yaw, v2.roll);
       const signedSpeed = v2.velocity.x * -Math.sin(v2.yaw) + v2.velocity.z * -Math.cos(v2.yaw);
       v2.wheelAngle = (v2.wheelAngle + signedSpeed * dt / VEHICLE_WHEEL_RADIUS_M) % (Math.PI * 2);
+      if (this.authoritativeDamage) for (let wheel = 2; wheel < 4; wheel++) {
+        const key = `${v2.vehicleId}:${wheel}`, w2 = v2.wheels[wheel];
+        if (!w2.grounded || v2.destroyed || Math.abs(signedSpeed) < 4 || !v2.braking && Math.abs(v2.steerAngleRad * signedSpeed) < 2.5) {
+          this.skidPoints.delete(key);
+          continue;
+        }
+        const mount = { x: v2.position.x + Math.cos(v2.yaw) * w2.localMountOffset.x + Math.sin(v2.yaw) * w2.localMountOffset.z, y: v2.position.y + 1, z: v2.position.z - Math.sin(v2.yaw) * w2.localMountOffset.x + Math.cos(v2.yaw) * w2.localMountOffset.z };
+        const hit = this.world.castRayAndGetNormal(new Og.Ray(mount, { x: 0, y: -1, z: 0 }), 4, true, Og.QueryFilterFlags.ONLY_FIXED | Og.QueryFilterFlags.EXCLUDE_SENSORS);
+        if (!hit) {
+          this.skidPoints.delete(key);
+          continue;
+        }
+        const point = { x: mount.x, y: mount.y - hit.timeOfImpact + 0.025, z: mount.z }, previous = this.skidPoints.get(key);
+        if (!previous) {
+          this.skidPoints.set(key, point);
+          continue;
+        }
+        const distance = Math.hypot(point.x - previous.x, point.y - previous.y, point.z - previous.z);
+        if (distance < 0.8) continue;
+        if (distance < 4) this.onEffect?.(effectSpec(6 /* SKID */, point, { actor: v2.driverEntityId, target: v2.vehicleId, origin: previous, normal: hit.normal, radius: 0.2 }));
+        this.skidPoints.set(key, point);
+      }
       v2.rigidBody.setTranslation(v2.position, true);
       v2.rigidBody.setNextKinematicTranslation(v2.position);
       v2.rigidBody.setRotation(v2.rotation, true);
@@ -35597,6 +36736,7 @@ var VehicleAndPropManager = class {
     const blastRadius = expParams.blastRadiusMeters * mods.blastRadiusMultiplier * yieldScale;
     const maxImpulseNs = expParams.impulseNs * mods.blastImpulseMultiplier * yieldScale;
     const baseBlastDamage = (110 + attacker.attributes.explosives * 32) * yieldScale;
+    this.onEffect?.(effectSpec(3 /* BLAST */, blastOrigin, { actor: attacker.entityId, radius: Math.min(100, blastRadius) }));
     const sphereShape = new Og.Ball(blastRadius);
     const shapeRot = { x: 0, y: 0, z: 0, w: 1 };
     const hitEnemyIds = /* @__PURE__ */ new Set();
@@ -36688,6 +37828,9 @@ var ApexDreadnoughtDirector = class {
     }
     this.syncTransform();
   }
+  /** Local campaigns retain their ending; shared raid servers keep the existing respawn loop. */
+  allowRespawn = true;
+  onEffect = null;
   phase = 0 /* DORMANT */;
   position = {
     x: DREADNOUGHT_ORBIT_CENTER.x + DREADNOUGHT_ORBIT_RADIUS_M,
@@ -36790,11 +37933,12 @@ var ApexDreadnoughtDirector = class {
     const origin = { x: agent.position.x, y: agent.position.y + 1.55, z: agent.position.z };
     const cp = Math.cos(pitch);
     const ray = new Og.Ray(origin, { x: -Math.sin(yaw) * cp, y: Math.sin(pitch), z: -Math.cos(yaw) * cp });
-    const hit = this.world.castRay(ray, DREADNOUGHT_WEAPON_RANGE_M, true, void 0, void 0, agent.collider);
+    const hit = this.world.castRayAndGetNormal(ray, DREADNOUGHT_WEAPON_RANGE_M, true, void 0, void 0, agent.collider);
     if (!hit) return false;
     const partId = this.colliderParts.get(hit.collider.handle);
     if (partId === void 0) return false;
     this.damagePart(agent, partId, WEAPON_BASE_DAMAGE * agent.buildModifiers.weaponDamageMultiplier);
+    this.onEffect?.(effectSpec(0 /* SHOT */, { x: origin.x + ray.dir.x * hit.timeOfImpact, y: origin.y + ray.dir.y * hit.timeOfImpact, z: origin.z + ray.dir.z * hit.timeOfImpact }, { origin, normal: hit.normal, flags: 1, actor: agent.entityId }));
     return true;
   }
   removeAgent(entityId) {
@@ -36849,6 +37993,10 @@ var ApexDreadnoughtDirector = class {
   }
   step(agents, dt = FIXED_TIMESTEP, actIIIUnlocked = false) {
     if (this.phase === 4 /* DEFEATED */) {
+      if (!this.allowRespawn) {
+        this.respawnTimerSec = 0;
+        return;
+      }
       this.respawnTimerSec = Math.max(0, this.respawnTimerSec - dt);
       if (this.respawnTimerSec === 0) this.phase = 0 /* DORMANT */;
       return;
@@ -36883,8 +38031,8 @@ var ApexDreadnoughtDirector = class {
       const lengthSq = dx * dx + dy * dy + dz * dz || 1;
       for (const a2 of targets) {
         const p2 = { x: a2.position.x, y: a2.position.y + 1, z: a2.position.z };
-        const t2 = Math.max(0, Math.min(1, ((p2.x - this.position.x) * dx + (p2.y - this.position.y) * dy + (p2.z - this.position.z) * dz) / lengthSq));
-        if (Math.hypot(p2.x - this.position.x - t2 * dx, p2.y - this.position.y - t2 * dy, p2.z - this.position.z - t2 * dz) < 3 && this.hasLineOfSight(this.position, p2)) this.damageAgent(a2, 100 * dt);
+        const t3 = Math.max(0, Math.min(1, ((p2.x - this.position.x) * dx + (p2.y - this.position.y) * dy + (p2.z - this.position.z) * dz) / lengthSq));
+        if (Math.hypot(p2.x - this.position.x - t3 * dx, p2.y - this.position.y - t3 * dy, p2.z - this.position.z - t3 * dz) < 3 && this.hasLineOfSight(this.position, p2)) this.damageAgent(a2, 100 * dt);
       }
       if (this.lanceActiveSec === 0) this.lanceCooldown = 4;
     } else {
@@ -36964,8 +38112,8 @@ function getRelayPlans(structures) {
       if (structures.some((s2) => !s2.isSensorOnly && s2.center.y + s2.halfExtents.y > 0.25 && s2.center.y - s2.halfExtents.y < 14 && Math.abs(cx - s2.center.x) < s2.halfExtents.x + 2.6 && Math.abs(cz - s2.center.z) < s2.halfExtents.z + 2.6)) return false;
       if (objectives.some((p2) => Math.hypot(cx - p2.x, cz - p2.z) < 3.3)) return false;
       if (objectives.some((p2) => {
-        const t2 = Math.max(0, Math.min(1, (cx * p2.x + cz * p2.z) / (p2.x * p2.x + p2.z * p2.z)));
-        return Math.hypot(cx - p2.x * t2, cz - p2.z * t2) < 2.9;
+        const t3 = Math.max(0, Math.min(1, (cx * p2.x + cz * p2.z) / (p2.x * p2.x + p2.z * p2.z)));
+        return Math.hypot(cx - p2.x * t3, cz - p2.z * t3) < 2.9;
       })) return false;
       if (OMEGA_EXTRACTION_WAYPOINTS.some((p2) => Math.hypot(cx - p2.x, cz - p2.z) < 3.3)) return false;
       return !plans.some((p2) => Math.hypot(cx - p2.origin.x - p2.towerOffset.x, cz - p2.origin.z - p2.towerOffset.z) < 5.3);
@@ -37138,6 +38286,7 @@ var SharedPhysicsWorld = class {
   cyberPetArenaManager;
   dreadnoughtDirector;
   pendingPhase6Events = [];
+  effects = new PresentationEventBus(() => this.tickCount);
   pendingCombatEvents = [];
   tickCount = 0;
   constructor() {
@@ -37146,11 +38295,13 @@ var SharedPhysicsWorld = class {
     }
     this.world = new Og.World(WORLD_GRAVITY);
     this.world.timestep = FIXED_TIMESTEP;
-    this.structures = [...buildNeoVeridiaSector01(), ...buildSkyboxPetArenaStructures()];
+    this.structures = [...buildNeoVeridiaSector01(), ...buildSkyboxPetArenaStructures(), ...buildBayBridgeColliders()];
     this.buildStaticCityColliders();
     this.combatManager = new EnemyCombatManager(this.world);
+    this.combatManager.onEffect = (e2) => this.effects.emit(e2);
     this.combatManager.spawnDefaultSquads();
     this.vehiclePropManager = new VehicleAndPropManager(this.world, this.combatManager);
+    this.vehiclePropManager.onEffect = (e2) => this.effects.emit(e2);
     this.vehiclePropManager.spawnDefaultVehiclesAndProps();
     this.phase5Director = new Phase5WorldDirector(this.combatManager);
     this.relaySystem = new RelaySystem(this.world, this.combatManager, getRelayPlans(this.structures), (plan) => {
@@ -37179,6 +38330,7 @@ var SharedPhysicsWorld = class {
         );
       }
     });
+    this.dreadnoughtDirector.onEffect = (e2) => this.effects.emit(e2);
     this.world.step();
   }
   buildStaticCityColliders() {
@@ -37555,9 +38707,9 @@ var SharedPhysicsWorld = class {
     }
     if (agent.mantling) {
       agent.mantleTimer += dt;
-      const t2 = Math.min(1, agent.mantleTimer / MANTLE_DURATION_SEC);
-      const verticalEase = 1 - Math.pow(1 - t2, 2.2);
-      const horizontalEase = t2 < 0.5 ? 2 * t2 * t2 : 1 - Math.pow(-2 * t2 + 2, 2) / 2;
+      const t3 = Math.min(1, agent.mantleTimer / MANTLE_DURATION_SEC);
+      const verticalEase = 1 - Math.pow(1 - t3, 2.2);
+      const horizontalEase = t3 < 0.5 ? 2 * t3 * t3 : 1 - Math.pow(-2 * t3 + 2, 2) / 2;
       const prevPos = { ...agent.position };
       agent.position.x = agent.mantleStartPos.x + (agent.mantleTargetPos.x - agent.mantleStartPos.x) * horizontalEase;
       agent.position.y = agent.mantleStartPos.y + (agent.mantleTargetPos.y - agent.mantleStartPos.y) * verticalEase;
@@ -37566,7 +38718,7 @@ var SharedPhysicsWorld = class {
       agent.velocity.y = (agent.position.y - prevPos.y) / dt;
       agent.velocity.z = (agent.position.z - prevPos.z) / dt;
       agent.animState = 6 /* MANTLE_VAULT */;
-      if (t2 >= 1) {
+      if (t3 >= 1) {
         agent.position = { ...agent.mantleTargetPos };
         agent.velocity = { x: 0, y: 0, z: 0 };
         agent.mantling = false;
@@ -37914,6 +39066,7 @@ var SharedPhysicsWorld = class {
       [...this.phase5Director.districtLoops.values()].every((loop) => loop.currentStage === 4)
     );
     this.world.step();
+    this.effects.footsteps(this.agents.values());
     this.tickCount += 1;
   }
   /**
@@ -37975,199 +39128,380 @@ var SharedPhysicsWorld = class {
   }
 };
 
-// client/audio/spatialOrbAudio.ts
-var MAX_ACTIVE_HRTF_VOICES = 6;
-var MAX_AUDIBLE_DISTANCE_M = 65;
+// client/audio/spatialGameAudio.ts
+var AUDIO_LIMITS = { oneShots: 16, orbs: 6, engines: 4 };
+function createCueBuffer(ctx, kind) {
+  const duration = {
+    shot: 0.16,
+    hit: 0.13,
+    critical: 0.18,
+    hurt: 0.2,
+    defeat: 0.3,
+    counter: 0.42,
+    blast: 0.9,
+    step: 0.1,
+    skid: 0.18,
+    orb: 0.55
+  }[kind];
+  const buffer = ctx.createBuffer(
+    1,
+    Math.ceil(ctx.sampleRate * duration),
+    ctx.sampleRate
+  ), data = buffer.getChannelData(0);
+  let seed = 74123, low = 0, phase = 0;
+  for (let i2 = 0; i2 < data.length; i2++) {
+    const t3 = i2 / ctx.sampleRate, u3 = t3 / duration;
+    seed = Math.imul(seed, 1664525) + 1013904223 >>> 0;
+    const noise = seed / 2147483648 - 1;
+    low = low * 0.92 + noise * 0.08;
+    let value = 0;
+    if (kind === "shot")
+      value = (noise * 0.65 + Math.sin(t3 * 440) * 0.35) * Math.exp(-u3 * 10);
+    else if (kind === "blast")
+      value = (low * 2 + Math.sin(t3 * 230) * 0.2) * Math.exp(-u3 * 5);
+    else if (kind === "step")
+      value = (low * 2 + noise * 0.15) * Math.exp(-u3 * 9);
+    else if (kind === "skid") value = noise * 0.22 * Math.sin(Math.PI * u3);
+    else if (kind === "counter") {
+      phase += 2 * Math.PI * (180 * (1 - u3) + 45) / ctx.sampleRate;
+      value = (Math.sin(phase) * 0.65 + noise * 0.2) * Math.exp(-u3 * 5);
+    } else if (kind === "orb") {
+      const notes = [432, 540, 648, 864], note = notes[Math.min(3, Math.floor(t3 / 0.1))];
+      phase += 2 * Math.PI * note / ctx.sampleRate;
+      value = Math.sin(phase) * Math.sin(Math.PI * Math.min(1, u3 * 2)) * Math.exp(-u3 * 3);
+    } else {
+      const frequency = kind === "hurt" ? 100 : kind === "critical" ? 980 : kind === "defeat" ? 660 : 350;
+      phase += 2 * Math.PI * frequency * (1 - u3 * 0.5) / ctx.sampleRate;
+      value = (Math.sin(phase) * 0.6 + noise * 0.15) * Math.exp(-u3 * 7);
+    }
+    const fade = Math.min(1, t3 / 2e-3, (duration - t3) / 8e-3);
+    data[i2] = Math.max(-0.85, Math.min(0.85, value * 0.65 * fade));
+  }
+  return buffer;
+}
 var SpatialOrbAudioEngine = class {
   ctx = null;
-  masterGain = null;
-  voices = [];
-  camWorldPos = new Vector3();
-  camForward = new Vector3();
-  camUp = new Vector3();
+  master = null;
+  compressor = null;
+  shots = [];
+  orbVoices = [];
+  engines = [];
+  buffers = /* @__PURE__ */ new Map();
+  cooldowns = /* @__PURE__ */ new Map();
+  muted = false;
+  active = true;
+  resumePending = false;
+  disposed = false;
+  position = new Vector3();
+  forward = new Vector3();
+  up = new Vector3();
   isInitialized = false;
-  playCombatCue(kind) {
-    if (!this.ctx || !this.masterGain) return;
+  played = 0;
+  stolen = 0;
+  dropped = 0;
+  unlockAndInit() {
+    if (this.disposed || typeof window === "undefined") return;
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      this.ctx = new AudioCtx();
+      const ctx = this.ctx;
+      this.master = ctx.createGain();
+      this.master.gain.value = this.muted ? 0 : 0.35;
+      this.compressor = ctx.createDynamicsCompressor();
+      this.compressor.threshold.value = -18;
+      this.compressor.ratio.value = 5;
+      this.master.connect(this.compressor);
+      this.compressor.connect(ctx.destination);
+      for (const kind of [
+        "shot",
+        "hit",
+        "critical",
+        "hurt",
+        "defeat",
+        "counter",
+        "blast",
+        "step",
+        "skid",
+        "orb"
+      ])
+        this.buffers.set(kind, createCueBuffer(ctx, kind));
+      for (let i2 = 0; i2 < AUDIO_LIMITS.oneShots; i2++) {
+        const { panner, gain } = this.channel();
+        this.shots.push({ panner, gain, source: null, ends: 0, priority: 0 });
+      }
+      for (let i2 = 0; i2 < AUDIO_LIMITS.orbs; i2++)
+        this.orbVoices.push(this.loop());
+      for (let i2 = 0; i2 < AUDIO_LIMITS.engines; i2++)
+        this.engines.push(this.loop());
+      this.isInitialized = true;
+    }
+    if (this.ctx?.state === "suspended" && !this.resumePending) {
+      this.resumePending = true;
+      void this.ctx.resume().catch(() => {
+      }).finally(() => this.resumePending = false);
+    }
+  }
+  channel() {
+    const ctx = this.ctx, panner = ctx.createPanner(), gain = ctx.createGain();
+    panner.panningModel = "HRTF";
+    panner.distanceModel = "inverse";
+    panner.refDistance = 3;
+    panner.maxDistance = 120;
+    panner.rolloffFactor = 1.5;
+    gain.gain.value = 0;
+    gain.connect(panner);
+    panner.connect(this.master);
+    return { panner, gain };
+  }
+  loop() {
+    const ctx = this.ctx, { panner, gain } = this.channel(), osc = ctx.createOscillator(), harmonic = ctx.createOscillator(), filter = ctx.createBiquadFilter();
+    osc.type = "sine";
+    harmonic.type = "triangle";
+    filter.type = "lowpass";
+    filter.frequency.value = 1800;
+    osc.connect(filter);
+    harmonic.connect(filter);
+    filter.connect(gain);
+    osc.start();
+    harmonic.start();
+    return { panner, gain, osc, harmonic, filter, id: -1 };
+  }
+  move(panner, p2) {
     const now2 = this.ctx.currentTime;
-    const oscillator = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    oscillator.type = kind === "hurt" ? "triangle" : "sine";
-    const frequency = kind === "hurt" ? 120 : kind === "critical" ? 980 : kind === "defeat" ? 660 : 620;
-    oscillator.frequency.setValueAtTime(frequency, now2);
-    oscillator.frequency.exponentialRampToValueAtTime(kind === "hurt" ? 60 : frequency * 0.65, now2 + 0.09);
-    gain.gain.setValueAtTime(0.18, now2);
-    gain.gain.exponentialRampToValueAtTime(1e-3, now2 + 0.12);
-    oscillator.connect(gain);
-    gain.connect(this.masterGain);
-    oscillator.start(now2);
-    oscillator.stop(now2 + 0.13);
-    oscillator.onended = () => {
-      oscillator.disconnect();
-      gain.disconnect();
+    if (panner.positionX) {
+      panner.positionX.setValueAtTime(p2.x, now2);
+      panner.positionY.setValueAtTime(p2.y, now2);
+      panner.positionZ.setValueAtTime(p2.z, now2);
+    } else panner.setPosition(p2.x, p2.y, p2.z);
+  }
+  stop(voice) {
+    const source = voice.source;
+    if (!source) return;
+    voice.source = null;
+    source.onended = null;
+    try {
+      source.stop();
+    } catch {
+    }
+    source.disconnect();
+    voice.gain.gain.cancelScheduledValues(0);
+    voice.gain.gain.value = 0;
+  }
+  play(kind, position = this.position, volume = 1) {
+    const ctx = this.ctx;
+    if (!ctx || ctx.state !== "running" || this.muted || !this.active || this.disposed || Math.hypot(
+      position.x - this.position.x,
+      position.y - this.position.y,
+      position.z - this.position.z
+    ) > 120) {
+      this.dropped++;
+      return false;
+    }
+    const priority = kind === "step" || kind === "skid" ? 1 : kind === "counter" || kind === "blast" ? 3 : 2;
+    let voice = this.shots.find((v2) => !v2.source);
+    if (!voice) {
+      const candidates = this.shots.filter((v2) => v2.priority <= priority);
+      if (!candidates.length) {
+        this.dropped++;
+        return false;
+      }
+      voice = candidates.reduce(
+        (a2, b2) => a2.priority < b2.priority || a2.priority === b2.priority && a2.ends < b2.ends ? a2 : b2
+      );
+      this.stolen++;
+      this.stop(voice);
+    }
+    voice.priority = priority;
+    const source = ctx.createBufferSource();
+    source.buffer = this.buffers.get(kind);
+    source.connect(voice.gain);
+    this.move(voice.panner, position);
+    voice.gain.gain.value = 0.25 * Math.max(0, Math.min(1, volume));
+    voice.source = source;
+    voice.ends = ctx.currentTime + source.buffer.duration;
+    const owned = voice;
+    source.onended = () => {
+      source.disconnect();
+      if (owned.source === source) {
+        owned.source = null;
+        owned.gain.gain.value = 0;
+      }
+    };
+    source.start();
+    this.played++;
+    return true;
+  }
+  playEffect(e2) {
+    const kind = {
+      [0 /* SHOT */]: "shot",
+      [1 /* HIT */]: e2.flags & 2 ? "critical" : "hit",
+      [2 /* COUNTER */]: "counter",
+      [3 /* BLAST */]: "blast",
+      [4 /* WALL */]: "hit",
+      [5 /* FOOTSTEP */]: "step",
+      [6 /* SKID */]: "skid",
+      [7 /* DESTRUCTION */]: "blast"
+    }[e2.kind];
+    if (e2.kind === 6 /* SKID */) {
+      const key = `skid:${e2.target}`, now2 = this.ctx?.currentTime ?? 0;
+      if (now2 < (this.cooldowns.get(key) ?? 0)) return;
+      this.cooldowns.set(key, now2 + 0.18);
+      while (this.cooldowns.size > 64)
+        this.cooldowns.delete(this.cooldowns.keys().next().value);
+    }
+    this.play(
+      kind,
+      e2.kind === 0 /* SHOT */ ? e2.origin : e2.point,
+      e2.kind === 5 /* FOOTSTEP */ ? 0.45 : 1
+    );
+  }
+  playCombatCue(kind) {
+    this.play(kind);
+  }
+  playOrbCollectedChime(_orbType) {
+    this.play("orb");
+  }
+  setMuted(muted) {
+    this.muted = muted;
+    this.applyGain();
+    if (muted) this.stopWorld();
+  }
+  setActive(active) {
+    if (this.active === active) return;
+    this.active = active;
+    this.applyGain();
+    if (!active) this.stopWorld();
+  }
+  applyGain() {
+    if (this.ctx && this.master) {
+      this.master.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.master.gain.setTargetAtTime(
+        this.muted || !this.active ? 0 : 0.35,
+        this.ctx.currentTime,
+        0.02
+      );
+    }
+  }
+  stopWorld() {
+    this.shots.forEach((v2) => this.stop(v2));
+    for (const v2 of [...this.orbVoices, ...this.engines]) {
+      v2.id = -1;
+      v2.gain.gain.cancelScheduledValues(0);
+      v2.gain.gain.value = 0;
+    }
+    this.cooldowns.clear();
+  }
+  update(camera, playerPos, orbs, collected, vehicles = []) {
+    const ctx = this.ctx;
+    if (!ctx || ctx.state !== "running" || !this.active || this.muted) return;
+    const now2 = ctx.currentTime;
+    camera.getWorldPosition(this.position);
+    camera.getWorldDirection(this.forward);
+    this.up.set(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
+    const l2 = ctx.listener;
+    if (l2.positionX) {
+      for (const [param, value] of [
+        [l2.positionX, this.position.x],
+        [l2.positionY, this.position.y],
+        [l2.positionZ, this.position.z],
+        [l2.forwardX, this.forward.x],
+        [l2.forwardY, this.forward.y],
+        [l2.forwardZ, this.forward.z],
+        [l2.upX, this.up.x],
+        [l2.upY, this.up.y],
+        [l2.upZ, this.up.z]
+      ])
+        param.setValueAtTime(value, now2);
+    } else {
+      l2.setPosition(this.position.x, this.position.y, this.position.z);
+      l2.setOrientation(
+        this.forward.x,
+        this.forward.y,
+        this.forward.z,
+        this.up.x,
+        this.up.y,
+        this.up.z
+      );
+    }
+    const distance = (p2) => Math.hypot(p2.x - playerPos.x, p2.y - playerPos.y, p2.z - playerPos.z);
+    const nearby = orbs.filter((o2) => !collected.has(o2.orbId) && distance(o2.position) < 65).sort((a2, b2) => distance(a2.position) - distance(b2.position));
+    this.orbVoices.forEach((v2, i2) => {
+      const orb = nearby[i2];
+      v2.id = orb?.orbId ?? -1;
+      if (!orb) {
+        v2.gain.gain.setTargetAtTime(0, now2, 0.05);
+        return;
+      }
+      this.move(v2.panner, orb.position);
+      const base = orb.harmonicFreqHz * (orb.isFleeing ? 1.25 : 1);
+      v2.osc.type = orb.type === 1 /* RENEGADE */ ? "sawtooth" : "sine";
+      v2.osc.frequency.setTargetAtTime(base + Math.sin(now2 * 3) * 5, now2, 0.04);
+      v2.harmonic.frequency.setTargetAtTime(
+        base * (orb.type === 2 /* WHISPER */ ? 2 : 1.498),
+        now2,
+        0.04
+      );
+      v2.gain.gain.setTargetAtTime(0.07, now2, 0.05);
+    });
+    const cars = vehicles.filter(
+      (v2) => (v2.driverEntityId || Math.abs(v2.speedMps) > 0.5) && distance(v2.position) < 100
+    ).sort((a2, b2) => distance(a2.position) - distance(b2.position));
+    this.engines.forEach((v2, i2) => {
+      const car = cars[i2];
+      v2.id = car?.vehicleId ?? -1;
+      if (!car) {
+        v2.gain.gain.setTargetAtTime(0, now2, 0.05);
+        return;
+      }
+      this.move(v2.panner, car.position);
+      const speed = Math.min(1, Math.abs(car.speedMps) / 40);
+      v2.osc.type = "sawtooth";
+      v2.osc.frequency.setTargetAtTime(38 + speed * 110, now2, 0.08);
+      v2.harmonic.frequency.setTargetAtTime(76 + speed * 220, now2, 0.08);
+      v2.filter.frequency.setTargetAtTime(240 + speed * 1e3, now2, 0.08);
+      v2.gain.gain.setTargetAtTime(0.035 + speed * 0.065, now2, 0.05);
+    });
+  }
+  get diagnostics() {
+    return {
+      initialized: this.isInitialized,
+      state: this.ctx?.state ?? "closed",
+      muted: this.muted,
+      active: this.active,
+      oneShots: this.shots.filter((v2) => v2.source).length,
+      orbVoices: this.orbVoices.filter((v2) => v2.id >= 0).length,
+      engines: this.engines.filter((v2) => v2.id >= 0).length,
+      channels: this.shots.length + this.orbVoices.length + this.engines.length,
+      played: this.played,
+      stolen: this.stolen,
+      dropped: this.dropped
     };
   }
-  unlockAndInit() {
-    if (this.isInitialized || typeof window === "undefined") return;
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    this.ctx = new AudioCtx();
-    this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = 0.35;
-    this.masterGain.connect(this.ctx.destination);
-    for (let i2 = 0; i2 < MAX_ACTIVE_HRTF_VOICES; i2++) {
-      const panner = this.ctx.createPanner();
-      panner.panningModel = "HRTF";
-      panner.distanceModel = "inverse";
-      panner.refDistance = 3.5;
-      panner.maxDistance = MAX_AUDIBLE_DISTANCE_M;
-      panner.rolloffFactor = 1.65;
-      panner.coneInnerAngle = 360;
-      panner.coneOuterAngle = 360;
-      const gain = this.ctx.createGain();
-      gain.gain.value = 0;
-      const oscPrimary = this.ctx.createOscillator();
-      const oscHarmonic = this.ctx.createOscillator();
-      oscPrimary.type = "sine";
-      oscHarmonic.type = "triangle";
-      oscPrimary.frequency.value = 432;
-      oscHarmonic.frequency.value = 648;
-      const lfo = this.ctx.createOscillator();
-      const lfoGain = this.ctx.createGain();
-      lfo.type = "sine";
-      lfo.frequency.value = 3;
-      lfoGain.gain.value = 8;
-      lfo.connect(lfoGain);
-      lfoGain.connect(oscPrimary.frequency);
-      oscPrimary.connect(gain);
-      oscHarmonic.connect(gain);
-      gain.connect(panner);
-      panner.connect(this.masterGain);
-      oscPrimary.start();
-      oscHarmonic.start();
-      lfo.start();
-      this.voices.push({
-        panner,
-        gain,
-        oscPrimary,
-        oscHarmonic,
-        lfo,
-        lfoGain,
-        boundOrbId: -1
-      });
+  async dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.stopWorld();
+    for (const v2 of [...this.orbVoices, ...this.engines]) {
+      v2.osc.stop();
+      v2.harmonic.stop();
+      v2.osc.disconnect();
+      v2.harmonic.disconnect();
+      v2.filter.disconnect();
+      v2.gain.disconnect();
+      v2.panner.disconnect();
     }
-    this.isInitialized = true;
-  }
-  /**
-   * Updates the 3D AudioListener transform and binds HRTF PannerNode voices to the nearest uncollected Orbs
-   */
-  update(camera, playerPos, orbs, collectedOrbIds) {
-    if (!this.ctx || !this.isInitialized) return;
-    if (this.ctx.state === "suspended") {
-      this.ctx.resume().catch(() => {
-      });
+    for (const v2 of this.shots) {
+      v2.gain.disconnect();
+      v2.panner.disconnect();
     }
-    const now2 = this.ctx.currentTime;
-    camera.getWorldPosition(this.camWorldPos);
-    camera.getWorldDirection(this.camForward);
-    this.camUp.set(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
-    const listener = this.ctx.listener;
-    if (listener.positionX) {
-      listener.positionX.setValueAtTime(this.camWorldPos.x, now2);
-      listener.positionY.setValueAtTime(this.camWorldPos.y, now2);
-      listener.positionZ.setValueAtTime(this.camWorldPos.z, now2);
-      listener.forwardX.setValueAtTime(this.camForward.x, now2);
-      listener.forwardY.setValueAtTime(this.camForward.y, now2);
-      listener.forwardZ.setValueAtTime(this.camForward.z, now2);
-      listener.upX.setValueAtTime(this.camUp.x, now2);
-      listener.upY.setValueAtTime(this.camUp.y, now2);
-      listener.upZ.setValueAtTime(this.camUp.z, now2);
-    } else {
-      listener.setPosition(this.camWorldPos.x, this.camWorldPos.y, this.camWorldPos.z);
-      listener.setOrientation(
-        this.camForward.x,
-        this.camForward.y,
-        this.camForward.z,
-        this.camUp.x,
-        this.camUp.y,
-        this.camUp.z
-      );
-    }
-    const nearby = [];
-    for (const orb of orbs) {
-      if (collectedOrbIds.has(orb.orbId)) continue;
-      const d2 = Math.hypot(
-        orb.position.x - playerPos.x,
-        orb.position.y - playerPos.y,
-        orb.position.z - playerPos.z
-      );
-      if (d2 <= MAX_AUDIBLE_DISTANCE_M) {
-        nearby.push({ orb, dist: d2 });
-      }
-    }
-    nearby.sort((a2, b2) => a2.dist - b2.dist);
-    for (let i2 = 0; i2 < this.voices.length; i2++) {
-      const voice = this.voices[i2];
-      const entry = nearby[i2];
-      if (!entry) {
-        voice.boundOrbId = -1;
-        voice.gain.gain.setTargetAtTime(0, now2, 0.05);
-        continue;
-      }
-      const { orb } = entry;
-      voice.boundOrbId = orb.orbId;
-      if (voice.panner.positionX) {
-        voice.panner.positionX.setValueAtTime(orb.position.x, now2);
-        voice.panner.positionY.setValueAtTime(orb.position.y, now2);
-        voice.panner.positionZ.setValueAtTime(orb.position.z, now2);
-      } else {
-        voice.panner.setPosition(orb.position.x, orb.position.y, orb.position.z);
-      }
-      const baseFreq = orb.harmonicFreqHz;
-      if (orb.type === 1 /* RENEGADE */) {
-        voice.oscPrimary.type = "sawtooth";
-        voice.oscPrimary.frequency.setTargetAtTime(orb.isFleeing ? baseFreq * 1.25 : baseFreq, now2, 0.04);
-        voice.oscHarmonic.frequency.setTargetAtTime(baseFreq * 1.5, now2, 0.04);
-        voice.lfo.frequency.setTargetAtTime(orb.isFleeing ? 11 : 4.5, now2, 0.04);
-        voice.lfoGain.gain.setTargetAtTime(orb.isFleeing ? 28 : 12, now2, 0.04);
-        voice.gain.gain.setTargetAtTime(0.22, now2, 0.05);
-      } else if (orb.type === 2 /* WHISPER */) {
-        voice.oscPrimary.type = "sine";
-        voice.oscPrimary.frequency.setTargetAtTime(baseFreq, now2, 0.06);
-        voice.oscHarmonic.frequency.setTargetAtTime(baseFreq * 2, now2, 0.06);
-        voice.lfo.frequency.setTargetAtTime(1.8, now2, 0.06);
-        voice.lfoGain.gain.setTargetAtTime(6, now2, 0.06);
-        voice.gain.gain.setTargetAtTime(0.24, now2, 0.05);
-      } else {
-        voice.oscPrimary.type = "sine";
-        voice.oscPrimary.frequency.setTargetAtTime(baseFreq, now2, 0.06);
-        voice.oscHarmonic.frequency.setTargetAtTime(baseFreq * 1.498, now2, 0.06);
-        voice.lfo.frequency.setTargetAtTime(3.2, now2, 0.06);
-        voice.lfoGain.gain.setTargetAtTime(5, now2, 0.06);
-        voice.gain.gain.setTargetAtTime(0.18, now2, 0.05);
-      }
-    }
-  }
-  /**
-   * Plays a celebratory harmonic arpeggio when an Orb is collected
-   */
-  playOrbCollectedChime(orbType) {
-    if (!this.ctx || !this.masterGain) return;
-    const now2 = this.ctx.currentTime;
-    const notes = orbType === 1 /* RENEGADE */ ? [528, 660, 792, 1056] : orbType === 2 /* WHISPER */ ? [396, 528, 792, 990] : [432, 540, 648, 864];
-    notes.forEach((freq, idx) => {
-      if (!this.ctx || !this.masterGain) return;
-      const osc = this.ctx.createOscillator();
-      const g2 = this.ctx.createGain();
-      osc.type = "triangle";
-      osc.frequency.setValueAtTime(freq, now2 + idx * 0.065);
-      g2.gain.setValueAtTime(1e-3, now2 + idx * 0.065);
-      g2.gain.exponentialRampToValueAtTime(0.28, now2 + idx * 0.065 + 0.02);
-      g2.gain.exponentialRampToValueAtTime(1e-3, now2 + idx * 0.065 + 0.38);
-      osc.connect(g2);
-      g2.connect(this.masterGain);
-      osc.start(now2 + idx * 0.065);
-      osc.stop(now2 + idx * 0.065 + 0.4);
-    });
+    this.master?.disconnect();
+    this.compressor?.disconnect();
+    this.buffers.clear();
+    this.shots.length = this.orbVoices.length = this.engines.length = 0;
+    await this.ctx?.close();
+    this.ctx = null;
+    this.isInitialized = false;
   }
 };
 
@@ -38293,7 +39627,8 @@ function stylizePBR(material) {
       outgoingLight += vec3(eclipseRim * eclipseHitFlash * 3.0);
       #include <opaque_fragment>`);
   };
-  material.customProgramCacheKey = () => "eclipse-stylized-pbr-v1";
+  const previousKey = material.customProgramCacheKey.bind(material);
+  material.customProgramCacheKey = () => `${previousKey()}|eclipse-stylized-pbr-v1`;
   material.needsUpdate = true;
   return material;
 }
@@ -39535,14 +40870,14 @@ var GLTFCubicSplineInterpolant = class extends Interpolant {
     }
     return result;
   }
-  interpolate_(i1, t0, t2, t1) {
+  interpolate_(i1, t0, t3, t1) {
     const result = this.resultBuffer;
     const values = this.sampleValues;
     const stride = this.valueSize;
     const stride2 = stride * 2;
     const stride3 = stride * 3;
     const td = t1 - t0;
-    const p2 = (t2 - t0) / td;
+    const p2 = (t3 - t0) / td;
     const pp = p2 * p2;
     const ppp = pp * p2;
     const offset1 = i1 * stride3;
@@ -39563,8 +40898,8 @@ var GLTFCubicSplineInterpolant = class extends Interpolant {
 };
 var _q = new Quaternion();
 var GLTFCubicSplineQuaternionInterpolant = class extends GLTFCubicSplineInterpolant {
-  interpolate_(i1, t0, t2, t1) {
-    const result = super.interpolate_(i1, t0, t2, t1);
+  interpolate_(i1, t0, t3, t1) {
+    const result = super.interpolate_(i1, t0, t3, t1);
     _q.fromArray(result).normalize().toArray(result);
     return result;
   }
@@ -39650,9 +40985,9 @@ var ALPHA_MODES = {
   MASK: "MASK",
   BLEND: "BLEND"
 };
-function createDefaultMaterial(cache) {
-  if (cache["DefaultMaterial"] === void 0) {
-    cache["DefaultMaterial"] = new MeshStandardMaterial({
+function createDefaultMaterial(cache2) {
+  if (cache2["DefaultMaterial"] === void 0) {
+    cache2["DefaultMaterial"] = new MeshStandardMaterial({
       color: 16777215,
       emissive: 0,
       metalness: 1,
@@ -39662,7 +40997,7 @@ function createDefaultMaterial(cache) {
       side: FrontSide
     });
   }
-  return cache["DefaultMaterial"];
+  return cache2["DefaultMaterial"];
 }
 function addUnknownExtensionsToUserData(knownExtensions, object, objectDef) {
   for (const name in objectDef.extensions) {
@@ -39762,9 +41097,9 @@ function createPrimitiveKey(primitiveDef) {
 }
 function createAttributesKey(attributes) {
   let attributesKey = "";
-  const keys = Object.keys(attributes).sort();
-  for (let i2 = 0, il = keys.length; i2 < il; i2++) {
-    attributesKey += keys[i2] + ":" + attributes[keys[i2]] + ";";
+  const keys2 = Object.keys(attributes).sort();
+  for (let i2 = 0, il = keys2.length; i2 < il; i2++) {
+    attributesKey += keys2[i2] + ":" + attributes[keys2[i2]] + ";";
   }
   return attributesKey;
 }
@@ -39883,9 +41218,9 @@ var GLTFParser = class {
     const skinDefs = this.json.skins || [];
     const meshDefs = this.json.meshes || [];
     for (let skinIndex = 0, skinLength = skinDefs.length; skinIndex < skinLength; skinIndex++) {
-      const joints = skinDefs[skinIndex].joints;
-      for (let i2 = 0, il = joints.length; i2 < il; i2++) {
-        nodeDefs[joints[i2]].isBone = true;
+      const joints2 = skinDefs[skinIndex].joints;
+      for (let i2 = 0, il = joints2.length; i2 < il; i2++) {
+        nodeDefs[joints2[i2]].isBone = true;
       }
     }
     for (let nodeIndex = 0, nodeLength = nodeDefs.length; nodeIndex < nodeLength; nodeIndex++) {
@@ -39910,16 +41245,16 @@ var GLTFParser = class {
    *
    * Example: CesiumMilkTruck sample model reuses "Wheel" meshes.
    */
-  _addNodeRef(cache, index) {
+  _addNodeRef(cache2, index) {
     if (index === void 0) return;
-    if (cache.refs[index] === void 0) {
-      cache.refs[index] = cache.uses[index] = 0;
+    if (cache2.refs[index] === void 0) {
+      cache2.refs[index] = cache2.uses[index] = 0;
     }
-    cache.refs[index]++;
+    cache2.refs[index]++;
   }
   /** Returns a reference to a shared resource, cloning it if necessary. */
-  _getNodeRef(cache, index, object) {
-    if (cache.refs[index] <= 1) return object;
+  _getNodeRef(cache2, index, object) {
+    if (cache2.refs[index] <= 1) return object;
     const ref = object.clone();
     const updateMappings = (original, clone2) => {
       const mappings = this.associations.get(original);
@@ -39931,7 +41266,7 @@ var GLTFParser = class {
       }
     };
     updateMappings(object, ref);
-    ref.name += "_instance_" + cache.uses[index]++;
+    ref.name += "_instance_" + cache2.uses[index]++;
     return ref;
   }
   _invokeOne(func) {
@@ -40445,7 +41780,7 @@ var GLTFParser = class {
   loadGeometries(primitives) {
     const parser = this;
     const extensions = this.extensions;
-    const cache = this.primitiveCache;
+    const cache2 = this.primitiveCache;
     function createDracoPrimitive(primitive) {
       return extensions[EXTENSIONS.KHR_DRACO_MESH_COMPRESSION].decodePrimitive(primitive, parser).then(function(geometry) {
         return addPrimitiveAttributes(geometry, primitive, parser);
@@ -40455,7 +41790,7 @@ var GLTFParser = class {
     for (let i2 = 0, il = primitives.length; i2 < il; i2++) {
       const primitive = primitives[i2];
       const cacheKey = createPrimitiveKey(primitive);
-      const cached = cache[cacheKey];
+      const cached = cache2[cacheKey];
       if (cached) {
         pending.push(cached.promise);
       } else {
@@ -40465,7 +41800,7 @@ var GLTFParser = class {
         } else {
           geometryPromise = addPrimitiveAttributes(new BufferGeometry(), primitive, parser);
         }
-        cache[cacheKey] = { primitive, promise: geometryPromise };
+        cache2[cacheKey] = { primitive, promise: geometryPromise };
         pending.push(geometryPromise);
       }
     }
@@ -41265,49 +42600,981 @@ function parallelTraverse(a2, b2, callback) {
   }
 }
 
-// client/assets/productionAssets.ts
-var ProductionAssetManager = class {
+// node_modules/three/examples/jsm/utils/WorkerPool.js
+var WorkerPool = class {
+  constructor(pool = 4) {
+    this.pool = pool;
+    this.queue = [];
+    this.workers = [];
+    this.workersResolve = [];
+    this.workerStatus = 0;
+  }
+  _initWorker(workerId) {
+    if (!this.workers[workerId]) {
+      const worker = this.workerCreator();
+      worker.addEventListener("message", this._onMessage.bind(this, workerId));
+      this.workers[workerId] = worker;
+    }
+  }
+  _getIdleWorker() {
+    for (let i2 = 0; i2 < this.pool; i2++)
+      if (!(this.workerStatus & 1 << i2)) return i2;
+    return -1;
+  }
+  _onMessage(workerId, msg) {
+    const resolve = this.workersResolve[workerId];
+    resolve && resolve(msg);
+    if (this.queue.length) {
+      const { resolve: resolve2, msg: msg2, transfer } = this.queue.shift();
+      this.workersResolve[workerId] = resolve2;
+      this.workers[workerId].postMessage(msg2, transfer);
+    } else {
+      this.workerStatus ^= 1 << workerId;
+    }
+  }
+  setWorkerCreator(workerCreator) {
+    this.workerCreator = workerCreator;
+  }
+  setWorkerLimit(pool) {
+    this.pool = pool;
+  }
+  postMessage(msg, transfer) {
+    return new Promise((resolve) => {
+      const workerId = this._getIdleWorker();
+      if (workerId !== -1) {
+        this._initWorker(workerId);
+        this.workerStatus |= 1 << workerId;
+        this.workersResolve[workerId] = resolve;
+        this.workers[workerId].postMessage(msg, transfer);
+      } else {
+        this.queue.push({ resolve, msg, transfer });
+      }
+    });
+  }
+  dispose() {
+    this.workers.forEach((worker) => worker.terminate());
+    this.workersResolve.length = 0;
+    this.workers.length = 0;
+    this.queue.length = 0;
+    this.workerStatus = 0;
+  }
+};
+
+// node_modules/three/examples/jsm/libs/ktx-parse.module.js
+var t2 = 0;
+var n2 = 2;
+var g2 = 1;
+var u2 = 2;
+var T2 = 0;
+var C2 = 1;
+var R2 = 10;
+var it = 0;
+var ct = 9;
+var yt = 15;
+var xt = 16;
+var wt = 22;
+var Ft = 37;
+var Ct = 43;
+var te = 76;
+var ae = 83;
+var ge = 97;
+var ue = 100;
+var we = 103;
+var Ae = 109;
+var In = 165;
+var Sn = 166;
+var pi = 1000066e3;
+var Ii = class {
+  constructor() {
+    this.vkFormat = 0, this.typeSize = 1, this.pixelWidth = 0, this.pixelHeight = 0, this.pixelDepth = 0, this.layerCount = 0, this.faceCount = 1, this.supercompressionScheme = 0, this.levels = [], this.dataFormatDescriptor = [{ vendorId: 0, descriptorType: 0, descriptorBlockSize: 0, versionNumber: 2, colorModel: 0, colorPrimaries: 1, transferFunction: 2, flags: 0, texelBlockDimension: [0, 0, 0, 0], bytesPlane: [0, 0, 0, 0, 0, 0, 0, 0], samples: [] }], this.keyValue = {}, this.globalData = null;
+  }
+};
+var Si = class {
+  constructor(t3, e2, n3, i2) {
+    this._dataView = void 0, this._littleEndian = void 0, this._offset = void 0, this._dataView = new DataView(t3.buffer, t3.byteOffset + e2, n3), this._littleEndian = i2, this._offset = 0;
+  }
+  _nextUint8() {
+    const t3 = this._dataView.getUint8(this._offset);
+    return this._offset += 1, t3;
+  }
+  _nextUint16() {
+    const t3 = this._dataView.getUint16(this._offset, this._littleEndian);
+    return this._offset += 2, t3;
+  }
+  _nextUint32() {
+    const t3 = this._dataView.getUint32(this._offset, this._littleEndian);
+    return this._offset += 4, t3;
+  }
+  _nextUint64() {
+    const t3 = this._dataView.getUint32(this._offset, this._littleEndian) + 2 ** 32 * this._dataView.getUint32(this._offset + 4, this._littleEndian);
+    return this._offset += 8, t3;
+  }
+  _nextInt32() {
+    const t3 = this._dataView.getInt32(this._offset, this._littleEndian);
+    return this._offset += 4, t3;
+  }
+  _nextUint8Array(t3) {
+    const e2 = new Uint8Array(this._dataView.buffer, this._dataView.byteOffset + this._offset, t3);
+    return this._offset += t3, e2;
+  }
+  _skip(t3) {
+    return this._offset += t3, this;
+  }
+  _scan(t3, e2) {
+    void 0 === e2 && (e2 = 0);
+    const n3 = this._offset;
+    let i2 = 0;
+    for (; this._dataView.getUint8(this._offset) !== e2 && i2 < t3; ) i2++, this._offset++;
+    return i2 < t3 && this._offset++, new Uint8Array(this._dataView.buffer, this._dataView.byteOffset + n3, i2);
+  }
+};
+var Fi = new Uint8Array([0]);
+var Oi = [171, 75, 84, 88, 32, 50, 48, 187, 13, 10, 26, 10];
+function Ti(t3) {
+  return new TextDecoder().decode(t3);
+}
+function Pi(t3) {
+  const e2 = new Uint8Array(t3.buffer, t3.byteOffset, Oi.length);
+  if (e2[0] !== Oi[0] || e2[1] !== Oi[1] || e2[2] !== Oi[2] || e2[3] !== Oi[3] || e2[4] !== Oi[4] || e2[5] !== Oi[5] || e2[6] !== Oi[6] || e2[7] !== Oi[7] || e2[8] !== Oi[8] || e2[9] !== Oi[9] || e2[10] !== Oi[10] || e2[11] !== Oi[11]) throw new Error("Missing KTX 2.0 identifier.");
+  const n3 = new Ii(), i2 = 17 * Uint32Array.BYTES_PER_ELEMENT, s2 = new Si(t3, Oi.length, i2, true);
+  n3.vkFormat = s2._nextUint32(), n3.typeSize = s2._nextUint32(), n3.pixelWidth = s2._nextUint32(), n3.pixelHeight = s2._nextUint32(), n3.pixelDepth = s2._nextUint32(), n3.layerCount = s2._nextUint32(), n3.faceCount = s2._nextUint32();
+  const a2 = s2._nextUint32();
+  n3.supercompressionScheme = s2._nextUint32();
+  const r2 = s2._nextUint32(), o2 = s2._nextUint32(), l2 = s2._nextUint32(), f2 = s2._nextUint32(), h2 = s2._nextUint64(), U2 = s2._nextUint64(), c2 = new Si(t3, Oi.length + i2, 3 * a2 * 8, true);
+  for (let e3 = 0; e3 < a2; e3++) n3.levels.push({ levelData: new Uint8Array(t3.buffer, t3.byteOffset + c2._nextUint64(), c2._nextUint64()), uncompressedByteLength: c2._nextUint64() });
+  const _2 = new Si(t3, r2, o2, true), p2 = { vendorId: _2._skip(4)._nextUint16(), descriptorType: _2._nextUint16(), versionNumber: _2._nextUint16(), descriptorBlockSize: _2._nextUint16(), colorModel: _2._nextUint8(), colorPrimaries: _2._nextUint8(), transferFunction: _2._nextUint8(), flags: _2._nextUint8(), texelBlockDimension: [_2._nextUint8(), _2._nextUint8(), _2._nextUint8(), _2._nextUint8()], bytesPlane: [_2._nextUint8(), _2._nextUint8(), _2._nextUint8(), _2._nextUint8(), _2._nextUint8(), _2._nextUint8(), _2._nextUint8(), _2._nextUint8()], samples: [] }, g4 = (p2.descriptorBlockSize / 4 - 6) / 4;
+  for (let t4 = 0; t4 < g4; t4++) {
+    const e3 = { bitOffset: _2._nextUint16(), bitLength: _2._nextUint8(), channelType: _2._nextUint8(), samplePosition: [_2._nextUint8(), _2._nextUint8(), _2._nextUint8(), _2._nextUint8()], sampleLower: -Infinity, sampleUpper: Infinity };
+    64 & e3.channelType ? (e3.sampleLower = _2._nextInt32(), e3.sampleUpper = _2._nextInt32()) : (e3.sampleLower = _2._nextUint32(), e3.sampleUpper = _2._nextUint32()), p2.samples[t4] = e3;
+  }
+  n3.dataFormatDescriptor.length = 0, n3.dataFormatDescriptor.push(p2);
+  const y2 = new Si(t3, l2, f2, true);
+  for (; y2._offset < f2; ) {
+    const t4 = y2._nextUint32(), e3 = y2._scan(t4), i3 = Ti(e3);
+    if (n3.keyValue[i3] = y2._nextUint8Array(t4 - e3.byteLength - 1), i3.match(/^ktx/i)) {
+      const t5 = Ti(n3.keyValue[i3]);
+      n3.keyValue[i3] = t5.substring(0, t5.lastIndexOf("\0"));
+    }
+    y2._skip(t4 % 4 ? 4 - t4 % 4 : 0);
+  }
+  if (U2 <= 0) return n3;
+  const x2 = new Si(t3, h2, U2, true), u3 = x2._nextUint16(), b2 = x2._nextUint16(), d2 = x2._nextUint32(), w2 = x2._nextUint32(), m2 = x2._nextUint32(), D2 = x2._nextUint32(), B3 = [];
+  for (let t4 = 0; t4 < a2; t4++) B3.push({ imageFlags: x2._nextUint32(), rgbSliceByteOffset: x2._nextUint32(), rgbSliceByteLength: x2._nextUint32(), alphaSliceByteOffset: x2._nextUint32(), alphaSliceByteLength: x2._nextUint32() });
+  const L2 = h2 + x2._offset, v2 = L2 + d2, A3 = v2 + w2, k2 = A3 + m2, V2 = new Uint8Array(t3.buffer, t3.byteOffset + L2, d2), I3 = new Uint8Array(t3.buffer, t3.byteOffset + v2, w2), S2 = new Uint8Array(t3.buffer, t3.byteOffset + A3, m2), F2 = new Uint8Array(t3.buffer, t3.byteOffset + k2, D2);
+  return n3.globalData = { endpointCount: u3, selectorCount: b2, imageDescs: B3, endpointsData: V2, selectorsData: I3, tablesData: S2, extendedData: F2 }, n3;
+}
+
+// node_modules/three/examples/jsm/libs/zstddec.module.js
+var A2;
+var I2;
+var B2;
+var g3 = { env: { emscripten_notify_memory_growth: function(A3) {
+  B2 = new Uint8Array(I2.exports.memory.buffer);
+} } };
+var Q2 = class {
+  init() {
+    return A2 || (A2 = "undefined" != typeof fetch ? fetch("data:application/wasm;base64," + C3).then((A3) => A3.arrayBuffer()).then((A3) => WebAssembly.instantiate(A3, g3)).then(this._init) : WebAssembly.instantiate(Buffer.from(C3, "base64"), g3).then(this._init), A2);
+  }
+  _init(A3) {
+    I2 = A3.instance, g3.env.emscripten_notify_memory_growth(0);
+  }
+  decode(A3, g4 = 0) {
+    if (!I2) throw new Error("ZSTDDecoder: Await .init() before decoding.");
+    const Q3 = A3.byteLength, C4 = I2.exports.malloc(Q3);
+    B2.set(A3, C4), g4 = g4 || Number(I2.exports.ZSTD_findDecompressedSize(C4, Q3));
+    const E2 = I2.exports.malloc(g4), i2 = I2.exports.ZSTD_decompress(E2, g4, C4, Q3), D2 = B2.slice(E2, E2 + i2);
+    return I2.exports.free(C4), I2.exports.free(E2), D2;
+  }
+};
+var C3 = "AGFzbQEAAAABpQEVYAF/AX9gAn9/AGADf39/AX9gBX9/f39/AX9gAX8AYAJ/fwF/YAR/f39/AX9gA39/fwBgBn9/f39/fwF/YAd/f39/f39/AX9gAn9/AX5gAn5+AX5gAABgBX9/f39/AGAGf39/f39/AGAIf39/f39/f38AYAl/f39/f39/f38AYAABf2AIf39/f39/f38Bf2ANf39/f39/f39/f39/fwF/YAF/AX4CJwEDZW52H2Vtc2NyaXB0ZW5fbm90aWZ5X21lbW9yeV9ncm93dGgABANpaAEFAAAFAgEFCwACAQABAgIFBQcAAwABDgsBAQcAEhMHAAUBDAQEAAANBwQCAgYCBAgDAwMDBgEACQkHBgICAAYGAgQUBwYGAwIGAAMCAQgBBwUGCgoEEQAEBAEIAwgDBQgDEA8IAAcABAUBcAECAgUEAQCAAgYJAX8BQaCgwAILB2AHBm1lbW9yeQIABm1hbGxvYwAoBGZyZWUAJgxaU1REX2lzRXJyb3IAaBlaU1REX2ZpbmREZWNvbXByZXNzZWRTaXplAFQPWlNURF9kZWNvbXByZXNzAEoGX3N0YXJ0ACQJBwEAQQELASQKussBaA8AIAAgACgCBCABajYCBAsZACAAKAIAIAAoAgRBH3F0QQAgAWtBH3F2CwgAIABBiH9LC34BBH9BAyEBIAAoAgQiA0EgTQRAIAAoAggiASAAKAIQTwRAIAAQDQ8LIAAoAgwiAiABRgRAQQFBAiADQSBJGw8LIAAgASABIAJrIANBA3YiBCABIARrIAJJIgEbIgJrIgQ2AgggACADIAJBA3RrNgIEIAAgBCgAADYCAAsgAQsUAQF/IAAgARACIQIgACABEAEgAgv3AQECfyACRQRAIABCADcCACAAQQA2AhAgAEIANwIIQbh/DwsgACABNgIMIAAgAUEEajYCECACQQRPBEAgACABIAJqIgFBfGoiAzYCCCAAIAMoAAA2AgAgAUF/ai0AACIBBEAgAEEIIAEQFGs2AgQgAg8LIABBADYCBEF/DwsgACABNgIIIAAgAS0AACIDNgIAIAJBfmoiBEEBTQRAIARBAWtFBEAgACABLQACQRB0IANyIgM2AgALIAAgAS0AAUEIdCADajYCAAsgASACakF/ai0AACIBRQRAIABBADYCBEFsDwsgAEEoIAEQFCACQQN0ams2AgQgAgsWACAAIAEpAAA3AAAgACABKQAINwAICy8BAX8gAUECdEGgHWooAgAgACgCAEEgIAEgACgCBGprQR9xdnEhAiAAIAEQASACCyEAIAFCz9bTvtLHq9lCfiAAfEIfiUKHla+vmLbem55/fgsdAQF/IAAoAgggACgCDEYEfyAAKAIEQSBGBUEACwuCBAEDfyACQYDAAE8EQCAAIAEgAhBnIAAPCyAAIAJqIQMCQCAAIAFzQQNxRQRAAkAgAkEBSARAIAAhAgwBCyAAQQNxRQRAIAAhAgwBCyAAIQIDQCACIAEtAAA6AAAgAUEBaiEBIAJBAWoiAiADTw0BIAJBA3ENAAsLAkAgA0F8cSIEQcAASQ0AIAIgBEFAaiIFSw0AA0AgAiABKAIANgIAIAIgASgCBDYCBCACIAEoAgg2AgggAiABKAIMNgIMIAIgASgCEDYCECACIAEoAhQ2AhQgAiABKAIYNgIYIAIgASgCHDYCHCACIAEoAiA2AiAgAiABKAIkNgIkIAIgASgCKDYCKCACIAEoAiw2AiwgAiABKAIwNgIwIAIgASgCNDYCNCACIAEoAjg2AjggAiABKAI8NgI8IAFBQGshASACQUBrIgIgBU0NAAsLIAIgBE8NAQNAIAIgASgCADYCACABQQRqIQEgAkEEaiICIARJDQALDAELIANBBEkEQCAAIQIMAQsgA0F8aiIEIABJBEAgACECDAELIAAhAgNAIAIgAS0AADoAACACIAEtAAE6AAEgAiABLQACOgACIAIgAS0AAzoAAyABQQRqIQEgAkEEaiICIARNDQALCyACIANJBEADQCACIAEtAAA6AAAgAUEBaiEBIAJBAWoiAiADRw0ACwsgAAsMACAAIAEpAAA3AAALQQECfyAAKAIIIgEgACgCEEkEQEEDDwsgACAAKAIEIgJBB3E2AgQgACABIAJBA3ZrIgE2AgggACABKAAANgIAQQALDAAgACABKAIANgAAC/cCAQJ/AkAgACABRg0AAkAgASACaiAASwRAIAAgAmoiBCABSw0BCyAAIAEgAhALDwsgACABc0EDcSEDAkACQCAAIAFJBEAgAwRAIAAhAwwDCyAAQQNxRQRAIAAhAwwCCyAAIQMDQCACRQ0EIAMgAS0AADoAACABQQFqIQEgAkF/aiECIANBAWoiA0EDcQ0ACwwBCwJAIAMNACAEQQNxBEADQCACRQ0FIAAgAkF/aiICaiIDIAEgAmotAAA6AAAgA0EDcQ0ACwsgAkEDTQ0AA0AgACACQXxqIgJqIAEgAmooAgA2AgAgAkEDSw0ACwsgAkUNAgNAIAAgAkF/aiICaiABIAJqLQAAOgAAIAINAAsMAgsgAkEDTQ0AIAIhBANAIAMgASgCADYCACABQQRqIQEgA0EEaiEDIARBfGoiBEEDSw0ACyACQQNxIQILIAJFDQADQCADIAEtAAA6AAAgA0EBaiEDIAFBAWohASACQX9qIgINAAsLIAAL8wICAn8BfgJAIAJFDQAgACACaiIDQX9qIAE6AAAgACABOgAAIAJBA0kNACADQX5qIAE6AAAgACABOgABIANBfWogAToAACAAIAE6AAIgAkEHSQ0AIANBfGogAToAACAAIAE6AAMgAkEJSQ0AIABBACAAa0EDcSIEaiIDIAFB/wFxQYGChAhsIgE2AgAgAyACIARrQXxxIgRqIgJBfGogATYCACAEQQlJDQAgAyABNgIIIAMgATYCBCACQXhqIAE2AgAgAkF0aiABNgIAIARBGUkNACADIAE2AhggAyABNgIUIAMgATYCECADIAE2AgwgAkFwaiABNgIAIAJBbGogATYCACACQWhqIAE2AgAgAkFkaiABNgIAIAQgA0EEcUEYciIEayICQSBJDQAgAa0iBUIghiAFhCEFIAMgBGohAQNAIAEgBTcDGCABIAU3AxAgASAFNwMIIAEgBTcDACABQSBqIQEgAkFgaiICQR9LDQALCyAACy8BAn8gACgCBCAAKAIAQQJ0aiICLQACIQMgACACLwEAIAEgAi0AAxAIajYCACADCy8BAn8gACgCBCAAKAIAQQJ0aiICLQACIQMgACACLwEAIAEgAi0AAxAFajYCACADCx8AIAAgASACKAIEEAg2AgAgARAEGiAAIAJBCGo2AgQLCAAgAGdBH3MLugUBDX8jAEEQayIKJAACfyAEQQNNBEAgCkEANgIMIApBDGogAyAEEAsaIAAgASACIApBDGpBBBAVIgBBbCAAEAMbIAAgACAESxsMAQsgAEEAIAEoAgBBAXRBAmoQECENQVQgAygAACIGQQ9xIgBBCksNABogAiAAQQVqNgIAIAMgBGoiAkF8aiEMIAJBeWohDiACQXtqIRAgAEEGaiELQQQhBSAGQQR2IQRBICAAdCIAQQFyIQkgASgCACEPQQAhAiADIQYCQANAIAlBAkggAiAPS3JFBEAgAiEHAkAgCARAA0AgBEH//wNxQf//A0YEQCAHQRhqIQcgBiAQSQR/IAZBAmoiBigAACAFdgUgBUEQaiEFIARBEHYLIQQMAQsLA0AgBEEDcSIIQQNGBEAgBUECaiEFIARBAnYhBCAHQQNqIQcMAQsLIAcgCGoiByAPSw0EIAVBAmohBQNAIAIgB0kEQCANIAJBAXRqQQA7AQAgAkEBaiECDAELCyAGIA5LQQAgBiAFQQN1aiIHIAxLG0UEQCAHKAAAIAVBB3EiBXYhBAwCCyAEQQJ2IQQLIAYhBwsCfyALQX9qIAQgAEF/anEiBiAAQQF0QX9qIgggCWsiEUkNABogBCAIcSIEQQAgESAEIABIG2shBiALCyEIIA0gAkEBdGogBkF/aiIEOwEAIAlBASAGayAEIAZBAUgbayEJA0AgCSAASARAIABBAXUhACALQX9qIQsMAQsLAn8gByAOS0EAIAcgBSAIaiIFQQN1aiIGIAxLG0UEQCAFQQdxDAELIAUgDCIGIAdrQQN0awshBSACQQFqIQIgBEUhCCAGKAAAIAVBH3F2IQQMAQsLQWwgCUEBRyAFQSBKcg0BGiABIAJBf2o2AgAgBiAFQQdqQQN1aiADawwBC0FQCyEAIApBEGokACAACwkAQQFBBSAAGwsMACAAIAEoAAA2AAALqgMBCn8jAEHwAGsiCiQAIAJBAWohDiAAQQhqIQtBgIAEIAVBf2p0QRB1IQxBACECQQEhBkEBIAV0IglBf2oiDyEIA0AgAiAORkUEQAJAIAEgAkEBdCINai8BACIHQf//A0YEQCALIAhBA3RqIAI2AgQgCEF/aiEIQQEhBwwBCyAGQQAgDCAHQRB0QRB1ShshBgsgCiANaiAHOwEAIAJBAWohAgwBCwsgACAFNgIEIAAgBjYCACAJQQN2IAlBAXZqQQNqIQxBACEAQQAhBkEAIQIDQCAGIA5GBEADQAJAIAAgCUYNACAKIAsgAEEDdGoiASgCBCIGQQF0aiICIAIvAQAiAkEBajsBACABIAUgAhAUayIIOgADIAEgAiAIQf8BcXQgCWs7AQAgASAEIAZBAnQiAmooAgA6AAIgASACIANqKAIANgIEIABBAWohAAwBCwsFIAEgBkEBdGouAQAhDUEAIQcDQCAHIA1ORQRAIAsgAkEDdGogBjYCBANAIAIgDGogD3EiAiAISw0ACyAHQQFqIQcMAQsLIAZBAWohBgwBCwsgCkHwAGokAAsjAEIAIAEQCSAAhUKHla+vmLbem55/fkLj3MqV/M7y9YV/fAsQACAAQn43AwggACABNgIACyQBAX8gAARAIAEoAgQiAgRAIAEoAgggACACEQEADwsgABAmCwsfACAAIAEgAi8BABAINgIAIAEQBBogACACQQRqNgIEC0oBAX9BoCAoAgAiASAAaiIAQX9MBEBBiCBBMDYCAEF/DwsCQCAAPwBBEHRNDQAgABBmDQBBiCBBMDYCAEF/DwtBoCAgADYCACABC9cBAQh/Qbp/IQoCQCACKAIEIgggAigCACIJaiIOIAEgAGtLDQBBbCEKIAkgBCADKAIAIgtrSw0AIAAgCWoiBCACKAIIIgxrIQ0gACABQWBqIg8gCyAJQQAQKSADIAkgC2o2AgACQAJAIAwgBCAFa00EQCANIQUMAQsgDCAEIAZrSw0CIAcgDSAFayIAaiIBIAhqIAdNBEAgBCABIAgQDxoMAgsgBCABQQAgAGsQDyEBIAIgACAIaiIINgIEIAEgAGshBAsgBCAPIAUgCEEBECkLIA4hCgsgCgubAgEBfyMAQYABayINJAAgDSADNgJ8AkAgAkEDSwRAQX8hCQwBCwJAAkACQAJAIAJBAWsOAwADAgELIAZFBEBBuH8hCQwEC0FsIQkgBS0AACICIANLDQMgACAHIAJBAnQiAmooAgAgAiAIaigCABA7IAEgADYCAEEBIQkMAwsgASAJNgIAQQAhCQwCCyAKRQRAQWwhCQwCC0EAIQkgC0UgDEEZSHINAUEIIAR0QQhqIQBBACECA0AgAiAATw0CIAJBQGshAgwAAAsAC0FsIQkgDSANQfwAaiANQfgAaiAFIAYQFSICEAMNACANKAJ4IgMgBEsNACAAIA0gDSgCfCAHIAggAxAYIAEgADYCACACIQkLIA1BgAFqJAAgCQsLACAAIAEgAhALGgsQACAALwAAIAAtAAJBEHRyCy8AAn9BuH8gAUEISQ0AGkFyIAAoAAQiAEF3Sw0AGkG4fyAAQQhqIgAgACABSxsLCwkAIAAgATsAAAsDAAELigYBBX8gACAAKAIAIgVBfnE2AgBBACAAIAVBAXZqQYQgKAIAIgQgAEYbIQECQAJAIAAoAgQiAkUNACACKAIAIgNBAXENACACQQhqIgUgA0EBdkF4aiIDQQggA0EISxtnQR9zQQJ0QYAfaiIDKAIARgRAIAMgAigCDDYCAAsgAigCCCIDBEAgAyACKAIMNgIECyACKAIMIgMEQCADIAIoAgg2AgALIAIgAigCACAAKAIAQX5xajYCAEGEICEAAkACQCABRQ0AIAEgAjYCBCABKAIAIgNBAXENASADQQF2QXhqIgNBCCADQQhLG2dBH3NBAnRBgB9qIgMoAgAgAUEIakYEQCADIAEoAgw2AgALIAEoAggiAwRAIAMgASgCDDYCBAsgASgCDCIDBEAgAyABKAIINgIAQYQgKAIAIQQLIAIgAigCACABKAIAQX5xajYCACABIARGDQAgASABKAIAQQF2akEEaiEACyAAIAI2AgALIAIoAgBBAXZBeGoiAEEIIABBCEsbZ0Efc0ECdEGAH2oiASgCACEAIAEgBTYCACACIAA2AgwgAkEANgIIIABFDQEgACAFNgIADwsCQCABRQ0AIAEoAgAiAkEBcQ0AIAJBAXZBeGoiAkEIIAJBCEsbZ0Efc0ECdEGAH2oiAigCACABQQhqRgRAIAIgASgCDDYCAAsgASgCCCICBEAgAiABKAIMNgIECyABKAIMIgIEQCACIAEoAgg2AgBBhCAoAgAhBAsgACAAKAIAIAEoAgBBfnFqIgI2AgACQCABIARHBEAgASABKAIAQQF2aiAANgIEIAAoAgAhAgwBC0GEICAANgIACyACQQF2QXhqIgFBCCABQQhLG2dBH3NBAnRBgB9qIgIoAgAhASACIABBCGoiAjYCACAAIAE2AgwgAEEANgIIIAFFDQEgASACNgIADwsgBUEBdkF4aiIBQQggAUEISxtnQR9zQQJ0QYAfaiICKAIAIQEgAiAAQQhqIgI2AgAgACABNgIMIABBADYCCCABRQ0AIAEgAjYCAAsLDgAgAARAIABBeGoQJQsLgAIBA38CQCAAQQ9qQXhxQYQgKAIAKAIAQQF2ayICEB1Bf0YNAAJAQYQgKAIAIgAoAgAiAUEBcQ0AIAFBAXZBeGoiAUEIIAFBCEsbZ0Efc0ECdEGAH2oiASgCACAAQQhqRgRAIAEgACgCDDYCAAsgACgCCCIBBEAgASAAKAIMNgIECyAAKAIMIgFFDQAgASAAKAIINgIAC0EBIQEgACAAKAIAIAJBAXRqIgI2AgAgAkEBcQ0AIAJBAXZBeGoiAkEIIAJBCEsbZ0Efc0ECdEGAH2oiAygCACECIAMgAEEIaiIDNgIAIAAgAjYCDCAAQQA2AgggAkUNACACIAM2AgALIAELtwIBA38CQAJAIABBASAAGyICEDgiAA0AAkACQEGEICgCACIARQ0AIAAoAgAiA0EBcQ0AIAAgA0EBcjYCACADQQF2QXhqIgFBCCABQQhLG2dBH3NBAnRBgB9qIgEoAgAgAEEIakYEQCABIAAoAgw2AgALIAAoAggiAQRAIAEgACgCDDYCBAsgACgCDCIBBEAgASAAKAIINgIACyACECchAkEAIQFBhCAoAgAhACACDQEgACAAKAIAQX5xNgIAQQAPCyACQQ9qQXhxIgMQHSICQX9GDQIgAkEHakF4cSIAIAJHBEAgACACaxAdQX9GDQMLAkBBhCAoAgAiAUUEQEGAICAANgIADAELIAAgATYCBAtBhCAgADYCACAAIANBAXRBAXI2AgAMAQsgAEUNAQsgAEEIaiEBCyABC7kDAQJ/IAAgA2ohBQJAIANBB0wEQANAIAAgBU8NAiAAIAItAAA6AAAgAEEBaiEAIAJBAWohAgwAAAsACyAEQQFGBEACQCAAIAJrIgZBB00EQCAAIAItAAA6AAAgACACLQABOgABIAAgAi0AAjoAAiAAIAItAAM6AAMgAEEEaiACIAZBAnQiBkHAHmooAgBqIgIQFyACIAZB4B5qKAIAayECDAELIAAgAhAMCyACQQhqIQIgAEEIaiEACwJAAkACQAJAIAUgAU0EQCAAIANqIQEgBEEBRyAAIAJrQQ9Kcg0BA0AgACACEAwgAkEIaiECIABBCGoiACABSQ0ACwwFCyAAIAFLBEAgACEBDAQLIARBAUcgACACa0EPSnINASAAIQMgAiEEA0AgAyAEEAwgBEEIaiEEIANBCGoiAyABSQ0ACwwCCwNAIAAgAhAHIAJBEGohAiAAQRBqIgAgAUkNAAsMAwsgACEDIAIhBANAIAMgBBAHIARBEGohBCADQRBqIgMgAUkNAAsLIAIgASAAa2ohAgsDQCABIAVPDQEgASACLQAAOgAAIAFBAWohASACQQFqIQIMAAALAAsLQQECfyAAIAAoArjgASIDNgLE4AEgACgCvOABIQQgACABNgK84AEgACABIAJqNgK44AEgACABIAQgA2tqNgLA4AELpgEBAX8gACAAKALs4QEQFjYCyOABIABCADcD+OABIABCADcDuOABIABBwOABakIANwMAIABBqNAAaiIBQYyAgOAANgIAIABBADYCmOIBIABCADcDiOEBIABCAzcDgOEBIABBrNABakHgEikCADcCACAAQbTQAWpB6BIoAgA2AgAgACABNgIMIAAgAEGYIGo2AgggACAAQaAwajYCBCAAIABBEGo2AgALYQEBf0G4fyEDAkAgAUEDSQ0AIAIgABAhIgFBA3YiADYCCCACIAFBAXE2AgQgAiABQQF2QQNxIgM2AgACQCADQX9qIgFBAksNAAJAIAFBAWsOAgEAAgtBbA8LIAAhAwsgAwsMACAAIAEgAkEAEC4LiAQCA38CfiADEBYhBCAAQQBBKBAQIQAgBCACSwRAIAQPCyABRQRAQX8PCwJAAkAgA0EBRg0AIAEoAAAiBkGo6r5pRg0AQXYhAyAGQXBxQdDUtMIBRw0BQQghAyACQQhJDQEgAEEAQSgQECEAIAEoAAQhASAAQQE2AhQgACABrTcDAEEADwsgASACIAMQLyIDIAJLDQAgACADNgIYQXIhAyABIARqIgVBf2otAAAiAkEIcQ0AIAJBIHEiBkUEQEFwIQMgBS0AACIFQacBSw0BIAVBB3GtQgEgBUEDdkEKaq2GIgdCA4h+IAd8IQggBEEBaiEECyACQQZ2IQMgAkECdiEFAkAgAkEDcUF/aiICQQJLBEBBACECDAELAkACQAJAIAJBAWsOAgECAAsgASAEai0AACECIARBAWohBAwCCyABIARqLwAAIQIgBEECaiEEDAELIAEgBGooAAAhAiAEQQRqIQQLIAVBAXEhBQJ+AkACQAJAIANBf2oiA0ECTQRAIANBAWsOAgIDAQtCfyAGRQ0DGiABIARqMQAADAMLIAEgBGovAACtQoACfAwCCyABIARqKAAArQwBCyABIARqKQAACyEHIAAgBTYCICAAIAI2AhwgACAHNwMAQQAhAyAAQQA2AhQgACAHIAggBhsiBzcDCCAAIAdCgIAIIAdCgIAIVBs+AhALIAMLWwEBf0G4fyEDIAIQFiICIAFNBH8gACACakF/ai0AACIAQQNxQQJ0QaAeaigCACACaiAAQQZ2IgFBAnRBsB5qKAIAaiAAQSBxIgBFaiABRSAAQQV2cWoFQbh/CwsdACAAKAKQ4gEQWiAAQQA2AqDiASAAQgA3A5DiAQu1AwEFfyMAQZACayIKJABBuH8hBgJAIAVFDQAgBCwAACIIQf8BcSEHAkAgCEF/TARAIAdBgn9qQQF2IgggBU8NAkFsIQYgB0GBf2oiBUGAAk8NAiAEQQFqIQdBACEGA0AgBiAFTwRAIAUhBiAIIQcMAwUgACAGaiAHIAZBAXZqIgQtAABBBHY6AAAgACAGQQFyaiAELQAAQQ9xOgAAIAZBAmohBgwBCwAACwALIAcgBU8NASAAIARBAWogByAKEFMiBhADDQELIAYhBEEAIQYgAUEAQTQQECEJQQAhBQNAIAQgBkcEQCAAIAZqIggtAAAiAUELSwRAQWwhBgwDBSAJIAFBAnRqIgEgASgCAEEBajYCACAGQQFqIQZBASAILQAAdEEBdSAFaiEFDAILAAsLQWwhBiAFRQ0AIAUQFEEBaiIBQQxLDQAgAyABNgIAQQFBASABdCAFayIDEBQiAXQgA0cNACAAIARqIAFBAWoiADoAACAJIABBAnRqIgAgACgCAEEBajYCACAJKAIEIgBBAkkgAEEBcXINACACIARBAWo2AgAgB0EBaiEGCyAKQZACaiQAIAYLxhEBDH8jAEHwAGsiBSQAQWwhCwJAIANBCkkNACACLwAAIQogAi8AAiEJIAIvAAQhByAFQQhqIAQQDgJAIAMgByAJIApqakEGaiIMSQ0AIAUtAAohCCAFQdgAaiACQQZqIgIgChAGIgsQAw0BIAVBQGsgAiAKaiICIAkQBiILEAMNASAFQShqIAIgCWoiAiAHEAYiCxADDQEgBUEQaiACIAdqIAMgDGsQBiILEAMNASAAIAFqIg9BfWohECAEQQRqIQZBASELIAAgAUEDakECdiIDaiIMIANqIgIgA2oiDiEDIAIhBCAMIQcDQCALIAMgEElxBEAgACAGIAVB2ABqIAgQAkECdGoiCS8BADsAACAFQdgAaiAJLQACEAEgCS0AAyELIAcgBiAFQUBrIAgQAkECdGoiCS8BADsAACAFQUBrIAktAAIQASAJLQADIQogBCAGIAVBKGogCBACQQJ0aiIJLwEAOwAAIAVBKGogCS0AAhABIAktAAMhCSADIAYgBUEQaiAIEAJBAnRqIg0vAQA7AAAgBUEQaiANLQACEAEgDS0AAyENIAAgC2oiCyAGIAVB2ABqIAgQAkECdGoiAC8BADsAACAFQdgAaiAALQACEAEgAC0AAyEAIAcgCmoiCiAGIAVBQGsgCBACQQJ0aiIHLwEAOwAAIAVBQGsgBy0AAhABIActAAMhByAEIAlqIgkgBiAFQShqIAgQAkECdGoiBC8BADsAACAFQShqIAQtAAIQASAELQADIQQgAyANaiIDIAYgBUEQaiAIEAJBAnRqIg0vAQA7AAAgBUEQaiANLQACEAEgACALaiEAIAcgCmohByAEIAlqIQQgAyANLQADaiEDIAVB2ABqEA0gBUFAaxANciAFQShqEA1yIAVBEGoQDXJFIQsMAQsLIAQgDksgByACS3INAEFsIQsgACAMSw0BIAxBfWohCQNAQQAgACAJSSAFQdgAahAEGwRAIAAgBiAFQdgAaiAIEAJBAnRqIgovAQA7AAAgBUHYAGogCi0AAhABIAAgCi0AA2oiACAGIAVB2ABqIAgQAkECdGoiCi8BADsAACAFQdgAaiAKLQACEAEgACAKLQADaiEADAEFIAxBfmohCgNAIAVB2ABqEAQgACAKS3JFBEAgACAGIAVB2ABqIAgQAkECdGoiCS8BADsAACAFQdgAaiAJLQACEAEgACAJLQADaiEADAELCwNAIAAgCk0EQCAAIAYgBUHYAGogCBACQQJ0aiIJLwEAOwAAIAVB2ABqIAktAAIQASAAIAktAANqIQAMAQsLAkAgACAMTw0AIAAgBiAFQdgAaiAIEAIiAEECdGoiDC0AADoAACAMLQADQQFGBEAgBUHYAGogDC0AAhABDAELIAUoAlxBH0sNACAFQdgAaiAGIABBAnRqLQACEAEgBSgCXEEhSQ0AIAVBIDYCXAsgAkF9aiEMA0BBACAHIAxJIAVBQGsQBBsEQCAHIAYgBUFAayAIEAJBAnRqIgAvAQA7AAAgBUFAayAALQACEAEgByAALQADaiIAIAYgBUFAayAIEAJBAnRqIgcvAQA7AAAgBUFAayAHLQACEAEgACAHLQADaiEHDAEFIAJBfmohDANAIAVBQGsQBCAHIAxLckUEQCAHIAYgBUFAayAIEAJBAnRqIgAvAQA7AAAgBUFAayAALQACEAEgByAALQADaiEHDAELCwNAIAcgDE0EQCAHIAYgBUFAayAIEAJBAnRqIgAvAQA7AAAgBUFAayAALQACEAEgByAALQADaiEHDAELCwJAIAcgAk8NACAHIAYgBUFAayAIEAIiAEECdGoiAi0AADoAACACLQADQQFGBEAgBUFAayACLQACEAEMAQsgBSgCREEfSw0AIAVBQGsgBiAAQQJ0ai0AAhABIAUoAkRBIUkNACAFQSA2AkQLIA5BfWohAgNAQQAgBCACSSAFQShqEAQbBEAgBCAGIAVBKGogCBACQQJ0aiIALwEAOwAAIAVBKGogAC0AAhABIAQgAC0AA2oiACAGIAVBKGogCBACQQJ0aiIELwEAOwAAIAVBKGogBC0AAhABIAAgBC0AA2ohBAwBBSAOQX5qIQIDQCAFQShqEAQgBCACS3JFBEAgBCAGIAVBKGogCBACQQJ0aiIALwEAOwAAIAVBKGogAC0AAhABIAQgAC0AA2ohBAwBCwsDQCAEIAJNBEAgBCAGIAVBKGogCBACQQJ0aiIALwEAOwAAIAVBKGogAC0AAhABIAQgAC0AA2ohBAwBCwsCQCAEIA5PDQAgBCAGIAVBKGogCBACIgBBAnRqIgItAAA6AAAgAi0AA0EBRgRAIAVBKGogAi0AAhABDAELIAUoAixBH0sNACAFQShqIAYgAEECdGotAAIQASAFKAIsQSFJDQAgBUEgNgIsCwNAQQAgAyAQSSAFQRBqEAQbBEAgAyAGIAVBEGogCBACQQJ0aiIALwEAOwAAIAVBEGogAC0AAhABIAMgAC0AA2oiACAGIAVBEGogCBACQQJ0aiICLwEAOwAAIAVBEGogAi0AAhABIAAgAi0AA2ohAwwBBSAPQX5qIQIDQCAFQRBqEAQgAyACS3JFBEAgAyAGIAVBEGogCBACQQJ0aiIALwEAOwAAIAVBEGogAC0AAhABIAMgAC0AA2ohAwwBCwsDQCADIAJNBEAgAyAGIAVBEGogCBACQQJ0aiIALwEAOwAAIAVBEGogAC0AAhABIAMgAC0AA2ohAwwBCwsCQCADIA9PDQAgAyAGIAVBEGogCBACIgBBAnRqIgItAAA6AAAgAi0AA0EBRgRAIAVBEGogAi0AAhABDAELIAUoAhRBH0sNACAFQRBqIAYgAEECdGotAAIQASAFKAIUQSFJDQAgBUEgNgIUCyABQWwgBUHYAGoQCiAFQUBrEApxIAVBKGoQCnEgBUEQahAKcRshCwwJCwAACwALAAALAAsAAAsACwAACwALQWwhCwsgBUHwAGokACALC7UEAQ5/IwBBEGsiBiQAIAZBBGogABAOQVQhBQJAIARB3AtJDQAgBi0ABCEHIANB8ARqQQBB7AAQECEIIAdBDEsNACADQdwJaiIJIAggBkEIaiAGQQxqIAEgAhAxIhAQA0UEQCAGKAIMIgQgB0sNASADQdwFaiEPIANBpAVqIREgAEEEaiESIANBqAVqIQEgBCEFA0AgBSICQX9qIQUgCCACQQJ0aigCAEUNAAsgAkEBaiEOQQEhBQNAIAUgDk9FBEAgCCAFQQJ0IgtqKAIAIQwgASALaiAKNgIAIAVBAWohBSAKIAxqIQoMAQsLIAEgCjYCAEEAIQUgBigCCCELA0AgBSALRkUEQCABIAUgCWotAAAiDEECdGoiDSANKAIAIg1BAWo2AgAgDyANQQF0aiINIAw6AAEgDSAFOgAAIAVBAWohBQwBCwtBACEBIANBADYCqAUgBEF/cyAHaiEJQQEhBQNAIAUgDk9FBEAgCCAFQQJ0IgtqKAIAIQwgAyALaiABNgIAIAwgBSAJanQgAWohASAFQQFqIQUMAQsLIAcgBEEBaiIBIAJrIgRrQQFqIQgDQEEBIQUgBCAIT0UEQANAIAUgDk9FBEAgBUECdCIJIAMgBEE0bGpqIAMgCWooAgAgBHY2AgAgBUEBaiEFDAELCyAEQQFqIQQMAQsLIBIgByAPIAogESADIAIgARBkIAZBAToABSAGIAc6AAYgACAGKAIENgIACyAQIQULIAZBEGokACAFC8ENAQt/IwBB8ABrIgUkAEFsIQkCQCADQQpJDQAgAi8AACEKIAIvAAIhDCACLwAEIQYgBUEIaiAEEA4CQCADIAYgCiAMampBBmoiDUkNACAFLQAKIQcgBUHYAGogAkEGaiICIAoQBiIJEAMNASAFQUBrIAIgCmoiAiAMEAYiCRADDQEgBUEoaiACIAxqIgIgBhAGIgkQAw0BIAVBEGogAiAGaiADIA1rEAYiCRADDQEgACABaiIOQX1qIQ8gBEEEaiEGQQEhCSAAIAFBA2pBAnYiAmoiCiACaiIMIAJqIg0hAyAMIQQgCiECA0AgCSADIA9JcQRAIAYgBUHYAGogBxACQQF0aiIILQAAIQsgBUHYAGogCC0AARABIAAgCzoAACAGIAVBQGsgBxACQQF0aiIILQAAIQsgBUFAayAILQABEAEgAiALOgAAIAYgBUEoaiAHEAJBAXRqIggtAAAhCyAFQShqIAgtAAEQASAEIAs6AAAgBiAFQRBqIAcQAkEBdGoiCC0AACELIAVBEGogCC0AARABIAMgCzoAACAGIAVB2ABqIAcQAkEBdGoiCC0AACELIAVB2ABqIAgtAAEQASAAIAs6AAEgBiAFQUBrIAcQAkEBdGoiCC0AACELIAVBQGsgCC0AARABIAIgCzoAASAGIAVBKGogBxACQQF0aiIILQAAIQsgBUEoaiAILQABEAEgBCALOgABIAYgBUEQaiAHEAJBAXRqIggtAAAhCyAFQRBqIAgtAAEQASADIAs6AAEgA0ECaiEDIARBAmohBCACQQJqIQIgAEECaiEAIAkgBUHYAGoQDUVxIAVBQGsQDUVxIAVBKGoQDUVxIAVBEGoQDUVxIQkMAQsLIAQgDUsgAiAMS3INAEFsIQkgACAKSw0BIApBfWohCQNAIAVB2ABqEAQgACAJT3JFBEAgBiAFQdgAaiAHEAJBAXRqIggtAAAhCyAFQdgAaiAILQABEAEgACALOgAAIAYgBUHYAGogBxACQQF0aiIILQAAIQsgBUHYAGogCC0AARABIAAgCzoAASAAQQJqIQAMAQsLA0AgBUHYAGoQBCAAIApPckUEQCAGIAVB2ABqIAcQAkEBdGoiCS0AACEIIAVB2ABqIAktAAEQASAAIAg6AAAgAEEBaiEADAELCwNAIAAgCkkEQCAGIAVB2ABqIAcQAkEBdGoiCS0AACEIIAVB2ABqIAktAAEQASAAIAg6AAAgAEEBaiEADAELCyAMQX1qIQADQCAFQUBrEAQgAiAAT3JFBEAgBiAFQUBrIAcQAkEBdGoiCi0AACEJIAVBQGsgCi0AARABIAIgCToAACAGIAVBQGsgBxACQQF0aiIKLQAAIQkgBUFAayAKLQABEAEgAiAJOgABIAJBAmohAgwBCwsDQCAFQUBrEAQgAiAMT3JFBEAgBiAFQUBrIAcQAkEBdGoiAC0AACEKIAVBQGsgAC0AARABIAIgCjoAACACQQFqIQIMAQsLA0AgAiAMSQRAIAYgBUFAayAHEAJBAXRqIgAtAAAhCiAFQUBrIAAtAAEQASACIAo6AAAgAkEBaiECDAELCyANQX1qIQADQCAFQShqEAQgBCAAT3JFBEAgBiAFQShqIAcQAkEBdGoiAi0AACEKIAVBKGogAi0AARABIAQgCjoAACAGIAVBKGogBxACQQF0aiICLQAAIQogBUEoaiACLQABEAEgBCAKOgABIARBAmohBAwBCwsDQCAFQShqEAQgBCANT3JFBEAgBiAFQShqIAcQAkEBdGoiAC0AACECIAVBKGogAC0AARABIAQgAjoAACAEQQFqIQQMAQsLA0AgBCANSQRAIAYgBUEoaiAHEAJBAXRqIgAtAAAhAiAFQShqIAAtAAEQASAEIAI6AAAgBEEBaiEEDAELCwNAIAVBEGoQBCADIA9PckUEQCAGIAVBEGogBxACQQF0aiIALQAAIQIgBUEQaiAALQABEAEgAyACOgAAIAYgBUEQaiAHEAJBAXRqIgAtAAAhAiAFQRBqIAAtAAEQASADIAI6AAEgA0ECaiEDDAELCwNAIAVBEGoQBCADIA5PckUEQCAGIAVBEGogBxACQQF0aiIALQAAIQIgBUEQaiAALQABEAEgAyACOgAAIANBAWohAwwBCwsDQCADIA5JBEAgBiAFQRBqIAcQAkEBdGoiAC0AACECIAVBEGogAC0AARABIAMgAjoAACADQQFqIQMMAQsLIAFBbCAFQdgAahAKIAVBQGsQCnEgBUEoahAKcSAFQRBqEApxGyEJDAELQWwhCQsgBUHwAGokACAJC8oCAQR/IwBBIGsiBSQAIAUgBBAOIAUtAAIhByAFQQhqIAIgAxAGIgIQA0UEQCAEQQRqIQIgACABaiIDQX1qIQQDQCAFQQhqEAQgACAET3JFBEAgAiAFQQhqIAcQAkEBdGoiBi0AACEIIAVBCGogBi0AARABIAAgCDoAACACIAVBCGogBxACQQF0aiIGLQAAIQggBUEIaiAGLQABEAEgACAIOgABIABBAmohAAwBCwsDQCAFQQhqEAQgACADT3JFBEAgAiAFQQhqIAcQAkEBdGoiBC0AACEGIAVBCGogBC0AARABIAAgBjoAACAAQQFqIQAMAQsLA0AgACADT0UEQCACIAVBCGogBxACQQF0aiIELQAAIQYgBUEIaiAELQABEAEgACAGOgAAIABBAWohAAwBCwsgAUFsIAVBCGoQChshAgsgBUEgaiQAIAILtgMBCX8jAEEQayIGJAAgBkEANgIMIAZBADYCCEFUIQQCQAJAIANBQGsiDCADIAZBCGogBkEMaiABIAIQMSICEAMNACAGQQRqIAAQDiAGKAIMIgcgBi0ABEEBaksNASAAQQRqIQogBkEAOgAFIAYgBzoABiAAIAYoAgQ2AgAgB0EBaiEJQQEhBANAIAQgCUkEQCADIARBAnRqIgEoAgAhACABIAU2AgAgACAEQX9qdCAFaiEFIARBAWohBAwBCwsgB0EBaiEHQQAhBSAGKAIIIQkDQCAFIAlGDQEgAyAFIAxqLQAAIgRBAnRqIgBBASAEdEEBdSILIAAoAgAiAWoiADYCACAHIARrIQhBACEEAkAgC0EDTQRAA0AgBCALRg0CIAogASAEakEBdGoiACAIOgABIAAgBToAACAEQQFqIQQMAAALAAsDQCABIABPDQEgCiABQQF0aiIEIAg6AAEgBCAFOgAAIAQgCDoAAyAEIAU6AAIgBCAIOgAFIAQgBToABCAEIAg6AAcgBCAFOgAGIAFBBGohAQwAAAsACyAFQQFqIQUMAAALAAsgAiEECyAGQRBqJAAgBAutAQECfwJAQYQgKAIAIABHIAAoAgBBAXYiAyABa0F4aiICQXhxQQhHcgR/IAIFIAMQJ0UNASACQQhqC0EQSQ0AIAAgACgCACICQQFxIAAgAWpBD2pBeHEiASAAa0EBdHI2AgAgASAANgIEIAEgASgCAEEBcSAAIAJBAXZqIAFrIgJBAXRyNgIAQYQgIAEgAkH/////B3FqQQRqQYQgKAIAIABGGyABNgIAIAEQJQsLygIBBX8CQAJAAkAgAEEIIABBCEsbZ0EfcyAAaUEBR2oiAUEESSAAIAF2cg0AIAFBAnRB/B5qKAIAIgJFDQADQCACQXhqIgMoAgBBAXZBeGoiBSAATwRAIAIgBUEIIAVBCEsbZ0Efc0ECdEGAH2oiASgCAEYEQCABIAIoAgQ2AgALDAMLIARBHksNASAEQQFqIQQgAigCBCICDQALC0EAIQMgAUEgTw0BA0AgAUECdEGAH2ooAgAiAkUEQCABQR5LIQIgAUEBaiEBIAJFDQEMAwsLIAIgAkF4aiIDKAIAQQF2QXhqIgFBCCABQQhLG2dBH3NBAnRBgB9qIgEoAgBGBEAgASACKAIENgIACwsgAigCACIBBEAgASACKAIENgIECyACKAIEIgEEQCABIAIoAgA2AgALIAMgAygCAEEBcjYCACADIAAQNwsgAwvhCwINfwV+IwBB8ABrIgckACAHIAAoAvDhASIINgJcIAEgAmohDSAIIAAoAoDiAWohDwJAAkAgBUUEQCABIQQMAQsgACgCxOABIRAgACgCwOABIREgACgCvOABIQ4gAEEBNgKM4QFBACEIA0AgCEEDRwRAIAcgCEECdCICaiAAIAJqQazQAWooAgA2AkQgCEEBaiEIDAELC0FsIQwgB0EYaiADIAQQBhADDQEgB0EsaiAHQRhqIAAoAgAQEyAHQTRqIAdBGGogACgCCBATIAdBPGogB0EYaiAAKAIEEBMgDUFgaiESIAEhBEEAIQwDQCAHKAIwIAcoAixBA3RqKQIAIhRCEIinQf8BcSEIIAcoAkAgBygCPEEDdGopAgAiFUIQiKdB/wFxIQsgBygCOCAHKAI0QQN0aikCACIWQiCIpyEJIBVCIIghFyAUQiCIpyECAkAgFkIQiKdB/wFxIgNBAk8EQAJAIAZFIANBGUlyRQRAIAkgB0EYaiADQSAgBygCHGsiCiAKIANLGyIKEAUgAyAKayIDdGohCSAHQRhqEAQaIANFDQEgB0EYaiADEAUgCWohCQwBCyAHQRhqIAMQBSAJaiEJIAdBGGoQBBoLIAcpAkQhGCAHIAk2AkQgByAYNwNIDAELAkAgA0UEQCACBEAgBygCRCEJDAMLIAcoAkghCQwBCwJAAkAgB0EYakEBEAUgCSACRWpqIgNBA0YEQCAHKAJEQX9qIgMgA0VqIQkMAQsgA0ECdCAHaigCRCIJIAlFaiEJIANBAUYNAQsgByAHKAJINgJMCwsgByAHKAJENgJIIAcgCTYCRAsgF6chAyALBEAgB0EYaiALEAUgA2ohAwsgCCALakEUTwRAIAdBGGoQBBoLIAgEQCAHQRhqIAgQBSACaiECCyAHQRhqEAQaIAcgB0EYaiAUQhiIp0H/AXEQCCAUp0H//wNxajYCLCAHIAdBGGogFUIYiKdB/wFxEAggFadB//8DcWo2AjwgB0EYahAEGiAHIAdBGGogFkIYiKdB/wFxEAggFqdB//8DcWo2AjQgByACNgJgIAcoAlwhCiAHIAk2AmggByADNgJkAkACQAJAIAQgAiADaiILaiASSw0AIAIgCmoiEyAPSw0AIA0gBGsgC0Egak8NAQsgByAHKQNoNwMQIAcgBykDYDcDCCAEIA0gB0EIaiAHQdwAaiAPIA4gESAQEB4hCwwBCyACIARqIQggBCAKEAcgAkERTwRAIARBEGohAgNAIAIgCkEQaiIKEAcgAkEQaiICIAhJDQALCyAIIAlrIQIgByATNgJcIAkgCCAOa0sEQCAJIAggEWtLBEBBbCELDAILIBAgAiAOayICaiIKIANqIBBNBEAgCCAKIAMQDxoMAgsgCCAKQQAgAmsQDyEIIAcgAiADaiIDNgJkIAggAmshCCAOIQILIAlBEE8EQCADIAhqIQMDQCAIIAIQByACQRBqIQIgCEEQaiIIIANJDQALDAELAkAgCUEHTQRAIAggAi0AADoAACAIIAItAAE6AAEgCCACLQACOgACIAggAi0AAzoAAyAIQQRqIAIgCUECdCIDQcAeaigCAGoiAhAXIAIgA0HgHmooAgBrIQIgBygCZCEDDAELIAggAhAMCyADQQlJDQAgAyAIaiEDIAhBCGoiCCACQQhqIgJrQQ9MBEADQCAIIAIQDCACQQhqIQIgCEEIaiIIIANJDQAMAgALAAsDQCAIIAIQByACQRBqIQIgCEEQaiIIIANJDQALCyAHQRhqEAQaIAsgDCALEAMiAhshDCAEIAQgC2ogAhshBCAFQX9qIgUNAAsgDBADDQFBbCEMIAdBGGoQBEECSQ0BQQAhCANAIAhBA0cEQCAAIAhBAnQiAmpBrNABaiACIAdqKAJENgIAIAhBAWohCAwBCwsgBygCXCEIC0G6fyEMIA8gCGsiACANIARrSw0AIAQEfyAEIAggABALIABqBUEACyABayEMCyAHQfAAaiQAIAwLkRcCFn8FfiMAQdABayIHJAAgByAAKALw4QEiCDYCvAEgASACaiESIAggACgCgOIBaiETAkACQCAFRQRAIAEhAwwBCyAAKALE4AEhESAAKALA4AEhFSAAKAK84AEhDyAAQQE2AozhAUEAIQgDQCAIQQNHBEAgByAIQQJ0IgJqIAAgAmpBrNABaigCADYCVCAIQQFqIQgMAQsLIAcgETYCZCAHIA82AmAgByABIA9rNgJoQWwhECAHQShqIAMgBBAGEAMNASAFQQQgBUEESBshFyAHQTxqIAdBKGogACgCABATIAdBxABqIAdBKGogACgCCBATIAdBzABqIAdBKGogACgCBBATQQAhBCAHQeAAaiEMIAdB5ABqIQoDQCAHQShqEARBAksgBCAXTnJFBEAgBygCQCAHKAI8QQN0aikCACIdQhCIp0H/AXEhCyAHKAJQIAcoAkxBA3RqKQIAIh5CEIinQf8BcSEJIAcoAkggBygCREEDdGopAgAiH0IgiKchCCAeQiCIISAgHUIgiKchAgJAIB9CEIinQf8BcSIDQQJPBEACQCAGRSADQRlJckUEQCAIIAdBKGogA0EgIAcoAixrIg0gDSADSxsiDRAFIAMgDWsiA3RqIQggB0EoahAEGiADRQ0BIAdBKGogAxAFIAhqIQgMAQsgB0EoaiADEAUgCGohCCAHQShqEAQaCyAHKQJUISEgByAINgJUIAcgITcDWAwBCwJAIANFBEAgAgRAIAcoAlQhCAwDCyAHKAJYIQgMAQsCQAJAIAdBKGpBARAFIAggAkVqaiIDQQNGBEAgBygCVEF/aiIDIANFaiEIDAELIANBAnQgB2ooAlQiCCAIRWohCCADQQFGDQELIAcgBygCWDYCXAsLIAcgBygCVDYCWCAHIAg2AlQLICCnIQMgCQRAIAdBKGogCRAFIANqIQMLIAkgC2pBFE8EQCAHQShqEAQaCyALBEAgB0EoaiALEAUgAmohAgsgB0EoahAEGiAHIAcoAmggAmoiCSADajYCaCAKIAwgCCAJSxsoAgAhDSAHIAdBKGogHUIYiKdB/wFxEAggHadB//8DcWo2AjwgByAHQShqIB5CGIinQf8BcRAIIB6nQf//A3FqNgJMIAdBKGoQBBogB0EoaiAfQhiIp0H/AXEQCCEOIAdB8ABqIARBBHRqIgsgCSANaiAIazYCDCALIAg2AgggCyADNgIEIAsgAjYCACAHIA4gH6dB//8DcWo2AkQgBEEBaiEEDAELCyAEIBdIDQEgEkFgaiEYIAdB4ABqIRogB0HkAGohGyABIQMDQCAHQShqEARBAksgBCAFTnJFBEAgBygCQCAHKAI8QQN0aikCACIdQhCIp0H/AXEhCyAHKAJQIAcoAkxBA3RqKQIAIh5CEIinQf8BcSEIIAcoAkggBygCREEDdGopAgAiH0IgiKchCSAeQiCIISAgHUIgiKchDAJAIB9CEIinQf8BcSICQQJPBEACQCAGRSACQRlJckUEQCAJIAdBKGogAkEgIAcoAixrIgogCiACSxsiChAFIAIgCmsiAnRqIQkgB0EoahAEGiACRQ0BIAdBKGogAhAFIAlqIQkMAQsgB0EoaiACEAUgCWohCSAHQShqEAQaCyAHKQJUISEgByAJNgJUIAcgITcDWAwBCwJAIAJFBEAgDARAIAcoAlQhCQwDCyAHKAJYIQkMAQsCQAJAIAdBKGpBARAFIAkgDEVqaiICQQNGBEAgBygCVEF/aiICIAJFaiEJDAELIAJBAnQgB2ooAlQiCSAJRWohCSACQQFGDQELIAcgBygCWDYCXAsLIAcgBygCVDYCWCAHIAk2AlQLICCnIRQgCARAIAdBKGogCBAFIBRqIRQLIAggC2pBFE8EQCAHQShqEAQaCyALBEAgB0EoaiALEAUgDGohDAsgB0EoahAEGiAHIAcoAmggDGoiGSAUajYCaCAbIBogCSAZSxsoAgAhHCAHIAdBKGogHUIYiKdB/wFxEAggHadB//8DcWo2AjwgByAHQShqIB5CGIinQf8BcRAIIB6nQf//A3FqNgJMIAdBKGoQBBogByAHQShqIB9CGIinQf8BcRAIIB+nQf//A3FqNgJEIAcgB0HwAGogBEEDcUEEdGoiDSkDCCIdNwPIASAHIA0pAwAiHjcDwAECQAJAAkAgBygCvAEiDiAepyICaiIWIBNLDQAgAyAHKALEASIKIAJqIgtqIBhLDQAgEiADayALQSBqTw0BCyAHIAcpA8gBNwMQIAcgBykDwAE3AwggAyASIAdBCGogB0G8AWogEyAPIBUgERAeIQsMAQsgAiADaiEIIAMgDhAHIAJBEU8EQCADQRBqIQIDQCACIA5BEGoiDhAHIAJBEGoiAiAISQ0ACwsgCCAdpyIOayECIAcgFjYCvAEgDiAIIA9rSwRAIA4gCCAVa0sEQEFsIQsMAgsgESACIA9rIgJqIhYgCmogEU0EQCAIIBYgChAPGgwCCyAIIBZBACACaxAPIQggByACIApqIgo2AsQBIAggAmshCCAPIQILIA5BEE8EQCAIIApqIQoDQCAIIAIQByACQRBqIQIgCEEQaiIIIApJDQALDAELAkAgDkEHTQRAIAggAi0AADoAACAIIAItAAE6AAEgCCACLQACOgACIAggAi0AAzoAAyAIQQRqIAIgDkECdCIKQcAeaigCAGoiAhAXIAIgCkHgHmooAgBrIQIgBygCxAEhCgwBCyAIIAIQDAsgCkEJSQ0AIAggCmohCiAIQQhqIgggAkEIaiICa0EPTARAA0AgCCACEAwgAkEIaiECIAhBCGoiCCAKSQ0ADAIACwALA0AgCCACEAcgAkEQaiECIAhBEGoiCCAKSQ0ACwsgCxADBEAgCyEQDAQFIA0gDDYCACANIBkgHGogCWs2AgwgDSAJNgIIIA0gFDYCBCAEQQFqIQQgAyALaiEDDAILAAsLIAQgBUgNASAEIBdrIQtBACEEA0AgCyAFSARAIAcgB0HwAGogC0EDcUEEdGoiAikDCCIdNwPIASAHIAIpAwAiHjcDwAECQAJAAkAgBygCvAEiDCAepyICaiIKIBNLDQAgAyAHKALEASIJIAJqIhBqIBhLDQAgEiADayAQQSBqTw0BCyAHIAcpA8gBNwMgIAcgBykDwAE3AxggAyASIAdBGGogB0G8AWogEyAPIBUgERAeIRAMAQsgAiADaiEIIAMgDBAHIAJBEU8EQCADQRBqIQIDQCACIAxBEGoiDBAHIAJBEGoiAiAISQ0ACwsgCCAdpyIGayECIAcgCjYCvAEgBiAIIA9rSwRAIAYgCCAVa0sEQEFsIRAMAgsgESACIA9rIgJqIgwgCWogEU0EQCAIIAwgCRAPGgwCCyAIIAxBACACaxAPIQggByACIAlqIgk2AsQBIAggAmshCCAPIQILIAZBEE8EQCAIIAlqIQYDQCAIIAIQByACQRBqIQIgCEEQaiIIIAZJDQALDAELAkAgBkEHTQRAIAggAi0AADoAACAIIAItAAE6AAEgCCACLQACOgACIAggAi0AAzoAAyAIQQRqIAIgBkECdCIGQcAeaigCAGoiAhAXIAIgBkHgHmooAgBrIQIgBygCxAEhCQwBCyAIIAIQDAsgCUEJSQ0AIAggCWohBiAIQQhqIgggAkEIaiICa0EPTARAA0AgCCACEAwgAkEIaiECIAhBCGoiCCAGSQ0ADAIACwALA0AgCCACEAcgAkEQaiECIAhBEGoiCCAGSQ0ACwsgEBADDQMgC0EBaiELIAMgEGohAwwBCwsDQCAEQQNHBEAgACAEQQJ0IgJqQazQAWogAiAHaigCVDYCACAEQQFqIQQMAQsLIAcoArwBIQgLQbp/IRAgEyAIayIAIBIgA2tLDQAgAwR/IAMgCCAAEAsgAGoFQQALIAFrIRALIAdB0AFqJAAgEAslACAAQgA3AgAgAEEAOwEIIABBADoACyAAIAE2AgwgACACOgAKC7QFAQN/IwBBMGsiBCQAIABB/wFqIgVBfWohBgJAIAMvAQIEQCAEQRhqIAEgAhAGIgIQAw0BIARBEGogBEEYaiADEBwgBEEIaiAEQRhqIAMQHCAAIQMDQAJAIARBGGoQBCADIAZPckUEQCADIARBEGogBEEYahASOgAAIAMgBEEIaiAEQRhqEBI6AAEgBEEYahAERQ0BIANBAmohAwsgBUF+aiEFAn8DQEG6fyECIAMiASAFSw0FIAEgBEEQaiAEQRhqEBI6AAAgAUEBaiEDIARBGGoQBEEDRgRAQQIhAiAEQQhqDAILIAMgBUsNBSABIARBCGogBEEYahASOgABIAFBAmohA0EDIQIgBEEYahAEQQNHDQALIARBEGoLIQUgAyAFIARBGGoQEjoAACABIAJqIABrIQIMAwsgAyAEQRBqIARBGGoQEjoAAiADIARBCGogBEEYahASOgADIANBBGohAwwAAAsACyAEQRhqIAEgAhAGIgIQAw0AIARBEGogBEEYaiADEBwgBEEIaiAEQRhqIAMQHCAAIQMDQAJAIARBGGoQBCADIAZPckUEQCADIARBEGogBEEYahAROgAAIAMgBEEIaiAEQRhqEBE6AAEgBEEYahAERQ0BIANBAmohAwsgBUF+aiEFAn8DQEG6fyECIAMiASAFSw0EIAEgBEEQaiAEQRhqEBE6AAAgAUEBaiEDIARBGGoQBEEDRgRAQQIhAiAEQQhqDAILIAMgBUsNBCABIARBCGogBEEYahAROgABIAFBAmohA0EDIQIgBEEYahAEQQNHDQALIARBEGoLIQUgAyAFIARBGGoQEToAACABIAJqIABrIQIMAgsgAyAEQRBqIARBGGoQEToAAiADIARBCGogBEEYahAROgADIANBBGohAwwAAAsACyAEQTBqJAAgAgtpAQF/An8CQAJAIAJBB00NACABKAAAQbfIwuF+Rw0AIAAgASgABDYCmOIBQWIgAEEQaiABIAIQPiIDEAMNAhogAEKBgICAEDcDiOEBIAAgASADaiACIANrECoMAQsgACABIAIQKgtBAAsLrQMBBn8jAEGAAWsiAyQAQWIhCAJAIAJBCUkNACAAQZjQAGogAUEIaiIEIAJBeGogAEGY0AAQMyIFEAMiBg0AIANBHzYCfCADIANB/ABqIANB+ABqIAQgBCAFaiAGGyIEIAEgAmoiAiAEaxAVIgUQAw0AIAMoAnwiBkEfSw0AIAMoAngiB0EJTw0AIABBiCBqIAMgBkGAC0GADCAHEBggA0E0NgJ8IAMgA0H8AGogA0H4AGogBCAFaiIEIAIgBGsQFSIFEAMNACADKAJ8IgZBNEsNACADKAJ4IgdBCk8NACAAQZAwaiADIAZBgA1B4A4gBxAYIANBIzYCfCADIANB/ABqIANB+ABqIAQgBWoiBCACIARrEBUiBRADDQAgAygCfCIGQSNLDQAgAygCeCIHQQpPDQAgACADIAZBwBBB0BEgBxAYIAQgBWoiBEEMaiIFIAJLDQAgAiAFayEFQQAhAgNAIAJBA0cEQCAEKAAAIgZBf2ogBU8NAiAAIAJBAnRqQZzQAWogBjYCACACQQFqIQIgBEEEaiEEDAELCyAEIAFrIQgLIANBgAFqJAAgCAtGAQN/IABBCGohAyAAKAIEIQJBACEAA0AgACACdkUEQCABIAMgAEEDdGotAAJBFktqIQEgAEEBaiEADAELCyABQQggAmt0C4YDAQV/Qbh/IQcCQCADRQ0AIAItAAAiBEUEQCABQQA2AgBBAUG4fyADQQFGGw8LAn8gAkEBaiIFIARBGHRBGHUiBkF/Sg0AGiAGQX9GBEAgA0EDSA0CIAUvAABBgP4BaiEEIAJBA2oMAQsgA0ECSA0BIAItAAEgBEEIdHJBgIB+aiEEIAJBAmoLIQUgASAENgIAIAVBAWoiASACIANqIgNLDQBBbCEHIABBEGogACAFLQAAIgVBBnZBI0EJIAEgAyABa0HAEEHQEUHwEiAAKAKM4QEgACgCnOIBIAQQHyIGEAMiCA0AIABBmCBqIABBCGogBUEEdkEDcUEfQQggASABIAZqIAgbIgEgAyABa0GAC0GADEGAFyAAKAKM4QEgACgCnOIBIAQQHyIGEAMiCA0AIABBoDBqIABBBGogBUECdkEDcUE0QQkgASABIAZqIAgbIgEgAyABa0GADUHgDkGQGSAAKAKM4QEgACgCnOIBIAQQHyIAEAMNACAAIAFqIAJrIQcLIAcLrQMBCn8jAEGABGsiCCQAAn9BUiACQf8BSw0AGkFUIANBDEsNABogAkEBaiELIABBBGohCUGAgAQgA0F/anRBEHUhCkEAIQJBASEEQQEgA3QiB0F/aiIMIQUDQCACIAtGRQRAAkAgASACQQF0Ig1qLwEAIgZB//8DRgRAIAkgBUECdGogAjoAAiAFQX9qIQVBASEGDAELIARBACAKIAZBEHRBEHVKGyEECyAIIA1qIAY7AQAgAkEBaiECDAELCyAAIAQ7AQIgACADOwEAIAdBA3YgB0EBdmpBA2ohBkEAIQRBACECA0AgBCALRkUEQCABIARBAXRqLgEAIQpBACEAA0AgACAKTkUEQCAJIAJBAnRqIAQ6AAIDQCACIAZqIAxxIgIgBUsNAAsgAEEBaiEADAELCyAEQQFqIQQMAQsLQX8gAg0AGkEAIQIDfyACIAdGBH9BAAUgCCAJIAJBAnRqIgAtAAJBAXRqIgEgAS8BACIBQQFqOwEAIAAgAyABEBRrIgU6AAMgACABIAVB/wFxdCAHazsBACACQQFqIQIMAQsLCyEFIAhBgARqJAAgBQvjBgEIf0FsIQcCQCACQQNJDQACQAJAAkACQCABLQAAIgNBA3EiCUEBaw4DAwEAAgsgACgCiOEBDQBBYg8LIAJBBUkNAkEDIQYgASgAACEFAn8CQAJAIANBAnZBA3EiCEF+aiIEQQFNBEAgBEEBaw0BDAILIAVBDnZB/wdxIQQgBUEEdkH/B3EhAyAIRQwCCyAFQRJ2IQRBBCEGIAVBBHZB//8AcSEDQQAMAQsgBUEEdkH//w9xIgNBgIAISw0DIAEtAARBCnQgBUEWdnIhBEEFIQZBAAshBSAEIAZqIgogAksNAgJAIANBgQZJDQAgACgCnOIBRQ0AQQAhAgNAIAJBg4ABSw0BIAJBQGshAgwAAAsACwJ/IAlBA0YEQCABIAZqIQEgAEHw4gFqIQIgACgCDCEGIAUEQCACIAMgASAEIAYQXwwCCyACIAMgASAEIAYQXQwBCyAAQbjQAWohAiABIAZqIQEgAEHw4gFqIQYgAEGo0ABqIQggBQRAIAggBiADIAEgBCACEF4MAQsgCCAGIAMgASAEIAIQXAsQAw0CIAAgAzYCgOIBIABBATYCiOEBIAAgAEHw4gFqNgLw4QEgCUECRgRAIAAgAEGo0ABqNgIMCyAAIANqIgBBiOMBakIANwAAIABBgOMBakIANwAAIABB+OIBakIANwAAIABB8OIBakIANwAAIAoPCwJ/AkACQAJAIANBAnZBA3FBf2oiBEECSw0AIARBAWsOAgACAQtBASEEIANBA3YMAgtBAiEEIAEvAABBBHYMAQtBAyEEIAEQIUEEdgsiAyAEaiIFQSBqIAJLBEAgBSACSw0CIABB8OIBaiABIARqIAMQCyEBIAAgAzYCgOIBIAAgATYC8OEBIAEgA2oiAEIANwAYIABCADcAECAAQgA3AAggAEIANwAAIAUPCyAAIAM2AoDiASAAIAEgBGo2AvDhASAFDwsCfwJAAkACQCADQQJ2QQNxQX9qIgRBAksNACAEQQFrDgIAAgELQQEhByADQQN2DAILQQIhByABLwAAQQR2DAELIAJBBEkgARAhIgJBj4CAAUtyDQFBAyEHIAJBBHYLIQIgAEHw4gFqIAEgB2otAAAgAkEgahAQIQEgACACNgKA4gEgACABNgLw4QEgB0EBaiEHCyAHC0sAIABC+erQ0OfJoeThADcDICAAQgA3AxggAELP1tO+0ser2UI3AxAgAELW64Lu6v2J9eAANwMIIABCADcDACAAQShqQQBBKBAQGgviAgICfwV+IABBKGoiASAAKAJIaiECAn4gACkDACIDQiBaBEAgACkDECIEQgeJIAApAwgiBUIBiXwgACkDGCIGQgyJfCAAKQMgIgdCEol8IAUQGSAEEBkgBhAZIAcQGQwBCyAAKQMYQsXP2bLx5brqJ3wLIAN8IQMDQCABQQhqIgAgAk0EQEIAIAEpAAAQCSADhUIbiUKHla+vmLbem55/fkLj3MqV/M7y9YV/fCEDIAAhAQwBCwsCQCABQQRqIgAgAksEQCABIQAMAQsgASgAAK1Ch5Wvr5i23puef34gA4VCF4lCz9bTvtLHq9lCfkL5893xmfaZqxZ8IQMLA0AgACACSQRAIAAxAABCxc/ZsvHluuonfiADhUILiUKHla+vmLbem55/fiEDIABBAWohAAwBCwsgA0IhiCADhULP1tO+0ser2UJ+IgNCHYggA4VC+fPd8Zn2masWfiIDQiCIIAOFC+8CAgJ/BH4gACAAKQMAIAKtfDcDAAJAAkAgACgCSCIDIAJqIgRBH00EQCABRQ0BIAAgA2pBKGogASACECAgACgCSCACaiEEDAELIAEgAmohAgJ/IAMEQCAAQShqIgQgA2ogAUEgIANrECAgACAAKQMIIAQpAAAQCTcDCCAAIAApAxAgACkAMBAJNwMQIAAgACkDGCAAKQA4EAk3AxggACAAKQMgIABBQGspAAAQCTcDICAAKAJIIQMgAEEANgJIIAEgA2tBIGohAQsgAUEgaiACTQsEQCACQWBqIQMgACkDICEFIAApAxghBiAAKQMQIQcgACkDCCEIA0AgCCABKQAAEAkhCCAHIAEpAAgQCSEHIAYgASkAEBAJIQYgBSABKQAYEAkhBSABQSBqIgEgA00NAAsgACAFNwMgIAAgBjcDGCAAIAc3AxAgACAINwMICyABIAJPDQEgAEEoaiABIAIgAWsiBBAgCyAAIAQ2AkgLCy8BAX8gAEUEQEG2f0EAIAMbDwtBun8hBCADIAFNBH8gACACIAMQEBogAwVBun8LCy8BAX8gAEUEQEG2f0EAIAMbDwtBun8hBCADIAFNBH8gACACIAMQCxogAwVBun8LC6gCAQZ/IwBBEGsiByQAIABB2OABaikDAEKAgIAQViEIQbh/IQUCQCAEQf//B0sNACAAIAMgBBBCIgUQAyIGDQAgACgCnOIBIQkgACAHQQxqIAMgAyAFaiAGGyIKIARBACAFIAYbayIGEEAiAxADBEAgAyEFDAELIAcoAgwhBCABRQRAQbp/IQUgBEEASg0BCyAGIANrIQUgAyAKaiEDAkAgCQRAIABBADYCnOIBDAELAkACQAJAIARBBUgNACAAQdjgAWopAwBCgICACFgNAAwBCyAAQQA2ApziAQwBCyAAKAIIED8hBiAAQQA2ApziASAGQRRPDQELIAAgASACIAMgBSAEIAgQOSEFDAELIAAgASACIAMgBSAEIAgQOiEFCyAHQRBqJAAgBQtnACAAQdDgAWogASACIAAoAuzhARAuIgEQAwRAIAEPC0G4fyECAkAgAQ0AIABB7OABaigCACIBBEBBYCECIAAoApjiASABRw0BC0EAIQIgAEHw4AFqKAIARQ0AIABBkOEBahBDCyACCycBAX8QVyIERQRAQUAPCyAEIAAgASACIAMgBBBLEE8hACAEEFYgAAs/AQF/AkACQAJAIAAoAqDiAUEBaiIBQQJLDQAgAUEBaw4CAAECCyAAEDBBAA8LIABBADYCoOIBCyAAKAKU4gELvAMCB38BfiMAQRBrIgkkAEG4fyEGAkAgBCgCACIIQQVBCSAAKALs4QEiBRtJDQAgAygCACIHQQFBBSAFGyAFEC8iBRADBEAgBSEGDAELIAggBUEDakkNACAAIAcgBRBJIgYQAw0AIAEgAmohCiAAQZDhAWohCyAIIAVrIQIgBSAHaiEHIAEhBQNAIAcgAiAJECwiBhADDQEgAkF9aiICIAZJBEBBuH8hBgwCCyAJKAIAIghBAksEQEFsIQYMAgsgB0EDaiEHAn8CQAJAAkAgCEEBaw4CAgABCyAAIAUgCiAFayAHIAYQSAwCCyAFIAogBWsgByAGEEcMAQsgBSAKIAVrIActAAAgCSgCCBBGCyIIEAMEQCAIIQYMAgsgACgC8OABBEAgCyAFIAgQRQsgAiAGayECIAYgB2ohByAFIAhqIQUgCSgCBEUNAAsgACkD0OABIgxCf1IEQEFsIQYgDCAFIAFrrFINAQsgACgC8OABBEBBaiEGIAJBBEkNASALEEQhDCAHKAAAIAynRw0BIAdBBGohByACQXxqIQILIAMgBzYCACAEIAI2AgAgBSABayEGCyAJQRBqJAAgBgsuACAAECsCf0EAQQAQAw0AGiABRSACRXJFBEBBYiAAIAEgAhA9EAMNARoLQQALCzcAIAEEQCAAIAAoAsTgASABKAIEIAEoAghqRzYCnOIBCyAAECtBABADIAFFckUEQCAAIAEQWwsL0QIBB38jAEEQayIGJAAgBiAENgIIIAYgAzYCDCAFBEAgBSgCBCEKIAUoAgghCQsgASEIAkACQANAIAAoAuzhARAWIQsCQANAIAQgC0kNASADKAAAQXBxQdDUtMIBRgRAIAMgBBAiIgcQAw0EIAQgB2shBCADIAdqIQMMAQsLIAYgAzYCDCAGIAQ2AggCQCAFBEAgACAFEE5BACEHQQAQA0UNAQwFCyAAIAogCRBNIgcQAw0ECyAAIAgQUCAMQQFHQQAgACAIIAIgBkEMaiAGQQhqEEwiByIDa0EAIAMQAxtBCkdyRQRAQbh/IQcMBAsgBxADDQMgAiAHayECIAcgCGohCEEBIQwgBigCDCEDIAYoAgghBAwBCwsgBiADNgIMIAYgBDYCCEG4fyEHIAQNASAIIAFrIQcMAQsgBiADNgIMIAYgBDYCCAsgBkEQaiQAIAcLRgECfyABIAAoArjgASICRwRAIAAgAjYCxOABIAAgATYCuOABIAAoArzgASEDIAAgATYCvOABIAAgASADIAJrajYCwOABCwutAgIEfwF+IwBBQGoiBCQAAkACQCACQQhJDQAgASgAAEFwcUHQ1LTCAUcNACABIAIQIiEBIABCADcDCCAAQQA2AgQgACABNgIADAELIARBGGogASACEC0iAxADBEAgACADEBoMAQsgAwRAIABBuH8QGgwBCyACIAQoAjAiA2shAiABIANqIQMDQAJAIAAgAyACIARBCGoQLCIFEAMEfyAFBSACIAVBA2oiBU8NAUG4fwsQGgwCCyAGQQFqIQYgAiAFayECIAMgBWohAyAEKAIMRQ0ACyAEKAI4BEAgAkEDTQRAIABBuH8QGgwCCyADQQRqIQMLIAQoAighAiAEKQMYIQcgAEEANgIEIAAgAyABazYCACAAIAIgBmytIAcgB0J/URs3AwgLIARBQGskAAslAQF/IwBBEGsiAiQAIAIgACABEFEgAigCACEAIAJBEGokACAAC30BBH8jAEGQBGsiBCQAIARB/wE2AggCQCAEQRBqIARBCGogBEEMaiABIAIQFSIGEAMEQCAGIQUMAQtBVCEFIAQoAgwiB0EGSw0AIAMgBEEQaiAEKAIIIAcQQSIFEAMNACAAIAEgBmogAiAGayADEDwhBQsgBEGQBGokACAFC4cBAgJ/An5BABAWIQMCQANAIAEgA08EQAJAIAAoAABBcHFB0NS0wgFGBEAgACABECIiAhADRQ0BQn4PCyAAIAEQVSIEQn1WDQMgBCAFfCIFIARUIQJCfiEEIAINAyAAIAEQUiICEAMNAwsgASACayEBIAAgAmohAAwBCwtCfiAFIAEbIQQLIAQLPwIBfwF+IwBBMGsiAiQAAn5CfiACQQhqIAAgARAtDQAaQgAgAigCHEEBRg0AGiACKQMICyEDIAJBMGokACADC40BAQJ/IwBBMGsiASQAAkAgAEUNACAAKAKI4gENACABIABB/OEBaigCADYCKCABIAApAvThATcDICAAEDAgACgCqOIBIQIgASABKAIoNgIYIAEgASkDIDcDECACIAFBEGoQGyAAQQA2AqjiASABIAEoAig2AgggASABKQMgNwMAIAAgARAbCyABQTBqJAALKgECfyMAQRBrIgAkACAAQQA2AgggAEIANwMAIAAQWCEBIABBEGokACABC4cBAQN/IwBBEGsiAiQAAkAgACgCAEUgACgCBEVzDQAgAiAAKAIINgIIIAIgACkCADcDAAJ/IAIoAgAiAQRAIAIoAghBqOMJIAERBQAMAQtBqOMJECgLIgFFDQAgASAAKQIANwL04QEgAUH84QFqIAAoAgg2AgAgARBZIAEhAwsgAkEQaiQAIAMLywEBAn8jAEEgayIBJAAgAEGBgIDAADYCtOIBIABBADYCiOIBIABBADYC7OEBIABCADcDkOIBIABBADYCpOMJIABBADYC3OIBIABCADcCzOIBIABBADYCvOIBIABBADYCxOABIABCADcCnOIBIABBpOIBakIANwIAIABBrOIBakEANgIAIAFCADcCECABQgA3AhggASABKQMYNwMIIAEgASkDEDcDACABKAIIQQh2QQFxIQIgAEEANgLg4gEgACACNgKM4gEgAUEgaiQAC3YBA38jAEEwayIBJAAgAARAIAEgAEHE0AFqIgIoAgA2AiggASAAKQK80AE3AyAgACgCACEDIAEgAigCADYCGCABIAApArzQATcDECADIAFBEGoQGyABIAEoAig2AgggASABKQMgNwMAIAAgARAbCyABQTBqJAALzAEBAX8gACABKAK00AE2ApjiASAAIAEoAgQiAjYCwOABIAAgAjYCvOABIAAgAiABKAIIaiICNgK44AEgACACNgLE4AEgASgCuNABBEAgAEKBgICAEDcDiOEBIAAgAUGk0ABqNgIMIAAgAUGUIGo2AgggACABQZwwajYCBCAAIAFBDGo2AgAgAEGs0AFqIAFBqNABaigCADYCACAAQbDQAWogAUGs0AFqKAIANgIAIABBtNABaiABQbDQAWooAgA2AgAPCyAAQgA3A4jhAQs7ACACRQRAQbp/DwsgBEUEQEFsDwsgAiAEEGAEQCAAIAEgAiADIAQgBRBhDwsgACABIAIgAyAEIAUQZQtGAQF/IwBBEGsiBSQAIAVBCGogBBAOAn8gBS0ACQRAIAAgASACIAMgBBAyDAELIAAgASACIAMgBBA0CyEAIAVBEGokACAACzQAIAAgAyAEIAUQNiIFEAMEQCAFDwsgBSAESQR/IAEgAiADIAVqIAQgBWsgABA1BUG4fwsLRgEBfyMAQRBrIgUkACAFQQhqIAQQDgJ/IAUtAAkEQCAAIAEgAiADIAQQYgwBCyAAIAEgAiADIAQQNQshACAFQRBqJAAgAAtZAQF/QQ8hAiABIABJBEAgAUEEdCAAbiECCyAAQQh2IgEgAkEYbCIAQYwIaigCAGwgAEGICGooAgBqIgJBA3YgAmogAEGACGooAgAgAEGECGooAgAgAWxqSQs3ACAAIAMgBCAFQYAQEDMiBRADBEAgBQ8LIAUgBEkEfyABIAIgAyAFaiAEIAVrIAAQMgVBuH8LC78DAQN/IwBBIGsiBSQAIAVBCGogAiADEAYiAhADRQRAIAAgAWoiB0F9aiEGIAUgBBAOIARBBGohAiAFLQACIQMDQEEAIAAgBkkgBUEIahAEGwRAIAAgAiAFQQhqIAMQAkECdGoiBC8BADsAACAFQQhqIAQtAAIQASAAIAQtAANqIgQgAiAFQQhqIAMQAkECdGoiAC8BADsAACAFQQhqIAAtAAIQASAEIAAtAANqIQAMAQUgB0F+aiEEA0AgBUEIahAEIAAgBEtyRQRAIAAgAiAFQQhqIAMQAkECdGoiBi8BADsAACAFQQhqIAYtAAIQASAAIAYtAANqIQAMAQsLA0AgACAES0UEQCAAIAIgBUEIaiADEAJBAnRqIgYvAQA7AAAgBUEIaiAGLQACEAEgACAGLQADaiEADAELCwJAIAAgB08NACAAIAIgBUEIaiADEAIiA0ECdGoiAC0AADoAACAALQADQQFGBEAgBUEIaiAALQACEAEMAQsgBSgCDEEfSw0AIAVBCGogAiADQQJ0ai0AAhABIAUoAgxBIUkNACAFQSA2AgwLIAFBbCAFQQhqEAobIQILCwsgBUEgaiQAIAILkgIBBH8jAEFAaiIJJAAgCSADQTQQCyEDAkAgBEECSA0AIAMgBEECdGooAgAhCSADQTxqIAgQIyADQQE6AD8gAyACOgA+QQAhBCADKAI8IQoDQCAEIAlGDQEgACAEQQJ0aiAKNgEAIARBAWohBAwAAAsAC0EAIQkDQCAGIAlGRQRAIAMgBSAJQQF0aiIKLQABIgtBAnRqIgwoAgAhBCADQTxqIAotAABBCHQgCGpB//8DcRAjIANBAjoAPyADIAcgC2siCiACajoAPiAEQQEgASAKa3RqIQogAygCPCELA0AgACAEQQJ0aiALNgEAIARBAWoiBCAKSQ0ACyAMIAo2AgAgCUEBaiEJDAELCyADQUBrJAALowIBCX8jAEHQAGsiCSQAIAlBEGogBUE0EAsaIAcgBmshDyAHIAFrIRADQAJAIAMgCkcEQEEBIAEgByACIApBAXRqIgYtAAEiDGsiCGsiC3QhDSAGLQAAIQ4gCUEQaiAMQQJ0aiIMKAIAIQYgCyAPTwRAIAAgBkECdGogCyAIIAUgCEE0bGogCCAQaiIIQQEgCEEBShsiCCACIAQgCEECdGooAgAiCEEBdGogAyAIayAHIA4QYyAGIA1qIQgMAgsgCUEMaiAOECMgCUEBOgAPIAkgCDoADiAGIA1qIQggCSgCDCELA0AgBiAITw0CIAAgBkECdGogCzYBACAGQQFqIQYMAAALAAsgCUHQAGokAA8LIAwgCDYCACAKQQFqIQoMAAALAAs0ACAAIAMgBCAFEDYiBRADBEAgBQ8LIAUgBEkEfyABIAIgAyAFaiAEIAVrIAAQNAVBuH8LCyMAIAA/AEEQdGtB//8DakEQdkAAQX9GBEBBAA8LQQAQAEEBCzsBAX8gAgRAA0AgACABIAJBgCAgAkGAIEkbIgMQCyEAIAFBgCBqIQEgAEGAIGohACACIANrIgINAAsLCwYAIAAQAwsLqBUJAEGICAsNAQAAAAEAAAACAAAAAgBBoAgLswYBAAAAAQAAAAIAAAACAAAAJgAAAIIAAAAhBQAASgAAAGcIAAAmAAAAwAEAAIAAAABJBQAASgAAAL4IAAApAAAALAIAAIAAAABJBQAASgAAAL4IAAAvAAAAygIAAIAAAACKBQAASgAAAIQJAAA1AAAAcwMAAIAAAACdBQAASgAAAKAJAAA9AAAAgQMAAIAAAADrBQAASwAAAD4KAABEAAAAngMAAIAAAABNBgAASwAAAKoKAABLAAAAswMAAIAAAADBBgAATQAAAB8NAABNAAAAUwQAAIAAAAAjCAAAUQAAAKYPAABUAAAAmQQAAIAAAABLCQAAVwAAALESAABYAAAA2gQAAIAAAABvCQAAXQAAACMUAABUAAAARQUAAIAAAABUCgAAagAAAIwUAABqAAAArwUAAIAAAAB2CQAAfAAAAE4QAAB8AAAA0gIAAIAAAABjBwAAkQAAAJAHAACSAAAAAAAAAAEAAAABAAAABQAAAA0AAAAdAAAAPQAAAH0AAAD9AAAA/QEAAP0DAAD9BwAA/Q8AAP0fAAD9PwAA/X8AAP3/AAD9/wEA/f8DAP3/BwD9/w8A/f8fAP3/PwD9/38A/f//AP3//wH9//8D/f//B/3//w/9//8f/f//P/3//38AAAAAAQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAADQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAAGQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAAAMAAAAEAAAABQAAAAYAAAAHAAAACAAAAAkAAAAKAAAACwAAAAwAAAANAAAADgAAAA8AAAAQAAAAEQAAABIAAAATAAAAFAAAABUAAAAWAAAAFwAAABgAAAAZAAAAGgAAABsAAAAcAAAAHQAAAB4AAAAfAAAAIAAAACEAAAAiAAAAIwAAACUAAAAnAAAAKQAAACsAAAAvAAAAMwAAADsAAABDAAAAUwAAAGMAAACDAAAAAwEAAAMCAAADBAAAAwgAAAMQAAADIAAAA0AAAAOAAAADAAEAQeAPC1EBAAAAAQAAAAEAAAABAAAAAgAAAAIAAAADAAAAAwAAAAQAAAAEAAAABQAAAAcAAAAIAAAACQAAAAoAAAALAAAADAAAAA0AAAAOAAAADwAAABAAQcQQC4sBAQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAADQAAAA4AAAAPAAAAEAAAABIAAAAUAAAAFgAAABgAAAAcAAAAIAAAACgAAAAwAAAAQAAAAIAAAAAAAQAAAAIAAAAEAAAACAAAABAAAAAgAAAAQAAAAIAAAAAAAQBBkBIL5gQBAAAAAQAAAAEAAAABAAAAAgAAAAIAAAADAAAAAwAAAAQAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAADQAAAA4AAAAPAAAAEAAAAAEAAAAEAAAACAAAAAAAAAABAAEBBgAAAAAAAAQAAAAAEAAABAAAAAAgAAAFAQAAAAAAAAUDAAAAAAAABQQAAAAAAAAFBgAAAAAAAAUHAAAAAAAABQkAAAAAAAAFCgAAAAAAAAUMAAAAAAAABg4AAAAAAAEFEAAAAAAAAQUUAAAAAAABBRYAAAAAAAIFHAAAAAAAAwUgAAAAAAAEBTAAAAAgAAYFQAAAAAAABwWAAAAAAAAIBgABAAAAAAoGAAQAAAAADAYAEAAAIAAABAAAAAAAAAAEAQAAAAAAAAUCAAAAIAAABQQAAAAAAAAFBQAAACAAAAUHAAAAAAAABQgAAAAgAAAFCgAAAAAAAAULAAAAAAAABg0AAAAgAAEFEAAAAAAAAQUSAAAAIAABBRYAAAAAAAIFGAAAACAAAwUgAAAAAAADBSgAAAAAAAYEQAAAABAABgRAAAAAIAAHBYAAAAAAAAkGAAIAAAAACwYACAAAMAAABAAAAAAQAAAEAQAAACAAAAUCAAAAIAAABQMAAAAgAAAFBQAAACAAAAUGAAAAIAAABQgAAAAgAAAFCQAAACAAAAULAAAAIAAABQwAAAAAAAAGDwAAACAAAQUSAAAAIAABBRQAAAAgAAIFGAAAACAAAgUcAAAAIAADBSgAAAAgAAQFMAAAAAAAEAYAAAEAAAAPBgCAAAAAAA4GAEAAAAAADQYAIABBgBcLhwIBAAEBBQAAAAAAAAUAAAAAAAAGBD0AAAAAAAkF/QEAAAAADwX9fwAAAAAVBf3/HwAAAAMFBQAAAAAABwR9AAAAAAAMBf0PAAAAABIF/f8DAAAAFwX9/38AAAAFBR0AAAAAAAgE/QAAAAAADgX9PwAAAAAUBf3/DwAAAAIFAQAAABAABwR9AAAAAAALBf0HAAAAABEF/f8BAAAAFgX9/z8AAAAEBQ0AAAAQAAgE/QAAAAAADQX9HwAAAAATBf3/BwAAAAEFAQAAABAABgQ9AAAAAAAKBf0DAAAAABAF/f8AAAAAHAX9//8PAAAbBf3//wcAABoF/f//AwAAGQX9//8BAAAYBf3//wBBkBkLhgQBAAEBBgAAAAAAAAYDAAAAAAAABAQAAAAgAAAFBQAAAAAAAAUGAAAAAAAABQgAAAAAAAAFCQAAAAAAAAULAAAAAAAABg0AAAAAAAAGEAAAAAAAAAYTAAAAAAAABhYAAAAAAAAGGQAAAAAAAAYcAAAAAAAABh8AAAAAAAAGIgAAAAAAAQYlAAAAAAABBikAAAAAAAIGLwAAAAAAAwY7AAAAAAAEBlMAAAAAAAcGgwAAAAAACQYDAgAAEAAABAQAAAAAAAAEBQAAACAAAAUGAAAAAAAABQcAAAAgAAAFCQAAAAAAAAUKAAAAAAAABgwAAAAAAAAGDwAAAAAAAAYSAAAAAAAABhUAAAAAAAAGGAAAAAAAAAYbAAAAAAAABh4AAAAAAAAGIQAAAAAAAQYjAAAAAAABBicAAAAAAAIGKwAAAAAAAwYzAAAAAAAEBkMAAAAAAAUGYwAAAAAACAYDAQAAIAAABAQAAAAwAAAEBAAAABAAAAQFAAAAIAAABQcAAAAgAAAFCAAAACAAAAUKAAAAIAAABQsAAAAAAAAGDgAAAAAAAAYRAAAAAAAABhQAAAAAAAAGFwAAAAAAAAYaAAAAAAAABh0AAAAAAAAGIAAAAAAAEAYDAAEAAAAPBgOAAAAAAA4GA0AAAAAADQYDIAAAAAAMBgMQAAAAAAsGAwgAAAAACgYDBABBpB0L2QEBAAAAAwAAAAcAAAAPAAAAHwAAAD8AAAB/AAAA/wAAAP8BAAD/AwAA/wcAAP8PAAD/HwAA/z8AAP9/AAD//wAA//8BAP//AwD//wcA//8PAP//HwD//z8A//9/AP///wD///8B////A////wf///8P////H////z////9/AAAAAAEAAAACAAAABAAAAAAAAAACAAAABAAAAAgAAAAAAAAAAQAAAAIAAAABAAAABAAAAAQAAAAEAAAABAAAAAgAAAAIAAAACAAAAAcAAAAIAAAACQAAAAoAAAALAEGgIAsDwBBQ";
+
+// node_modules/three/examples/jsm/math/ColorSpaces.js
+var DisplayP3ColorSpace = "display-p3";
+var LinearDisplayP3ColorSpace = "display-p3-linear";
+
+// node_modules/three/examples/jsm/loaders/KTX2Loader.js
+var _taskCache = /* @__PURE__ */ new WeakMap();
+var _activeLoaders = 0;
+var _zstd;
+var KTX2Loader = class _KTX2Loader extends Loader {
+  constructor(manager) {
+    super(manager);
+    this.transcoderPath = "";
+    this.transcoderBinary = null;
+    this.transcoderPending = null;
+    this.workerPool = new WorkerPool();
+    this.workerSourceURL = "";
+    this.workerConfig = null;
+    if (typeof MSC_TRANSCODER !== "undefined") {
+      console.warn(
+        'THREE.KTX2Loader: Please update to latest "basis_transcoder". "msc_basis_transcoder" is no longer supported in three.js r125+.'
+      );
+    }
+  }
+  setTranscoderPath(path) {
+    this.transcoderPath = path;
+    return this;
+  }
+  setWorkerLimit(num) {
+    this.workerPool.setWorkerLimit(num);
+    return this;
+  }
+  async detectSupportAsync(renderer) {
+    this.workerConfig = {
+      astcSupported: await renderer.hasFeatureAsync("texture-compression-astc"),
+      astcHDRSupported: false,
+      // https://github.com/gpuweb/gpuweb/issues/3856
+      etc1Supported: await renderer.hasFeatureAsync("texture-compression-etc1"),
+      etc2Supported: await renderer.hasFeatureAsync("texture-compression-etc2"),
+      dxtSupported: await renderer.hasFeatureAsync("texture-compression-bc"),
+      bptcSupported: await renderer.hasFeatureAsync("texture-compression-bptc"),
+      pvrtcSupported: await renderer.hasFeatureAsync("texture-compression-pvrtc")
+    };
+    return this;
+  }
+  detectSupport(renderer) {
+    if (renderer.isWebGPURenderer === true) {
+      this.workerConfig = {
+        astcSupported: renderer.hasFeature("texture-compression-astc"),
+        astcHDRSupported: false,
+        // https://github.com/gpuweb/gpuweb/issues/3856
+        etc1Supported: renderer.hasFeature("texture-compression-etc1"),
+        etc2Supported: renderer.hasFeature("texture-compression-etc2"),
+        dxtSupported: renderer.hasFeature("texture-compression-bc"),
+        bptcSupported: renderer.hasFeature("texture-compression-bptc"),
+        pvrtcSupported: renderer.hasFeature("texture-compression-pvrtc")
+      };
+    } else {
+      this.workerConfig = {
+        astcSupported: renderer.extensions.has("WEBGL_compressed_texture_astc"),
+        astcHDRSupported: renderer.extensions.has("WEBGL_compressed_texture_astc") && renderer.extensions.get("WEBGL_compressed_texture_astc").getSupportedProfiles().includes("hdr"),
+        etc1Supported: renderer.extensions.has("WEBGL_compressed_texture_etc1"),
+        etc2Supported: renderer.extensions.has("WEBGL_compressed_texture_etc"),
+        dxtSupported: renderer.extensions.has("WEBGL_compressed_texture_s3tc"),
+        bptcSupported: renderer.extensions.has("EXT_texture_compression_bptc"),
+        pvrtcSupported: renderer.extensions.has("WEBGL_compressed_texture_pvrtc") || renderer.extensions.has("WEBKIT_WEBGL_compressed_texture_pvrtc")
+      };
+    }
+    return this;
+  }
+  init() {
+    if (!this.transcoderPending) {
+      const jsLoader = new FileLoader(this.manager);
+      jsLoader.setPath(this.transcoderPath);
+      jsLoader.setWithCredentials(this.withCredentials);
+      const jsContent = jsLoader.loadAsync("basis_transcoder.js");
+      const binaryLoader = new FileLoader(this.manager);
+      binaryLoader.setPath(this.transcoderPath);
+      binaryLoader.setResponseType("arraybuffer");
+      binaryLoader.setWithCredentials(this.withCredentials);
+      const binaryContent = binaryLoader.loadAsync("basis_transcoder.wasm");
+      this.transcoderPending = Promise.all([jsContent, binaryContent]).then(([jsContent2, binaryContent2]) => {
+        const fn = _KTX2Loader.BasisWorker.toString();
+        const body = [
+          "/* constants */",
+          "let _EngineFormat = " + JSON.stringify(_KTX2Loader.EngineFormat),
+          "let _EngineType = " + JSON.stringify(_KTX2Loader.EngineType),
+          "let _TranscoderFormat = " + JSON.stringify(_KTX2Loader.TranscoderFormat),
+          "let _BasisFormat = " + JSON.stringify(_KTX2Loader.BasisFormat),
+          "/* basis_transcoder.js */",
+          jsContent2,
+          "/* worker */",
+          fn.substring(fn.indexOf("{") + 1, fn.lastIndexOf("}"))
+        ].join("\n");
+        this.workerSourceURL = URL.createObjectURL(new Blob([body]));
+        this.transcoderBinary = binaryContent2;
+        this.workerPool.setWorkerCreator(() => {
+          const worker = new Worker(this.workerSourceURL);
+          const transcoderBinary = this.transcoderBinary.slice(0);
+          worker.postMessage({ type: "init", config: this.workerConfig, transcoderBinary }, [transcoderBinary]);
+          return worker;
+        });
+      });
+      if (_activeLoaders > 0) {
+        console.warn(
+          "THREE.KTX2Loader: Multiple active KTX2 loaders may cause performance issues. Use a single KTX2Loader instance, or call .dispose() on old instances."
+        );
+      }
+      _activeLoaders++;
+    }
+    return this.transcoderPending;
+  }
+  load(url, onLoad, onProgress, onError) {
+    if (this.workerConfig === null) {
+      throw new Error("THREE.KTX2Loader: Missing initialization with `.detectSupport( renderer )`.");
+    }
+    const loader = new FileLoader(this.manager);
+    loader.setResponseType("arraybuffer");
+    loader.setWithCredentials(this.withCredentials);
+    loader.load(url, (buffer) => {
+      this.parse(buffer, onLoad, onError);
+    }, onProgress, onError);
+  }
+  parse(buffer, onLoad, onError) {
+    if (this.workerConfig === null) {
+      throw new Error("THREE.KTX2Loader: Missing initialization with `.detectSupport( renderer )`.");
+    }
+    if (_taskCache.has(buffer)) {
+      const cachedTask = _taskCache.get(buffer);
+      return cachedTask.promise.then(onLoad).catch(onError);
+    }
+    this._createTexture(buffer).then((texture) => onLoad ? onLoad(texture) : null).catch(onError);
+  }
+  _createTextureFrom(transcodeResult, container) {
+    const { type: messageType, error, data: { faces, width, height, format, type, dfdFlags } } = transcodeResult;
+    if (messageType === "error") return Promise.reject(error);
+    let texture;
+    if (container.faceCount === 6) {
+      texture = new CompressedCubeTexture(faces, format, type);
+    } else {
+      const mipmaps = faces[0].mipmaps;
+      texture = container.layerCount > 1 ? new CompressedArrayTexture(mipmaps, width, height, container.layerCount, format, type) : new CompressedTexture(mipmaps, width, height, format, type);
+    }
+    texture.minFilter = faces[0].mipmaps.length === 1 ? LinearFilter : LinearMipmapLinearFilter;
+    texture.magFilter = LinearFilter;
+    texture.generateMipmaps = false;
+    texture.needsUpdate = true;
+    texture.colorSpace = parseColorSpace(container);
+    texture.premultiplyAlpha = !!(dfdFlags & g2);
+    return texture;
+  }
+  /**
+   * @param {ArrayBuffer} buffer
+   * @param {object?} config
+   * @return {Promise<CompressedTexture|CompressedArrayTexture|DataTexture|Data3DTexture>}
+   */
+  async _createTexture(buffer, config = {}) {
+    const container = Pi(new Uint8Array(buffer));
+    const isBasisHDR = container.vkFormat === pi && container.dataFormatDescriptor[0].colorModel === 167;
+    const needsTranscoder = container.vkFormat === it || isBasisHDR && !this.workerConfig.astcHDRSupported;
+    if (!needsTranscoder) {
+      return createRawTexture(container);
+    }
+    const taskConfig = config;
+    const texturePending = this.init().then(() => {
+      return this.workerPool.postMessage({ type: "transcode", buffer, taskConfig }, [buffer]);
+    }).then((e2) => this._createTextureFrom(e2.data, container));
+    _taskCache.set(buffer, { promise: texturePending });
+    return texturePending;
+  }
+  dispose() {
+    this.workerPool.dispose();
+    if (this.workerSourceURL) URL.revokeObjectURL(this.workerSourceURL);
+    _activeLoaders--;
+    return this;
+  }
+};
+KTX2Loader.BasisFormat = {
+  ETC1S: 0,
+  UASTC: 1,
+  UASTC_HDR: 2
+};
+KTX2Loader.TranscoderFormat = {
+  ETC1: 0,
+  ETC2: 1,
+  BC1: 2,
+  BC3: 3,
+  BC4: 4,
+  BC5: 5,
+  BC7_M6_OPAQUE_ONLY: 6,
+  BC7_M5: 7,
+  PVRTC1_4_RGB: 8,
+  PVRTC1_4_RGBA: 9,
+  ASTC_4x4: 10,
+  ATC_RGB: 11,
+  ATC_RGBA_INTERPOLATED_ALPHA: 12,
+  RGBA32: 13,
+  RGB565: 14,
+  BGR565: 15,
+  RGBA4444: 16,
+  BC6H: 22,
+  RGB_HALF: 24,
+  RGBA_HALF: 25
+};
+KTX2Loader.EngineFormat = {
+  RGBAFormat,
+  RGBA_ASTC_4x4_Format,
+  RGB_BPTC_UNSIGNED_Format,
+  RGBA_BPTC_Format,
+  RGBA_ETC2_EAC_Format,
+  RGBA_PVRTC_4BPPV1_Format,
+  RGBA_S3TC_DXT5_Format,
+  RGB_ETC1_Format,
+  RGB_ETC2_Format,
+  RGB_PVRTC_4BPPV1_Format,
+  RGBA_S3TC_DXT1_Format
+};
+KTX2Loader.EngineType = {
+  UnsignedByteType,
+  HalfFloatType,
+  FloatType
+};
+KTX2Loader.BasisWorker = function() {
+  let config;
+  let transcoderPending;
+  let BasisModule;
+  const EngineFormat = _EngineFormat;
+  const EngineType = _EngineType;
+  const TranscoderFormat = _TranscoderFormat;
+  const BasisFormat = _BasisFormat;
+  self.addEventListener("message", function(e2) {
+    const message = e2.data;
+    switch (message.type) {
+      case "init":
+        config = message.config;
+        init(message.transcoderBinary);
+        break;
+      case "transcode":
+        transcoderPending.then(() => {
+          try {
+            const { faces, buffers, width, height, hasAlpha, format, type, dfdFlags } = transcode(message.buffer);
+            self.postMessage({ type: "transcode", id: message.id, data: { faces, width, height, hasAlpha, format, type, dfdFlags } }, buffers);
+          } catch (error) {
+            console.error(error);
+            self.postMessage({ type: "error", id: message.id, error: error.message });
+          }
+        });
+        break;
+    }
+  });
+  function init(wasmBinary) {
+    transcoderPending = new Promise((resolve) => {
+      BasisModule = { wasmBinary, onRuntimeInitialized: resolve };
+      BASIS(BasisModule);
+    }).then(() => {
+      BasisModule.initializeBasis();
+      if (BasisModule.KTX2File === void 0) {
+        console.warn("THREE.KTX2Loader: Please update Basis Universal transcoder.");
+      }
+    });
+  }
+  function transcode(buffer) {
+    const ktx2File = new BasisModule.KTX2File(new Uint8Array(buffer));
+    function cleanup() {
+      ktx2File.close();
+      ktx2File.delete();
+    }
+    if (!ktx2File.isValid()) {
+      cleanup();
+      throw new Error("THREE.KTX2Loader:	Invalid or unsupported .ktx2 file");
+    }
+    let basisFormat;
+    if (ktx2File.isUASTC()) {
+      basisFormat = BasisFormat.UASTC;
+    } else if (ktx2File.isETC1S()) {
+      basisFormat = BasisFormat.ETC1S;
+    } else if (ktx2File.isHDR()) {
+      basisFormat = BasisFormat.UASTC_HDR;
+    } else {
+      throw new Error("THREE.KTX2Loader: Unknown Basis encoding");
+    }
+    const width = ktx2File.getWidth();
+    const height = ktx2File.getHeight();
+    const layerCount = ktx2File.getLayers() || 1;
+    const levelCount = ktx2File.getLevels();
+    const faceCount = ktx2File.getFaces();
+    const hasAlpha = ktx2File.getHasAlpha();
+    const dfdFlags = ktx2File.getDFDFlags();
+    const { transcoderFormat, engineFormat, engineType } = getTranscoderFormat(basisFormat, width, height, hasAlpha);
+    if (!width || !height || !levelCount) {
+      cleanup();
+      throw new Error("THREE.KTX2Loader:	Invalid texture");
+    }
+    if (!ktx2File.startTranscoding()) {
+      cleanup();
+      throw new Error("THREE.KTX2Loader: .startTranscoding failed");
+    }
+    const faces = [];
+    const buffers = [];
+    for (let face = 0; face < faceCount; face++) {
+      const mipmaps = [];
+      for (let mip = 0; mip < levelCount; mip++) {
+        const layerMips = [];
+        let mipWidth, mipHeight;
+        for (let layer = 0; layer < layerCount; layer++) {
+          const levelInfo = ktx2File.getImageLevelInfo(mip, layer, face);
+          if (face === 0 && mip === 0 && layer === 0 && (levelInfo.origWidth % 4 !== 0 || levelInfo.origHeight % 4 !== 0)) {
+            console.warn("THREE.KTX2Loader: ETC1S and UASTC textures should use multiple-of-four dimensions.");
+          }
+          if (levelCount > 1) {
+            mipWidth = levelInfo.origWidth;
+            mipHeight = levelInfo.origHeight;
+          } else {
+            mipWidth = levelInfo.width;
+            mipHeight = levelInfo.height;
+          }
+          let dst = new Uint8Array(ktx2File.getImageTranscodedSizeInBytes(mip, layer, 0, transcoderFormat));
+          const status = ktx2File.transcodeImage(dst, mip, layer, face, transcoderFormat, 0, -1, -1);
+          if (engineType === EngineType.HalfFloatType) {
+            dst = new Uint16Array(dst.buffer, dst.byteOffset, dst.byteLength / Uint16Array.BYTES_PER_ELEMENT);
+          }
+          if (!status) {
+            cleanup();
+            throw new Error("THREE.KTX2Loader: .transcodeImage failed.");
+          }
+          layerMips.push(dst);
+        }
+        const mipData = concat(layerMips);
+        mipmaps.push({ data: mipData, width: mipWidth, height: mipHeight });
+        buffers.push(mipData.buffer);
+      }
+      faces.push({ mipmaps, width, height, format: engineFormat, type: engineType });
+    }
+    cleanup();
+    return { faces, buffers, width, height, hasAlpha, dfdFlags, format: engineFormat, type: engineType };
+  }
+  const FORMAT_OPTIONS = [
+    {
+      if: "astcSupported",
+      basisFormat: [BasisFormat.UASTC],
+      transcoderFormat: [TranscoderFormat.ASTC_4x4, TranscoderFormat.ASTC_4x4],
+      engineFormat: [EngineFormat.RGBA_ASTC_4x4_Format, EngineFormat.RGBA_ASTC_4x4_Format],
+      engineType: [EngineType.UnsignedByteType],
+      priorityETC1S: Infinity,
+      priorityUASTC: 1,
+      needsPowerOfTwo: false
+    },
+    {
+      if: "bptcSupported",
+      basisFormat: [BasisFormat.ETC1S, BasisFormat.UASTC],
+      transcoderFormat: [TranscoderFormat.BC7_M5, TranscoderFormat.BC7_M5],
+      engineFormat: [EngineFormat.RGBA_BPTC_Format, EngineFormat.RGBA_BPTC_Format],
+      engineType: [EngineType.UnsignedByteType],
+      priorityETC1S: 3,
+      priorityUASTC: 2,
+      needsPowerOfTwo: false
+    },
+    {
+      if: "dxtSupported",
+      basisFormat: [BasisFormat.ETC1S, BasisFormat.UASTC],
+      transcoderFormat: [TranscoderFormat.BC1, TranscoderFormat.BC3],
+      engineFormat: [EngineFormat.RGBA_S3TC_DXT1_Format, EngineFormat.RGBA_S3TC_DXT5_Format],
+      engineType: [EngineType.UnsignedByteType],
+      priorityETC1S: 4,
+      priorityUASTC: 5,
+      needsPowerOfTwo: false
+    },
+    {
+      if: "etc2Supported",
+      basisFormat: [BasisFormat.ETC1S, BasisFormat.UASTC],
+      transcoderFormat: [TranscoderFormat.ETC1, TranscoderFormat.ETC2],
+      engineFormat: [EngineFormat.RGB_ETC2_Format, EngineFormat.RGBA_ETC2_EAC_Format],
+      engineType: [EngineType.UnsignedByteType],
+      priorityETC1S: 1,
+      priorityUASTC: 3,
+      needsPowerOfTwo: false
+    },
+    {
+      if: "etc1Supported",
+      basisFormat: [BasisFormat.ETC1S, BasisFormat.UASTC],
+      transcoderFormat: [TranscoderFormat.ETC1],
+      engineFormat: [EngineFormat.RGB_ETC1_Format],
+      engineType: [EngineType.UnsignedByteType],
+      priorityETC1S: 2,
+      priorityUASTC: 4,
+      needsPowerOfTwo: false
+    },
+    {
+      if: "pvrtcSupported",
+      basisFormat: [BasisFormat.ETC1S, BasisFormat.UASTC],
+      transcoderFormat: [TranscoderFormat.PVRTC1_4_RGB, TranscoderFormat.PVRTC1_4_RGBA],
+      engineFormat: [EngineFormat.RGB_PVRTC_4BPPV1_Format, EngineFormat.RGBA_PVRTC_4BPPV1_Format],
+      engineType: [EngineType.UnsignedByteType],
+      priorityETC1S: 5,
+      priorityUASTC: 6,
+      needsPowerOfTwo: true
+    },
+    {
+      if: "bptcSupported",
+      basisFormat: [BasisFormat.UASTC_HDR],
+      transcoderFormat: [TranscoderFormat.BC6H],
+      engineFormat: [EngineFormat.RGB_BPTC_UNSIGNED_Format],
+      engineType: [EngineType.HalfFloatType],
+      priorityHDR: 1,
+      needsPowerOfTwo: false
+    },
+    // Uncompressed fallbacks.
+    {
+      basisFormat: [BasisFormat.ETC1S, BasisFormat.UASTC],
+      transcoderFormat: [TranscoderFormat.RGBA32, TranscoderFormat.RGBA32],
+      engineFormat: [EngineFormat.RGBAFormat, EngineFormat.RGBAFormat],
+      engineType: [EngineType.UnsignedByteType, EngineType.UnsignedByteType],
+      priorityETC1S: 100,
+      priorityUASTC: 100,
+      needsPowerOfTwo: false
+    },
+    {
+      basisFormat: [BasisFormat.UASTC_HDR],
+      transcoderFormat: [TranscoderFormat.RGBA_HALF],
+      engineFormat: [EngineFormat.RGBAFormat],
+      engineType: [EngineType.HalfFloatType],
+      priorityHDR: 100,
+      needsPowerOfTwo: false
+    }
+  ];
+  const OPTIONS = {
+    // TODO: For ETC1S we intentionally sort by _UASTC_ priority, preserving
+    // a historical accident shown to avoid performance pitfalls for Linux with
+    // Firefox & AMD GPU (RadeonSI). Further work needed.
+    // See https://github.com/mrdoob/three.js/pull/29730.
+    [BasisFormat.ETC1S]: FORMAT_OPTIONS.filter((opt) => opt.basisFormat.includes(BasisFormat.ETC1S)).sort((a2, b2) => a2.priorityUASTC - b2.priorityUASTC),
+    [BasisFormat.UASTC]: FORMAT_OPTIONS.filter((opt) => opt.basisFormat.includes(BasisFormat.UASTC)).sort((a2, b2) => a2.priorityUASTC - b2.priorityUASTC),
+    [BasisFormat.UASTC_HDR]: FORMAT_OPTIONS.filter((opt) => opt.basisFormat.includes(BasisFormat.UASTC_HDR)).sort((a2, b2) => a2.priorityHDR - b2.priorityHDR)
+  };
+  function getTranscoderFormat(basisFormat, width, height, hasAlpha) {
+    const options = OPTIONS[basisFormat];
+    for (let i2 = 0; i2 < options.length; i2++) {
+      const opt = options[i2];
+      if (opt.if && !config[opt.if]) continue;
+      if (!opt.basisFormat.includes(basisFormat)) continue;
+      if (hasAlpha && opt.transcoderFormat.length < 2) continue;
+      if (opt.needsPowerOfTwo && !(isPowerOfTwo2(width) && isPowerOfTwo2(height))) continue;
+      const transcoderFormat = opt.transcoderFormat[hasAlpha ? 1 : 0];
+      const engineFormat = opt.engineFormat[hasAlpha ? 1 : 0];
+      const engineType = opt.engineType[0];
+      return { transcoderFormat, engineFormat, engineType };
+    }
+    throw new Error("THREE.KTX2Loader: Failed to identify transcoding target.");
+  }
+  function isPowerOfTwo2(value) {
+    if (value <= 2) return true;
+    return (value & value - 1) === 0 && value !== 0;
+  }
+  function concat(arrays) {
+    if (arrays.length === 1) return arrays[0];
+    let totalByteLength = 0;
+    for (let i2 = 0; i2 < arrays.length; i2++) {
+      const array = arrays[i2];
+      totalByteLength += array.byteLength;
+    }
+    const result = new Uint8Array(totalByteLength);
+    let byteOffset = 0;
+    for (let i2 = 0; i2 < arrays.length; i2++) {
+      const array = arrays[i2];
+      result.set(array, byteOffset);
+      byteOffset += array.byteLength;
+    }
+    return result;
+  }
+};
+var UNCOMPRESSED_FORMATS = /* @__PURE__ */ new Set([RGBAFormat, RGFormat, RedFormat]);
+var FORMAT_MAP = {
+  [Ae]: RGBAFormat,
+  [ge]: RGBAFormat,
+  [Ft]: RGBAFormat,
+  [Ct]: RGBAFormat,
+  [we]: RGFormat,
+  [ae]: RGFormat,
+  [xt]: RGFormat,
+  [wt]: RGFormat,
+  [ue]: RedFormat,
+  [te]: RedFormat,
+  [yt]: RedFormat,
+  [ct]: RedFormat,
+  [pi]: RGBA_ASTC_4x4_Format,
+  [Sn]: RGBA_ASTC_6x6_Format,
+  [In]: RGBA_ASTC_6x6_Format
+};
+var TYPE_MAP = {
+  [Ae]: FloatType,
+  [ge]: HalfFloatType,
+  [Ft]: UnsignedByteType,
+  [Ct]: UnsignedByteType,
+  [we]: FloatType,
+  [ae]: HalfFloatType,
+  [xt]: UnsignedByteType,
+  [wt]: UnsignedByteType,
+  [ue]: FloatType,
+  [te]: HalfFloatType,
+  [yt]: UnsignedByteType,
+  [ct]: UnsignedByteType,
+  [pi]: HalfFloatType,
+  [Sn]: UnsignedByteType,
+  [In]: UnsignedByteType
+};
+async function createRawTexture(container) {
+  const { vkFormat } = container;
+  if (FORMAT_MAP[vkFormat] === void 0) {
+    throw new Error("THREE.KTX2Loader: Unsupported vkFormat.");
+  }
+  let zstd;
+  if (container.supercompressionScheme === n2) {
+    if (!_zstd) {
+      _zstd = new Promise(async (resolve) => {
+        const zstd2 = new Q2();
+        await zstd2.init();
+        resolve(zstd2);
+      });
+    }
+    zstd = await _zstd;
+  }
+  const mipmaps = [];
+  for (let levelIndex = 0; levelIndex < container.levels.length; levelIndex++) {
+    const levelWidth = Math.max(1, container.pixelWidth >> levelIndex);
+    const levelHeight = Math.max(1, container.pixelHeight >> levelIndex);
+    const levelDepth = container.pixelDepth ? Math.max(1, container.pixelDepth >> levelIndex) : 0;
+    const level = container.levels[levelIndex];
+    let levelData;
+    if (container.supercompressionScheme === t2) {
+      levelData = level.levelData;
+    } else if (container.supercompressionScheme === n2) {
+      levelData = zstd.decode(level.levelData, level.uncompressedByteLength);
+    } else {
+      throw new Error("THREE.KTX2Loader: Unsupported supercompressionScheme.");
+    }
+    let data;
+    if (TYPE_MAP[vkFormat] === FloatType) {
+      data = new Float32Array(
+        levelData.buffer,
+        levelData.byteOffset,
+        levelData.byteLength / Float32Array.BYTES_PER_ELEMENT
+      );
+    } else if (TYPE_MAP[vkFormat] === HalfFloatType) {
+      data = new Uint16Array(
+        levelData.buffer,
+        levelData.byteOffset,
+        levelData.byteLength / Uint16Array.BYTES_PER_ELEMENT
+      );
+    } else {
+      data = levelData;
+    }
+    mipmaps.push({
+      data,
+      width: levelWidth,
+      height: levelHeight,
+      depth: levelDepth
+    });
+  }
+  let texture;
+  if (UNCOMPRESSED_FORMATS.has(FORMAT_MAP[vkFormat])) {
+    texture = container.pixelDepth === 0 ? new DataTexture(mipmaps[0].data, container.pixelWidth, container.pixelHeight) : new Data3DTexture(mipmaps[0].data, container.pixelWidth, container.pixelHeight, container.pixelDepth);
+  } else {
+    if (container.pixelDepth > 0) throw new Error("THREE.KTX2Loader: Unsupported pixelDepth.");
+    texture = new CompressedTexture(mipmaps, container.pixelWidth, container.pixelHeight);
+  }
+  texture.mipmaps = mipmaps;
+  texture.type = TYPE_MAP[vkFormat];
+  texture.format = FORMAT_MAP[vkFormat];
+  texture.colorSpace = parseColorSpace(container);
+  texture.needsUpdate = true;
+  return Promise.resolve(texture);
+}
+function parseColorSpace(container) {
+  const dfd = container.dataFormatDescriptor[0];
+  if (dfd.colorPrimaries === C2) {
+    return dfd.transferFunction === u2 ? SRGBColorSpace : LinearSRGBColorSpace;
+  } else if (dfd.colorPrimaries === R2) {
+    return dfd.transferFunction === u2 ? DisplayP3ColorSpace : LinearDisplayP3ColorSpace;
+  } else if (dfd.colorPrimaries === T2) {
+    return NoColorSpace;
+  } else {
+    console.warn(`THREE.KTX2Loader: Unsupported color primaries, "${dfd.colorPrimaries}"`);
+    return NoColorSpace;
+  }
+}
+
+// client/assets/pbrTextureLibrary.ts
+var slots = {
+  diffuse: "map",
+  roughness: "roughnessMap",
+  normal: "normalMap",
+  metalness: "metalnessMap",
+  emissive: "emissiveMap"
+};
+var styles = [
+  "concrete_layers_02",
+  "asphalt_02",
+  "corrugated_iron_02",
+  "carbon_fiber"
+];
+function makeFallbackPBR(name, size = 128) {
+  const maps = {}, metal = /iron|metal|carbon/.test(name), asphalt = name.includes("asphalt"), carbon = name.includes("carbon");
+  for (const channel of Object.keys(slots)) {
+    const bytes = new Uint8Array(size * size * 4);
+    for (let y2 = 0; y2 < size; y2++)
+      for (let x2 = 0; x2 < size; x2++) {
+        const i2 = (y2 * size + x2) * 4, noise = ((Math.imul(x2 + 17, 374761393) ^ Math.imul(y2 + 43, 668265263)) >>> 13) % 23;
+        const weave = ((x2 >> 3) + (y2 >> 3)) % 2, brushed = Math.sin(y2 * Math.PI / 4);
+        const value = carbon ? 29 + weave * 17 + noise / 3 : asphalt ? 52 + noise : metal ? 135 + noise + brushed * 12 : 150 + noise;
+        if (channel === "normal") {
+          bytes[i2] = 128;
+          bytes[i2 + 1] = 128 + (metal ? brushed * 10 : noise / 3 - 3);
+          bytes[i2 + 2] = 255;
+        } else {
+          const v2 = channel === "diffuse" ? value : channel === "roughness" ? metal ? 130 : 225 : channel === "metalness" ? metal ? 230 : 0 : 0;
+          bytes[i2] = bytes[i2 + 1] = bytes[i2 + 2] = v2;
+        }
+        bytes[i2 + 3] = 255;
+      }
+    const texture = new DataTexture(bytes, size, size);
+    texture.name = `procedural:${name}:${channel}`;
+    texture.colorSpace = channel === "diffuse" || channel === "emissive" ? SRGBColorSpace : NoColorSpace;
+    texture.wrapS = texture.wrapT = RepeatWrapping;
+    texture.magFilter = LinearFilter;
+    texture.minFilter = LinearMipmapLinearFilter;
+    texture.generateMipmaps = true;
+    texture.needsUpdate = true;
+    maps[channel] = texture;
+  }
+  return maps;
+}
+var PBRTextureLibrary = class {
   textures = /* @__PURE__ */ new Map();
+  materialFailures = /* @__PURE__ */ new Map();
+  materialSources = /* @__PURE__ */ new Map();
+  bindings = /* @__PURE__ */ new Map();
+  versions = /* @__PURE__ */ new Map();
+  imageLoader = new TextureLoader();
+  ktx = null;
+  anisotropy = 1;
+  disposed = false;
+  constructor() {
+    for (const name of styles) {
+      this.textures.set(name, makeFallbackPBR(name));
+      this.materialSources.set(name, "procedural");
+    }
+  }
+  configureTextures(renderer) {
+    this.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    this.ktx ??= new KTX2Loader().setTranscoderPath("/assets/transcoders/").setWorkerLimit(2).detectSupport(renderer);
+  }
+  async replaceMaterialPack(name, urls, load) {
+    if (this.disposed) return false;
+    const revision = (this.versions.get(name) ?? 0) + 1;
+    this.versions.set(name, revision);
+    const maps = {};
+    try {
+      if (!urls.diffuse || !urls.normal || !urls.roughness)
+        throw new Error(
+          "A PBR pack requires diffuse, normal and roughness maps"
+        );
+      for (const [channel, url] of Object.entries(urls)) {
+        if (!(channel in slots) || typeof url !== "string" || !/\.(?:png|jpe?g|webp|ktx2)(?:[?#]|$)/i.test(url))
+          throw new Error(`Unsupported PBR map: ${channel}`);
+        const texture = load ? await load(url) : /\.ktx2(?:[?#]|$)/i.test(url) ? await this.loadKTX(url) : await this.imageLoader.loadAsync(url);
+        maps[channel] = texture;
+        const { width, height } = texture.image ?? {};
+        if (!(width > 0 && height > 0 && width <= 16384 && height <= 16384))
+          throw new Error(`Invalid texture dimensions: ${channel}`);
+        texture.colorSpace = channel === "diffuse" || channel === "emissive" ? SRGBColorSpace : NoColorSpace;
+        texture.wrapS = texture.wrapT = RepeatWrapping;
+        texture.anisotropy = this.anisotropy;
+        texture.needsUpdate = true;
+      }
+      if (this.disposed || this.versions.get(name) !== revision) {
+        Object.values(maps).forEach((t3) => t3.dispose());
+        return false;
+      }
+      const previous = this.textures.get(name);
+      this.textures.set(name, maps);
+      for (const [material, binding] of this.bindings)
+        if (binding.name === name)
+          this.assign(material, maps, binding.repeat, binding.baseMetalness);
+      Object.values(previous ?? {}).forEach((t3) => t3.dispose());
+      this.materialSources.set(name, "external");
+      this.materialFailures.delete(name);
+      return true;
+    } catch (error) {
+      Object.values(maps).forEach((t3) => t3.dispose());
+      if (this.versions.get(name) === revision)
+        this.materialFailures.set(name, String(error));
+      return false;
+    }
+  }
+  loadKTX(url) {
+    if (!this.ktx)
+      throw new Error("Configure the renderer before loading KTX2");
+    return this.ktx.loadAsync(url);
+  }
+  applyMaterial(material, name, repeat = [1, 1]) {
+    const maps = this.textures.get(name);
+    if (!maps) return false;
+    const previous = this.bindings.get(material);
+    if (previous?.name === name && previous.repeat.every((v2, i2) => v2 === repeat[i2]))
+      return true;
+    const baseMetalness = previous?.baseMetalness ?? material.metalness;
+    this.releaseMaterial(material);
+    this.assign(material, maps, repeat, baseMetalness);
+    const cleanup = () => this.releaseMaterial(material);
+    material.addEventListener("dispose", cleanup);
+    this.bindings.set(material, {
+      name,
+      repeat: [...repeat],
+      baseMetalness,
+      cleanup
+    });
+    return true;
+  }
+  assign(material, maps, repeat, baseMetalness) {
+    for (const [channel, slot] of Object.entries(slots)) {
+      if (this.bindings.has(material)) material[slot]?.dispose();
+      const texture = maps[channel]?.clone() ?? null;
+      if (texture) {
+        texture.repeat.set(...repeat);
+        texture.needsUpdate = true;
+      }
+      material[slot] = texture;
+    }
+    material.roughness = 1;
+    material.metalness = maps.metalness ? 1 : baseMetalness;
+    material.needsUpdate = true;
+  }
+  releaseMaterial(material) {
+    const binding = this.bindings.get(material);
+    if (!binding) return;
+    for (const slot of Object.values(slots)) {
+      material[slot]?.dispose();
+      material[slot] = null;
+    }
+    material.removeEventListener("dispose", binding.cleanup);
+    this.bindings.delete(material);
+  }
+  disposeTextures() {
+    this.disposed = true;
+    for (const material of this.bindings.keys()) this.releaseMaterial(material);
+    for (const [name, maps] of this.textures) {
+      this.versions.set(name, (this.versions.get(name) ?? 0) + 1);
+      Object.values(maps).forEach((t3) => t3.dispose());
+    }
+    this.textures.clear();
+    this.ktx?.dispose();
+    this.ktx = null;
+  }
+};
+
+// client/assets/productionAssets.ts
+var ProductionAssetManager = class extends PBRTextureLibrary {
   characters = /* @__PURE__ */ new Map();
   models = /* @__PURE__ */ new Map();
   modelFailures = /* @__PURE__ */ new Map();
+  characterFailures = /* @__PURE__ */ new Map();
   environment = null;
   environmentTarget = null;
-  materialMaps = /* @__PURE__ */ new WeakMap();
-  loader = new TextureLoader();
-  anisotropy = 1;
   async load(renderer) {
     const response = await fetch("/assets/manifest.json");
     if (!response.ok) throw new Error(`Asset manifest: HTTP ${response.status}; run npm run assets:fetch`);
     const manifest = await response.json();
-    this.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    this.configureTextures(renderer);
     this.environment = await new RGBELoader().loadAsync(manifest.environment.url);
     this.environment.mapping = EquirectangularReflectionMapping;
-    for (const [name, material] of Object.entries(manifest.materials)) {
-      const maps = {};
-      try {
-        for (const [channel, url] of Object.entries(material.maps)) {
-          const texture = await this.loader.loadAsync(url);
-          texture.colorSpace = channel === "diffuse" ? SRGBColorSpace : NoColorSpace;
-          texture.wrapS = texture.wrapT = RepeatWrapping;
-          texture.anisotropy = this.anisotropy;
-          maps[channel] = texture;
-        }
-      } catch (error) {
-        Object.values(maps).forEach((texture) => texture.dispose());
-        throw error;
-      }
-      this.textures.set(name, maps);
-    }
+    for (const [name, material] of Object.entries(manifest.materials)) await this.replaceMaterialPack(name, material.maps);
     const loader = new GLTFLoader();
     for (const [name, model] of Object.entries(manifest.characters)) {
-      const gltf = await loader.loadAsync(model.url);
-      let skinned = 0;
-      gltf.scene.traverse((object) => {
-        if (object.isSkinnedMesh) skinned++;
-      });
-      if (!skinned || !gltf.animations.length) throw new Error(`${name}: missing SkinnedMesh or animation clips`);
-      this.characters.set(name, gltf);
+      try {
+        const gltf = await loader.loadAsync(model.url);
+        let skinned = 0;
+        gltf.scene.traverse((object) => {
+          if (object.isSkinnedMesh) skinned++;
+        });
+        if (!skinned || !gltf.animations.length) throw new Error(`${name}: missing SkinnedMesh or animation clips`);
+        this.characters.set(name, gltf);
+        this.characterFailures.delete(name);
+      } catch (error) {
+        if (!model.optional) throw error;
+        this.characters.delete(name);
+        this.characterFailures.set(name, String(error));
+        console.info(`[Production assets] Optional ${name} unavailable; using procedural animation.`);
+      }
     }
     await this.loadModels(manifest.models ?? {});
     console.info("[Production assets]", { materials: this.textures.size, characters: [...this.characters.keys()] });
@@ -41351,8 +43618,8 @@ var ProductionAssetManager = class {
               for (const value of Object.values(material)) if (value instanceof Texture) textures.add(value);
               material.dispose();
             }
-            geometries.forEach((g2) => g2.dispose());
-            textures.forEach((t2) => t2.dispose());
+            geometries.forEach((g4) => g4.dispose());
+            textures.forEach((t3) => t3.dispose());
           }
           this.models.delete(key);
           this.modelFailures.set(key, String(error));
@@ -41380,34 +43647,6 @@ var ProductionAssetManager = class {
       generator.dispose();
     }
   }
-  applyMaterial(material, name, repeat = [1, 1]) {
-    const maps = this.textures.get(name);
-    if (!maps) return false;
-    if (this.materialMaps.get(material) === name) return true;
-    this.releaseMaterial(material);
-    const copy = (channel) => {
-      const texture = maps[channel]?.clone();
-      if (texture) {
-        texture.repeat.set(...repeat);
-        texture.needsUpdate = true;
-      }
-      return texture ?? null;
-    };
-    material.map = copy("diffuse");
-    material.roughnessMap = copy("roughness");
-    material.normalMap = copy("normal");
-    material.metalnessMap = copy("metalness");
-    material.roughness = 1;
-    if (material.metalnessMap) material.metalness = 1;
-    material.needsUpdate = true;
-    this.materialMaps.set(material, name);
-    return true;
-  }
-  releaseMaterial(material) {
-    if (!this.materialMaps.has(material)) return;
-    for (const texture of [material.map, material.roughnessMap, material.normalMap, material.metalnessMap]) texture?.dispose();
-    this.materialMaps.delete(material);
-  }
   createCharacter(name = "Soldier") {
     const template = this.characters.get(name);
     if (!template) return null;
@@ -41426,6 +43665,223 @@ var ProductionAssetManager = class {
   }
 };
 var productionAssets = new ProductionAssetManager();
+
+// client/builders/builderContract.ts
+var BuilderResourcePool = class {
+  entries = /* @__PURE__ */ new Map();
+  scope() {
+    return new BuilderResourceScope(this);
+  }
+  acquire(key, create) {
+    let entry = this.entries.get(key);
+    if (!entry) {
+      entry = { value: create(), refs: 0 };
+      this.entries.set(key, entry);
+    }
+    entry.refs++;
+    return entry.value;
+  }
+  release(key) {
+    const entry = this.entries.get(key);
+    if (!entry) return;
+    if (--entry.refs === 0) {
+      entry.value.dispose();
+      this.entries.delete(key);
+    }
+  }
+  get size() {
+    return this.entries.size;
+  }
+};
+var BuilderResourceScope = class {
+  constructor(pool) {
+    this.pool = pool;
+  }
+  owned = /* @__PURE__ */ new Map();
+  disposed = false;
+  get(key, create) {
+    if (this.disposed) throw new Error("Builder resource scope has been disposed");
+    if (!this.owned.has(key)) this.owned.set(key, this.pool.acquire(key, create));
+    return this.owned.get(key);
+  }
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    for (const key of this.owned.keys()) this.pool.release(key);
+    this.owned.clear();
+  }
+};
+
+// client/builders/WeaponBuilder.ts
+var WeaponBuilder = class {
+  resources = new BuilderResourcePool();
+  build(variant = 0 /* CARBINE */) {
+    const profile = WEAPON_PROFILES[variant];
+    if (!profile) throw new Error(`Unknown weapon variant: ${variant}`);
+    const scope = this.resources.scope(), root = new Group();
+    root.name = `Weapon_${profile.key}`;
+    root.userData.entityKind = "weapon";
+    root.userData.weaponVariant = variant;
+    const materials = /* @__PURE__ */ new Set(), anchors = /* @__PURE__ */ new Map();
+    let source = "procedural", imported = null;
+    const candidate = productionAssets.createModel("weapon", profile.key);
+    if (candidate) {
+      const scene = candidate.scene, grip2 = scene.getObjectByName("Grip"), muzzle2 = scene.getObjectByName("MuzzleFlashEmitter");
+      const disposeCandidate = () => {
+        const geometries = /* @__PURE__ */ new Set(), mats = /* @__PURE__ */ new Set();
+        scene.traverse((o2) => {
+          if (o2 instanceof Mesh) {
+            geometries.add(o2.geometry);
+            (Array.isArray(o2.material) ? o2.material : [o2.material]).forEach((m2) => mats.add(m2));
+          }
+        });
+        geometries.forEach((g4) => g4.dispose());
+        mats.forEach((m2) => m2.dispose());
+      };
+      if (grip2 && muzzle2) {
+        scene.updateMatrixWorld(true);
+        const correction = new Group();
+        correction.applyMatrix4(grip2.matrixWorld.clone().invert());
+        correction.add(scene);
+        correction.updateMatrixWorld(true);
+        const bounds = new Box3().setFromObject(correction), size = bounds.getSize(new Vector3());
+        const p2 = muzzle2.getWorldPosition(new Vector3());
+        const d2 = new Vector3(0, 0, -1).applyQuaternion(muzzle2.getWorldQuaternion(new Quaternion()));
+        let skinned = false;
+        scene.traverse((o2) => {
+          if (o2.isSkinnedMesh) skinned = true;
+        });
+        const gripScale = grip2.getWorldScale(new Vector3());
+        if (!skinned && candidate.animations.length === 0 && [...bounds.min, ...bounds.max, ...gripScale].every(Number.isFinite) && size.z > 0.2 && size.z < 1.6 && size.x < 0.6 && size.y < 0.7 && gripScale.distanceTo(new Vector3(1, 1, 1)) < 1e-3 && p2.z < -0.2 && p2.z > -1.4 && Math.abs(p2.x) < 0.04 && Math.abs(p2.y - 0.06) < 0.12 && d2.dot(new Vector3(0, 0, -1)) > 0.995) {
+          imported = correction;
+          root.add(correction);
+          source = "gltf";
+          anchors.set("Grip", grip2);
+          anchors.set("MuzzleFlashEmitter", muzzle2);
+        } else disposeCandidate();
+      } else disposeCandidate();
+    }
+    if (!imported) {
+      const material = (key, color, emissive = false) => scope.get(`weapon:material:${key}`, () => stylizePBR(new MeshStandardMaterial({ color, metalness: 0.65, roughness: 0.4, emissive: emissive ? color : 0, emissiveIntensity: emissive ? 1.5 : 0 })));
+      const steel = material("steel", 2373444), ceramic = material("ceramic", 11058637), gripMat = material("grip", 1121317), trim = material(profile.key, profile.color, true);
+      const cube = scope.get("weapon:cube", () => new BoxGeometry(1, 1, 1));
+      const cylinder = scope.get("weapon:cylinder", () => new CylinderGeometry(1, 1, 1, 6));
+      const add2 = (name, geometry, mat, pos, scale) => {
+        const mesh = new Mesh(geometry, mat);
+        mesh.name = name;
+        mesh.position.set(...pos);
+        mesh.scale.set(...scale);
+        mesh.castShadow = mesh.receiveShadow = true;
+        root.add(mesh);
+        return mesh;
+      };
+      const box = (name, mat, p2, s2) => add2(name, cube, mat, p2, s2);
+      box("Receiver", steel, [0, 0.06, -0.11], [profile.width, 0.14, profile.receiver]);
+      box("UpperReceiver", ceramic, [0, 0.13, -0.12], [profile.width * 0.8, 0.035, profile.receiver * 0.9]);
+      box("PistolGrip", gripMat, [0, -0.06, 0], [0.065, 0.18, 0.08]).rotation.x = -0.16;
+      box("TriggerGuard", steel, [0, -0.015, -0.07], [0.028, 0.025, 0.13]);
+      box("Stock", ceramic, [0, 0.045, 0.13], [profile.width * 0.7, 0.12, profile.stock]);
+      const barrelCenter = profile.muzzleZ + profile.barrel / 2 + 0.025;
+      add2("BarrelShroud", cylinder, steel, [0, 0.06, barrelCenter], [variant === 2 /* HEAVY */ ? 0.055 : 0.032, profile.barrel, variant === 2 /* HEAVY */ ? 0.055 : 0.032]).rotation.x = Math.PI / 2;
+      box("Foregrip", ceramic, [0, -0.015, barrelCenter + 0.05], [profile.width * 0.9, 0.08, profile.barrel * 0.65]);
+      box("MuzzleBrake", steel, [0, 0.06, profile.muzzleZ + 0.025], [profile.width * 0.6, 0.065, 0.05]);
+      if (variant === 2 /* HEAVY */) add2("Magazine", cylinder, gripMat, [0, -0.11, -0.12], [0.1, 0.19, 0.1]).rotation.z = Math.PI / 2;
+      else box("Magazine", gripMat, [0, -0.11, -0.14], [0.065, variant === 1 /* MARKSMAN */ ? 0.14 : 0.2, 0.1]).rotation.x = -0.2;
+      if (variant === 1 /* MARKSMAN */) {
+        add2("Optic", cylinder, steel, [0, 0.22, -0.12], [0.038, 0.22, 0.038]).rotation.x = Math.PI / 2;
+        add2("OpticLens", cylinder, trim, [0, 0.22, -0.235], [0.028, 6e-3, 0.028]).rotation.x = Math.PI / 2;
+      } else add2("Optic", scope.get("weapon:optic-ring", () => new TorusGeometry(0.035, 9e-3, 3, 8)), trim, [0, 0.205, -0.13], [1, 1, 1]);
+      for (const side of [-1, 1]) box(`ChargeStrip${side}`, trim, [side * (profile.width / 2 + 3e-3), 0.075, -0.12], [9e-3, 0.02, profile.receiver * 0.72]);
+      for (const [name, p2] of [["Grip", [0, 0, 0]], ["MuzzleFlashEmitter", [0, 0.06, profile.muzzleZ]], ["SupportGrip", [0, -0.045, barrelCenter + 0.05]]]) {
+        const anchor = new Object3D();
+        anchor.name = name;
+        anchor.position.set(...p2);
+        root.add(anchor);
+        anchors.set(name, anchor);
+      }
+      const bodyMaterial = material("vertex-body", 16777215);
+      bodyMaterial.vertexColors = true;
+      const batches = /* @__PURE__ */ new Map();
+      for (const child of [...root.children]) if (child instanceof Mesh) {
+        const mat = child.material === trim ? trim : bodyMaterial, batch = batches.get(mat) ?? [];
+        batch.push(child);
+        batches.set(mat, batch);
+      }
+      for (const [index, [mat, meshes]] of [...batches].entries()) {
+        const geometry = scope.get(`weapon:batch:${variant}:${index}`, () => {
+          const parts = meshes.map((m2) => {
+            m2.updateMatrix();
+            const geometry2 = m2.geometry.clone().applyMatrix4(m2.matrix), color = m2.material.color;
+            const colors = new Float32Array(geometry2.getAttribute("position").count * 3);
+            for (let i2 = 0; i2 < colors.length; i2 += 3) {
+              colors[i2] = color.r;
+              colors[i2 + 1] = color.g;
+              colors[i2 + 2] = color.b;
+            }
+            geometry2.setAttribute("color", new BufferAttribute(colors, 3));
+            return geometry2;
+          });
+          const merged = mergeGeometries(parts, false);
+          parts.forEach((g4) => g4.dispose());
+          if (!merged) throw new Error("Weapon geometry batching failed");
+          return merged;
+        });
+        for (const mesh2 of meshes) {
+          const part = new Object3D();
+          part.name = mesh2.name;
+          part.position.copy(mesh2.position);
+          part.quaternion.copy(mesh2.quaternion);
+          part.scale.copy(mesh2.scale);
+          root.remove(mesh2);
+          root.add(part);
+        }
+        const mesh = new Mesh(geometry, mat);
+        mesh.name = `WeaponMaterialBatch${index}`;
+        mesh.castShadow = mesh.receiveShadow = true;
+        root.add(mesh);
+      }
+    }
+    root.traverse((o2) => {
+      if (o2 instanceof Mesh) (Array.isArray(o2.material) ? o2.material : [o2.material]).forEach((m2) => materials.add(m2));
+    });
+    const grip = anchors.get("Grip"), muzzle = anchors.get("MuzzleFlashEmitter"), q2 = new Quaternion();
+    let disposed = false;
+    return {
+      root,
+      variant,
+      source,
+      grip,
+      muzzle,
+      anchors,
+      materials,
+      animatedParts: /* @__PURE__ */ new Map(),
+      collisions: [],
+      update: () => {
+      },
+      muzzleTransform: (position, direction) => {
+        root.updateWorldMatrix(true, true);
+        muzzle.getWorldPosition(position);
+        direction.set(0, 0, -1).applyQuaternion(muzzle.getWorldQuaternion(q2)).normalize();
+      },
+      dispose: () => {
+        if (disposed) return;
+        disposed = true;
+        root.removeFromParent();
+        if (imported) {
+          const geometries = /* @__PURE__ */ new Set();
+          imported.traverse((o2) => {
+            if (o2 instanceof Mesh) geometries.add(o2.geometry);
+          });
+          geometries.forEach((g4) => g4.dispose());
+          materials.forEach((m2) => m2.dispose());
+        }
+        scope.dispose();
+        root.clear();
+      }
+    };
+  }
+};
+var weaponBuilder = new WeaponBuilder();
 
 // client/animation/humanoidRig.ts
 var JOINT_LAYOUT = {
@@ -41449,30 +43905,6 @@ var JOINT_LAYOUT = {
   RightCalf: ["RightThigh", 0, -0.43, 0],
   RightFoot: ["RightCalf", 0, -0.4, -0.05]
 };
-function createRigFirearm(heavy = false) {
-  const g2 = new Group();
-  g2.name = "SocketFirearm";
-  const m2 = createFactionMaterials("aegis");
-  const part = (name, geo, mat, x2, y2, z2) => {
-    const mesh = new Mesh(geo, mat);
-    mesh.name = name;
-    mesh.position.set(x2, y2, z2);
-    mesh.castShadow = true;
-    g2.add(mesh);
-    return mesh;
-  };
-  part("Receiver", new BoxGeometry(0.11, 0.14, heavy ? 0.5 : 0.32), m2.joint, 0, 0, -0.1);
-  const barrel = part("BarrelShroud", new CylinderGeometry(0.035, 0.045, 0.3, 8), m2.armor, 0, 0.02, -0.4);
-  barrel.rotation.x = Math.PI / 2;
-  part("Magazine", new BoxGeometry(0.07, 0.18, 0.09), m2.joint, 0, -0.12, -0.1).rotation.x = -0.2;
-  part("Optic", new TorusGeometry(0.045, 0.012, 4, 8), m2.trim, 0, 0.11, -0.13);
-  part("ChargeStrip", new BoxGeometry(0.012, 0.025, 0.23), m2.trim, 0.06, 0.025, -0.13);
-  const muzzle = new Object3D();
-  muzzle.name = "MuzzleFlashEmitter";
-  muzzle.position.set(0, 0.02, -0.57);
-  g2.add(muzzle);
-  return g2;
-}
 var HumanoidRig = class {
   constructor(style, enemy = false) {
     this.style = style;
@@ -41560,7 +43992,9 @@ var HumanoidRig = class {
       plate("Chest", "TriageBackpack", 0.34, 0.45, 0.2, 0, 0.25);
       plate("LeftClavicle", "SquadBeacon", 0.045, 0.42, 0.045, 0.28, 0.12, this.materials.trim);
     }
-    this.weapon = createRigFirearm(heavy);
+    this.equipment = weaponBuilder.build(weaponForStyle(style));
+    this.weapon = this.equipment.root;
+    this.weapon.rotation.x = -Math.PI / 2;
     this.bones.RightHand.add(this.weapon);
     this.root.userData.entityKind = enemy ? "enemy" : "agent";
     this.root.userData.silhouette = style;
@@ -41570,7 +44004,9 @@ var HumanoidRig = class {
   skeleton;
   materials;
   weapon;
+  equipment;
   dispose() {
+    this.equipment.dispose();
     const materials = /* @__PURE__ */ new Set();
     this.root.traverse((o2) => {
       if (o2 instanceof Mesh) {
@@ -41586,8 +44022,129 @@ var HumanoidRig = class {
   }
 };
 
+// client/animation/mixamoMotion.ts
+var MIXAMO_JOINTS = {
+  Pelvis: "Hips",
+  Spine: "Spine",
+  Chest: "Spine2",
+  Neck: "Neck",
+  Head: "Head",
+  LeftClavicle: "LeftShoulder",
+  LeftUpperArm: "LeftArm",
+  LeftForearm: "LeftForeArm",
+  LeftHand: "LeftHand",
+  RightClavicle: "RightShoulder",
+  RightUpperArm: "RightArm",
+  RightForearm: "RightForeArm",
+  RightHand: "RightHand",
+  LeftThigh: "LeftUpLeg",
+  LeftCalf: "LeftLeg",
+  LeftFoot: "LeftFoot",
+  RightThigh: "RightUpLeg",
+  RightCalf: "RightLeg",
+  RightFoot: "RightFoot"
+};
+var joints = Object.keys(JOINT_LAYOUT);
+var createMotionSample = () => ({ rotations: Object.fromEntries(joints.map((n3) => [n3, new Quaternion()])), pelvisY: 0.94 });
+var MixamoMotion = class {
+  constructor(template, name) {
+    this.name = name;
+    const clip = template.animations.find((a2) => a2.name === name);
+    if (!clip || !(clip.duration > 0)) throw new Error(`Missing Mixamo motion: ${name}`);
+    this.duration = clip.duration;
+    this.frames = Math.ceil(clip.duration * 30) + 1;
+    this.values = new Float32Array(this.frames * joints.length * 4);
+    this.heights = new Float32Array(this.frames);
+    const source = clone(template.scene), sourceBones = /* @__PURE__ */ new Map(), skeletons = /* @__PURE__ */ new Set();
+    source.traverse((o2) => {
+      if (o2.isSkinnedMesh) skeletons.add(o2.skeleton);
+      if (o2.isBone) sourceBones.set(o2.name.replace(/^mixamorig\d*[:_]?/i, ""), o2);
+    });
+    const mixer = new AnimationMixer(source);
+    try {
+      skeletons.forEach((s2) => s2.pose());
+      source.updateMatrixWorld(true);
+      const rest = {}, targetRest = {};
+      const target = new Group(), bones = {};
+      for (const name2 of joints) {
+        const original = sourceBones.get(MIXAMO_JOINTS[name2]);
+        if (!original) throw new Error(`Missing source joint: ${MIXAMO_JOINTS[name2]}`);
+        rest[name2] = original.getWorldQuaternion(new Quaternion()).invert();
+        const [parent, x2, y2, z2] = JOINT_LAYOUT[name2], bone = new Bone();
+        bone.position.set(x2, y2, z2);
+        if (name2 === "LeftUpperArm") bone.rotation.z = -Math.PI / 2;
+        if (name2 === "RightUpperArm") bone.rotation.z = Math.PI / 2;
+        bones[name2] = bone;
+        (parent ? bones[parent] : target).add(bone);
+      }
+      target.updateMatrixWorld(true);
+      for (const name2 of joints) targetRest[name2] = bones[name2].getWorldQuaternion(new Quaternion());
+      const hips = sourceBones.get("Hips"), hipRestY = hips.getWorldPosition(new Vector3()).y;
+      if (!(hipRestY > 0.5 && hipRestY < 1.5)) throw new Error(`Mixamo base must use metres: hips=${hipRestY}`);
+      const forward = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI), inverseForward = forward.clone().invert();
+      const desired = {}, local = new Quaternion(), position = new Vector3();
+      joints.forEach((n3) => desired[n3] = new Quaternion());
+      const action = mixer.clipAction(clip);
+      action.setLoop(LoopOnce, 1);
+      action.clampWhenFinished = true;
+      action.play();
+      for (let frame = 0; frame < this.frames; frame++) {
+        mixer.setTime(frame / (this.frames - 1) * this.duration);
+        source.updateMatrixWorld(true);
+        this.heights[frame] = hips.getWorldPosition(position).y / hipRestY * JOINT_LAYOUT.Pelvis[2];
+        for (const [index, name2] of joints.entries()) {
+          const original = sourceBones.get(MIXAMO_JOINTS[name2]);
+          original.getWorldQuaternion(desired[name2]);
+          desired[name2].premultiply(forward).multiply(rest[name2]).multiply(inverseForward).multiply(targetRest[name2]).normalize();
+          const parent = JOINT_LAYOUT[name2][0];
+          local.copy(parent ? desired[parent] : new Quaternion()).invert().multiply(desired[name2]).normalize();
+          local.toArray(this.values, (frame * joints.length + index) * 4);
+        }
+      }
+      if (![...this.values, ...this.heights].every(Number.isFinite)) throw new Error("Nonfinite retargeted motion");
+    } finally {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(source);
+      skeletons.forEach((s2) => s2.dispose());
+    }
+  }
+  duration;
+  frames;
+  values;
+  heights;
+  qa = new Quaternion();
+  qb = new Quaternion();
+  sample(seconds, result) {
+    const f2 = MathUtils.clamp(seconds / this.duration, 0, 1) * (this.frames - 1), a2 = Math.floor(f2), b2 = Math.min(a2 + 1, this.frames - 1), t3 = f2 - a2;
+    for (const [i2, name] of joints.entries()) {
+      this.qa.fromArray(this.values, (a2 * joints.length + i2) * 4);
+      this.qb.fromArray(this.values, (b2 * joints.length + i2) * 4);
+      result.rotations[name].copy(this.qa).slerp(this.qb, t3);
+    }
+    result.pelvisY = MathUtils.lerp(this.heights[a2], this.heights[b2], t3);
+  }
+};
+var cache = /* @__PURE__ */ new WeakMap();
+function getMixamoMotion(template, name) {
+  if (!template) return null;
+  let clips = cache.get(template);
+  if (!clips) {
+    clips = /* @__PURE__ */ new Map();
+    cache.set(template, clips);
+  }
+  if (!clips.has(name)) {
+    try {
+      clips.set(name, new MixamoMotion(template, name));
+    } catch (error) {
+      console.info("[Mixamo fallback]", String(error));
+      clips.set(name, null);
+    }
+  }
+  return clips.get(name) ?? null;
+}
+
 // client/animation/skeletalAnimator.ts
-var newPose = () => Object.fromEntries(Object.keys(JOINT_LAYOUT).map((n2) => [n2, new Euler()]));
+var newPose = () => Object.fromEntries(Object.keys(JOINT_LAYOUT).map((n3) => [n3, new Euler()]));
 var SkeletalAnimator = class {
   constructor(rig) {
     this.rig = rig;
@@ -41602,6 +44159,14 @@ var SkeletalAnimator = class {
   pose = newPose();
   from = newPose();
   previousVertical = 0;
+  motionSample = createMotionSample();
+  blendedMotion = createMotionSample();
+  previousMotion = createMotionSample();
+  motionWeight = 0;
+  previousMotionWeight = 0;
+  handWorld = new Quaternion();
+  aimWorld = new Quaternion();
+  activeMotion = null;
   choose(input) {
     const r2 = input.reaction;
     if (r2?.reaction === 6 /* PAIRED_COUNTER */ && r2.timer > 0) return "CounterVictim";
@@ -41640,27 +44205,57 @@ var SkeletalAnimator = class {
       this.phase += 1 / 60;
       const next = this.choose(input);
       if (next !== this.state) {
-        for (const n2 of Object.keys(JOINT_LAYOUT)) this.from[n2].copy(this.pose[n2]);
+        for (const n3 of Object.keys(JOINT_LAYOUT)) this.from[n3].copy(this.pose[n3]);
         this.state = next;
         this.blend = 0;
         this.age = 0;
       }
       this.age += 1 / 60;
       this.blend = Math.min(1, this.blend + 1 / (60 * 0.14));
-      const target = this.sample(input), t2 = this.blend * this.blend * (3 - 2 * this.blend);
-      for (const n2 of Object.keys(JOINT_LAYOUT)) {
-        this.previous[n2].copy(this.pose[n2]);
-        this.pose[n2].set(MathUtils.lerp(this.from[n2].x, target[n2].x, t2), MathUtils.lerp(this.from[n2].y, target[n2].y, t2), MathUtils.lerp(this.from[n2].z, target[n2].z, t2));
+      const target = this.sample(input), t3 = this.blend * this.blend * (3 - 2 * this.blend);
+      for (const n3 of Object.keys(JOINT_LAYOUT)) {
+        this.previous[n3].copy(this.pose[n3]);
+        this.pose[n3].set(MathUtils.lerp(this.from[n3].x, target[n3].x, t3), MathUtils.lerp(this.from[n3].y, target[n3].y, t3), MathUtils.lerp(this.from[n3].z, target[n3].z, t3));
       }
       this.previousVertical = input.verticalSpeed;
+      this.previousMotionWeight = this.motionWeight;
+      for (const n3 of Object.keys(JOINT_LAYOUT)) this.previousMotion.rotations[n3].copy(this.blendedMotion.rotations[n3]);
+      this.previousMotion.pelvisY = this.blendedMotion.pelvisY;
+      const motion = this.state === "MeleeCombo3_SpinningKick" ? getMixamoMotion(productionAssets.characters.get("capoeira_ybot"), "armada") : null;
+      this.activeMotion = motion?.name ?? null;
+      this.motionWeight = MathUtils.clamp(this.motionWeight + (motion ? 1 : -1) / (60 * 0.07), 0, 1);
+      if (motion) {
+        motion.sample(MathUtils.lerp(1.05, Math.min(1.5, motion.duration), Math.min(1, this.age / 0.28)), this.motionSample);
+        for (const n3 of Object.keys(JOINT_LAYOUT)) this.blendedMotion.rotations[n3].copy(this.motionSample.rotations[n3]);
+        this.blendedMotion.pelvisY = this.motionSample.pelvisY;
+      }
     }
     const alpha = Math.max(0, this.accumulator * 60);
-    for (const n2 of Object.keys(JOINT_LAYOUT)) {
-      const a2 = new Quaternion().setFromEuler(this.previous[n2]), b2 = new Quaternion().setFromEuler(this.pose[n2]);
-      this.rig.bones[n2].quaternion.copy(a2.slerp(b2, alpha));
+    for (const n3 of Object.keys(JOINT_LAYOUT)) {
+      const a2 = new Quaternion().setFromEuler(this.previous[n3]), b2 = new Quaternion().setFromEuler(this.pose[n3]);
+      this.rig.bones[n3].quaternion.copy(a2.slerp(b2, alpha));
+      const weight = MathUtils.lerp(this.previousMotionWeight, this.motionWeight, alpha);
+      if (weight > 0) {
+        a2.copy(this.previousMotion.rotations[n3]).slerp(this.blendedMotion.rotations[n3], alpha);
+        this.rig.bones[n3].quaternion.slerp(a2, weight);
+      }
     }
     const down = ["DropToKneeStagger", "WallSplatStun", "CounterVictim"].includes(this.state) ? 0.37 : 0;
     this.rig.bones.Pelvis.position.y = (this.state === "DrivingSeated" ? 0.3 : 0.94) - down + Math.sin(this.phase * 2.4) * 0.01;
+    this.rig.bones.Pelvis.position.y = MathUtils.lerp(
+      this.rig.bones.Pelvis.position.y,
+      MathUtils.lerp(this.previousMotion.pelvisY, this.blendedMotion.pelvisY, alpha),
+      MathUtils.lerp(this.previousMotionWeight, this.motionWeight, alpha)
+    );
+    this.rig.weapon.rotation.set(-Math.PI / 2, 0, 0);
+    const aim = MathUtils.clamp(input.aim ?? 0, 0, 1);
+    if (aim > 0 && !this.state.startsWith("Melee") && this.state !== "PairedCounter" && this.state !== "CounterVictim") {
+      this.rig.root.updateWorldMatrix(true, true);
+      this.rig.bones.RightHand.getWorldQuaternion(this.handWorld).invert();
+      this.rig.root.getWorldQuaternion(this.aimWorld);
+      this.aimWorld.multiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), input.aimPitch ?? 0));
+      this.rig.weapon.quaternion.slerp(this.handWorld.multiply(this.aimWorld), aim);
+    }
     this.rig.weapon.visible = this.state !== "DrivingSeated" && !input.reaction?.weaponDropped;
     const flash = (input.reaction?.flashSec ?? 0) > 0;
     this.rig.materials.armor.emissive.setHex(flash ? 16777215 : 0);
@@ -41771,10 +44366,11 @@ var SkeletalAnimator = class {
       p2.RightUpperArm.z = -0.5;
     }
     if (this.state === "PairedCounter" || this.state === "CounterVictim") {
-      const t2 = Math.min(1, (input.pairedElapsed ?? input.reaction?.pairedElapsed ?? this.age) / 0.65), deflect = Math.sin(t2 * Math.PI), slam = Math.max(0, (t2 - 0.45) / 0.55);
+      const elapsed = input.pairedElapsed ?? input.reaction?.pairedElapsed ?? this.age, t3 = Math.min(1, elapsed / PAIRED_DURATION_SEC), deflect = Math.sin(t3 * Math.PI), slam = Math.max(0, Math.min(1, (elapsed - 0.16) / (COUNTER_CONTACT_SEC - 0.16)));
       if (this.state === "PairedCounter") {
         p2.LeftUpperArm.x = -1.5 * deflect;
-        p2.RightUpperArm.x = -1.8 * slam;
+        p2.RightUpperArm.x = 1.6 * slam;
+        p2.RightForearm.x = 0.5 * slam;
         p2.Spine.y = -0.7 * deflect;
         p2.RightThigh.x = -0.7 * slam;
       } else {
@@ -41787,9 +44383,9 @@ var SkeletalAnimator = class {
     const aim = input.aim ?? 0;
     p2.Spine.y += aim * -0.15;
     p2.Chest.x += aim * (input.aimPitch ?? 0);
-    p2.RightUpperArm.x += aim * -1.25;
-    p2.LeftUpperArm.x += aim * -0.95;
-    p2.RightForearm.x += aim * -0.45;
+    p2.RightUpperArm.x = MathUtils.lerp(p2.RightUpperArm.x, 1.05, aim);
+    p2.LeftUpperArm.x = MathUtils.lerp(p2.LeftUpperArm.x, 1.1, aim);
+    p2.RightForearm.x = MathUtils.lerp(p2.RightForearm.x, 0.5, aim);
     p2.Chest.x -= (input.recoil ?? 0) * 0.18;
     const r2 = input.reaction;
     if (r2 && r2.flinchSec > 0) {
@@ -41817,7 +44413,8 @@ var ArticulatedAgentRig = class {
   actionSec = 0;
   combo = 1;
   recoil = 0;
-  productionVisual = null;
+  shotPoseSec = 0;
+  shotPitch = 0;
   disposed = false;
   constructor(callsign, local) {
     this.root.name = `AgentRig_${callsign}`;
@@ -41835,22 +44432,6 @@ var ArticulatedAgentRig = class {
       this.windShearGroup.add(shear);
     }
     this.root.add(this.windShearGroup);
-    const imported = productionAssets.createCharacter(productionAssets.characters.has("agent_cyber") ? "agent_cyber" : local ? "Soldier" : "Xbot");
-    if (imported) {
-      this.productionVisual = new Group();
-      this.productionVisual.name = "ProductionHumanoid";
-      imported.scene.updateMatrixWorld(true);
-      imported.scene.traverse((o2) => {
-        if (o2.isSkinnedMesh) o2.skeleton.update();
-      });
-      const bounds = new Box3().setFromObject(imported.scene), scale = 1.84 / Math.max(1e-3, bounds.max.y - bounds.min.y);
-      imported.scene.scale.multiplyScalar(scale);
-      imported.scene.position.y -= bounds.min.y * scale;
-      this.productionVisual.rotation.y = Math.PI;
-      this.productionVisual.add(imported.scene);
-      this.root.add(this.productionVisual);
-      this.productionVisual.visible = false;
-    }
     this.setCallsign(callsign, local);
   }
   setChassis(chassis) {
@@ -41886,6 +44467,11 @@ var ArticulatedAgentRig = class {
     this.label.scale.set(1.4, 0.35, 1);
     this.root.add(this.label);
   }
+  showShot(pitch) {
+    this.recoil = 1;
+    this.shotPoseSec = 0.16;
+    this.shotPitch = pitch;
+  }
   combat(event) {
     if (event.type === "MELEE_HIT") {
       this.combo = event.comboStep ?? 1;
@@ -41896,6 +44482,7 @@ var ArticulatedAgentRig = class {
   update(position, rotation, velocity, animState, mantleProgress, dt, agilityLevel = 1, options = {}) {
     this.root.position.set(position.x, position.y, position.z);
     this.root.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+    this.shotPoseSec = Math.max(0, this.shotPoseSec - dt);
     this.actionSec = Math.max(0, this.actionSec - dt);
     this.recoil = Math.max(0, this.recoil - dt * 10);
     const dashMaterial = this.dashTrailMesh.material;
@@ -41903,19 +44490,12 @@ var ArticulatedAgentRig = class {
     const speed = Math.hypot(velocity.x, velocity.y, velocity.z);
     for (const o2 of this.windShearGroup.children) o2.material.opacity = speed > 8.5 ? Math.min(0.75, (speed - 8.5) / 14 * (0.35 + agilityLevel * 0.08)) : 0;
     this.windShearGroup.scale.z = 0.6 + (agilityLevel - 1) * 0.3 + Math.min(1.5, speed * 0.06);
-    this.animator.update(dt, { speed: Math.hypot(velocity.x, velocity.z), verticalSpeed: velocity.y, animState: this.actionSec > 0 ? 7 /* MELEE_STRIKE */ : animState, mantleProgress, combo: this.combo, recoil: this.recoil, ...options });
+    this.animator.update(dt, { speed: Math.hypot(velocity.x, velocity.z), verticalSpeed: velocity.y, animState: this.actionSec > 0 ? 7 /* MELEE_STRIKE */ : animState, mantleProgress, combo: this.combo, recoil: this.recoil, ...options, aim: Math.max(options.aim ?? 0, this.shotPoseSec > 0 ? 1 : 0), aimPitch: options.aimPitch ?? this.shotPitch });
   }
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
     this.humanoid.dispose();
-    this.productionVisual?.traverse((o2) => {
-      if (o2.isSkinnedMesh) o2.skeleton.dispose();
-      if (o2 instanceof Mesh) {
-        o2.geometry.dispose();
-        (Array.isArray(o2.material) ? o2.material : [o2.material]).forEach((m2) => m2.dispose());
-      }
-    });
     this.label?.material.map?.dispose();
     this.label?.material.dispose();
     for (const mesh of [this.dashTrailMesh, ...this.windShearGroup.children]) {
@@ -42017,74 +44597,6 @@ var ArticulatedEnemyRigMesh = class {
     }
   }
 };
-var KineticShockwaveEffect = class {
-  mesh;
-  timer = 1;
-  constructor(scene) {
-    this.mesh = new Mesh(new RingGeometry(0.3, 1, 48), new MeshBasicMaterial({ color: 61695, side: DoubleSide, transparent: true, opacity: 0 }));
-    this.mesh.rotation.x = Math.PI / 2;
-    this.mesh.visible = false;
-    scene.add(this.mesh);
-  }
-  trigger(origin) {
-    this.timer = 0;
-    this.mesh.visible = true;
-    this.mesh.position.set(origin.x, origin.y + 0.18, origin.z);
-  }
-  update(dt) {
-    this.timer += dt;
-    const t2 = Math.min(1, this.timer / 0.45);
-    this.mesh.visible = t2 < 1;
-    this.mesh.scale.setScalar(0.3 + t2 * PARRY_SHOCKWAVE_RADIUS_M);
-    this.mesh.material.opacity = (1 - t2) * 0.9;
-  }
-};
-
-// client/builders/builderContract.ts
-var BuilderResourcePool = class {
-  entries = /* @__PURE__ */ new Map();
-  scope() {
-    return new BuilderResourceScope(this);
-  }
-  acquire(key, create) {
-    let entry = this.entries.get(key);
-    if (!entry) {
-      entry = { value: create(), refs: 0 };
-      this.entries.set(key, entry);
-    }
-    entry.refs++;
-    return entry.value;
-  }
-  release(key) {
-    const entry = this.entries.get(key);
-    if (!entry) return;
-    if (--entry.refs === 0) {
-      entry.value.dispose();
-      this.entries.delete(key);
-    }
-  }
-  get size() {
-    return this.entries.size;
-  }
-};
-var BuilderResourceScope = class {
-  constructor(pool) {
-    this.pool = pool;
-  }
-  owned = /* @__PURE__ */ new Map();
-  disposed = false;
-  get(key, create) {
-    if (this.disposed) throw new Error("Builder resource scope has been disposed");
-    if (!this.owned.has(key)) this.owned.set(key, this.pool.acquire(key, create));
-    return this.owned.get(key);
-  }
-  dispose() {
-    if (this.disposed) return;
-    this.disposed = true;
-    for (const key of this.owned.keys()) this.pool.release(key);
-    this.owned.clear();
-  }
-};
 
 // client/builders/RelayBuilder.ts
 var PALETTES = [2415085, 16751669, 8632063, 14898600];
@@ -42118,7 +44630,7 @@ var RelayBuilder = class {
           else fragments.push(mesh.geometry.clone().applyMatrix4(transform));
         }
         const combined = mergeGeometries(fragments, false);
-        fragments.forEach((g2) => g2.dispose());
+        fragments.forEach((g4) => g4.dispose());
         return combined;
       });
       const batch = new Mesh(geometry, material);
@@ -42165,24 +44677,24 @@ var RelayBuilder = class {
     const lattice = new InstancedMesh(unit, steel, plan.boxes.length);
     lattice.name = "TwelveMeterLattice";
     lattice.castShadow = lattice.receiveShadow = true;
-    const pose = new Object3D();
+    const pose2 = new Object3D();
     plan.boxes.forEach((b2, i2) => {
-      pose.position.set(b2.center.x, b2.center.y, b2.center.z);
-      pose.rotation.set(b2.rotation?.x ?? 0, 0, b2.rotation?.z ?? 0);
-      pose.scale.set(b2.halfExtents.x * 2, b2.halfExtents.y * 2, b2.halfExtents.z * 2);
-      pose.updateMatrix();
-      lattice.setMatrixAt(i2, pose.matrix);
+      pose2.position.set(b2.center.x, b2.center.y, b2.center.z);
+      pose2.rotation.set(b2.rotation?.x ?? 0, 0, b2.rotation?.z ?? 0);
+      pose2.scale.set(b2.halfExtents.x * 2, b2.halfExtents.y * 2, b2.halfExtents.z * 2);
+      pose2.updateMatrix();
+      lattice.setMatrixAt(i2, pose2.matrix);
     });
     root.add(lattice);
     const stripes = new InstancedMesh(unit, danger, 24);
     stripes.name = "BunkerHazardStriping";
     for (let face = 0; face < 8; face++) for (let j2 = 0; j2 < 3; j2++) {
       const a2 = (face + 0.5) * Math.PI / 4, tangent = (j2 - 1) * 0.3, radius = RELAY_BASE_RADIUS * Math.cos(Math.PI / 8) + 0.015;
-      pose.position.set(o2.x + Math.sin(a2) * radius + Math.cos(a2) * tangent, 0.24, o2.z + Math.cos(a2) * radius - Math.sin(a2) * tangent);
-      pose.rotation.set(0, a2, -0.38);
-      pose.scale.set(0.13, 0.22, 0.025);
-      pose.updateMatrix();
-      stripes.setMatrixAt(face * 3 + j2, pose.matrix);
+      pose2.position.set(o2.x + Math.sin(a2) * radius + Math.cos(a2) * tangent, 0.24, o2.z + Math.cos(a2) * radius - Math.sin(a2) * tangent);
+      pose2.rotation.set(0, a2, -0.38);
+      pose2.scale.set(0.13, 0.22, 0.025);
+      pose2.updateMatrix();
+      stripes.setMatrixAt(face * 3 + j2, pose2.matrix);
     }
     root.add(stripes);
     const vents = [];
@@ -42203,11 +44715,11 @@ var RelayBuilder = class {
       const slats = new InstancedMesh(unit, concrete, 7);
       slats.name = "CoolingLouverSlats";
       for (let i2 = 0; i2 < 7; i2++) {
-        pose.position.set(0, -0.32 + i2 * 0.106, 0.12);
-        pose.rotation.set(-0.3, 0, 0);
-        pose.scale.set(0.94, 0.055, 0.12);
-        pose.updateMatrix();
-        slats.setMatrixAt(i2, pose.matrix);
+        pose2.position.set(0, -0.32 + i2 * 0.106, 0.12);
+        pose2.rotation.set(-0.3, 0, 0);
+        pose2.scale.set(0.94, 0.055, 0.12);
+        pose2.updateMatrix();
+        slats.setMatrixAt(i2, pose2.matrix);
       }
       louvers.add(slats);
       const coil = new Group();
@@ -42232,11 +44744,11 @@ var RelayBuilder = class {
     const collars = new InstancedMesh(scope.get("relay:collar", () => new TorusGeometry(0.15, 0.04, 5, 10)), steel, 10);
     collars.name = "PlasmaTubeCollars";
     for (let i2 = 0; i2 < 10; i2++) {
-      pose.position.set(o2.x + (i2 % 2 ? 0.3 : -0.3), 2.1 + Math.floor(i2 / 2) * 1.8, o2.z);
-      pose.rotation.set(Math.PI / 2, 0, 0);
-      pose.scale.set(1, 1, 1);
-      pose.updateMatrix();
-      collars.setMatrixAt(i2, pose.matrix);
+      pose2.position.set(o2.x + (i2 % 2 ? 0.3 : -0.3), 2.1 + Math.floor(i2 / 2) * 1.8, o2.z);
+      pose2.rotation.set(Math.PI / 2, 0, 0);
+      pose2.scale.set(1, 1, 1);
+      pose2.updateMatrix();
+      collars.setMatrixAt(i2, pose2.matrix);
     }
     tubes.add(collars);
     const dishes = [], dishGeometry = scope.get("relay:parabolic-dish", () => new LatheGeometry(Array.from({ length: 11 }, (_2, i2) => {
@@ -42248,9 +44760,9 @@ var RelayBuilder = class {
       return m2;
     });
     const rimGeometry = scope.get("relay:dish-rim", () => {
-      const g2 = new TorusGeometry(1, 0.045, 6, 24);
-      g2.rotateX(Math.PI / 2);
-      return g2;
+      const g4 = new TorusGeometry(1, 0.045, 6, 24);
+      g4.rotateX(Math.PI / 2);
+      return g4;
     });
     for (let i2 = 0; i2 < 3; i2++) {
       const pivot = new Group();
@@ -42292,9 +44804,9 @@ var RelayBuilder = class {
     holo.rotation.x = -0.18;
     const ringMaterial = scope.get(`relay:ring:${serial}`, () => new MeshBasicMaterial({ color: PALETTES[plan.districtIndex], transparent: true, opacity: 0.6, side: DoubleSide, depthWrite: false }));
     const ring = mesh("TerminalRing", scope.get("relay:terminal-ring", () => {
-      const g2 = new RingGeometry(1.15, 1.35, 32);
-      g2.rotateX(-Math.PI / 2);
-      return g2;
+      const g4 = new RingGeometry(1.15, 1.35, 32);
+      g4.rotateX(-Math.PI / 2);
+      return g4;
     }), ringMaterial, new Vector3(0, 0.025, 0));
     const conduit = box("EmbeddedDataConduit", [Math.hypot(o2.x, o2.z), 6e-3, 0.045], [o2.x / 2, 8e-3, o2.z / 2], accent);
     conduit.rotation.y = -Math.atan2(o2.z, o2.x);
@@ -42449,7 +44961,7 @@ var RelayBuilder = class {
         (Array.isArray(o2.material) ? o2.material : [o2.material]).forEach((m2) => materials.add(m2));
       }
     });
-    geometries.forEach((g2) => g2.dispose());
+    geometries.forEach((g4) => g4.dispose());
     materials.forEach((m2) => m2.dispose());
   }
 };
@@ -42701,7 +45213,7 @@ var ClientPhase5WorldRenderer = class {
         (Array.isArray(o2.material) ? o2.material : [o2.material]).forEach((m2) => materials.add(m2));
       }
     });
-    geometries.forEach((g2) => g2.dispose());
+    geometries.forEach((g4) => g4.dispose());
     materials.forEach((m2) => m2.dispose());
     root.clear();
   }
@@ -42723,8 +45235,8 @@ function loft(sections) {
     indices.push(a2, b2, c2, a2, c2, d2);
   }
   indices.push(0, 2, 1, 0, 3, 2);
-  const n2 = positions.length / 3 - 4;
-  indices.push(n2, n2 + 1, n2 + 2, n2, n2 + 2, n2 + 3);
+  const n3 = positions.length / 3 - 4;
+  indices.push(n3, n3 + 1, n3 + 2, n3, n3 + 2, n3 + 3);
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
@@ -42732,11 +45244,11 @@ function loft(sections) {
   return geometry;
 }
 function glassQuad(points) {
-  const g2 = new BufferGeometry();
-  g2.setAttribute("position", new Float32BufferAttribute(points, 3));
-  g2.setIndex([0, 2, 1, 0, 3, 2]);
-  g2.computeVertexNormals();
-  return g2;
+  const g4 = new BufferGeometry();
+  g4.setAttribute("position", new Float32BufferAttribute(points, 3));
+  g4.setIndex([0, 2, 1, 0, 3, 2]);
+  g4.computeVertexNormals();
+  return g4;
 }
 var VehicleBuilder = class {
   resources = new BuilderResourcePool();
@@ -42789,7 +45301,7 @@ var VehicleBuilder = class {
     const body = this.material(scope, interceptor ? "ceramic" : "corten", interceptor ? 11781584 : 8475708);
     const steel = this.material(scope, "steel", 2438982), trim = this.material(scope, interceptor ? "cyan" : "amber", interceptor ? 2414591 : 16752936, true);
     const unit = scope.get("vehicle:unit", () => new BoxGeometry(1, 1, 1));
-    const add = (name, geometry, material, position, scale) => {
+    const add2 = (name, geometry, material, position, scale) => {
       const mesh = new Mesh(geometry, material);
       mesh.name = name;
       mesh.position.set(...position);
@@ -42800,20 +45312,20 @@ var VehicleBuilder = class {
     };
     if (id === 0 /* HOOD */ || id === 3 /* TRUNK */) {
       const s2 = VEHICLE_PANELS[id];
-      add("SculptedPanelSkin", scope.get(`vehicle:panel:${id}`, () => loft([
+      add2("SculptedPanelSkin", scope.get(`vehicle:panel:${id}`, () => loft([
         { z: -s2.halfExtents.z, width: s2.halfExtents.x * 0.88, bottom: -s2.halfExtents.y, top: s2.halfExtents.y * 0.4 },
         { z: s2.halfExtents.z, width: s2.halfExtents.x, bottom: -s2.halfExtents.y, top: s2.halfExtents.y }
       ])), body, [0, 0, 0]);
-      for (const side of [-1, 1]) add("PanelReinforcementRail", unit, steel, [side * 0.55, -0.07, 0], [0.08, 0.035, s2.halfExtents.z * 1.5]);
-      add("PanelChargeStrip", unit, trim, [0, s2.halfExtents.y + 5e-3, 0.05], [0.055, 0.015, s2.halfExtents.z * 1.3]);
+      for (const side of [-1, 1]) add2("PanelReinforcementRail", unit, steel, [side * 0.55, -0.07, 0], [0.08, 0.035, s2.halfExtents.z * 1.5]);
+      add2("PanelChargeStrip", unit, trim, [0, s2.halfExtents.y + 5e-3, 0.05], [0.055, 0.015, s2.halfExtents.z * 1.3]);
     } else {
-      add("DoorCeramicSkin", unit, body, [0, -0.18, 0], [0.105, 0.44, 1.3]);
+      add2("DoorCeramicSkin", unit, body, [0, -0.18, 0], [0.105, 0.44, 1.3]);
       const glass = this.material(scope, "door-glass", 1522770);
-      add("DoorWindow", unit, glass, [0, 0.2, -0.02], [0.075, 0.3, 1.15]);
-      for (const z2 of [-0.64, 0.64]) add("DoorPillar", unit, steel, [0, 0.19, z2], [0.11, 0.42, 0.06]);
-      add("DoorWindowHeader", unit, steel, [0, 0.38, 0], [0.12, 0.045, 1.34]);
-      add("DoorHandle", unit, steel, [id === 1 /* LEFT_DOOR */ ? -0.07 : 0.07, 0.01, 0.36], [0.045, 0.035, 0.22]);
-      add("DoorPoweredTrim", unit, trim, [id === 1 /* LEFT_DOOR */ ? -0.057 : 0.057, -0.12, 0], [0.018, 0.035, 1.1]);
+      add2("DoorWindow", unit, glass, [0, 0.2, -0.02], [0.075, 0.3, 1.15]);
+      for (const z2 of [-0.64, 0.64]) add2("DoorPillar", unit, steel, [0, 0.19, z2], [0.11, 0.42, 0.06]);
+      add2("DoorWindowHeader", unit, steel, [0, 0.38, 0], [0.12, 0.045, 1.34]);
+      add2("DoorHandle", unit, steel, [id === 1 /* LEFT_DOOR */ ? -0.07 : 0.07, 0.01, 0.36], [0.045, 0.035, 0.22]);
+      add2("DoorPoweredTrim", unit, trim, [id === 1 /* LEFT_DOOR */ ? -0.057 : 0.057, -0.12, 0], [0.018, 0.035, 1.1]);
     }
     this.batchStaticDetails(group);
     return group;
@@ -42881,7 +45393,7 @@ var VehicleBuilder = class {
     const headlight = this.material(scope, "headlights", 12185087, true), brake = this.material(scope, `brake:${instanceId}`, 16719931, true);
     const unit = scope.get("vehicle:unit", () => new BoxGeometry(1, 1, 1));
     const materials = /* @__PURE__ */ new Set(), anchors = /* @__PURE__ */ new Map(), animatedParts = /* @__PURE__ */ new Map(), panels = /* @__PURE__ */ new Map();
-    const add = (name, geometry, material, position, parent = root) => {
+    const add2 = (name, geometry, material, position, parent = root) => {
       const mesh = new Mesh(geometry, material);
       mesh.name = name;
       mesh.position.set(...position);
@@ -42890,7 +45402,7 @@ var VehicleBuilder = class {
       return mesh;
     };
     const box = (name, size, position, material, parent = root) => {
-      const mesh = add(name, unit, material, position, parent);
+      const mesh = add2(name, unit, material, position, parent);
       mesh.scale.set(...size);
       return mesh;
     };
@@ -42906,8 +45418,8 @@ var VehicleBuilder = class {
       { z: 1.95, width: 1, bottom: -0.22, top: 0.2 },
       { z: 2.3, width: 0.91, bottom: -0.2, top: 0.05 }
     ]));
-    add("SculptedChassis", hull, body, [0, 0, 0]);
-    const wreck = add("ScorchedChassis", hull, this.material(scope, "wreck", 2369061), [0, 0, 0]);
+    add2("SculptedChassis", hull, body, [0, 0, 0]);
+    const wreck = add2("ScorchedChassis", hull, this.material(scope, "wreck", 2369061), [0, 0, 0]);
     wreck.scale.setScalar(1.004);
     wreck.visible = false;
     box("CabinFloor", [1.7, 0.12, 1.5], [0, -0.18, 0.05], steel);
@@ -42917,8 +45429,8 @@ var VehicleBuilder = class {
     }
     box("Dashboard", [1.6, 0.16, 0.18], [0, 0.35, -0.65], steel);
     box("CabinRoof", [1.46, 0.11, 0.95], [0, 0.86, 0.1], body);
-    add("AngledWindshield", scope.get("vehicle:windshield", () => glassQuad([-0.88, 0.35, -0.83, 0.88, 0.35, -0.83, 0.72, 0.82, -0.37, -0.72, 0.82, -0.37])), glass, [0, 0, 0]);
-    add("RearFastbackGlass", scope.get("vehicle:rear-window", () => glassQuad([0.72, 0.82, 0.57, 0.88, 0.32, 1.2, -0.88, 0.32, 1.2, -0.72, 0.82, 0.57])), glass, [0, 0, 0]);
+    add2("AngledWindshield", scope.get("vehicle:windshield", () => glassQuad([-0.88, 0.35, -0.83, 0.88, 0.35, -0.83, 0.72, 0.82, -0.37, -0.72, 0.82, -0.37])), glass, [0, 0, 0]);
+    add2("RearFastbackGlass", scope.get("vehicle:rear-window", () => glassQuad([0.72, 0.82, 0.57, 0.88, 0.32, 1.2, -0.88, 0.32, 1.2, -0.72, 0.82, 0.57])), glass, [0, 0, 0]);
     const strut = (name, from, to, width, material) => {
       const midpoint = from.clone().add(to).multiplyScalar(0.5), delta = to.clone().sub(from);
       const part = box(name, [width, delta.length(), width], [midpoint.x, midpoint.y, midpoint.z], material);
@@ -42959,19 +45471,19 @@ var VehicleBuilder = class {
     engineBay.visible = false;
     const wheels = [];
     const tire = scope.get("vehicle:tire", () => {
-      const g2 = new CylinderGeometry(VEHICLE_WHEEL_RADIUS_M, VEHICLE_WHEEL_RADIUS_M, 0.28, 24);
-      g2.rotateZ(Math.PI / 2);
-      return g2;
+      const g4 = new CylinderGeometry(VEHICLE_WHEEL_RADIUS_M, VEHICLE_WHEEL_RADIUS_M, 0.28, 24);
+      g4.rotateZ(Math.PI / 2);
+      return g4;
     });
     const rim = scope.get("vehicle:rim", () => {
-      const g2 = new TorusGeometry(0.25, 0.035, 6, 20);
-      g2.rotateY(Math.PI / 2);
-      return g2;
+      const g4 = new TorusGeometry(0.25, 0.035, 6, 20);
+      g4.rotateY(Math.PI / 2);
+      return g4;
     });
     const arch = scope.get("vehicle:arch", () => {
-      const g2 = new TorusGeometry(0.445, 0.055, 6, 24, Math.PI);
-      g2.rotateY(Math.PI / 2);
-      return g2;
+      const g4 = new TorusGeometry(0.445, 0.055, 6, 24, Math.PI);
+      g4.rotateY(Math.PI / 2);
+      return g4;
     });
     for (const mount of VEHICLE_WHEEL_MOUNTS) {
       const suspension = new Group();
@@ -42984,41 +45496,41 @@ var VehicleBuilder = class {
       const axle = new Group();
       axle.name = `Axle${mount.name}`;
       steering.add(axle);
-      add("TreadedTire", tire, rubber, [0, 0, 0], axle);
+      add2("TreadedTire", tire, rubber, [0, 0, 0], axle);
       const side = Math.sign(mount.offset.x);
-      add("AlloyRim", rim, alloy, [side * 0.145, 0, 0], axle);
-      const spokes = new InstancedMesh(unit, alloy, 5), pose = new Object3D();
+      add2("AlloyRim", rim, alloy, [side * 0.145, 0, 0], axle);
+      const spokes = new InstancedMesh(unit, alloy, 5), pose2 = new Object3D();
       spokes.name = "AlloyRimSpokes";
       for (let i2 = 0; i2 < 5; i2++) {
         const angle = i2 * Math.PI * 2 / 5;
-        pose.position.set(side * 0.16, Math.cos(angle) * 0.12, Math.sin(angle) * 0.12);
-        pose.rotation.x = angle;
-        pose.scale.set(0.035, 0.24, 0.035);
-        pose.updateMatrix();
-        spokes.setMatrixAt(i2, pose.matrix);
+        pose2.position.set(side * 0.16, Math.cos(angle) * 0.12, Math.sin(angle) * 0.12);
+        pose2.rotation.x = angle;
+        pose2.scale.set(0.035, 0.24, 0.035);
+        pose2.updateMatrix();
+        spokes.setMatrixAt(i2, pose2.matrix);
       }
       axle.add(spokes);
       const tread = new InstancedMesh(unit, steel, 24);
       tread.name = "IndependentTireTread";
       for (let i2 = 0; i2 < 24; i2++) {
         const angle = i2 * Math.PI / 12;
-        pose.position.set(0, Math.cos(angle) * 0.378, Math.sin(angle) * 0.378);
-        pose.rotation.x = angle;
-        pose.scale.set(0.255, 0.016, 0.045);
-        pose.updateMatrix();
-        tread.setMatrixAt(i2, pose.matrix);
+        pose2.position.set(0, Math.cos(angle) * 0.378, Math.sin(angle) * 0.378);
+        pose2.rotation.x = angle;
+        pose2.scale.set(0.255, 0.016, 0.045);
+        pose2.updateMatrix();
+        tread.setMatrixAt(i2, pose2.matrix);
       }
       axle.add(tread);
       box("StationaryBrakeCaliper", [0.09, 0.15, 0.12], [side * 0.17, 0.13, 0.14], brake, steering);
-      add(`WheelWell${mount.name}`, arch, body, [side * 1.025, -0.45, mount.offset.z]);
+      add2(`WheelWell${mount.name}`, arch, body, [side * 1.025, -0.45, mount.offset.z]);
       wheels.push({ suspension, steering, axle });
       anchors.set(suspension.name, suspension);
       animatedParts.set(axle.name, axle);
     }
-    const thruster = add("WallThrusterPlume", scope.get("vehicle:thruster", () => {
-      const g2 = new ConeGeometry(0.65, 1.2, 12);
-      g2.rotateX(Math.PI);
-      return g2;
+    const thruster = add2("WallThrusterPlume", scope.get("vehicle:thruster", () => {
+      const g4 = new ConeGeometry(0.65, 1.2, 12);
+      g4.rotateX(Math.PI);
+      return g4;
     }), trim, [0, -0.85, 0]);
     thruster.visible = false;
     this.batchStaticDetails(root);
@@ -43162,7 +45674,7 @@ var VehicleBuilder = class {
         (Array.isArray(o2.material) ? o2.material : [o2.material]).forEach((m2) => materials.add(m2));
       }
     });
-    geometries.forEach((g2) => g2.dispose());
+    geometries.forEach((g4) => g4.dispose());
     materials.forEach((m2) => m2.dispose());
   }
 };
@@ -43203,8 +45715,8 @@ var ClientVehiclePropRenderer = class {
   }
   buildPrototypeRelicMeshes() {
     for (const spec of PROTOTYPE_RELIC_SPECS) {
-      const g2 = new Group();
-      g2.position.set(spec.position.x, spec.position.y, spec.position.z);
+      const g4 = new Group();
+      g4.position.set(spec.position.x, spec.position.y, spec.position.z);
       const coreGeo = new OctahedronGeometry(0.65, 1);
       const coreMat = new MeshStandardMaterial({
         color: spec.colorHex,
@@ -43215,7 +45727,7 @@ var ClientVehiclePropRenderer = class {
       });
       const coreMesh = new Mesh(coreGeo, coreMat);
       coreMesh.name = "relicCore";
-      g2.add(coreMesh);
+      g4.add(coreMesh);
       const ringGeo = new TorusGeometry(0.95, 0.06, 8, 24);
       const ringMat = new MeshBasicMaterial({
         color: 16777215,
@@ -43223,7 +45735,7 @@ var ClientVehiclePropRenderer = class {
       });
       const ringMesh = new Mesh(ringGeo, ringMat);
       ringMesh.name = "relicRing";
-      g2.add(ringMesh);
+      g4.add(ringMesh);
       const beamGeo = new CylinderGeometry(0.12, 0.35, 36, 8, 1, true);
       const beamMat = new MeshBasicMaterial({
         color: spec.colorHex,
@@ -43233,16 +45745,16 @@ var ClientVehiclePropRenderer = class {
       });
       const beamMesh = new Mesh(beamGeo, beamMat);
       beamMesh.position.y = 18;
-      g2.add(beamMesh);
-      this.relicGroups.set(spec.id, g2);
-      this.rootGroup.add(g2);
+      g4.add(beamMesh);
+      this.relicGroups.set(spec.id, g4);
+      this.rootGroup.add(g4);
     }
   }
   createVehicleMesh(isInterceptor) {
     return this.vehicleBuilder.build(isInterceptor);
   }
   createPropMesh(propType) {
-    const g2 = new Group();
+    const g4 = new Group();
     let mesh;
     if (propType === 0 /* CRYO_BARREL */) {
       const geo = new CylinderGeometry(0.38, 0.38, 1.1, 14);
@@ -43290,23 +45802,23 @@ var ClientVehiclePropRenderer = class {
     }
     mesh.castShadow = true;
     mesh.receiveShadow = true;
-    g2.add(mesh);
+    g4.add(mesh);
     const bounds = new Box3().setFromObject(mesh), size = bounds.getSize(new Vector3());
     const hardware = new MeshStandardMaterial({ color: 2569793, roughness: 0.6, metalness: 0.75 });
     const power = new MeshStandardMaterial({ color: 6612978, emissive: 3321795, emissiveIntensity: 0.8 });
     for (const x2 of [-1, 1]) {
       const rib = new Mesh(new BoxGeometry(0.06, size.y * 0.9, size.z * 0.95), hardware);
       rib.position.x = x2 * size.x * 0.35;
-      g2.add(rib);
+      g4.add(rib);
     }
     const lid = new Mesh(new BoxGeometry(size.x * 0.94, 0.08, size.z * 0.94), hardware);
     lid.position.y = size.y / 2;
-    g2.add(lid);
+    g4.add(lid);
     const panel = new Mesh(new BoxGeometry(size.x * 0.35, 0.08, 0.03), power);
     panel.position.set(0, size.y * 0.15, -size.z / 2 - 0.02);
-    g2.add(panel);
-    g2.userData.entityKind = "prop";
-    return g2;
+    g4.add(panel);
+    g4.userData.entityKind = "prop";
+    return g4;
   }
   updateFromSnapshots(vehicles, props, unlockedRelics, grappleActive, agentPosition, grappleAnchor, timeSec, damage) {
     const dt = this.lastVehicleTime ? Math.min(0.1, Math.max(0, timeSec - this.lastVehicleTime)) : 0;
@@ -43396,7 +45908,7 @@ var ClientVehiclePropRenderer = class {
         (Array.isArray(o2.material) ? o2.material : [o2.material]).forEach((m2) => materials.add(m2));
       }
     });
-    geometries.forEach((g2) => g2.dispose());
+    geometries.forEach((g4) => g4.dispose());
     materials.forEach((m2) => {
       if (m2 instanceof MeshStandardMaterial) productionAssets.releaseMaterial(m2);
       m2.dispose();
@@ -43413,27 +45925,27 @@ var VEHICLE_DAMAGE_PACKET = 9;
 var VEHICLE_DAMAGE_HEADER_BYTES = 12;
 var VEHICLE_DAMAGE_RECORD_BYTES = 24;
 var VEHICLE_DEBRIS_RECORD_BYTES = 56;
-var uint = (n2, max) => Number.isInteger(n2) && n2 >= 0 && n2 <= max;
-function valid(packet) {
-  if (!uint(packet.serverTick, 4294967295) || packet.vehicles.length > 256 || packet.debris.length > MAX_VEHICLE_DEBRIS) return false;
+var uint2 = (n3, max) => Number.isInteger(n3) && n3 >= 0 && n3 <= max;
+function valid2(packet) {
+  if (!uint2(packet.serverTick, 4294967295) || packet.vehicles.length > 256 || packet.debris.length > MAX_VEHICLE_DEBRIS) return false;
   const vehicles = /* @__PURE__ */ new Set(), ids = /* @__PURE__ */ new Set();
   for (const v2 of packet.vehicles) {
     if (typeof v2.destroyed !== "boolean" || typeof v2.braking !== "boolean") return false;
-    if (!uint(v2.vehicleId, 65535) || v2.vehicleId === 0 || vehicles.has(v2.vehicleId) || !uint(v2.generation, 65535) || v2.generation === 0 || !uint(v2.detachedMask, 15) || ![v2.hp, v2.maxHp, v2.respawnSec, v2.wheelAngle].every(Number.isFinite) || v2.maxHp <= 0 || v2.hp < 0 || v2.hp > v2.maxHp || v2.respawnSec < 0 || v2.respawnSec > 60 || v2.destroyed !== (v2.hp === 0)) return false;
+    if (!uint2(v2.vehicleId, 65535) || v2.vehicleId === 0 || vehicles.has(v2.vehicleId) || !uint2(v2.generation, 65535) || v2.generation === 0 || !uint2(v2.detachedMask, 15) || ![v2.hp, v2.maxHp, v2.respawnSec, v2.wheelAngle].every(Number.isFinite) || v2.maxHp <= 0 || v2.hp < 0 || v2.hp > v2.maxHp || v2.respawnSec < 0 || v2.respawnSec > 60 || v2.destroyed !== (v2.hp === 0)) return false;
     vehicles.add(v2.vehicleId);
   }
   for (const d2 of packet.debris) {
     if (typeof d2.isInterceptor !== "boolean") return false;
     const v2 = packet.vehicles.find((v3) => v3.vehicleId === d2.vehicleId);
     const qLen = Math.hypot(d2.rotation.x, d2.rotation.y, d2.rotation.z, d2.rotation.w);
-    if (!uint(d2.id, 4294967295) || d2.id === 0 || ids.has(d2.id) || !v2 || v2.generation !== d2.generation || !uint(d2.panelId, 3) || !(v2.detachedMask & 1 << d2.panelId) || ![d2.ageSec, d2.position.x, d2.position.y, d2.position.z, d2.rotation.x, d2.rotation.y, d2.rotation.z, d2.rotation.w, d2.velocity.x, d2.velocity.y, d2.velocity.z].every(Number.isFinite) || d2.ageSec < 0 || d2.ageSec > 60 || qLen < 0.98 || qLen > 1.02) return false;
+    if (!uint2(d2.id, 4294967295) || d2.id === 0 || ids.has(d2.id) || !v2 || v2.generation !== d2.generation || !uint2(d2.panelId, 3) || !(v2.detachedMask & 1 << d2.panelId) || ![d2.ageSec, d2.position.x, d2.position.y, d2.position.z, d2.rotation.x, d2.rotation.y, d2.rotation.z, d2.rotation.w, d2.velocity.x, d2.velocity.y, d2.velocity.z].every(Number.isFinite) || d2.ageSec < 0 || d2.ageSec > 60 || qLen < 0.98 || qLen > 1.02) return false;
     ids.add(d2.id);
   }
   return true;
 }
 function decodeVehicleDamage(buffer, byteOffset = 0, byteLength) {
   const length = byteLength ?? buffer.byteLength - byteOffset;
-  if (!uint(byteOffset, buffer.byteLength) || !uint(length, buffer.byteLength - byteOffset) || length < VEHICLE_DAMAGE_HEADER_BYTES) return null;
+  if (!uint2(byteOffset, buffer.byteLength) || !uint2(length, buffer.byteLength - byteOffset) || length < VEHICLE_DAMAGE_HEADER_BYTES) return null;
   const v2 = new DataView(buffer, byteOffset, length);
   if (v2.getUint8(0) !== VEHICLE_DAMAGE_PACKET || v2.getUint8(1) !== 1 || v2.getUint16(6, true) !== 0) return null;
   const count = v2.getUint16(2, true), debrisCount = v2.getUint16(4, true);
@@ -43445,23 +45957,23 @@ function decodeVehicleDamage(buffer, byteOffset = 0, byteLength) {
     packet.vehicles.push({ vehicleId: v2.getUint16(b2, true), generation: v2.getUint16(b2 + 2, true), hp: v2.getFloat32(b2 + 4, true), maxHp: v2.getFloat32(b2 + 8, true), detachedMask: v2.getUint8(b2 + 12), destroyed: !!(flags & 1), braking: !!(flags & 2), respawnSec: v2.getFloat32(b2 + 16, true), wheelAngle: v2.getFloat32(b2 + 20, true) });
   }
   for (let i2 = 0; i2 < debrisCount; i2++) {
-    const b2 = VEHICLE_DAMAGE_HEADER_BYTES + count * VEHICLE_DAMAGE_RECORD_BYTES + i2 * VEHICLE_DEBRIS_RECORD_BYTES, n2 = Array.from({ length: 11 }, (_2, j2) => v2.getFloat32(b2 + 12 + j2 * 4, true));
+    const b2 = VEHICLE_DAMAGE_HEADER_BYTES + count * VEHICLE_DAMAGE_RECORD_BYTES + i2 * VEHICLE_DEBRIS_RECORD_BYTES, n3 = Array.from({ length: 11 }, (_2, j2) => v2.getFloat32(b2 + 12 + j2 * 4, true));
     if (v2.getUint8(b2 + 9) > 1 || v2.getUint16(b2 + 10, true) !== 0) return null;
-    packet.debris.push({ id: v2.getUint32(b2, true), vehicleId: v2.getUint16(b2 + 4, true), generation: v2.getUint16(b2 + 6, true), panelId: v2.getUint8(b2 + 8), isInterceptor: !!v2.getUint8(b2 + 9), ageSec: n2[0], position: { x: n2[1], y: n2[2], z: n2[3] }, rotation: { x: n2[4], y: n2[5], z: n2[6], w: n2[7] }, velocity: { x: n2[8], y: n2[9], z: n2[10] } });
+    packet.debris.push({ id: v2.getUint32(b2, true), vehicleId: v2.getUint16(b2 + 4, true), generation: v2.getUint16(b2 + 6, true), panelId: v2.getUint8(b2 + 8), isInterceptor: !!v2.getUint8(b2 + 9), ageSec: n3[0], position: { x: n3[1], y: n3[2], z: n3[3] }, rotation: { x: n3[4], y: n3[5], z: n3[6], w: n3[7] }, velocity: { x: n3[8], y: n3[9], z: n3[10] } });
   }
-  return valid(packet) ? packet : null;
+  return valid2(packet) ? packet : null;
 }
 
 // shared/protocol/relayProtocol.ts
 var RELAY_PACKET = 10;
 var RELAY_HEADER_BYTES = 8;
 var RELAY_RECORD_BYTES = 28;
-var uint2 = (n2, max) => Number.isInteger(n2) && n2 >= 0 && n2 <= max;
-function valid2(p2) {
-  if (!uint2(p2.serverTick, 4294967295) || p2.relays.length > 64) return false;
+var uint3 = (n3, max) => Number.isInteger(n3) && n3 >= 0 && n3 <= max;
+function valid3(p2) {
+  if (!uint3(p2.serverTick, 4294967295) || p2.relays.length > 64) return false;
   const ids = /* @__PURE__ */ new Set();
   for (const s2 of p2.relays) {
-    if (!uint2(s2.relayId, 65535) || !s2.relayId || ids.has(s2.relayId) || !uint2(s2.generation, 65535) || !s2.generation || !uint2(s2.mode, 3) || typeof s2.hacked !== "boolean" || s2.hacked !== (s2.mode === 3 /* HACKED */) || s2.ventHp.length !== 3 || ![s2.heat, s2.rebootSec, ...s2.ventHp].every(Number.isFinite) || s2.heat < 0 || s2.heat > 1 || s2.rebootSec < 0 || s2.rebootSec > RELAY_REBOOT_SEC || s2.ventHp.some((hp) => hp < 0 || hp > RELAY_VENT_MAX_HP) || (s2.mode === 2 /* SHUTDOWN */ ? s2.heat !== 1 : s2.rebootSec !== 0)) return false;
+    if (!uint3(s2.relayId, 65535) || !s2.relayId || ids.has(s2.relayId) || !uint3(s2.generation, 65535) || !s2.generation || !uint3(s2.mode, 3) || typeof s2.hacked !== "boolean" || s2.hacked !== (s2.mode === 3 /* HACKED */) || s2.ventHp.length !== 3 || ![s2.heat, s2.rebootSec, ...s2.ventHp].every(Number.isFinite) || s2.heat < 0 || s2.heat > 1 || s2.rebootSec < 0 || s2.rebootSec > RELAY_REBOOT_SEC || s2.ventHp.some((hp) => hp < 0 || hp > RELAY_VENT_MAX_HP) || (s2.mode === 2 /* SHUTDOWN */ ? s2.heat !== 1 : s2.rebootSec !== 0)) return false;
     if (!s2.hacked && (s2.mode === 0 /* ONLINE */ && (s2.heat !== 0 || s2.ventHp.some((hp) => hp === 0)) || s2.mode !== 0 /* ONLINE */ && !s2.ventHp.some((hp) => hp === 0))) return false;
     ids.add(s2.relayId);
   }
@@ -43469,7 +45981,7 @@ function valid2(p2) {
 }
 function decodeRelays(buffer, byteOffset = 0, byteLength) {
   const length = byteLength ?? buffer.byteLength - byteOffset;
-  if (!uint2(byteOffset, buffer.byteLength) || !uint2(length, buffer.byteLength - byteOffset) || length < RELAY_HEADER_BYTES) return null;
+  if (!uint3(byteOffset, buffer.byteLength) || !uint3(length, buffer.byteLength - byteOffset) || length < RELAY_HEADER_BYTES) return null;
   const v2 = new DataView(buffer, byteOffset, length), count = v2.getUint16(2, true);
   if (v2.getUint8(0) !== RELAY_PACKET || v2.getUint8(1) !== 1 || count > 64 || length !== RELAY_HEADER_BYTES + count * RELAY_RECORD_BYTES) return null;
   const p2 = { serverTick: v2.getUint32(4, true), relays: [] };
@@ -43486,7 +45998,7 @@ function decodeRelays(buffer, byteOffset = 0, byteLength) {
       ventHp: [v2.getFloat32(b2 + 16, true), v2.getFloat32(b2 + 20, true), v2.getFloat32(b2 + 24, true)]
     });
   }
-  return valid2(p2) ? p2 : null;
+  return valid3(p2) ? p2 : null;
 }
 
 // shared/world/orbSystem.ts
@@ -43635,6 +46147,7 @@ function generateNeoVeridiaOrbs() {
 var PredictionAndInterpolationManager = class {
   constructor(physicsWorld) {
     this.physicsWorld = physicsWorld;
+    this.physicsWorld.effects.enabled = false;
     this.physicsWorld.vehiclePropManager.authoritativeDamage = false;
     this.physicsWorld.relaySystem.authoritative = false;
     for (const o2 of this.orbs) {
@@ -43658,6 +46171,8 @@ var PredictionAndInterpolationManager = class {
   districtLoopSnapshots = [];
   auditorAirshipSnapshots = [];
   onOrbCollectedCallback = null;
+  onEffects = null;
+  onPresentationReset = null;
   onCombatEventCallback = null;
   onRelicCollectedCallback = null;
   onPhase5EventCallback = null;
@@ -43670,6 +46185,11 @@ var PredictionAndInterpolationManager = class {
   lastPositionErrorMeters = 0;
   ws = null;
   connected = false;
+  mode = "shared";
+  campaignJoin = null;
+  campaignPresentation = null;
+  soloState = null;
+  onSoloState = null;
   playerStatus = null;
   phase6Snapshot = null;
   onConnectionChanged = null;
@@ -43686,6 +46206,11 @@ var PredictionAndInterpolationManager = class {
     socket.binaryType = "arraybuffer";
     this.ws = socket;
     this.connected = false;
+    this.soloState = null;
+    this.playerStatus = null;
+    this.phase6Snapshot = null;
+    this.districtLoopSnapshots = [];
+    this.onPresentationReset?.();
     let authFailed = false;
     const connectTimeout = setTimeout(() => {
       if (!this.connected && this.ws === socket) socket.close();
@@ -43695,6 +46220,7 @@ var PredictionAndInterpolationManager = class {
       socket.send(
         JSON.stringify({
           type: "AUTH",
+          ...this.campaignJoin,
           callsign,
           pin
         })
@@ -43703,6 +46229,11 @@ var PredictionAndInterpolationManager = class {
     socket.onmessage = (event) => {
       if (this.ws !== socket) return;
       if (event.data instanceof ArrayBuffer) {
+        const effects = decodeEffects(event.data);
+        if (effects) {
+          this.onEffects?.(effects);
+          return;
+        }
         const snapshot = decodeWorldSnapshot(event.data);
         if (snapshot) {
           this.onWorldSnapshot(snapshot);
@@ -43800,6 +46331,8 @@ var PredictionAndInterpolationManager = class {
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === "AUTH_OK") {
+            this.mode = msg.mode === "solo" || msg.mode === "campaign" ? msg.mode : "shared";
+            this.campaignPresentation = this.mode !== "shared" && msg.presentation ? parseCampaignPresentation(msg.presentation) : null;
             clearTimeout(connectTimeout);
             for (const id of [...this.physicsWorld.agents.keys()]) this.physicsWorld.removeAgent(id);
             this.ringBuffer.fill(null);
@@ -43838,6 +46371,28 @@ var PredictionAndInterpolationManager = class {
             );
             onAuthenticated(this.localEntityId, this.localCallsign, attributes);
             this.onConnectionChanged?.("connected", "Connected");
+          } else if (msg.type === "SOLO_STATE" && this.mode === "solo" || msg.type === "CAMPAIGN_STATE" && this.mode === "campaign") {
+            const pauseChanged = this.soloState?.paused !== Boolean(msg.paused);
+            this.soloState = {
+              owner: msg.owner,
+              role: msg.role,
+              inviteCode: msg.inviteCode,
+              members: msg.members,
+              paused: Boolean(msg.paused),
+              saveError: Boolean(msg.saveError),
+              recap: String(msg.recap ?? ""),
+              revision: Number(msg.revision),
+              savedAt: Number(msg.savedAt),
+              checkpoint: String(msg.checkpoint)
+            };
+            if (pauseChanged) this.ringBuffer.fill(null);
+            this.onSoloState?.();
+          } else if (msg.type === "SOLO_PRESENTATION_ERROR") {
+            this.onNotice?.(String(msg.error));
+          } else if (msg.type === "SOLO_LEFT" && this.mode === "solo" || msg.type === "CAMPAIGN_LEFT" && this.mode === "campaign") {
+            authFailed = true;
+            this.connected = false;
+            window.location.reload();
           } else if (msg.type === "PLAYER_STATE") {
             this.playerStatus = msg;
             const agent = this.getLocalAgent();
@@ -43951,6 +46506,7 @@ var PredictionAndInterpolationManager = class {
       this.onConnectionChanged?.("connecting", "Unable to reach the server. Retrying\u2026");
     };
     socket.onclose = (event) => {
+      if (this.ws === socket) this.onPresentationReset?.();
       clearTimeout(connectTimeout);
       if (this.ws !== socket) return;
       this.connected = false;
@@ -43975,6 +46531,7 @@ var PredictionAndInterpolationManager = class {
    * Steps local prediction at 60Hz, writes into the 128-tick ring buffer, and sends binary packet
    */
   recordAndSendInput(moveX, moveZ, yaw, pitch, buttons) {
+    if (this.mode !== "shared" && this.soloState?.paused) return;
     const localAgent = this.getLocalAgent();
     if (!localAgent) return;
     this.currentSeq += 1;
@@ -44173,6 +46730,508 @@ var PredictionAndInterpolationManager = class {
       });
     }
     return result;
+  }
+};
+
+// client/shaders/worldSurface.ts
+function triplanarPBR(material, metresPerTile = 4) {
+  if (material.userData.worldTile) {
+    material.userData.worldTile.value = metresPerTile;
+    return;
+  }
+  const tile = { value: metresPerTile };
+  material.userData.worldTile = tile;
+  const previous = material.onBeforeCompile, key = material.customProgramCacheKey.bind(material);
+  material.customProgramCacheKey = () => `${key()}|world-triplanar-v1`;
+  material.onBeforeCompile = (shader, renderer) => {
+    previous.call(material, shader, renderer);
+    shader.uniforms.worldTile = tile;
+    shader.vertexShader = "varying vec3 surfaceWorld;\n" + shader.vertexShader;
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <project_vertex>",
+      `
+      #include <project_vertex>
+      vec4 surfacePosition = vec4(transformed, 1.0);
+      #ifdef USE_BATCHING
+        surfacePosition = batchingMatrix * surfacePosition;
+      #endif
+      #ifdef USE_INSTANCING
+        surfacePosition = instanceMatrix * surfacePosition;
+      #endif
+      surfaceWorld = (modelMatrix * surfacePosition).xyz;`
+    );
+    shader.fragmentShader = `varying vec3 surfaceWorld;
+      uniform float worldTile;
+      vec3 triWeight;
+      vec3 triNormal;
+      vec4 triSample(sampler2D tex) {
+        vec3 p = surfaceWorld / worldTile;
+        return texture2D(tex, p.zy * vec2(sign(triNormal.x), 1.0)) * triWeight.x
+          + texture2D(tex, p.xz * vec2(sign(triNormal.y), 1.0)) * triWeight.y
+          + texture2D(tex, p.xy * vec2(-sign(triNormal.z), 1.0)) * triWeight.z;
+      }
+      ` + shader.fragmentShader;
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <map_fragment>",
+      `
+      triNormal = normalize(cross(dFdx(surfaceWorld), dFdy(surfaceWorld)));
+      triWeight = pow(abs(triNormal), vec3(4.0)); triWeight /= max(dot(triWeight, vec3(1.0)), 0.00001);
+      #ifdef USE_MAP
+        diffuseColor *= triSample(map);
+      #endif`
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <roughnessmap_fragment>",
+      `
+      float roughnessFactor = roughness;
+      #ifdef USE_ROUGHNESSMAP
+        roughnessFactor *= triSample(roughnessMap).g;
+      #endif`
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <metalnessmap_fragment>",
+      `
+      float metalnessFactor = metalness;
+      #ifdef USE_METALNESSMAP
+        metalnessFactor *= triSample(metalnessMap).b;
+      #endif`
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <emissivemap_fragment>",
+      `
+      #ifdef USE_EMISSIVEMAP
+        totalEmissiveRadiance *= triSample(emissiveMap).rgb;
+      #endif`
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <normal_fragment_maps>",
+      `
+      #ifdef USE_NORMALMAP
+        vec3 p = surfaceWorld / worldTile;
+        vec3 nx = texture2D(normalMap, p.zy * vec2(sign(triNormal.x), 1.0)).xyz * 2.0 - 1.0;
+        vec3 ny = texture2D(normalMap, p.xz * vec2(sign(triNormal.y), 1.0)).xyz * 2.0 - 1.0;
+        vec3 nz = texture2D(normalMap, p.xy * vec2(-sign(triNormal.z), 1.0)).xyz * 2.0 - 1.0;
+        nx.xy *= normalScale; ny.xy *= normalScale; nz.xy *= normalScale;
+        vec3 worldN = normalize(triNormal + vec3(0.0, nx.y, nx.x * sign(triNormal.x)) * triWeight.x
+          + vec3(ny.x * sign(triNormal.y), 0.0, ny.y) * triWeight.y
+          + vec3(-nz.x * sign(triNormal.z), nz.y, 0.0) * triWeight.z);
+        normal = normalize(mat3(viewMatrix) * worldN);
+      #endif`
+    );
+  };
+  material.needsUpdate = true;
+}
+var heightFogGLSL = `
+  float fogHeight = max(0.0, (surfaceWorld.y + cameraPosition.y) * 0.5);
+  float heightDensity = atmosphereDensity * (0.22 + 0.78 * exp(-fogHeight / 180.0));
+  float heightAmount = 1.0 - exp(-length(surfaceWorld - cameraPosition) * heightDensity);
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, atmosphereColor, clamp(heightAmount, 0.0, 0.97));`;
+function heightFog(material, atmosphere) {
+  if (material.userData.heightFog) return;
+  material.userData.heightFog = true;
+  const previous = material.onBeforeCompile, key = material.customProgramCacheKey.bind(material);
+  material.customProgramCacheKey = () => `${key()}|height-fog-v1`;
+  material.onBeforeCompile = (shader, renderer) => {
+    previous.call(material, shader, renderer);
+    shader.uniforms.atmosphereColor = atmosphere.color;
+    shader.uniforms.atmosphereDensity = atmosphere.density;
+    if (!material.userData.worldTile) {
+      shader.vertexShader = "varying vec3 surfaceWorld;\n" + shader.vertexShader;
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <project_vertex>",
+        `#include <project_vertex>
+        surfaceWorld = (cameraMatrixWorld * mvPosition).xyz;`.replace(
+          "cameraMatrixWorld",
+          "inverse(viewMatrix)"
+        )
+      );
+      shader.fragmentShader = "varying vec3 surfaceWorld;\n" + shader.fragmentShader;
+    }
+    shader.fragmentShader = "uniform vec3 atmosphereColor; uniform float atmosphereDensity;\n" + shader.fragmentShader;
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <tonemapping_fragment>",
+      heightFogGLSL + "\n#include <tonemapping_fragment>"
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <fog_fragment>",
+      ""
+    );
+  };
+  material.needsUpdate = true;
+}
+
+// client/world/bayVista.ts
+var waterVertex = `
+  uniform float time;
+  varying vec3 surfaceWorld;
+  varying vec3 waveNormal;
+  void wave(vec2 d, float length, float amplitude, inout vec3 p, inout vec3 tangent, inout vec3 bitangent) {
+    float k = 6.283185 / length;
+    float phase = k * (dot(d, position.xz) - sqrt(9.81 / k) * time);
+    p.xz += d * amplitude * 0.5 * cos(phase); p.y += amplitude * sin(phase);
+    tangent += vec3(-d.x*d.x*amplitude*0.5*k*sin(phase), d.x*amplitude*k*cos(phase), -d.x*d.y*amplitude*0.5*k*sin(phase));
+    bitangent += vec3(-d.x*d.y*amplitude*0.5*k*sin(phase), d.y*amplitude*k*cos(phase), -d.y*d.y*amplitude*0.5*k*sin(phase));
+  }
+  void main() {
+    vec3 p = position, t = vec3(1,0,0), b = vec3(0,0,1);
+    wave(vec2(0.8,0.6), 230.0, 0.8, p,t,b);
+    wave(vec2(-0.6,0.8), 140.0, 0.35, p,t,b);
+    wave(vec2(0.28,-0.96), 90.0, 0.18, p,t,b);
+    surfaceWorld = (modelMatrix * vec4(p,1)).xyz; waveNormal = normalize(cross(b,t));
+    gl_Position = projectionMatrix * viewMatrix * vec4(surfaceWorld,1);
+  }`;
+var waterFragment = `
+  uniform float time, night, atmosphereDensity, hasHDR;
+  uniform sampler2D hdr;
+  uniform vec3 atmosphereColor;
+  varying vec3 surfaceWorld, waveNormal;
+  float boxDistance(vec2 p, vec2 halfSize) { vec2 q = abs(p)-halfSize; return length(max(q,0.0)) + min(max(q.x,q.y),0.0); }
+  void main() {
+    vec2 p = surfaceWorld.xz;
+    float island = boxDistance(p, vec2(601.0));
+    float neck = boxDistance(p-vec2(0,2020),vec2(210,1420));
+    float angle = atan(p.y,p.x), coast = 3270.0+150.0*sin(angle*5.0)+120.0*sin(angle*9.0);
+    float distanceToCoast = min(min(island,neck),coast-length(p));
+    if (distanceToCoast < -2.0) discard;
+    // Analytic fragment normals avoid interpolation bands across the coarse ocean mesh.
+    vec2 slope = vec2(.8,.6)*(.8*6.283185/230.0)*cos(6.283185/230.0*(dot(p,vec2(.8,.6))-sqrt(9.81*230.0/6.283185)*time));
+    slope += vec2(-.6,.8)*(.35*6.283185/140.0)*cos(6.283185/140.0*(dot(p,vec2(-.6,.8))-sqrt(9.81*140.0/6.283185)*time));
+    slope += vec2(.28,-.96)*(.18*6.283185/90.0)*cos(6.283185/90.0*(dot(p,vec2(.28,-.96))-sqrt(9.81*90.0/6.283185)*time));
+    float detail = 1.0-smoothstep(.5,2.0,length(fwidth(p))*.2);
+    slope += detail*.018*vec2(sin(dot(p,vec2(.15,.21))+time),cos(dot(p,vec2(-.17,.09))+time*.8));
+    vec3 n = normalize(vec3(-slope.x,1.0,-slope.y));
+    vec3 eye = normalize(cameraPosition-surfaceWorld);
+    float fresnel = pow(1.0-max(0.0,dot(n,eye)),4.0);
+    vec3 reflected = reflect(-eye,n);
+    vec2 environmentUV = vec2(atan(reflected.z,reflected.x)/6.283185+.5,asin(reflected.y)/3.141593+.5);
+    vec3 reflectedSky = mix(atmosphereColor*.65, texture2D(hdr,environmentUV).rgb*.3*(1.0-night*.85),hasHDR);
+    vec3 color = mix(vec3(.012,.045,.062),reflectedSky,fresnel);
+    // Deliberately stylized reflection streaks from the neon waterfront, not SSR.
+    float reflection = detail * exp(-max(island,0.0)/650.0) * pow(max(0.0,sin(p.x*.055 + sin(p.y*.14+time)*1.8)*sin(p.y*.24-time*.7)),6.0);
+    color += mix(vec3(.035,.15,.17),vec3(.07,.22,.35),night) * reflection * (.25+.75*fresnel);
+    float foam = (1.0-smoothstep(0.0,11.0,abs(distanceToCoast))) * (.55+.45*sin(distanceToCoast*1.7-time*1.8+sin(p.x*.12)));
+    color += vec3(.27,.42,.43)*foam;
+    float fogAmount=1.0-exp(-length(cameraPosition-surfaceWorld)*atmosphereDensity*.65);
+    gl_FragColor=vec4(mix(color,atmosphereColor,fogAmount),1);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+  }`;
+var BayVista = class {
+  root = new Group();
+  atmosphere = {
+    color: { value: new Color(5928583) },
+    density: { value: 28e-5 }
+  };
+  water;
+  sky;
+  night = 0;
+  autoCycle = true;
+  elapsed = 0;
+  cycle = 0;
+  materials = /* @__PURE__ */ new Set();
+  constructor() {
+    this.root.name = "BayAreaVista";
+    const waterGeometry = new PlaneGeometry(BAY_SIZE, BAY_SIZE, 192, 192);
+    waterGeometry.rotateX(-Math.PI / 2);
+    this.water = new Mesh(
+      waterGeometry,
+      new ShaderMaterial({
+        vertexShader: waterVertex,
+        fragmentShader: waterFragment,
+        uniforms: {
+          time: { value: 0 },
+          night: { value: 0 },
+          hdr: { value: null },
+          hasHDR: { value: 0 },
+          atmosphereColor: this.atmosphere.color,
+          atmosphereDensity: this.atmosphere.density
+        }
+      })
+    );
+    this.water.name = "GerstnerBay_10km";
+    this.water.position.y = -3.5;
+    this.water.geometry.computeBoundingSphere();
+    this.water.geometry.boundingSphere.radius += 3;
+    this.root.add(this.water);
+    this.sky = new Mesh(
+      new SphereGeometry(1e4, 40, 24),
+      new ShaderMaterial({
+        side: BackSide,
+        depthWrite: false,
+        uniforms: {
+          night: { value: 0 },
+          hdr: { value: null },
+          hasHDR: { value: 0 }
+        },
+        vertexShader: "varying vec3 direction; void main(){direction=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1);}",
+        fragmentShader: `uniform float night,hasHDR; uniform sampler2D hdr; varying vec3 direction;
+        void main(){ vec3 d=normalize(direction); float h=pow(max(d.y,0.0),.55);
+          vec3 dusk=mix(vec3(.36,.25,.22),vec3(.027,.075,.15),h);
+          vec2 uv=vec2(atan(d.z,d.x)/6.283185+.5,asin(d.y)/3.141593+.5);
+          dusk=mix(dusk,texture2D(hdr,uv).rgb*.35,hasHDR*.42);
+          vec3 color=mix(dusk,mix(vec3(.025,.041,.075),vec3(.002,.006,.018),h),night);
+          float star=step(.9989,fract(sin(dot(floor(d.xz/max(d.y,.01)*650.0),vec2(127.1,311.7)))*43758.5453))*smoothstep(.05,.3,d.y);
+          color+=vec3(star*.4*night); gl_FragColor=vec4(color,1);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }`
+      })
+    );
+    this.sky.name = "DuskNightSky";
+    this.sky.userData.excludeSurfacePass = true;
+    this.sky.frustumCulled = false;
+    this.sky.renderOrder = -10;
+    this.root.add(this.sky);
+    this.buildTerrain();
+    this.buildBridges();
+    this.setNight(0.15);
+  }
+  surface(name, color, map) {
+    const material = new MeshStandardMaterial({
+      color,
+      roughness: 0.85,
+      metalness: map?.includes("iron") ? 0.7 : 0
+    });
+    material.name = name;
+    if (map) {
+      productionAssets.applyMaterial(material, map);
+      triplanarPBR(material, map === "asphalt_02" ? 5 : 4);
+    }
+    heightFog(material, this.atmosphere);
+    this.materials.add(material);
+    return material;
+  }
+  buildTerrain() {
+    const vertices = [], colors = [], indices = [], radial = 48, segments = 320;
+    for (let r2 = 0; r2 <= radial; r2++)
+      for (let i2 = 0; i2 <= segments; i2++) {
+        const angle = i2 / segments * Math.PI * 2, inner = terrainRadius(angle), radius = inner + (8e3 - inner) * r2 / radial;
+        const y2 = terrainHeight(angle, radius);
+        vertices.push(Math.cos(angle) * radius, y2, Math.sin(angle) * radius);
+        const c2 = new Color().setRGB(
+          0.085 + y2 / 6e3,
+          0.13 + y2 / 6500,
+          0.12 + y2 / 6e3
+        );
+        colors.push(c2.r, c2.g, c2.b);
+        if (r2 < radial && i2 < segments) {
+          const a2 = r2 * (segments + 1) + i2, b2 = a2 + segments + 1;
+          indices.push(a2, a2 + 1, b2, b2, a2 + 1, b2 + 1);
+        }
+      }
+    const geometry = new BufferGeometry();
+    geometry.setAttribute(
+      "position",
+      new Float32BufferAttribute(vertices, 3)
+    );
+    geometry.setAttribute("color", new Float32BufferAttribute(colors, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    const terrainMaterial = this.surface("HeadlandRock", 16777215);
+    terrainMaterial.vertexColors = true;
+    const terrain = new Mesh(geometry, terrainMaterial);
+    terrain.name = "Headlands_3_to_8km";
+    this.root.add(terrain);
+    const neck = new Mesh(
+      new BoxGeometry(420, 12, 2850),
+      this.surface("PeninsulaNeck", 4479831, "concrete_layers_02")
+    );
+    neck.position.set(0, -6, 2025);
+    neck.name = "SouthernPeninsula";
+    this.root.add(neck);
+    const points = [], lightColors = [];
+    for (let i2 = 0; i2 < 420; i2++) {
+      const a2 = i2 / 420 * Math.PI * 2, r2 = terrainRadius(a2) + 65;
+      points.push(Math.cos(a2) * r2, terrainHeight(a2, r2) + 4, Math.sin(a2) * r2);
+      const c2 = new Color(i2 % 5 ? 16758901 : 6478335);
+      lightColors.push(c2.r, c2.g, c2.b);
+    }
+    const g4 = new BufferGeometry();
+    g4.setAttribute("position", new Float32BufferAttribute(points, 3));
+    g4.setAttribute("color", new Float32BufferAttribute(lightColors, 3));
+    const m2 = new PointsMaterial({
+      size: 5,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.7,
+      depthWrite: false
+    });
+    this.materials.add(m2);
+    const lights = new Points(g4, m2);
+    lights.name = "DistantShoreLights";
+    this.root.add(lights);
+  }
+  buildBridges() {
+    const structures = buildBayBridgeColliders(), unit = new BoxGeometry(1, 1, 1);
+    const matrix = new Matrix4(), q2 = new Quaternion();
+    for (const road of [true, false]) {
+      const parts = structures.filter(
+        (s2) => s2.material === "plaza_asphalt" === road
+      );
+      const mesh = new InstancedMesh(
+        unit,
+        this.surface(
+          road ? "HighwayDeck" : "BridgeSafetyRails",
+          road ? 10791601 : 9082780,
+          road ? "asphalt_02" : "concrete_layers_02"
+        ),
+        parts.length
+      );
+      mesh.name = road ? "TraversableBridgeDecks" : "ColliderMatchedBridgeRails";
+      mesh.userData.collisionIds = parts.map((p2) => p2.id);
+      parts.forEach((p2, i2) => {
+        q2.setFromEuler(
+          new Euler(
+            p2.rotation?.x ?? 0,
+            p2.rotation?.y ?? 0,
+            p2.rotation?.z ?? 0
+          )
+        );
+        matrix.compose(
+          new Vector3(p2.center.x, p2.center.y, p2.center.z),
+          q2,
+          new Vector3(
+            p2.halfExtents.x * 2,
+            p2.halfExtents.y * 2,
+            p2.halfExtents.z * 2
+          )
+        );
+        mesh.setMatrixAt(i2, matrix);
+      });
+      mesh.receiveShadow = true;
+      this.root.add(mesh);
+    }
+    for (const bridge of BRIDGES) {
+      const group = new Group();
+      group.name = `SuspensionBridge_${bridge.id}`;
+      this.root.add(group);
+      const steel = this.surface(
+        `${bridge.id}TowerSteel`,
+        bridge.color,
+        "corrugated_iron_02"
+      );
+      const transforms = [];
+      const box = (distance, across, y2, sx, sy, sz) => {
+        const p2 = bridgePoint(bridge, distance, across, y2);
+        transforms.push(
+          new Matrix4().compose(
+            new Vector3(p2.x, p2.y, p2.z),
+            new Quaternion().setFromAxisAngle(
+              new Vector3(0, 1, 0),
+              bridge.yaw
+            ),
+            new Vector3(sx, sy, sz)
+          )
+        );
+      };
+      for (const distance of [700, 2100]) {
+        for (const side of [-1, 1]) box(distance, side * 20, 120, 9, 252, 15);
+        for (const y2 of [82, 170, 235]) box(distance, 0, y2, 48, 8, 14);
+      }
+      const towers = new InstancedMesh(unit, steel, transforms.length);
+      transforms.forEach((m2, i2) => towers.setMatrixAt(i2, m2));
+      towers.name = "TowersAndCrossbeams";
+      group.add(towers);
+      const cableMaterial = this.surface(`${bridge.id}Cables`, 8757159);
+      const positions = [];
+      for (const side of [-1, 1]) {
+        const path = [];
+        for (let t3 = 0; t3 <= BRIDGE_LENGTH; t3 += 20) {
+          const p2 = bridgePoint(bridge, t3, side * 17, bridgeCableHeight(t3));
+          path.push(new Vector3(p2.x, p2.y, p2.z));
+        }
+        const cable = new Mesh(
+          new TubeGeometry(
+            new CatmullRomCurve3(path),
+            140,
+            1,
+            5,
+            false
+          ),
+          cableMaterial
+        );
+        cable.name = "MainSuspensionCable";
+        group.add(cable);
+        for (let t3 = 40; t3 < BRIDGE_LENGTH; t3 += 40) {
+          const a2 = bridgePoint(bridge, t3, side * 17), b2 = bridgePoint(bridge, t3, side * 17, bridgeCableHeight(t3));
+          positions.push(a2.x, a2.y, a2.z, b2.x, b2.y, b2.z);
+        }
+      }
+      const suspenders = new InstancedMesh(
+        new CylinderGeometry(0.23, 0.23, 1, 5),
+        cableMaterial,
+        positions.length / 6
+      );
+      for (let i2 = 0; i2 < positions.length; i2 += 6) {
+        const a2 = new Vector3(
+          ...positions.slice(i2, i2 + 3)
+        ), b2 = new Vector3(
+          ...positions.slice(i2 + 3, i2 + 6)
+        );
+        matrix.compose(
+          a2.clone().add(b2).multiplyScalar(0.5),
+          new Quaternion(),
+          new Vector3(1, b2.y - a2.y, 1)
+        );
+        suspenders.setMatrixAt(i2 / 6, matrix);
+      }
+      suspenders.name = "IndividualSuspenders";
+      group.add(suspenders);
+      const stripes = [];
+      for (let t3 = 10; t3 < BRIDGE_LENGTH; t3 += 24) {
+        const p2 = bridgePoint(bridge, t3);
+        stripes.push(
+          new Matrix4().compose(
+            new Vector3(p2.x, p2.y + 0.07, p2.z),
+            new Quaternion().setFromAxisAngle(
+              new Vector3(0, 1, 0),
+              bridge.yaw
+            ),
+            new Vector3(0.22, 0.03, 9)
+          )
+        );
+      }
+      const stripeMat = this.surface("LaneMarkings", 12695705), markings = new InstancedMesh(unit, stripeMat, stripes.length);
+      stripes.forEach((m2, i2) => markings.setMatrixAt(i2, m2));
+      group.add(markings);
+    }
+  }
+  setNight(value) {
+    this.night = MathUtils.clamp(value, 0, 1);
+    this.cycle = Math.acos(1 - 2 * this.night);
+    this.atmosphere.color.value.set(6650761).lerp(new Color(1517630), this.night);
+    this.atmosphere.density.value = 24e-5 + this.night * 5e-5;
+    this.water.material.uniforms.night.value = this.night;
+    this.sky.material.uniforms.night.value = this.night;
+  }
+  update(dt, camera) {
+    this.elapsed += Math.max(0, Math.min(dt, 0.1));
+    if (this.autoCycle) {
+      const next = this.cycle + dt * Math.PI / 600;
+      this.setNight((1 - Math.cos(next)) / 2);
+      this.cycle = next;
+    }
+    this.water.material.uniforms.time.value = this.elapsed;
+    this.sky.position.copy(camera.position);
+    this.water.material.uniforms.hdr.value = productionAssets.environment;
+    this.water.material.uniforms.hasHDR.value = productionAssets.environment ? 1 : 0;
+    this.sky.material.uniforms.hdr.value = productionAssets.environment;
+    this.sky.material.uniforms.hasHDR.value = productionAssets.environment ? 1 : 0;
+  }
+  dispose() {
+    const geometries = /* @__PURE__ */ new Set();
+    this.root.traverse((o2) => {
+      if (o2 instanceof Mesh || o2 instanceof Points) {
+        geometries.add(o2.geometry);
+        for (const m2 of Array.isArray(o2.material) ? o2.material : [o2.material])
+          this.materials.add(m2);
+      }
+    });
+    geometries.forEach((g4) => g4.dispose());
+    this.materials.forEach((m2) => m2.dispose());
+    this.materials.clear();
+    this.root.removeFromParent();
+    this.root.clear();
   }
 };
 
@@ -45414,27 +48473,27 @@ var SimplexNoise = class {
       [3, 2, 1, 0]
     ];
   }
-  dot(g2, x2, y2) {
-    return g2[0] * x2 + g2[1] * y2;
+  dot(g4, x2, y2) {
+    return g4[0] * x2 + g4[1] * y2;
   }
-  dot3(g2, x2, y2, z2) {
-    return g2[0] * x2 + g2[1] * y2 + g2[2] * z2;
+  dot3(g4, x2, y2, z2) {
+    return g4[0] * x2 + g4[1] * y2 + g4[2] * z2;
   }
-  dot4(g2, x2, y2, z2, w2) {
-    return g2[0] * x2 + g2[1] * y2 + g2[2] * z2 + g2[3] * w2;
+  dot4(g4, x2, y2, z2, w2) {
+    return g4[0] * x2 + g4[1] * y2 + g4[2] * z2 + g4[3] * w2;
   }
   noise(xin, yin) {
     let n0;
     let n1;
-    let n2;
+    let n22;
     const F2 = 0.5 * (Math.sqrt(3) - 1);
     const s2 = (xin + yin) * F2;
     const i2 = Math.floor(xin + s2);
     const j2 = Math.floor(yin + s2);
     const G2 = (3 - Math.sqrt(3)) / 6;
-    const t2 = (i2 + j2) * G2;
-    const X0 = i2 - t2;
-    const Y0 = j2 - t2;
+    const t3 = (i2 + j2) * G2;
+    const X0 = i2 - t3;
+    const Y0 = j2 - t3;
     const x0 = xin - X0;
     const y0 = yin - Y0;
     let i1;
@@ -45468,18 +48527,18 @@ var SimplexNoise = class {
       n1 = t1 * t1 * this.dot(this.grad3[gi1], x1, y1);
     }
     let t22 = 0.5 - x2 * x2 - y2 * y2;
-    if (t22 < 0) n2 = 0;
+    if (t22 < 0) n22 = 0;
     else {
       t22 *= t22;
-      n2 = t22 * t22 * this.dot(this.grad3[gi2], x2, y2);
+      n22 = t22 * t22 * this.dot(this.grad3[gi2], x2, y2);
     }
-    return 70 * (n0 + n1 + n2);
+    return 70 * (n0 + n1 + n22);
   }
   // 3D simplex noise
   noise3d(xin, yin, zin) {
     let n0;
     let n1;
-    let n2;
+    let n22;
     let n3;
     const F3 = 1 / 3;
     const s2 = (xin + yin + zin) * F3;
@@ -45487,10 +48546,10 @@ var SimplexNoise = class {
     const j2 = Math.floor(yin + s2);
     const k2 = Math.floor(zin + s2);
     const G3 = 1 / 6;
-    const t2 = (i2 + j2 + k2) * G3;
-    const X0 = i2 - t2;
-    const Y0 = j2 - t2;
-    const Z0 = k2 - t2;
+    const t3 = (i2 + j2 + k2) * G3;
+    const X0 = i2 - t3;
+    const Y0 = j2 - t3;
+    const Z0 = k2 - t3;
     const x0 = xin - X0;
     const y0 = yin - Y0;
     const z0 = zin - Z0;
@@ -45576,18 +48635,18 @@ var SimplexNoise = class {
       n1 = t1 * t1 * this.dot3(this.grad3[gi1], x1, y1, z1);
     }
     let t22 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
-    if (t22 < 0) n2 = 0;
+    if (t22 < 0) n22 = 0;
     else {
       t22 *= t22;
-      n2 = t22 * t22 * this.dot3(this.grad3[gi2], x2, y2, z2);
+      n22 = t22 * t22 * this.dot3(this.grad3[gi2], x2, y2, z2);
     }
-    let t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
-    if (t3 < 0) n3 = 0;
+    let t32 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
+    if (t32 < 0) n3 = 0;
     else {
-      t3 *= t3;
-      n3 = t3 * t3 * this.dot3(this.grad3[gi3], x3, y3, z3);
+      t32 *= t32;
+      n3 = t32 * t32 * this.dot3(this.grad3[gi3], x3, y3, z3);
     }
-    return 32 * (n0 + n1 + n2 + n3);
+    return 32 * (n0 + n1 + n22 + n3);
   }
   // 4D simplex noise
   noise4d(x2, y2, z2, w2) {
@@ -45598,7 +48657,7 @@ var SimplexNoise = class {
     const G4 = (5 - Math.sqrt(5)) / 20;
     let n0;
     let n1;
-    let n2;
+    let n22;
     let n3;
     let n4;
     const s2 = (x2 + y2 + z2 + w2) * F4;
@@ -45606,11 +48665,11 @@ var SimplexNoise = class {
     const j2 = Math.floor(y2 + s2);
     const k2 = Math.floor(z2 + s2);
     const l2 = Math.floor(w2 + s2);
-    const t2 = (i2 + j2 + k2 + l2) * G4;
-    const X0 = i2 - t2;
-    const Y0 = j2 - t2;
-    const Z0 = k2 - t2;
-    const W0 = l2 - t2;
+    const t3 = (i2 + j2 + k2 + l2) * G4;
+    const X0 = i2 - t3;
+    const Y0 = j2 - t3;
+    const Z0 = k2 - t3;
+    const W0 = l2 - t3;
     const x0 = x2 - X0;
     const y0 = y2 - Y0;
     const z0 = z2 - Z0;
@@ -45672,16 +48731,16 @@ var SimplexNoise = class {
       n1 = t1 * t1 * this.dot4(grad4[gi1], x1, y1, z1, w1);
     }
     let t22 = 0.6 - x22 * x22 - y22 * y22 - z22 * z22 - w22 * w22;
-    if (t22 < 0) n2 = 0;
+    if (t22 < 0) n22 = 0;
     else {
       t22 *= t22;
-      n2 = t22 * t22 * this.dot4(grad4[gi2], x22, y22, z22, w22);
+      n22 = t22 * t22 * this.dot4(grad4[gi2], x22, y22, z22, w22);
     }
-    let t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3 - w3 * w3;
-    if (t3 < 0) n3 = 0;
+    let t32 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3 - w3 * w3;
+    if (t32 < 0) n3 = 0;
     else {
-      t3 *= t3;
-      n3 = t3 * t3 * this.dot4(grad4[gi3], x3, y3, z3, w3);
+      t32 *= t32;
+      n3 = t32 * t32 * this.dot4(grad4[gi3], x3, y3, z3, w3);
     }
     let t4 = 0.6 - x4 * x4 - y4 * y4 - z4 * z4 - w4 * w4;
     if (t4 < 0) n4 = 0;
@@ -45689,7 +48748,7 @@ var SimplexNoise = class {
       t4 *= t4;
       n4 = t4 * t4 * this.dot4(grad4[gi4], x4, y4, z4, w4);
     }
-    return 27 * (n0 + n1 + n2 + n3 + n4);
+    return 27 * (n0 + n1 + n22 + n3 + n4);
   }
 };
 
@@ -46165,20 +49224,20 @@ var SSAOPass = class _SSAOPass extends Pass {
   }
   overrideVisibility() {
     const scene = this.scene;
-    const cache = this._visibilityCache;
+    const cache2 = this._visibilityCache;
     scene.traverse(function(object) {
-      cache.set(object, object.visible);
+      cache2.set(object, object.visible);
       if (object.isPoints || object.isLine) object.visible = false;
     });
   }
   restoreVisibility() {
     const scene = this.scene;
-    const cache = this._visibilityCache;
+    const cache2 = this._visibilityCache;
     scene.traverse(function(object) {
-      const visible = cache.get(object);
+      const visible = cache2.get(object);
       object.visible = visible;
     });
-    cache.clear();
+    cache2.clear();
   }
 };
 SSAOPass.OUTPUT = {
@@ -46187,6 +49246,34 @@ SSAOPass.OUTPUT = {
   "Blur": 2,
   "Depth": 3,
   "Normal": 4
+};
+
+// client/shaders/opaqueSSAOPass.ts
+var OpaqueSSAOPass = class extends SSAOPass {
+  reuseShadows = true;
+  render(renderer, write, read, dt, mask) {
+    const auto = renderer.shadowMap.autoUpdate, needs = renderer.shadowMap.needsUpdate, override = this.scene.overrideMaterial;
+    const hidden = [];
+    this.scene.traverse((o2) => {
+      if (!o2.visible) return;
+      if (o2.userData.excludeSurfacePass || o2 instanceof Sprite || o2 instanceof Mesh && (Array.isArray(o2.material) ? o2.material : [o2.material]).every((m2) => m2.opacity <= 1e-3 || m2.transparent && m2.opacity < 1)) {
+        hidden.push(o2);
+        o2.visible = false;
+      }
+    });
+    try {
+      if (this.reuseShadows) {
+        renderer.shadowMap.autoUpdate = false;
+        renderer.shadowMap.needsUpdate = false;
+      }
+      super.render(renderer, write, read, dt, mask);
+    } finally {
+      renderer.shadowMap.autoUpdate = auto;
+      renderer.shadowMap.needsUpdate = needs;
+      this.scene.overrideMaterial = override;
+      hidden.forEach((o2) => o2.visible = true);
+    }
+  }
 };
 
 // node_modules/three/examples/jsm/shaders/LuminosityHighPassShader.js
@@ -46524,7 +49611,7 @@ var INK_FRAGMENT_SHADER = `
     float edge = max(smoothstep(0.045, 0.14, length(vec2(dx, dy))),
                      smoothstep(0.8, 1.8, length(nx) + length(ny)));
     vec4 color = texture2D(tDiffuse, vUv);
-    gl_FragColor = vec4(mix(color.rgb, vec3(0.008, 0.014, 0.025), edge * 0.9), color.a);
+    gl_FragColor = vec4(mix(color.rgb, vec3(0.008, 0.014, 0.025), edge * 0.9 * (1.0 - smoothstep(350.0, 1200.0, center))), color.a);
   }`;
 var InkOutlinePass = class extends Pass {
   constructor(scene, camera) {
@@ -46552,37 +49639,45 @@ var InkOutlinePass = class extends Pass {
   normal = new MeshNormalMaterial();
   material;
   quad;
+  /** Optional opaque normal/depth buffer produced earlier in this same frame. Not owned here. */
+  sharedNormals = null;
   setSize(w2, h2) {
     this.target.setSize(w2, h2);
     this.material.uniforms.resolution.value.set(w2, h2);
   }
   render(renderer, write, read) {
-    const override = this.scene.overrideMaterial, background = this.scene.background;
-    const clear = renderer.getClearColor(new Color()), alpha = renderer.getClearAlpha();
-    const shadowUpdate = renderer.shadowMap.autoUpdate;
-    const hidden = [];
-    try {
-      this.scene.traverse((object) => {
-        if (!object.visible) return;
-        if (object instanceof Sprite || object instanceof Line || object instanceof Points || object instanceof Mesh && (Array.isArray(object.material) ? object.material : [object.material]).every((m2) => m2.opacity <= 1e-3 || m2.transparent && m2.opacity < 1)) {
-          hidden.push(object);
-          object.visible = false;
-        }
-      });
-      this.scene.overrideMaterial = this.normal;
-      this.scene.background = null;
-      renderer.shadowMap.autoUpdate = false;
-      renderer.setClearColor(8421631, 1);
-      renderer.setRenderTarget(this.target);
-      renderer.clear();
-      renderer.render(this.scene, this.camera);
-    } finally {
-      this.scene.overrideMaterial = override;
-      this.scene.background = background;
-      for (const object of hidden) object.visible = true;
-      renderer.setClearColor(clear, alpha);
-      renderer.shadowMap.autoUpdate = shadowUpdate;
+    const shared = this.sharedNormals?.depthTexture ? this.sharedNormals : null;
+    if (!shared) {
+      const override = this.scene.overrideMaterial, background = this.scene.background;
+      const clear = renderer.getClearColor(new Color()), alpha = renderer.getClearAlpha();
+      const shadowUpdate = renderer.shadowMap.autoUpdate;
+      const hidden = [];
+      try {
+        this.scene.traverse((object) => {
+          if (!object.visible) return;
+          if (object.userData.excludeSurfacePass || object instanceof Sprite || object instanceof Line || object instanceof Points || object instanceof Mesh && (Array.isArray(object.material) ? object.material : [object.material]).every((m2) => m2.opacity <= 1e-3 || m2.transparent && m2.opacity < 1)) {
+            hidden.push(object);
+            object.visible = false;
+          }
+        });
+        this.scene.overrideMaterial = this.normal;
+        this.scene.background = null;
+        renderer.shadowMap.autoUpdate = false;
+        renderer.setClearColor(8421631, 1);
+        renderer.setRenderTarget(this.target);
+        renderer.clear();
+        renderer.render(this.scene, this.camera);
+      } finally {
+        this.scene.overrideMaterial = override;
+        this.scene.background = background;
+        for (const object of hidden) object.visible = true;
+        renderer.setClearColor(clear, alpha);
+        renderer.shadowMap.autoUpdate = shadowUpdate;
+      }
     }
+    const target = shared ?? this.target;
+    this.material.uniforms.tNormal.value = target.texture;
+    this.material.uniforms.tDepth.value = target.depthTexture;
     this.material.uniforms.tDiffuse.value = read.texture;
     this.material.uniforms.cameraNear.value = this.camera.near;
     this.material.uniforms.cameraFar.value = this.camera.far;
@@ -46620,17 +49715,17 @@ function buildStructureFallback(s2, surface, trim) {
     const rows = Math.max(1, Math.floor((h2 - 2) / 3.6)), colsX = Math.max(1, Math.floor((w2 - 2) / 2.4)), colsZ = Math.max(1, Math.floor((d2 - 2) / 2.4));
     const windows = new InstancedMesh(new PlaneGeometry(1, 1), new MeshStandardMaterial({ color: 1987435, emissive: 1793141, emissiveIntensity: 0.5, metalness: 0.65, roughness: 0.25, side: DoubleSide }), rows * (colsX + colsZ) * 2);
     windows.name = "RecessedWindowBays";
-    const pose = new Object3D();
+    const pose2 = new Object3D();
     index = 0;
     for (let row = 0; row < rows; row++) for (let face = 0; face < 4; face++) {
       const cols = face < 2 ? colsX : colsZ, span = face < 2 ? w2 : d2;
       for (let col = 0; col < cols; col++) {
         const horizontal = (col + 0.5) * (span - 2) / cols - (span - 2) / 2, y2 = (row + 0.5) * (h2 - 2) / rows - (h2 - 2) / 2;
-        pose.position.set(face < 2 ? horizontal : (face === 2 ? 1 : -1) * (w2 / 2 + 5e-3), y2, face < 2 ? (face === 0 ? 1 : -1) * (d2 / 2 + 5e-3) : horizontal);
-        pose.rotation.y = face < 2 ? 0 : Math.PI / 2;
-        pose.scale.set((span - 2) / cols * 0.67, (h2 - 2) / rows * 0.55, 1);
-        pose.updateMatrix();
-        windows.setMatrixAt(index++, pose.matrix);
+        pose2.position.set(face < 2 ? horizontal : (face === 2 ? 1 : -1) * (w2 / 2 + 5e-3), y2, face < 2 ? (face === 0 ? 1 : -1) * (d2 / 2 + 5e-3) : horizontal);
+        pose2.rotation.y = face < 2 ? 0 : Math.PI / 2;
+        pose2.scale.set((span - 2) / cols * 0.67, (h2 - 2) / rows * 0.55, 1);
+        pose2.updateMatrix();
+        windows.setMatrixAt(index++, pose2.matrix);
         windows.setColorAt(index - 1, new Color((row * 7 + col * 13 + face) % 5 === 0 ? 2374219 : 10208464));
       }
     }
@@ -46757,7 +49852,7 @@ var ArchBuilder = class {
     const model = productionAssets.createModel("building", plan.id);
     if (!model) return false;
     model.scene.updateMatrixWorld(true);
-    const valid3 = ["Entrance", "RoofEntry", "Helipad"].every((name) => {
+    const valid4 = ["Entrance", "RoofEntry", "Helipad"].every((name) => {
       const anchor = model.scene.getObjectByName(name);
       if (!anchor) return false;
       const expected = plan.anchors[name], actual = anchor.getWorldPosition(new Vector3());
@@ -46777,7 +49872,7 @@ var ArchBuilder = class {
       new Vector3(part.center.x - plan.origin.x + part.halfExtents.x, part.center.y + part.halfExtents.y, part.center.z - plan.origin.z + part.halfExtents.z)
     ));
     const coversFootprint = bounds.min.x <= requiredBounds.min.x + 0.5 && bounds.max.x >= requiredBounds.max.x - 0.5 && bounds.min.z <= requiredBounds.min.z + 0.5 && bounds.max.z >= requiredBounds.max.z - 0.5;
-    if (!valid3 || !coversFootprint || Math.abs(bounds.min.y) > 0.25 || Math.abs(size.y - plan.height) > 10) {
+    if (!valid4 || !coversFootprint || Math.abs(bounds.min.y) > 0.25 || Math.abs(size.y - plan.height) > 10) {
       disposeModel();
       return false;
     }
@@ -46831,6 +49926,10 @@ var ArchBuilder = class {
         emissive: emissive ? color : 0,
         emissiveIntensity: emissive ? 1.1 : 0
       })));
+      if (!emissive && ["facade", "podium", "steel", "ceramic"].includes(role)) {
+        productionAssets.applyMaterial(material, role === "steel" ? "corrugated_iron_02" : "concrete_layers_02");
+        triplanarPBR(material, role === "steel" ? 3 : 5);
+      }
       materials.add(material);
       return material;
     };
@@ -46942,7 +50041,7 @@ var ArchBuilder = class {
         const m2 = box("FanBlade", [1.5, 0.06, 0.15], [0, 0, 0], steel, rotor);
         m2.rotation.y = blade * Math.PI / 4;
       }
-      const vents = Array.from({ length: 6 }, (_2, n2) => transform(position.x, position.y - 0.55, position.z - 1.62, 2.2, 0.06, 0.08).setPosition(position.x, position.y - 0.2 - n2 * 0.16, position.z - 1.62));
+      const vents = Array.from({ length: 6 }, (_2, n3) => transform(position.x, position.y - 0.55, position.z - 1.62, 2.2, 0.06, 0.08).setPosition(position.x, position.y - 0.2 - n3 * 0.16, position.z - 1.62));
       batchDecoration(`HVACVentLouvers${i2}`, vents, ceramic, details);
     }
     const antenna = plan.anchors.Antenna;
@@ -46992,21 +50091,21 @@ var ArchBuilder = class {
     materials.add(material);
     const mesh = new InstancedMesh(scope.get("geo:window", () => new PlaneGeometry(1, 1)), material, rows * (colsX + colsZ) * 2);
     mesh.name = "ParallaxOfficeRooms";
-    const pose = new Object3D();
+    const pose2 = new Object3D();
     let index = 0;
     for (let row = 0; row < rows; row++) for (let face = 0; face < 4; face++) {
       const cols = face % 2 === 0 ? colsX : colsZ, span = face % 2 === 0 ? width : depth;
       for (let col = 0; col < cols; col++) {
         const across = (col + 0.5) * (span - 1) / cols - (span - 1) / 2, y2 = bottom + (row + 0.5) * (top - bottom) / rows;
-        pose.position.set(
+        pose2.position.set(
           face % 2 === 0 ? across : (face === 1 ? 1 : -1) * (width / 2 + 0.015),
           y2,
           face % 2 === 0 ? (face === 0 ? -1 : 1) * (depth / 2 + 0.015) : across
         );
-        pose.rotation.set(0, face === 0 ? Math.PI : face === 1 ? Math.PI / 2 : face === 2 ? 0 : -Math.PI / 2, 0);
-        pose.scale.set((span - 1) / cols * 0.82, Math.min(2.8, (top - bottom) / rows * 0.72), 1);
-        pose.updateMatrix();
-        mesh.setMatrixAt(index++, pose.matrix);
+        pose2.rotation.set(0, face === 0 ? Math.PI : face === 1 ? Math.PI / 2 : face === 2 ? 0 : -Math.PI / 2, 0);
+        pose2.scale.set((span - 1) / cols * 0.82, Math.min(2.8, (top - bottom) / rows * 0.72), 1);
+        pose2.updateMatrix();
+        mesh.setMatrixAt(index++, pose2.matrix);
       }
     }
     parent.add(mesh);
@@ -47089,10 +50188,16 @@ var NeoVeridiaSceneEnvironment = class {
   constructor(renderer, camera, orbs = [], architectureRollout = ARCHITECTURE_ROLLOUT) {
     this.architectureRollout = architectureRollout;
     this.camera = camera;
+    this.pixelRatio = renderer.getPixelRatio();
+    camera.far = VISTA_FAR;
+    camera.updateProjectionMatrix();
+    this.vista = new BayVista();
     this.scene = new Scene();
     this.scene.background = new Color(329745);
-    this.scene.fog = new FogExp2(396054, 18e-4);
+    this.scene.fog = new FogExp2(6650761, 24e-5);
+    this.scene.add(this.vista.root);
     const hemiLight = new HemisphereLight(10336725, 3426388, 1.4);
+    this.hemisphere = hemiLight;
     hemiLight.position.set(0, 320, 0);
     this.scene.add(hemiLight);
     this.csm = new CSM({
@@ -47106,7 +50211,11 @@ var NeoVeridiaSceneEnvironment = class {
       lightIntensity: 2.1
     });
     const structures = buildNeoVeridiaSector01();
+    this.vista.root.traverse((o2) => {
+      if (o2 instanceof Mesh) for (const m2 of Array.isArray(o2.material) ? o2.material : [o2.material]) this.setupArchitectureMaterial(m2);
+    });
     this.buildCityMeshes(structures);
+    this.applyProductionMaterials();
     this.buildThermalUpdraftColumns();
     if (orbs.length > 0) {
       this.buildOrbMeshes(orbs);
@@ -47116,10 +50225,10 @@ var NeoVeridiaSceneEnvironment = class {
     this.composer = new EffectComposer(renderer);
     const renderPass = new RenderPass(this.scene, camera);
     this.composer.addPass(renderPass);
-    this.ssaoPass = new SSAOPass(this.scene, camera, width, height);
+    this.ssaoPass = new OpaqueSSAOPass(this.scene, camera, width, height);
     this.ssaoPass.kernelRadius = 6;
-    this.ssaoPass.minDistance = 2e-3;
-    this.ssaoPass.maxDistance = 0.08;
+    this.ssaoPass.minDistance = 1.8 / (camera.far - camera.near);
+    this.ssaoPass.maxDistance = 72 / (camera.far - camera.near);
     this.composer.addPass(this.ssaoPass);
     this.bloomPass = new UnrealBloomPass(
       new Vector2(width, height),
@@ -47130,16 +50239,20 @@ var NeoVeridiaSceneEnvironment = class {
     );
     this.composer.addPass(this.bloomPass);
     this.inkPass = new InkOutlinePass(this.scene, camera);
+    this.inkPass.sharedNormals = this.ssaoPass.normalRenderTarget;
     this.composer.addPass(this.inkPass);
     const outputPass = new OutputPass();
     this.composer.addPass(outputPass);
   }
   scene;
+  vista;
+  hemisphere;
   csm;
   composer;
   bloomPass;
   ssaoPass;
   inkPass;
+  pixelRatio;
   orbMeshes = /* @__PURE__ */ new Map();
   updraftRings = [];
   cityMaterials = {};
@@ -47219,9 +50332,7 @@ var NeoVeridiaSceneEnvironment = class {
         opacity: 0.45
       })
     };
-    for (const mat of Object.values(materials)) {
-      this.csm.setupMaterial(mat);
-    }
+    for (const mat of Object.values(materials)) this.setupArchitectureMaterial(mat);
     const trimColors = {
       cyan: materials.neon_cyan,
       magenta: materials.neon_magenta,
@@ -47283,8 +50394,9 @@ var NeoVeridiaSceneEnvironment = class {
     ]) {
       const material = this.cityMaterials[type];
       if (material) {
-        productionAssets.applyMaterial(material, name, [...repeat]);
-        material.color.set(16777215);
+        productionAssets.applyMaterial(material, name);
+        triplanarPBR(material, type === "plaza_asphalt" ? 5 : 4);
+        material.color.set(12109267);
       }
     }
   }
@@ -47296,17 +50408,17 @@ var NeoVeridiaSceneEnvironment = class {
       transparent: true,
       opacity: 0.55
     });
-    for (const u2 of updrafts) {
+    for (const u3 of updrafts) {
       for (let r2 = 0; r2 < 6; r2++) {
         const ring = new Mesh(ringGeo, ringMat);
         ring.rotation.x = Math.PI * 0.5;
-        ring.scale.set(u2.radius, u2.radius, 1);
+        ring.scale.set(u3.radius, u3.radius, 1);
         ring.position.set(
-          u2.center.x,
-          u2.baseY + r2 / 6 * (u2.topY - u2.baseY),
-          u2.center.z
+          u3.center.x,
+          u3.baseY + r2 / 6 * (u3.topY - u3.baseY),
+          u3.center.z
         );
-        ring.userData = { baseY: u2.baseY, topY: u2.topY };
+        ring.userData = { baseY: u3.baseY, topY: u3.topY };
         this.updraftRings.push(ring);
         this.scene.add(ring);
       }
@@ -47391,16 +50503,30 @@ var NeoVeridiaSceneEnvironment = class {
   }
   resize(width, height) {
     this.composer.setSize(width, height);
-    this.ssaoPass.setSize(width, height);
+    this.ssaoPass.setSize(width * this.pixelRatio, height * this.pixelRatio);
   }
   render() {
+    this.inkPass.sharedNormals = this.ssaoPass.enabled && this.ssaoPass.reuseShadows ? this.ssaoPass.normalRenderTarget : null;
     const dt = Math.max(0, Math.min(0.1, (performance.now() - this.lastArchitectureFrame) / 1e3));
     this.lastArchitectureFrame = performance.now();
     for (const { built } of this.architecture) built.update(dt, this.camera.position);
+    this.vista.update(dt, this.camera);
+    const night = this.vista.night;
+    this.hemisphere.intensity = MathUtils.lerp(1.4, 0.65, night);
+    for (const light of this.csm.lights) {
+      light.intensity = MathUtils.lerp(2.1, 0.35, night);
+      light.color.set(16767148).lerp(new Color(7115214), night);
+    }
+    this.scene.environmentIntensity = MathUtils.lerp(0.55, 0.25, night);
+    this.scene.fog.color.copy(this.vista.atmosphere.color.value);
+    this.scene.fog.density = this.vista.atmosphere.density.value;
     this.scene.traverse((object) => {
       if (!(object instanceof Mesh)) return;
       for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
-        if (material instanceof MeshStandardMaterial) stylizePBR(material);
+        if (material instanceof MeshStandardMaterial) {
+          stylizePBR(material);
+          heightFog(material, this.vista.atmosphere);
+        }
       }
     });
     this.csm.update();
@@ -47423,6 +50549,7 @@ var NeoVeridiaSceneEnvironment = class {
     material.needsUpdate = true;
   }
   dispose() {
+    this.vista.dispose();
     this.architecture.forEach(({ built }) => built.dispose());
     this.architecture.length = 0;
     this.csm.dispose();
@@ -47436,8 +50563,8 @@ var NeoVeridiaSceneEnvironment = class {
       for (const value of Object.values(material)) if (value instanceof Texture) textures.add(value);
       material.dispose();
     }
-    geometries.forEach((g2) => g2.dispose());
-    textures.forEach((t2) => t2.dispose());
+    geometries.forEach((g4) => g4.dispose());
+    textures.forEach((t3) => t3.dispose());
     for (const pass of this.composer.passes) pass.dispose();
     this.composer.dispose();
     this.scene.clear();
@@ -47452,13 +50579,38 @@ var text = (id, value) => {
 };
 var titleCase = (value) => value.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (s2) => s2.toUpperCase());
 var PlayerHUD = class {
-  constructor(net, camera, environment, renderer) {
+  constructor(net, camera, environment, renderer, storage = null) {
     this.net = net;
     this.camera = camera;
     this.environment = environment;
     this.renderer = renderer;
+    this.storage = storage;
     el("resume-button").onclick = () => this.setMenu(false);
     el("respawn-button").onclick = () => this.net.sendControl("RESPAWN");
+    el("solo-save").onclick = () => this.net.sendControl(this.net.mode === "campaign" ? "CAMPAIGN_SAVE" : "SOLO_SAVE");
+    el("solo-leave").onclick = () => this.net.sendControl(this.net.mode === "campaign" ? "CAMPAIGN_LEAVE" : "SOLO_LEAVE");
+    this.net.onSoloState = () => {
+      const state = this.net.soloState;
+      if (!state) return;
+      el("solo-controls").hidden = false;
+      text("session-note", state.paused ? "Offline solo is paused. Your campaign belongs to this local profile." : "Offline solo. Progress saves on this computer.");
+      text("solo-checkpoint", state.saveError ? "Save failed. Play is paused. Free disk space, then select Save checkpoint to retry." : `Saved ${new Date(state.savedAt).toLocaleTimeString()} \xB7 ${state.checkpoint}`);
+      if (this.net.mode === "campaign") {
+        text("session-note", state.paused ? "Campaign paused: waiting for the host or save recovery." : "Co-op remains live while this menu is open.");
+        el("campaign-party").hidden = false;
+        text("campaign-party", `${state.role === "host" ? "Hosting your campaign" : `Visiting ${state.owner}'s campaign`} | Party ${state.members?.length ?? 0}/8: ${state.members?.join(", ") ?? ""}${state.inviteCode ? ` | Session code: ${state.inviteCode}` : ""}`);
+        text("campaign-policy", "Only the host's world advances. Connected players keep district unlocks once per character; joining after completion grants no past unlocks. Guest dialogue and settings save for this host's campaign; their own world stays unchanged. No automatic catch-up or host migration.");
+        el("campaign-policy").hidden = false;
+        text("campaign-resume-note", "Rejoin at the agency drop point in the host's latest world checkpoint. An absent host pauses play; unfinished encounters restart after a service restart.");
+        el("solo-leave").textContent = state.role === "host" ? "Save & end party" : "Save & leave visit";
+        if (state.paused && !this.menuOpen) this.setMenu(true);
+      }
+      text("solo-recap", state.recap);
+      if (state.saveError) {
+        this.notice("Save failed. Play is paused; retry from the field menu.");
+        if (!this.menuOpen) this.setMenu(true);
+      }
+    };
     document.querySelectorAll("[data-panel]").forEach((button) => {
       button.onclick = () => this.selectPanel(button.dataset.panel);
     });
@@ -47515,12 +50667,14 @@ var PlayerHUD = class {
   forward = new Vector3();
   previousEnemyHealth = /* @__PURE__ */ new Map();
   get blocksInput() {
-    return this.menuOpen || this.downed || !this.net.connected || document.hidden;
+    return this.menuOpen || this.downed || !this.net.connected || document.hidden || Boolean(this.net.soloState?.paused);
   }
   deploy(callsign) {
     el("auth-overlay").hidden = true;
     el("player-hud").hidden = false;
     text("player-callsign", callsign);
+    el("solo-controls").hidden = this.net.mode === "shared";
+    if (this.net.mode === "solo") text("session-note", "Offline solo pauses in this menu. Progress saves on this computer.");
     this.startPos = null;
     this.previousHp = null;
     this.notice(
@@ -47529,7 +50683,7 @@ var PlayerHUD = class {
     document.activeElement?.blur();
   }
   setMenu(open, panel = "briefing") {
-    if (!this.net.connected || this.downed) return;
+    if (!this.net.connected || this.downed && !this.net.soloState?.paused) return;
     this.menuOpen = open;
     el("field-menu").hidden = !open;
     this.onMenuChanged?.();
@@ -47910,7 +51064,7 @@ var PlayerHUD = class {
     const bloom = el("bloom-setting");
     try {
       const settings = JSON.parse(
-        localStorage.getItem("crackup.settings") || "{}"
+        this.storage?.getItem("crackup.settings") || "{}"
       );
       sensitivity.value = String(
         Math.max(1, Math.min(10, Number(settings.sensitivity) || 4))
@@ -47919,7 +51073,7 @@ var PlayerHUD = class {
       bloom.checked = settings.bloom !== false;
     } catch {
     }
-    const apply = () => {
+    const apply = (save = true) => {
       this.camera.sensitivity = Number(sensitivity.value) * 55e-5;
       this.environment.bloomPass.enabled = bloom.checked;
       this.environment.ssaoPass.enabled = quality.value !== "performance";
@@ -47930,8 +51084,9 @@ var PlayerHUD = class {
         )
       );
       this.environment.resize(window.innerWidth, window.innerHeight);
+      if (!save) return;
       try {
-        localStorage.setItem(
+        this.storage?.setItem(
           "crackup.settings",
           JSON.stringify({
             sensitivity: sensitivity.value,
@@ -47942,9 +51097,10 @@ var PlayerHUD = class {
       } catch {
       }
     };
-    sensitivity.oninput = apply;
-    quality.onchange = apply;
-    bloom.onchange = apply;
+    sensitivity.oninput = () => apply(false);
+    sensitivity.onchange = () => apply();
+    quality.onchange = () => apply();
+    bloom.onchange = () => apply();
     apply();
   }
 };
@@ -48184,188 +51340,20 @@ var Phase6WorldRenderer = class {
   }
 };
 
-// shared/narrative/storyBible.ts
-var CHARACTERS = {
-  vance: {
-    name: "Director Julian Vance",
-    role: "Aegis Directorate",
-    faction: "aegis",
-    color: "#42caff",
-    appearance: "Silver swept hair, narrow jaw, white ceramic collar, cobalt neural temple implants.",
-    motivation: "Convert citizens into a distributed neural processor while presenting control as public safety.",
-    arc: ["Paternal mission commander", "Conceals the relay harvest", "Activates the kill-switch and retreats to the Dreadnought"],
-    voiceHz: 108
-  },
-  sera: {
-    name: "Handler Sera Lin",
-    role: "Squad Comms Officer",
-    faction: "aegis",
-    color: "#86dcff",
-    appearance: "Asymmetric dark fringe, angular comms headset, cobalt uniform, copper emergency patch lead.",
-    motivation: "Protect her squad; loyalty shifts from the Directorate to the people it exploits.",
-    arc: ["Trusts Aegis dispatch", "Confirms the cover-up and forges telemetry", "Risks her life transmitting the override"],
-    voiceHz: 218
-  },
-  voss: {
-    name: "Dr. Kaelen Voss",
-    role: "Resistance Architect",
-    faction: "resistance",
-    color: "#50efad",
-    appearance: "Shaved scalp, round optic lenses, carbon field coat, exposed copper implant wiring.",
-    motivation: "Free the dissident minds trapped in the implants he designed.",
-    arc: ["Branded a terrorist", "Reveals the minds inside Agility Orbs", "Builds the Protocol Eclipse Override"],
-    voiceHz: 152
-  }
-};
-var STORY_BEATS = [
-  { id: "deployment", act: 1, title: "Welcome to Neo-Veridia", entry: "mandate", trigger: (c2) => c2.deployed, nodes: [
-    { id: "mandate", speaker: "vance", text: "Agents. Neo-Veridia is a city under siege. Voss has poisoned its relays. You are the cure.", next: "dispatch" },
-    {
-      id: "dispatch",
-      speaker: "sera",
-      text: "Squad link stable. Start in the Docks and Foundry. Hack both terminals, remove the lieutenant, then reach the core.",
-      choices: [{ label: "Who is Voss?", next: "target" }, { label: "Understood. Moving.", next: "move" }]
-    },
-    { id: "target", speaker: "vance", text: "A gifted architect who mistook doubt for conscience. Do not give his broadcasts an audience.", next: "move" },
-    { id: "move", speaker: "sera", text: "Keep moving. Comms stay live while you work. Amber windup means a counter opportunity: press Q." }
-  ] },
-  {
-    id: "mandate",
-    act: 1,
-    title: "Restoring Order",
-    requires: "deployment",
-    entry: "order",
-    trigger: (c2) => c2.districtIndex <= 1 && c2.vigilanteLevel <= 2 && c2.relaySabotage,
-    nodes: [
-      { id: "order", speaker: "vance", text: "Every relay you disable returns a district to lawful service. Precision is compassion, Agent.", next: "anomaly" },
-      { id: "anomaly", speaker: "sera", text: "Odd. The outage report is listing patient identifiers instead of power loss. I will check it." }
-    ]
-  },
-  {
-    id: "evidence",
-    act: 2,
-    title: "A Human Signal",
-    requires: "deployment",
-    entry: "breach",
-    trigger: (c2) => c2.whisperOrbs >= 3 || c2.nonLethalBounties >= 2,
-    nodes: [
-      { id: "breach", speaker: "voss", text: "You spared witnesses. Or perhaps you listened to the whispers. Either way, you have heard what Aegis deletes.", next: "choice" },
-      { id: "choice", speaker: "sera", text: "Unauthorized signal. Wait... those signatures match the missing citizens.", choices: [
-        { label: "Show us the source.", next: "source" },
-        { label: "Why trust you?", next: "guilt" }
-      ] },
-      { id: "guilt", speaker: "voss", text: "I designed your implants. My guilt is not evidence. The relay telemetry is. Read it yourself.", next: "source" },
-      { id: "source", speaker: "voss", text: "Reach a relay core. I can expose its live feed there. Keep this channel beneath your mission carrier." }
-    ]
-  },
-  {
-    id: "revelation",
-    act: 2,
-    title: "The Dampeners",
-    requires: "evidence",
-    entry: "truth",
-    trigger: (c2) => c2.relaySabotage,
-    nodes: [
-      { id: "truth", speaker: "voss", text: "There. Not a terrorist transmitter: an Aegis neural dampener. Those spikes are people. Your Agility Orbs are harvested dissident minds.", next: "confirm" },
-      { id: "confirm", speaker: "sera", text: "I checked the raw telemetry against hospital records. He is right. Vance signed the harvest orders.", next: "fake" },
-      { id: "fake", speaker: "sera", text: "I will forge your mission returns. Vance sees loyal Agents; we see the route into the Citadel.", next: "rescue" },
-      { id: "rescue", speaker: "voss", text: "Then help me turn the prison into a door. Save the source nodes. We will need them for Eclipse." }
-    ]
-  },
-  {
-    id: "killswitch",
-    act: 3,
-    title: "Revocation",
-    requires: "revelation",
-    entry: "revoke",
-    trigger: (c2) => c2.citadelLoopStage >= 3,
-    nodes: [
-      { id: "revoke", speaker: "vance", text: "Sera. I read the silence between your reports. Agents, your autonomy was a revocable privilege. Neural termination authorized.", next: "hold" },
-      { id: "hold", speaker: "sera", text: "Stay with me! I have severed dispatch. Kaelen, send it now.", next: "override" },
-      { id: "override", speaker: "voss", text: "Protocol Eclipse Override uploading. Your thoughts belong to you. So does what you choose next.", next: "free" },
-      { id: "free", speaker: "sera", text: "Kill-switch neutralized. Storm the Plaza. Break the engines, expose the core, and end Vance's Dreadnought." }
-    ]
-  },
-  {
-    id: "dawn",
-    act: 3,
-    title: "A City Unbound",
-    requires: "killswitch",
-    entry: "silence",
-    trigger: (c2) => c2.bossDefeated,
-    nodes: [
-      { id: "silence", speaker: "sera", text: "Dreadnought down. The city channels are opening. Listen: no commands. Just people.", next: "after" },
-      { id: "after", speaker: "voss", text: "We cannot return every stolen moment. We can make sure the next one belongs to them." }
-    ]
-  }
-];
-var WHISPER_TRANSCRIPTS = [
-  "My name is Imani. If the light remembers me, tell my son I reached the seawall.",
-  "The clinic called it civic service. No one explained why the doors locked from outside.",
-  "I can hear the relay counting. Those are heartbeats, not packets.",
-  "Voss argued with the Director. The next morning his office was sealed.",
-  "They call the blue lights agility. I remember calling one of them my sister.",
-  "Sera Lin requested the missing persons ledger. Someone still asks questions.",
-  "The Foundry shift never clocked out. We woke inside the grid.",
-  "If an Agent listens, the implant opens a narrow channel. Please keep listening.",
-  "Aegis can stop a heart from dispatch. The authorization key is in the Citadel.",
-  "Eclipse is not a weapon. It is the permission to say no.",
-  "The engines shield his reactor. Even a tyrant is afraid of falling.",
-  "When the signal clears, leave the channel open. We want to hear the bay again."
-];
-var StoryDirector = class {
-  completed = /* @__PURE__ */ new Set();
-  beat = null;
-  node = null;
-  update(context) {
-    if (this.node) return this.node;
-    const currentAct = Math.max(1, ...STORY_BEATS.filter((b2) => this.completed.has(b2.id)).map((b2) => b2.act));
-    this.beat = STORY_BEATS.find((b2) => b2.act >= currentAct && !this.completed.has(b2.id) && (!b2.requires || this.completed.has(b2.requires)) && b2.trigger(context)) ?? null;
-    this.node = this.beat?.nodes.find((n2) => n2.id === this.beat.entry) ?? null;
-    return this.node;
-  }
-  advance(choice = 0) {
-    if (!this.node || !this.beat) return;
-    const next = this.node.choices?.[choice]?.next ?? this.node.next;
-    if (next) this.node = this.beat.nodes.find((n2) => n2.id === next) ?? null;
-    else {
-      this.completed.add(this.beat.id);
-      this.node = null;
-      this.beat = null;
-    }
-  }
-};
-
 // client/narrative/tacticalComms.ts
 var TacticalCommsOverlay = class {
-  director = new StoryDirector();
-  element = document.createElement("aside");
-  text = document.createElement("p");
-  name = document.createElement("strong");
-  choices = document.createElement("div");
-  portrait = new Group();
-  scene = new Scene();
-  camera = new PerspectiveCamera(32, 1, 0.1, 10);
-  material = new MeshBasicMaterial({ color: 4377343, wireframe: true, transparent: true, opacity: 0.8 });
-  node = null;
-  elapsed = 0;
-  visibleCharacters = 0;
-  ctx = null;
-  muted = false;
-  whispers = [];
-  heard = /* @__PURE__ */ new Set();
-  storageKey = "";
-  constructor() {
+  constructor(storage = null) {
+    this.storage = storage;
     this.element.id = "tactical-comms";
     this.element.setAttribute("aria-label", "Tactical communications");
     this.element.style.cssText = "position:fixed;left:22px;bottom:170px;width:min(460px,calc(100vw - 44px));box-sizing:border-box;padding:16px 16px 14px 112px;border:1px solid var(--comms-color,#42caff);border-left-width:3px;background:linear-gradient(90deg,transparent 104px,rgba(4,13,22,.91) 104px);color:#e8f3f9;font:13px/1.5 Consolas,monospace;z-index:12;pointer-events:auto;min-height:120px;display:none";
     this.text.style.cssText = "margin:8px 0;min-height:42px";
     this.text.setAttribute("aria-live", "polite");
-    const mute = document.createElement("button");
+    const mute = this.mute;
     mute.textContent = "Comms audio on";
     mute.onclick = () => {
-      this.muted = !this.muted;
-      mute.textContent = `Comms audio ${this.muted ? "off" : "on"}`;
+      this.setMuted(!this.muted);
+      this.storage?.setItem("crackup.commsMuted", String(this.muted));
     };
     mute.style.cssText = "background:none;border:0;color:#b6c8d3;font:10px monospace;cursor:pointer;padding:3px 0";
     this.element.append(this.name, this.text, this.choices, mute);
@@ -48387,30 +51375,54 @@ var TacticalCommsOverlay = class {
     window.addEventListener("pointerdown", this.unlockAudio, { once: true });
     window.addEventListener("keydown", this.unlockAudio, { once: true });
   }
+  director = new StoryDirector();
+  element = document.createElement("aside");
+  text = document.createElement("p");
+  name = document.createElement("strong");
+  choices = document.createElement("div");
+  portrait = new Group();
+  scene = new Scene();
+  camera = new PerspectiveCamera(32, 1, 0.1, 10);
+  material = new MeshBasicMaterial({ color: 4377343, wireframe: true, transparent: true, opacity: 0.8 });
+  node = null;
+  elapsed = 0;
+  visibleCharacters = 0;
+  ctx = null;
+  muted = false;
+  mute = document.createElement("button");
+  whispers = [];
+  heard = /* @__PURE__ */ new Set();
+  storageKey = "";
+  cinematicActive = false;
+  openingPresented = false;
   unlockAudio = () => {
     if (!this.ctx && window.AudioContext) this.ctx = new AudioContext();
     void this.ctx?.resume();
   };
-  useProfile(callsign) {
-    if (this.storageKey === `crackup:story:v1:${callsign}`) return;
+  useProfile(callsign, force = false) {
+    if (!force && this.storageKey === `crackup:story:v1:${callsign}`) return;
     this.storageKey = `crackup:story:v1:${callsign}`;
-    this.director.completed.clear();
-    this.director.beat = null;
-    this.director.node = null;
+    this.openingPresented = false;
+    this.director.restore(newCampaignPresentation().story);
     this.heard.clear();
     this.whispers.length = 0;
     this.node = null;
     try {
-      const saved = JSON.parse(localStorage.getItem(this.storageKey) ?? "{}");
-      for (const id of saved.completed ?? []) this.director.completed.add(id);
-      this.heard = new Set(saved.heard ?? []);
+      const raw = JSON.parse(this.storage?.getItem(this.storageKey) ?? "{}");
+      const saved = parseCampaignPresentation({ ...newCampaignPresentation(), story: { ...newCampaignPresentation().story, ...raw } }).story;
+      this.director.restore(saved);
+      this.heard = new Set(saved.heard);
     } catch {
     }
+  }
+  setMuted(muted) {
+    this.muted = muted;
+    this.mute.textContent = `Comms audio ${muted ? "off" : "on"}`;
   }
   save() {
     if (!this.storageKey) return;
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify({ completed: [...this.director.completed], heard: [...this.heard] }));
+      this.storage?.setItem(this.storageKey, JSON.stringify({ ...this.director.snapshot(), heard: [...this.heard] }));
     } catch {
     }
   }
@@ -48422,15 +51434,15 @@ var TacticalCommsOverlay = class {
   }
   cadence(character) {
     if (this.muted || !this.ctx || this.ctx.state !== "running" || !this.node || !/[\w]/.test(character)) return;
-    const oscillator = this.ctx.createOscillator(), gain = this.ctx.createGain(), t2 = this.ctx.currentTime;
+    const oscillator = this.ctx.createOscillator(), gain = this.ctx.createGain(), t3 = this.ctx.currentTime;
     oscillator.type = "triangle";
-    oscillator.frequency.setValueAtTime(CHARACTERS[this.node.speaker].voiceHz + character.charCodeAt(0) % 7 * 13, t2);
-    gain.gain.setValueAtTime(0.025, t2);
-    gain.gain.exponentialRampToValueAtTime(1e-3, t2 + 0.045);
+    oscillator.frequency.setValueAtTime(CHARACTERS[this.node.speaker].voiceHz + character.charCodeAt(0) % 7 * 13, t3);
+    gain.gain.setValueAtTime(0.025, t3);
+    gain.gain.exponentialRampToValueAtTime(1e-3, t3 + 0.045);
     oscillator.connect(gain);
     gain.connect(this.ctx.destination);
-    oscillator.start(t2);
-    oscillator.stop(t2 + 0.05);
+    oscillator.start(t3);
+    oscillator.stop(t3 + 0.05);
     oscillator.onended = () => {
       oscillator.disconnect();
       gain.disconnect();
@@ -48442,6 +51454,19 @@ var TacticalCommsOverlay = class {
     this.save();
   }
   update(context, dt) {
+    if (this.cinematicActive) {
+      this.element.style.display = "none";
+      return;
+    }
+    if (this.openingPresented) {
+      this.director.update(context);
+      if (this.director.beat?.id === "deployment" && this.director.node?.id === "mandate") {
+        if (this.node === this.director.node) this.node = null;
+        this.director.advance();
+      }
+      this.openingPresented = false;
+      this.save();
+    }
     if (!context.deployed) {
       this.element.style.display = "none";
       return;
@@ -48453,6 +51478,7 @@ var TacticalCommsOverlay = class {
         return;
       }
       this.node = next;
+      this.save();
       this.elapsed = 0;
       this.visibleCharacters = 0;
       const profile = CHARACTERS[next.speaker];
@@ -48486,7 +51512,7 @@ var TacticalCommsOverlay = class {
     if (this.elapsed > this.node.text.length / 32 + (this.node.choices ? 10 : 3.5)) this.advance();
   }
   renderPortrait(renderer) {
-    if (this.element.style.display === "none") return;
+    if (this.cinematicActive || this.element.style.display === "none") return;
     const rect = this.element.getBoundingClientRect();
     const viewport = renderer.getViewport(new Vector4()), scissor = renderer.getScissor(new Vector4());
     const scissorTest = renderer.getScissorTest(), autoClear = renderer.autoClear;
@@ -48520,6 +51546,14 @@ var TacticalCommsOverlay = class {
     void this.ctx?.close();
     this.element.remove();
   }
+  setCinematicActive(active) {
+    this.cinematicActive = active;
+    if (active) this.element.style.display = "none";
+    else if (this.node) this.element.style.display = "block";
+  }
+  acknowledgeOpeningBriefing() {
+    this.openingPresented = true;
+  }
 };
 
 // client/animation/combatDebris.ts
@@ -48529,25 +51563,403 @@ var CombatDebrisRenderer = class {
   update(states) {
     const active = new Set(states.map((s2) => s2.id));
     for (const state of states) {
-      let mesh = this.weapons.get(state.id);
-      if (!mesh) {
-        mesh = createRigFirearm();
-        this.weapons.set(state.id, mesh);
-        this.root.add(mesh);
+      let weapon = this.weapons.get(state.id);
+      const variant = state.variant ?? 0 /* CARBINE */;
+      if (weapon && weapon.variant !== variant) {
+        weapon.dispose();
+        this.weapons.delete(state.id);
+        weapon = void 0;
       }
+      if (!weapon) {
+        weapon = weaponBuilder.build(variant);
+        this.weapons.set(state.id, weapon);
+        this.root.add(weapon.root);
+      }
+      const mesh = weapon.root;
+      mesh.scale.setScalar(state.scale ?? 1);
       mesh.position.set(state.position.x, state.position.y, state.position.z);
       mesh.quaternion.set(state.rotation.x, state.rotation.y, state.rotation.z, state.rotation.w);
     }
-    for (const [id, mesh] of this.weapons) if (!active.has(id)) {
-      mesh.removeFromParent();
-      mesh.traverse((o2) => {
-        if (o2 instanceof Mesh) {
-          o2.geometry.dispose();
-          o2.material.dispose();
-        }
-      });
+    for (const [id, weapon] of this.weapons) if (!active.has(id)) {
+      weapon.dispose();
       this.weapons.delete(id);
     }
+  }
+  dispose() {
+    this.update([]);
+    this.root.removeFromParent();
+  }
+};
+
+// client/narrative/cinematicTracks.ts
+var OPENING_ID = "opening-v1";
+var add = (p2, x2, y2, z2) => ({
+  x: p2.x + x2,
+  y: p2.y + y2,
+  z: p2.z + z2
+});
+var facingOffset = (p2, yaw, side, height, forward) => add(
+  p2,
+  Math.cos(yaw) * side - Math.sin(yaw) * forward,
+  height,
+  -Math.sin(yaw) * side - Math.cos(yaw) * forward
+);
+var pose = (position, target, fov2) => ({
+  position,
+  target,
+  fov: fov2
+});
+var shot = (start, end, from, to) => ({ start, end, from, to });
+function openingTrack(player, vehicle, playerYaw = 0) {
+  const bridge = BRIDGES[0], deployment = STORY_BEATS.find((b2) => b2.id === "deployment");
+  const car = vehicle ?? player;
+  return {
+    id: OPENING_ID,
+    title: "NEO-VERIDIA",
+    eyebrow: "ACT I / THE SAFETY MANDATE",
+    duration: 11.5,
+    shots: [
+      shot(
+        0,
+        4,
+        pose(
+          bridgePoint(bridge, 1500, -190, 170),
+          bridgePoint(bridge, 900, 0, 100),
+          54
+        ),
+        pose(
+          bridgePoint(bridge, 1120, -145, 145),
+          bridgePoint(bridge, 700, 0, 100),
+          50
+        )
+      ),
+      shot(
+        4,
+        7,
+        pose({ x: -300, y: 195, z: -650 }, { x: -40, y: 30, z: -20 }, 58),
+        pose({ x: -210, y: 160, z: -500 }, { x: -25, y: 24, z: 10 }, 55)
+      ),
+      shot(
+        7,
+        9,
+        pose(add(car, -9, 4, 10), add(car, 0, 0.5, 0), 50),
+        pose(add(car, -7, 3, 9), add(car, 0, 0.5, 0), 48)
+      ),
+      shot(
+        9,
+        11.5,
+        pose(
+          facingOffset(player, playerYaw, 3, 2.5, 5),
+          add(player, 0, 1.4, 0),
+          48
+        ),
+        pose(
+          facingOffset(player, playerYaw, 2.5, 2.2, 4.5),
+          add(player, 0, 1.4, 0),
+          46
+        )
+      )
+    ],
+    cues: [
+      {
+        start: 0.3,
+        end: 6.7,
+        line: deployment.nodes.find((n3) => n3.id === "mandate")
+      },
+      { start: 7, end: 11.5, line: CINEMATIC_LINES.arrival }
+    ]
+  };
+}
+function encounterTracks(source) {
+  const out = [];
+  const boss = source.phase6?.dreadnought;
+  if (boss && boss.phase !== 0 /* DORMANT */ && boss.phase !== 4 /* DEFEATED */ && Math.hypot(
+    source.player.x - boss.position.x,
+    source.player.z - boss.position.z
+  ) < 140) {
+    out.push({
+      id: "dreadnought-v1",
+      title: "APEX DREADNOUGHT",
+      eyebrow: "AEGIS / FINAL ENCOUNTER",
+      duration: 4.5,
+      shots: [
+        shot(
+          0,
+          4.5,
+          pose(add(boss.position, 65, 25, 80), boss.position, 52),
+          pose(add(boss.position, 58, 18, 74), boss.position, 48)
+        )
+      ],
+      cues: [{ start: 0.15, end: 4.5, line: CINEMATIC_LINES.dreadnought }]
+    });
+  }
+  for (const district of source.districts) {
+    if (district.currentStage !== 2 && district.currentStage !== 3) continue;
+    const spec = DISTRICT_LOOP_SPECS[district.districtIndex];
+    if (!spec) continue;
+    const lieutenant = district.currentStage === 2, id = lieutenant ? spec.lieutenantEnemyId : spec.kingpinEnemyId;
+    const enemy = source.enemies.get(id);
+    if (!enemy || enemy.hp <= 0 || enemy.combatState === 7 /* DEAD */ || Math.hypot(
+      source.player.x - enemy.position.x,
+      source.player.y - enemy.position.y,
+      source.player.z - enemy.position.z
+    ) > 60)
+      continue;
+    const target = add(enemy.position, 0, 1.3, 0);
+    out.push({
+      id: `enemy-${id}`,
+      targetEnemyId: id,
+      title: (lieutenant ? spec.lieutenantCallsign : spec.kingpinCallsign).replaceAll("-", " "),
+      eyebrow: `${spec.district.replaceAll("_", " ")} / ${lieutenant ? "LIEUTENANT" : "KINGPIN"}`,
+      duration: 3.6,
+      shots: [
+        shot(
+          0,
+          3.6,
+          pose(facingOffset(enemy.position, enemy.yaw, 6, 3.2, 8), target, 42),
+          pose(facingOffset(enemy.position, enemy.yaw, 5, 2.7, 7), target, 40)
+        )
+      ],
+      cues: [
+        {
+          start: 0.15,
+          end: 3.6,
+          line: lieutenant ? CINEMATIC_LINES.lieutenant : CINEMATIC_LINES.kingpin
+        }
+      ]
+    });
+  }
+  return out;
+}
+function sampleTrack(track, time, reducedMotion = false) {
+  const current = track.shots.find((s2) => time < s2.end) ?? track.shots.at(-1);
+  const t3 = Math.max(
+    0,
+    Math.min(1, (time - current.start) / (current.end - current.start))
+  );
+  const alpha = reducedMotion ? 0.5 : t3 * t3 * (3 - 2 * t3);
+  const mix = (a2, b2) => a2 + (b2 - a2) * alpha;
+  const vector = (a2, b2) => ({
+    x: mix(a2.x, b2.x),
+    y: mix(a2.y, b2.y),
+    z: mix(a2.z, b2.z)
+  });
+  const fade = Math.max(
+    0,
+    1 - Math.min(time - current.start, current.end - time) / 0.18
+  );
+  return {
+    shotIndex: track.shots.indexOf(current),
+    position: vector(current.from.position, current.to.position),
+    target: vector(current.from.target, current.to.target),
+    fov: mix(current.from.fov, current.to.fov),
+    fade: Math.min(1, fade),
+    cue: track.cues.find((c2) => time >= c2.start && time < c2.end)?.line ?? null
+  };
+}
+
+// client/narrative/cinematicDirector.ts
+var CinematicDirector = class {
+  constructor(camera, storage = null, hooks = {}) {
+    this.camera = camera;
+    this.storage = storage;
+    this.hooks = hooks;
+  }
+  track = null;
+  started = 0;
+  profile = "";
+  history = /* @__PURE__ */ new Map();
+  gameplayPosition = new Vector3();
+  gameplayRotation = new Quaternion();
+  gameplayFov = 68;
+  reducedMotion = false;
+  get active() {
+    return this.track !== null;
+  }
+  get activeId() {
+    return this.track?.id ?? null;
+  }
+  get targetEnemyId() {
+    return this.track?.targetEnemyId;
+  }
+  follow(track) {
+    if (track.id === this.track?.id) this.track = track;
+  }
+  seen(id) {
+    return this.history.has(id);
+  }
+  useProfile(callsign, force = false) {
+    if (!force && this.profile === callsign) return;
+    this.end("interrupted");
+    this.profile = callsign;
+    this.history.clear();
+    try {
+      const saved = JSON.parse(this.storage?.getItem(this.key) ?? "{}");
+      for (const [id, value] of Object.entries(saved)) {
+        if (CINEMATIC_IDS.has(id) && [
+          "completed",
+          "skipped",
+          "damage",
+          "death",
+          "disconnected",
+          "hidden",
+          "interrupted"
+        ].includes(String(value)))
+          this.history.set(id, value);
+      }
+    } catch {
+    }
+  }
+  get key() {
+    return `crackup:cinematics:v1:${this.profile}`;
+  }
+  capture() {
+    this.gameplayPosition.copy(this.camera.position);
+    this.gameplayRotation.copy(this.camera.quaternion);
+    this.gameplayFov = this.camera.fov;
+  }
+  /** Call before the ordinary spring-arm update so cinematic FOV never leaks into it. */
+  restoreGameplayCamera() {
+    if (!this.active) return;
+    this.camera.position.copy(this.gameplayPosition);
+    this.camera.quaternion.copy(this.gameplayRotation);
+    this.camera.fov = this.gameplayFov;
+    this.camera.updateProjectionMatrix();
+  }
+  start(track, now2) {
+    if (this.active || this.seen(track.id) || !CINEMATIC_IDS.has(track.id) || !Number.isFinite(now2))
+      return false;
+    this.capture();
+    this.track = track;
+    this.started = now2;
+    this.hooks.start?.(track);
+    return true;
+  }
+  /** Call after the normal gameplay camera updates, using monotonic wall-clock seconds. */
+  update(now2) {
+    if (!this.track) return;
+    this.capture();
+    const elapsed = Math.max(0, now2 - this.started);
+    if (elapsed >= this.track.duration) {
+      this.end("completed");
+      return;
+    }
+    const sample = sampleTrack(this.track, elapsed, this.reducedMotion);
+    const resolved = this.hooks.resolvePosition?.(this.track, sample);
+    if (resolved) this.camera.position.copy(resolved);
+    else
+      this.camera.position.set(
+        sample.position.x,
+        sample.position.y,
+        sample.position.z
+      );
+    this.camera.lookAt(sample.target.x, sample.target.y, sample.target.z);
+    this.camera.fov = sample.fov;
+    this.camera.updateProjectionMatrix();
+    this.hooks.frame?.(this.track, sample);
+  }
+  end(reason = "skipped") {
+    const track = this.track;
+    if (!track) return;
+    this.restoreGameplayCamera();
+    this.track = null;
+    this.history.set(track.id, reason);
+    try {
+      if (this.profile)
+        this.storage?.setItem(
+          this.key,
+          JSON.stringify(Object.fromEntries(this.history))
+        );
+    } catch {
+    }
+    this.hooks.finish?.(track, reason);
+  }
+  dispose() {
+    this.end("interrupted");
+  }
+};
+
+// client/narrative/cinematicOverlay.ts
+var CinematicOverlay = class {
+  element = document.createElement("section");
+  skip = document.createElement("button");
+  style = document.createElement("style");
+  title = document.createElement("h2");
+  eyebrow = document.createElement("p");
+  caption = document.createElement("p");
+  fade = document.createElement("div");
+  previousFocus = null;
+  constructor(onSkip) {
+    this.style.textContent = `
+body.cinematic-active #player-hud,body.cinematic-active #telemetry-hud{visibility:hidden}
+#cinematic-overlay{position:fixed;inset:0;z-index:80;color:#f3f8fb;font-family:system-ui,sans-serif;pointer-events:none}
+#cinematic-overlay[hidden]{display:none}
+#cinematic-overlay:before,#cinematic-overlay:after{content:'';position:absolute;left:0;right:0;height:9%;background:#050a10}
+#cinematic-overlay:before{top:0}#cinematic-overlay:after{bottom:0}
+#cinematic-overlay .cinema-fade{position:absolute;inset:0;background:#050a10}
+#cinematic-overlay .cinema-heading{position:absolute;left:6%;top:14%;text-shadow:0 2px 14px #000}
+#cinematic-overlay h2{font-size:clamp(24px,4vw,56px);letter-spacing:.12em;margin:0;font-weight:700;max-width:85vw}
+#cinematic-overlay .cinema-heading p{font-size:11px;letter-spacing:.22em;color:#7de9db;margin:0 0 12px}
+#cinematic-overlay .cinema-caption{position:absolute;bottom:12%;left:15%;width:70%;box-sizing:border-box;text-align:center;padding:14px 20px;background:#07111ce8;font-size:clamp(13px,1.4vw,18px);line-height:1.6;border-top:1px solid #4b7883}
+#cinematic-overlay .cinema-caption:empty{display:none}
+#cinematic-overlay button{position:absolute;right:4%;top:3%;z-index:2;pointer-events:auto;background:#152633;border:1px solid #6d8d9e;border-radius:4px;padding:8px 14px;color:#f3f8fb;cursor:pointer;font:12px system-ui}
+#cinematic-overlay button:focus-visible{outline:2px solid #7de9db;outline-offset:4px}
+@media(max-width:600px){#cinematic-overlay .cinema-caption{left:4%;width:92%}#cinematic-overlay .cinema-heading{top:18%}}
+`;
+    this.element.id = "cinematic-overlay";
+    this.element.hidden = true;
+    this.element.setAttribute("role", "dialog");
+    this.element.setAttribute("aria-modal", "true");
+    this.title.id = "cinematic-title";
+    this.element.setAttribute("aria-labelledby", this.title.id);
+    this.caption.className = "cinema-caption";
+    this.caption.setAttribute("aria-live", "polite");
+    this.caption.setAttribute("aria-atomic", "true");
+    const heading = document.createElement("div");
+    heading.className = "cinema-heading";
+    heading.append(this.eyebrow, this.title);
+    this.fade.className = "cinema-fade";
+    this.fade.setAttribute("aria-hidden", "true");
+    this.skip.textContent = "Skip intro \xB7 Esc / Space";
+    this.skip.onclick = onSkip;
+    this.element.addEventListener("keydown", (event) => {
+      if (event.key === "Tab") {
+        event.preventDefault();
+        this.skip.focus();
+      }
+    });
+    this.element.append(this.fade, heading, this.caption, this.skip);
+    document.head.append(this.style);
+    document.body.append(this.element);
+  }
+  show(track) {
+    this.previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    this.title.textContent = track.title;
+    this.eyebrow.textContent = track.eyebrow;
+    this.caption.textContent = "";
+    this.element.dataset.sequence = track.id;
+    this.element.hidden = false;
+    document.body.classList.add("cinematic-active");
+    this.skip.focus();
+  }
+  update(sample) {
+    this.fade.style.opacity = String(sample.fade);
+    const text2 = sample.cue ? `${CHARACTERS[sample.cue.speaker].name}: ${sample.cue.text}` : "";
+    if (this.caption.textContent !== text2) this.caption.textContent = text2;
+  }
+  hide() {
+    this.element.hidden = true;
+    this.caption.textContent = "";
+    document.body.classList.remove("cinematic-active");
+    if (this.previousFocus?.isConnected && this.previousFocus.getClientRects().length)
+      this.previousFocus.focus();
+    else this.skip.blur();
+    this.previousFocus = null;
+  }
+  dispose() {
+    this.hide();
+    this.element.remove();
+    this.style.remove();
   }
 };
 
@@ -48559,12 +51971,21 @@ var Crackup3DClientApp = class {
   physicsWorld;
   netcode;
   spatialAudio;
-  shockwaveEffect;
+  effects = new CombatEffects();
+  presentationQueue = new PresentationQueue();
   vehiclePropRenderer;
   phase5Renderer;
   phase6Renderer;
   playerHUD;
   comms;
+  cinematics;
+  cinematicOverlay;
+  campaignStorage;
+  loadPresentationSettings = null;
+  cinematicIntros = true;
+  nextCinematicAt = 0;
+  cinematicHadPointerLock = false;
+  cinematicUnlockPending = false;
   combatDebris = new CombatDebrisRenderer();
   localRig = null;
   remoteRigs = /* @__PURE__ */ new Map();
@@ -48582,6 +52003,17 @@ var Crackup3DClientApp = class {
     this.physicsWorld = new SharedPhysicsWorld();
     this.netcode = new PredictionAndInterpolationManager(this.physicsWorld);
     this.spatialAudio = new SpatialOrbAudioEngine();
+    this.netcode.onEffects = (packet) => {
+      if (document.hidden) return;
+      const accepted = this.presentationQueue.receive(packet, performance.now() / 1e3);
+      for (const event of accepted) if (event.kind === 0 /* SHOT */) (event.actor === this.netcode.localEntityId ? this.localRig : this.remoteRigs.get(event.actor))?.showShot(Math.atan2(event.point.y - event.origin.y, Math.hypot(event.point.x - event.origin.x, event.point.z - event.origin.z)));
+    };
+    this.netcode.onPresentationReset = () => {
+      this.presentationQueue.reset();
+      this.effects.reset();
+      this.spatialAudio.stopWorld();
+      this.cinematics?.end("disconnected");
+    };
     this.netcode.onOrbCollectedCallback = (_orbId, orbType) => {
       this.spatialAudio.playOrbCollectedChime(orbType);
       if (orbType === 2) this.comms.whisper(Math.max(0, this.netcode.orbs.filter((o2) => o2.type === 2).findIndex((o2) => o2.orbId === _orbId)));
@@ -48590,14 +52022,8 @@ var Crackup3DClientApp = class {
     this.netcode.onCombatEventCallback = (ev) => {
       (ev.attackerEntityId === this.netcode.localEntityId ? this.localRig : this.remoteRigs.get(ev.attackerEntityId))?.combat(ev);
       this.playerHUD.combat(ev);
-      if (ev.attackerEntityId === this.netcode.localEntityId && ["WEAPON_HIT", "VEHICLE_HIT", "RELAY_VENT_HIT", "MELEE_HIT", "PARRY_TAKEDOWN"].includes(ev.type)) {
-        this.spatialAudio.playCombatCue(ev.isCrit ? "critical" : "hit");
-      }
       if (ev.type === "PARRY_TAKEDOWN") {
         this.lastCombatLog = `Q COUNTER-PARRY TAKEDOWN! (${ev.damageDealt.toFixed(0)} DMG${ev.shockwaveTriggered ? ` + 6.0m SHOCKWAVE [${ev.shockwaveHits} HIT]` : ""})`;
-        if (ev.shockwaveTriggered) {
-          this.shockwaveEffect.trigger(ev.impactPoint);
-        }
       } else if (ev.type === "COUNTER_BOUNCE_THROW") {
         this.lastCombatLog = `STRIKE BOUNCED OFF ELITE CRIMSON COUNTER-SHIELD!`;
       } else if (ev.type === "MELEE_HIT") {
@@ -48637,16 +52063,112 @@ var Crackup3DClientApp = class {
       this.cameraController.camera,
       this.netcode.orbs
     );
-    this.shockwaveEffect = new KineticShockwaveEffect(this.environment.scene);
+    this.environment.scene.add(this.effects.root);
     this.environment.scene.add(this.combatDebris.root);
     this.vehiclePropRenderer = new ClientVehiclePropRenderer();
     this.environment.scene.add(this.vehiclePropRenderer.rootGroup);
     this.phase5Renderer = new ClientPhase5WorldRenderer(this.environment.scene, (material) => this.environment.prepareArtMaterial(material));
     this.phase6Renderer = new Phase6WorldRenderer(this.environment.scene);
-    this.playerHUD = new PlayerHUD(this.netcode, this.cameraController, this.environment, this.renderer);
-    this.comms = new TacticalCommsOverlay();
-    this.playerHUD.onMenuChanged = () => this.clearInput();
-    this.playerHUD.onDamage = () => this.spatialAudio.playCombatCue("hurt");
+    let browserStorage = null;
+    try {
+      browserStorage = localStorage;
+    } catch {
+    }
+    this.campaignStorage = new CampaignStorage(browserStorage, (presentation) => this.netcode.sendControl(this.netcode.mode === "campaign" ? "CAMPAIGN_PRESENTATION" : "SOLO_PRESENTATION", { presentation }));
+    this.playerHUD = new PlayerHUD(this.netcode, this.cameraController, this.environment, this.renderer, this.campaignStorage);
+    this.comms = new TacticalCommsOverlay(this.campaignStorage);
+    this.cinematicOverlay = new CinematicOverlay(() => this.cinematics.end("skipped"));
+    this.cinematics = new CinematicDirector(this.cameraController.camera, this.campaignStorage, {
+      start: (track) => {
+        this.cinematicHadPointerLock = document.pointerLockElement === this.renderer.domElement;
+        this.cinematicUnlockPending = this.cinematicHadPointerLock;
+        this.clearInput();
+        this.comms.setCinematicActive(true);
+        this.cinematicOverlay.show(track);
+        document.exitPointerLock?.();
+      },
+      frame: (_track, sample) => this.cinematicOverlay.update(sample),
+      finish: (track, reason) => {
+        this.clearInput();
+        this.cinematicOverlay.hide();
+        this.comms.setCinematicActive(false);
+        this.nextCinematicAt = performance.now() / 1e3 + 4;
+        if (track.id === OPENING_ID && reason === "completed") this.comms.acknowledgeOpeningBriefing();
+        if (this.cinematicHadPointerLock && (reason === "completed" || reason === "skipped") && this.netcode.connected && document.hasFocus() && !document.hidden && !this.playerHUD.blocksInput) {
+          Promise.resolve(this.renderer.domElement.requestPointerLock?.()).catch(() => {
+          });
+        }
+        this.cinematicHadPointerLock = false;
+      },
+      resolvePosition: (track, sample) => {
+        if (!track.targetEnemyId && !(track.id === OPENING_ID && sample.shotIndex === 3)) return void 0;
+        const direction = new Vector3(sample.position.x - sample.target.x, sample.position.y - sample.target.y, sample.position.z - sample.target.z);
+        const length = direction.length();
+        direction.normalize();
+        const safe = this.physicsWorld.computeCameraSafeDistance(sample.target, direction, length, this.netcode.getLocalAgent());
+        return direction.multiplyScalar(safe).add(new Vector3(sample.target.x, sample.target.y, sample.target.z));
+      }
+    });
+    this.cinematics.reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    this.playerHUD.onMenuChanged = () => {
+      this.clearInput();
+      this.syncSoloPause();
+      if (this.playerHUD.downed) this.cinematics.end("death");
+      else if (this.playerHUD.menuOpen) this.cinematics.end("interrupted");
+    };
+    const cinematicSetting = document.getElementById("cinematics-setting");
+    try {
+      cinematicSetting.checked = this.campaignStorage.getItem("crackup.cinematicIntros") !== "false";
+    } catch {
+    }
+    this.cinematicIntros = cinematicSetting.checked;
+    cinematicSetting.onchange = () => {
+      this.cinematicIntros = cinematicSetting.checked;
+      if (!this.cinematicIntros) this.cinematics.end("skipped");
+      try {
+        this.campaignStorage.setItem("crackup.cinematicIntros", String(this.cinematicIntros));
+      } catch {
+      }
+    };
+    const audioSetting = document.getElementById("audio-setting");
+    try {
+      audioSetting.checked = this.campaignStorage.getItem("crackup.audioMuted") !== "true";
+    } catch {
+    }
+    this.spatialAudio.setMuted(!audioSetting.checked);
+    audioSetting.onchange = () => {
+      this.spatialAudio.unlockAndInit();
+      this.spatialAudio.setMuted(!audioSetting.checked);
+      try {
+        this.campaignStorage.setItem("crackup.audioMuted", String(!audioSetting.checked));
+      } catch {
+      }
+    };
+    this.loadPresentationSettings = () => {
+      this.playerHUD.bindSettings();
+      cinematicSetting.checked = this.campaignStorage.getItem("crackup.cinematicIntros") !== "false";
+      this.cinematicIntros = cinematicSetting.checked;
+      audioSetting.checked = this.campaignStorage.getItem("crackup.audioMuted") !== "true";
+      this.spatialAudio.setMuted(!audioSetting.checked);
+      this.comms.setMuted(this.campaignStorage.getItem("crackup.commsMuted") === "true");
+    };
+    window.addEventListener("pagehide", (event) => {
+      this.cinematics.end("hidden");
+      this.presentationQueue.reset();
+      this.effects.reset();
+      this.spatialAudio.setActive(false);
+      if (!event.persisted) {
+        this.cinematics.dispose();
+        this.cinematicOverlay.dispose();
+        this.comms.dispose();
+        this.effects.dispose();
+        void this.spatialAudio.dispose();
+      }
+    });
+    this.playerHUD.onDamage = () => {
+      this.cinematics.end("damage");
+      this.spatialAudio.playCombatCue("hurt");
+    };
     this.playerHUD.onDefeat = () => this.spatialAudio.playCombatCue("defeat");
     try {
       await productionAssets.load(this.renderer);
@@ -48664,10 +52186,19 @@ var Crackup3DClientApp = class {
       this.cameraController.resize(w2, h2);
       this.environment.resize(w2, h2);
     });
-    requestAnimationFrame((t2) => this.renderLoop(t2));
+    requestAnimationFrame((t3) => this.renderLoop(t3));
   }
   bindControls() {
     window.addEventListener("keydown", (e2) => {
+      if (this.cinematics.active) {
+        if (e2.code === "Escape" || e2.code === "Space") {
+          e2.preventDefault();
+          this.cinematics.end("skipped");
+          return;
+        }
+        if (["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyV", "KeyQ", "KeyE", "KeyH", "KeyB"].includes(e2.code)) this.cinematics.end("skipped");
+        else return;
+      }
       if (!elIsAuthVisible() && !e2.repeat && this.playerHUD.handleKey(e2.code)) {
         e2.preventDefault();
         return;
@@ -48687,12 +52218,14 @@ var Crackup3DClientApp = class {
       this.keysDown.delete(e2.code);
     });
     window.addEventListener("wheel", (e2) => {
+      if (this.cinematics.active) return;
       if (this.cameraController.isAiming) {
         const delta = e2.deltaY > 0 ? 1 : 5;
         this.selectedVatsLimb = (this.selectedVatsLimb + delta) % 6;
       }
     });
     window.addEventListener("mousedown", (e2) => {
+      if (this.cinematics.active) return;
       if (e2.target !== this.renderer.domElement || this.playerHUD.blocksInput) return;
       this.spatialAudio.unlockAndInit();
       if (document.pointerLockElement !== this.renderer.domElement) {
@@ -48714,18 +52247,34 @@ var Crackup3DClientApp = class {
     });
     window.addEventListener("contextmenu", (e2) => e2.preventDefault());
     window.addEventListener("mousemove", (e2) => {
+      if (this.cinematics.active) return;
       if (document.pointerLockElement === this.renderer.domElement) {
         this.cameraController.onMouseMove(e2.movementX, e2.movementY);
       }
     });
-    window.addEventListener("blur", () => this.clearInput());
+    window.addEventListener("blur", () => {
+      this.clearInput();
+      this.syncSoloPause();
+    });
+    window.addEventListener("focus", () => this.syncSoloPause());
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden) this.clearInput();
+      this.syncSoloPause();
+      if (document.hidden) {
+        this.cinematics.end("hidden");
+        this.clearInput();
+        this.presentationQueue.reset();
+        this.effects.reset();
+        this.spatialAudio.setActive(false);
+      }
     });
     document.addEventListener("pointerlockchange", () => {
       if (!document.pointerLockElement) {
         this.clearInput();
-        if (!this.playerHUD.menuOpen && !this.playerHUD.downed && document.hasFocus() && !document.hidden) this.playerHUD.setMenu(true);
+        if (this.cinematicUnlockPending) {
+          this.cinematicUnlockPending = false;
+          return;
+        }
+        if (!this.cinematics.active && !this.playerHUD.menuOpen && !this.playerHUD.downed && document.hasFocus() && !document.hidden) this.playerHUD.setMenu(true);
       }
     });
   }
@@ -48736,6 +52285,14 @@ var Crackup3DClientApp = class {
     this.pendingMouseButtons = 0;
     this.cameraController.isAiming = false;
     this.physicsAccumulator = 0;
+  }
+  requestedSoloPause = null;
+  syncSoloPause() {
+    if (this.netcode.mode !== "solo" || !this.netcode.connected) return;
+    const paused = this.playerHUD.menuOpen || document.hidden || !document.hasFocus();
+    if (paused === this.requestedSoloPause) return;
+    this.requestedSoloPause = paused;
+    this.netcode.sendControl("SOLO_PAUSE", { paused });
   }
   bindAuthUI() {
     const form = document.getElementById("auth-form");
@@ -48752,12 +52309,19 @@ var Crackup3DClientApp = class {
       if (errorEl) errorEl.textContent = "Connecting to Authoritative 3D Rapier Server...";
       const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
       const wsUrl = `${proto}//${window.location.host}/ws`;
+      this.netcode.campaignJoin = {
+        campaignRole: document.getElementById("campaign-role").value === "guest" ? "guest" : "host",
+        campaignOwner: document.getElementById("campaign-owner").value.trim().toUpperCase(),
+        inviteCode: document.getElementById("campaign-code").value.trim()
+      };
       this.netcode.connect(
         wsUrl,
         callsign,
         pin,
         (_entityId, authedCallsign, attributes) => {
+          this.requestedSoloPause = null;
           this.playerHUD.deploy(authedCallsign);
+          this.syncSoloPause();
           this.spawnOrUpdateLocalRig(authedCallsign, attributes);
           const position = this.netcode.getLocalAgent()?.position;
           if (position) {
@@ -48778,11 +52342,16 @@ var Crackup3DClientApp = class {
       this.localRig.dispose();
     }
     this.localRig = new ArticulatedAgentRig(callsign, true);
-    this.comms.useProfile(callsign);
+    this.campaignStorage.suspend();
+    this.cinematics.end("interrupted");
+    this.campaignStorage.useCampaign(callsign, this.netcode.mode !== "shared", this.netcode.campaignPresentation);
+    this.comms.useProfile(callsign, true);
+    this.cinematics.useProfile(callsign, true);
+    this.loadPresentationSettings?.();
     this.environment.scene.add(this.localRig.root);
   }
   sampleMovementAxesAndButtons() {
-    if (this.playerHUD.blocksInput) return { moveX: 0, moveZ: 0, buttons: 0 };
+    if (this.playerHUD.blocksInput || this.cinematics.active) return { moveX: 0, moveZ: 0, buttons: 0 };
     let moveX = 0;
     let moveZ = 0;
     if (this.keysDown.has("KeyD") || this.keysDown.has("ArrowRight")) moveX += 1;
@@ -48812,15 +52381,16 @@ var Crackup3DClientApp = class {
     return { moveX, moveZ, buttons };
   }
   renderLoop(nowMs) {
-    requestAnimationFrame((t2) => this.renderLoop(t2));
-    const dt = Math.min(0.1, Math.max(1e-3, (nowMs - this.lastFrameTimeMs) / 1e3));
+    requestAnimationFrame((t3) => this.renderLoop(t3));
+    this.cinematics.restoreGameplayCamera();
+    const dt = this.netcode.mode !== "shared" && this.netcode.soloState?.paused ? 0 : Math.min(0.1, Math.max(1e-3, (nowMs - this.lastFrameTimeMs) / 1e3));
     this.lastFrameTimeMs = nowMs;
     this.environment.updateOrbsAndUpdrafts(
       this.netcode.orbs,
       this.netcode.collectedOrbIds,
       dt
     );
-    this.shockwaveEffect.update(dt);
+    this.spatialAudio.setActive(this.netcode.connected && !document.hidden && !this.netcode.soloState?.paused);
     this.phase6Renderer.update(this.netcode.phase6Snapshot, dt);
     const localAgent = this.netcode.getLocalAgent();
     this.vehiclePropRenderer.updateFromSnapshots(
@@ -48845,6 +52415,7 @@ var Crackup3DClientApp = class {
       this.netcode.relaySnapshot
     );
     if (this.netcode.connected && localAgent) {
+      this.updateCinematics(localAgent, nowMs / 1e3);
       this.physicsAccumulator += dt;
       while (this.physicsAccumulator >= FIXED_TIMESTEP) {
         this.physicsAccumulator -= FIXED_TIMESTEP;
@@ -48886,7 +52457,8 @@ var Crackup3DClientApp = class {
         this.cameraController.camera,
         localAgent.position,
         this.netcode.orbs,
-        this.netcode.collectedOrbIds
+        this.netcode.collectedOrbIds,
+        this.netcode.vehicleSnapshots.filter((v2) => !this.netcode.vehicleDamageSnapshot.vehicles.find((d2) => d2.vehicleId === v2.vehicleId)?.destroyed)
       );
       this.updateEnemiesAndVats(localAgent, dt);
       this.updateHUD(localAgent);
@@ -48943,9 +52515,47 @@ var Crackup3DClientApp = class {
         this.remoteRigs.delete(id);
       }
     }
+    this.cinematics.update(nowMs / 1e3);
+    this.presentationQueue.update(nowMs / 1e3, (event) => {
+      const rig = event.actor === this.netcode.localEntityId ? this.localRig : this.remoteRigs.get(event.actor);
+      const muzzle = event.kind === 0 /* SHOT */ ? rig?.humanoid.weapon.getObjectByName("MuzzleFlashEmitter")?.getWorldPosition(new Vector3()) : void 0;
+      this.effects.emit(event, this.cameraController.camera.position, muzzle);
+      this.spatialAudio.playEffect(muzzle ? { ...event, origin: muzzle } : event);
+    }, (event) => {
+      if (event.kind !== 2 /* COUNTER */) return void 0;
+      const pair = this.netcode.combatPresentations.get(event.target);
+      return pair?.pairedAgentId === event.actor ? pair.pairedElapsed : void 0;
+    });
+    this.effects.update(dt);
     this.combatDebris.update(this.netcode.droppedWeapons);
     this.environment.render();
     this.comms.renderPortrait(this.renderer);
+  }
+  updateCinematics(agent, now2) {
+    const status = this.netcode.playerStatus;
+    if (!status || this.playerHUD.blocksInput || !this.cinematicIntros) return;
+    if (status.hp <= 0) {
+      this.cinematics.end("death");
+      return;
+    }
+    const source = { player: agent.position, districts: this.netcode.districtLoopSnapshots, enemies: this.netcode.enemySnapshots, phase6: this.netcode.phase6Snapshot };
+    const encounters = encounterTracks(source);
+    if (this.cinematics.active) {
+      if (this.cinematics.activeId !== OPENING_ID) {
+        const current = encounters.find((track) => track.id === this.cinematics.activeId);
+        if (current) this.cinematics.follow(current);
+        else this.cinematics.end("interrupted");
+      }
+      return;
+    }
+    if (now2 < this.nextCinematicAt || this.keysDown.size || this.mouseButtons || agent.mountedVehicleId || agent.mantling) return;
+    if (!this.cinematics.seen(OPENING_ID) && !this.comms.director.completed.has("deployment") && status.protectionSec > 11.5) {
+      const car = [...this.netcode.vehicleSnapshots].sort((a2, b2) => Math.hypot(a2.position.x - agent.position.x, a2.position.z - agent.position.z) - Math.hypot(b2.position.x - agent.position.x, b2.position.z - agent.position.z))[0];
+      this.cinematics.start(openingTrack(agent.position, car?.position, 2 * Math.atan2(agent.rotation.y, agent.rotation.w)), now2);
+    } else {
+      const next = encounters.find((track) => !this.cinematics.seen(track.id));
+      if (next) this.cinematics.start(next, now2);
+    }
   }
   positionPairedRig(rig, pair) {
     const enemy = this.netcode.enemySnapshots.get(pair.enemyId);
@@ -49129,10 +52739,36 @@ var Crackup3DClientApp = class {
   }
 };
 window.addEventListener("DOMContentLoaded", () => {
+  void fetch("/api/health").then((response) => response.json()).then((health) => {
+    if (health.mode === "campaign") {
+      const options = document.getElementById("campaign-options");
+      options.hidden = false;
+      const role = document.getElementById("campaign-role");
+      const guest = document.getElementById("campaign-guest-fields");
+      role.onchange = () => {
+        guest.hidden = role.value !== "guest";
+      };
+      const note2 = document.querySelector("#auth-overlay .fine-print");
+      if (note2) note2.textContent = "Profiles and campaign saves belong to this server. Use Host to continue your world, or Join with a current session code.";
+      return;
+    }
+    if (health.mode !== "solo") return;
+    const tag = document.querySelector(".alpha-tag");
+    if (tag) tag.textContent = "OFFLINE SOLO";
+    const note = document.querySelector("#auth-overlay .auth-layout .fine-print");
+    if (note) note.textContent = "Local profiles \xB7 No internet required \xB7 Progress saves on this computer.";
+    setInterval(() => {
+      void fetch("/api/health").catch(() => {
+      });
+    }, 1e4);
+  }).catch(() => {
+  });
   const app = new Crackup3DClientApp();
   app.bootstrap().then(() => {
     const status = document.getElementById("auth-error");
     if (status) status.textContent = "Ready to deploy. Your agent saves automatically.";
+    const button = document.getElementById("deploy-button");
+    if (button) button.disabled = false;
   }).catch((err) => {
     console.error("[CRACKUP 3D CLIENT] Bootstrap error:", err);
     const status = document.getElementById("auth-error");

@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "checkedAt": "2026-11-13T03:45:40.037Z",
+  "bridgeColliders": 422,
+  "deckRaySamples": 330,
+  "bridgeWalks": 4,
+  "deterministicFallbacks": 4,
+  "atomicPackSwap": true,
+  "staleRequestRejected": true,
+  "visibleColliderParity": true
+}

@@ -30,7 +30,7 @@ const lines = [
   `PR: ${ledger.delivery.prUrl ? `[Open pull request](${ledger.delivery.prUrl})` : 'Will be linked after the branch is pushed.'}`,
   `Approval: ${ledger.delivery.approval.summary}`, '',
   '## Stage map', '',
-  'The Phase 1-6 gameplay roadmap and Section 6 art stages use different numbering. The gameplay foundation is verified; the art pipeline remains incomplete.', '',
+  ledger.stages.every(s => s.status === 'complete') ? 'The Phase 1-6 gameplay roadmap and Section 6 art stages use different numbering. Both implementation roadmaps pass their gates; production release qualification remains open.' : 'The Phase 1-6 gameplay roadmap and Section 6 art stages use different numbering. The gameplay foundation is verified; the art pipeline remains incomplete.', '',
   '| Section 6 checkpoint | State | Dependencies | Outcome / exit gate |',
   '| --- | --- | --- | --- |',
   ...ledger.stages.map(s => `| ${safe(s.title)} | ${statuses[s.status]} | ${s.dependsOn.join(', ') || 'None'} | ${safe(s.summary)} |`), '',

@@ -1,4 +1,5 @@
 import type { Quat4, Vec3 } from '../protocol/binaryProtocol.js';
+import { WeaponVariant } from './weaponPresentation.js';
 
 export enum EnemyArchetype { STREET_ENFORCER, CYBER_RONIN, AEGIS_SHOCK_TROOPER, SECTOR_WARDEN }
 export const WARDEN_RIG_SCALE = 3.2 / 1.88;
@@ -8,12 +9,12 @@ export interface CombatPresentation {
   flinchSec: number; flashSec: number; direction: Vec3; impulse: Vec3;
   pairedAgentId: number; pairedElapsed: number; weaponDropped: boolean; hitSequence: number;
 }
-export interface DroppedWeaponState { id: number; position: Vec3; rotation: Quat4 }
+export interface DroppedWeaponState { id: number; position: Vec3; rotation: Quat4; variant?: WeaponVariant; scale?: number }
 export const COMBAT_PRESENTATION_PACKET = 0x08;
-const HEADER = 8, RECORD = 48, DROP = 32;
+const HEADER = 8, RECORD = 48, DROP = 40;
 export function encodeCombatPresentation(tick: number, states: CombatPresentation[], drops: DroppedWeaponState[]): ArrayBuffer {
   const buffer = new ArrayBuffer(HEADER + states.length * RECORD + drops.length * DROP), view = new DataView(buffer);
-  view.setUint8(0, COMBAT_PRESENTATION_PACKET); view.setUint8(1, 1); view.setUint16(2, states.length, true);
+  view.setUint8(0, COMBAT_PRESENTATION_PACKET); view.setUint8(1, 2); view.setUint16(2, states.length, true);
   view.setUint16(4, drops.length, true); view.setUint16(6, tick & 0xffff, true);
   states.forEach((s, i) => {
     const b = HEADER + i * RECORD;
@@ -24,14 +25,16 @@ export function encodeCombatPresentation(tick: number, states: CombatPresentatio
   drops.forEach((s, i) => {
     const b = HEADER + states.length * RECORD + i * DROP; view.setUint32(b, s.id, true);
     [s.position.x, s.position.y, s.position.z, s.rotation.x, s.rotation.y, s.rotation.z, s.rotation.w].forEach((n, j) => view.setFloat32(b + 4 + j * 4, n, true));
+    view.setUint8(b + 32, s.variant ?? WeaponVariant.CARBINE); view.setFloat32(b + 36, s.scale ?? 1, true);
   });
   return buffer;
 }
 export function decodeCombatPresentation(buffer: ArrayBuffer): { states: CombatPresentation[]; drops: DroppedWeaponState[] } | null {
   if (buffer.byteLength < HEADER) return null;
-  const v = new DataView(buffer); if (v.getUint8(0) !== COMBAT_PRESENTATION_PACKET || v.getUint8(1) !== 1) return null;
+  const v = new DataView(buffer), version = v.getUint8(1); if (v.getUint8(0) !== COMBAT_PRESENTATION_PACKET || (version !== 1 && version !== 2)) return null;
+  const dropSize = version === 1 ? 32 : DROP;
   const count = v.getUint16(2, true), dropped = v.getUint16(4, true);
-  if (buffer.byteLength !== HEADER + count * RECORD + dropped * DROP) return null;
+  if (buffer.byteLength !== HEADER + count * RECORD + dropped * dropSize) return null;
   const states: CombatPresentation[] = [], drops: DroppedWeaponState[] = [], ids = new Set<number>();
   for (let i = 0; i < count; i++) {
     const b = HEADER + i * RECORD, f = (j: number) => v.getFloat32(b + 8 + j * 4, true);
@@ -43,9 +46,11 @@ export function decodeCombatPresentation(buffer: ArrayBuffer): { states: CombatP
   }
   ids.clear();
   for (let i = 0; i < dropped; i++) {
-    const b = HEADER + count * RECORD + i * DROP, n = Array.from({ length: 7 }, (_, j) => v.getFloat32(b + 4 + j * 4, true));
+    const b = HEADER + count * RECORD + i * dropSize, n = Array.from({ length: 7 }, (_, j) => v.getFloat32(b + 4 + j * 4, true));
     const id = v.getUint32(b, true); if (ids.has(id) || !n.every(Number.isFinite)) return null; ids.add(id);
-    drops.push({ id, position: { x: n[0], y: n[1], z: n[2] }, rotation: { x: n[3], y: n[4], z: n[5], w: n[6] } });
+    const variant = version === 1 ? WeaponVariant.CARBINE : v.getUint8(b + 32), scale = version === 1 ? 1 : v.getFloat32(b + 36, true);
+    if (variant > WeaponVariant.HEAVY || !Number.isFinite(scale) || scale < 0.5 || scale > 2 || Math.abs(Math.hypot(...n.slice(3)) - 1) > 0.01) return null;
+    drops.push({ id, position: { x: n[0], y: n[1], z: n[2] }, rotation: { x: n[3], y: n[4], z: n[5], w: n[6] }, variant, scale });
   }
   return { states, drops };
 }

@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "checkedAt": "2026-11-13T19:13:33.673Z",
+  "openingShots": 4,
+  "endReasons": 7,
+  "cameraRestoration": true,
+  "perProfileHistory": true,
+  "reducedMotion": true,
+  "scriptedThreeActRoute": [
+    "deployment",
+    "mandate",
+    "evidence",
+    "revelation",
+    "killswitch",
+    "dawn"
+  ],
+  "districtBossIntros": 8,
+  "uncoachedPlaythrough": false
+}

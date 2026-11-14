@@ -1,8 +1,8 @@
-# Section 6 upgrade: Stages 1, 2 and 3A-3C
+# Section 6 upgrade: Stages 1-6 and Mixamo motion
 
-Completed and verified on November 11, 2026. This report concerns the new art/narrative pipeline stages, separate from the existing Phase 1-6 gameplay roadmap.
+Stages 1-6 completed and verified across November 11-13, 2026. This report concerns the new art/narrative pipeline stages, separate from the existing Phase 1-6 gameplay roadmap.
 
-Current checkpoint: Stage 3C relays is complete. Stage 3D weapon consolidation and the full Stage 3 integration gate are next.
+Current checkpoint: Stages 1-6 and the controlled Stage 3 integration gate pass their implementation checks. Release qualification is next. Minimum-hardware GPU/frame-time qualification and multiplayer playtests remain release gates.
 
 ## Stage 1: complete
 
@@ -32,7 +32,7 @@ The current imported packs lack the complete required combat pose set; the rich 
 
 Existing structural modules and loose props now have multipart fallbacks with separate hardware, windows/columns where appropriate, materials and powered trim. Automated guards reject tested entity roots with fewer than three meshes or two materials. Existing vehicles, relay terminals and the new socket weapons are multipart hierarchies. Box/cylinder/sphere geometries remain valid as subcomponents and physics colliders.
 
-ArchBuilder has now replaced the fallback assemblies for eighteen major buildings. VehicleBuilder, destructible vehicle panels and RelayBuilder are also complete; weapon consolidation and the full Stage 3 integration gate remain pending. Other loose world modules continue to use the minimum multipart fallback. This does not mark the full Stage 3 complete.
+ArchBuilder has replaced the fallback assemblies for eighteen major buildings. VehicleBuilder, destructible panels, RelayBuilder and WeaponBuilder are complete. Other loose world modules continue to use the minimum multipart fallback. The November 12 combined gate below covers their integration and controlled render overhead.
 
 ## Stage 3A: complete
 
@@ -104,10 +104,21 @@ Optional manifest example: `models.building.foundry_stack_01 = { "url": "/assets
 - Live authentication with the installed HDR/PBR assets and an actual H interaction advanced the objective to 1/2 and switched the correct relay to its hacked presentation, with zero browser console errors.
 - Evidence is under ignored `output/playwright/`: `stage3c-browser.json` plus online, console, shutdown, hacked, city and live-game screenshots. Repeat via `npm run verify:stage3c:browser` and open its printed local URL.
 
+## Stage 3D and combined Stage 3 gate: complete (November 12)
+
+- `WeaponBuilder` is shared by hand equipment and authoritative dropped/disarmed props. Carbine, marksman and heavy variants have distinct receivers, barrel shrouds, optics, magazines, stocks, muzzle brakes and emissive charge strips. Named part transforms survive batching; `Grip` is the palm origin and `MuzzleFlashEmitter` points down local -Z. Each weapon uses two material batches and 192–204 triangles. Optional static GLBs are grip-normalized and rejected for invalid dimensions, missing anchors, incompatible skin/animation or reversed muzzles, leaving the procedural fallback intact.
+- All nine silhouettes retain their armor and weapon choices. Aim now raises the downward arm toward -Z and keeps the muzzle aligned to pitch. Tests cover equipment through locomotion, aim, all three strikes, paired roles, driving and disarms. Resource ownership is pooled and idempotent for weapons; disposing one rig or drop cannot invalidate its neighbors.
+- Packet 0x08 version 2 adds variant and scale to each dropped weapon (40 rather than 32 bytes per drop). The new decoder accepts version 1 and rejects malformed v2 data. Two observers and a late joiner receive a Warden's correctly scaled heavy weapon. Original movement/combat rules and other packet layouts remain unchanged. Deploy the matching server and browser bundle together; old clients do not understand v2.
+- The genuine Capoeira ZIP and 40 FBXs remain in the ignored local inbox. `assets:capoeira` converted Y Bot and all 39 motions at 30 fps, merged/rebound them with glTF Transform CLI, removed duplicate rigs, resampled and produced `capoeira_ybot.glb` (5,642,328 bytes). Source hashes and output hash are recorded. Validation has zero errors and two non-fatal inherited skinned-node hierarchy warnings; the original seven-clip `agent_cyber` batch remains pending.
+- A bind-axis-aware retargeter maps Mixamo onto the visible 19-joint armor, including the collapsed extra spine joint and explicit +Z to -Z conversion. The third combo strike uses Armada's actual 1.05–1.50s kick/recovery interval in the existing 0.28s presentation window, with a short blend. Root X/Z and damage remain authoritative. Other source clips are previewable and available for later state mappings; they are not new gameplay commands. 60/120Hz retargeted sampling is deterministic. Missing optional motion assets retain procedural animation.
+- The full city check includes eighteen buildings, eight relays, four vehicles and eight equipped agents. Reusing CSM shadows during SSAO and sharing opaque normal/depth buffers with the Sobel pass reduced a matched comparison from **5,987 to 3,379 calls** (44%). Mean framebuffer channel difference was below **0.003/255**. Invisible effects do not produce ghost geometry; disabling SSAO correctly restores standalone ink normals.
+- Final roof/street checks add **80 calls / 7,800 triangles** for eight weapons, below the predeclared 160-call / 16,000-triangle increment. Exact CPU submission timings, triangle counts and browser checks are saved in `artifacts/evidence/stage3d-browser.json`. These controlled checks do not certify a hardware-independent frame rate; CPU submission excludes GPU work, and minimum-hardware/long-session qualification remains a release gate.
+- Build, full Phase 1-6/alpha/Stage 1-3 regression, all 18 manifest assets, all 39 browser-played motions, independent source skins, optional-model failures, physical destruction/network tests and repeated resource cleanup pass. Live authentication, rendered gameplay and downed recovery pass with zero console warnings/errors. Browser screenshots and reports are bound by SHA-256 in the progress ledger. `npm run assets:preview` provides the motion/weapon studio for continued integration.
+
 ## Verification
 
 - `npm run build`: passed (strict TypeScript server/client compilation and browser bundle).
-- `npm run verify`: passed Phase 1-6, alpha, Stages 1-2 and 3A-3C, including the combat, vehicle and relay network checks.
+- `npm run verify`: passed Phase 1-6, alpha, Stages 1-2 and 3A-3D, including the combat, vehicle and relay network checks.
 - Stage 1 checks dialogue reachability, both evidence routes, act/milestone prerequisites, no repeat transmissions, faction materials and depth/normal render-target lifecycle.
 - Stage 2 checks rig topology and all nine silhouettes, finite animated transforms, 60/120Hz determinism, aim, physical reactions, real dropped-body motion, swept wall impacts, paired input locks, combo cadence, slam landing, non-lethal capture, malformed packets and multipart entity roots.
 - Two live WebSocket observers received authoritative disarm reactions and physical weapon snapshots.
@@ -116,8 +127,52 @@ Optional manifest example: `models.building.foundry_stack_01 = { "url": "/assets
 
 Browser evidence is generated under ignored `output/playwright/`: `art-verification.json`, `stages-1-2.png` and `live-stages-1-2.png`. Run `npm run verify:art:browser` and open the printed local URL to repeat the render check.
 
+## Stage 4 - PBR materials and Bay Area vista (November 12-13)
+
+- Added world-space triplanar albedo, OpenGL normal, roughness, metalness and emissive mapping for static surfaces, including non-uniformly scaled building instances. Animated characters keep their existing UV mapping.
+- Added deterministic five-channel concrete, brushed-metal, asphalt and carbon-fiber fallbacks. Real PNG/JPEG/WebP/KTX2 packs replace complete sets atomically, update live materials, retain valid maps on failure, reject stale requests and release owned texture clones. Missing metal maps restore the material's original scalar.
+- Added a 10,000 m Gerstner bay with analytic wave normals, the installed HDR reflected in the water, stylized waterfront neon streaks and animated shoreline foam. It surrounds the preserved city foundation and a southern peninsula neck.
+- Added two 2.8 km suspension bridges, with towers, highway decks, main cables and individual suspenders. The 422 shared deck/rail/end-barrier colliders exactly match rendered parts. Access begins on the existing 14 m sea-wall; viewing-end barriers delimit the traversable spans. Distant headlands and peninsula scenery are not an expanded playable terrain system.
+- Added the 3-8 km headland ring, coastal lights, height fog and a slow dusk/night cycle. Extended camera range to 18 km, preserved SSAO thresholds in world units, faded distant outlines to prevent depth artifacts and kept the sky out of surface-normal passes.
+- Kept all legacy world/orb/objective fixtures, combat timing and the real Capoeira library intact. No new gameplay animation states were invented. At the Stage 4 checkpoint, Stage 5 was next.
+
+Verification: `npm run build`, full `npm run verify` (Phases 1-6, alpha, Stages 1-4), and all 18 production manifest assets pass. Stage 4 checks sample 330 deck locations and walk the actual controller across four ascending/descending ramp cases. Browser checks load real WebP and official Basis KTX2, reject an intentionally corrupt test response, report identical pixels for baked versus instanced texture scale, and return GPU resource counts to baseline after three vista disposal cycles.
+
+Six controlled browser views add 20-32 draw calls and 235,032-249,224 triangles through the complete pipeline, within the declared incremental limits of 120 calls / 250,000 triangles. Shader/loader warnings and errors are zero. These are render-complexity/CPU-submission checks, not minimum-hardware FPS certification. The live game also authenticates, renders, resizes and recovers from downed state with the rebuilt client. Evidence and hashes are in the progress ledger. Preview with `npm run vista:preview` at http://127.0.0.1:3199.
+
+## Stage 5 - Combat effects and spatial audio (November 13)
+
+- Added strict versioned packet `0x0B` with bounded batches, stable event IDs, authoritative source/contact points, normals, hit limbs and counter timing. Local prediction cannot emit events; repeated/stale batches and hidden/disconnected queues are discarded. Real WebSocket tests verify matching data across three observers and reject forged client effects. Empty sessions discard transient effects before the next player joins.
+- Added four fixed instanced pools: 64 tracers, 384 directional sparks, 12 shockwave spheres and 256 impact/skid marks. Tracers begin at the rendered weapon muzzle. Rapier supplies actual surface normals/contact points; rear-wheel skid strips follow grounded braking/steering. Existing Stage 3 physical destruction remains authoritative.
+- Counter sound and waves follow the paired animation's 0.48-second contact, using replicated pair progress where available. Damage, XP, input-lock duration and existing combo cadence are unchanged. Explosion cues originate once even when no enemy is in range.
+- Added 16 prioritized HRTF one-shot channels, six nearby orb loops and four nearby engine loops. Engine pitch follows speed. Footstep cadence follows grounded distance; skid audio is rate-limited. Cues are explicitly synthesized PCM, not downloaded or placeholder recordings. The menu's Game sound preference persists locally; tactical speech keeps its existing separate control.
+- Added gesture-only audio unlock/resume, mute/visibility/disconnect clearing, stale-cue expiry, natural source cleanup and final AudioContext/GPU disposal. Capoeira Armada and all 39 source clips remain intact.
+
+Verification: build and the complete Phase 1-6 / alpha / Stage 1-5 regression pass. All 18 production files pass hashes and full decode/GLB validation (eight existing non-fatal upstream warnings). Shared and browser tests simulate 120 seconds of repeated effects within fixed pool limits; a mixed burst adds three draw calls / 512 triangles through the full postprocessing pipeline, under the four-batch limit. Three creation/disposal cycles restore GPU geometry counts. These controlled tests are not wall-clock FPS certification.
+
+Actual browser WebAudio tests pass directional HRTF energy, maximum voices, counter priority over footsteps, natural onended cleanup, mute, disconnect and context disposal. A six-second stereo cue sample is saved as `artifacts/evidence/stage5-audio.wav`; waveform peak is 0.178 with no clipping. Browser shader/loader warnings and errors are zero. Live QA verifies login, sound preference writes for mute/unmute, downed recovery and the rendered game on an isolated in-memory server. Network tests cover a 150 ms simulated delivery delay and duplicate batches; realistic eight-player network/hardware qualification remains open.
+
+Preview with `npm run effects:preview` at http://127.0.0.1:3205, then click **Enable audio / verify**. Reports, screenshots and hashes are in the progress ledger. All implementation changes remain local and uncommitted.
+
+## Stage 6 - In-engine cinematics (November 13)
+
+- Added a camera director that uses the existing renderer and scene. The opening has four timed shots across the real bridge, city, nearby vehicle and visible agent, lasting 11.5 seconds within the existing deployment protection window. No new immunity or gameplay pause was added.
+- Timed subtitle cues use the story bible, including Vance's deployment line verbatim. Sera's live briefing resumes afterward without repeating the opening line on natural completion. Existing tactical speech keeps its own controls; no recorded voice pack is claimed.
+- Added introductions for all eight district lieutenants/kingpins and the Dreadnought. Both the authoritative district stage and living enemy snapshot must agree; no client cinematic message can spawn a boss or advance a mission. Shots follow the entity's facing/position and use camera clearance for close character views.
+- Esc, Space, the skip button or movement cancels playback. Camera position/orientation/FOV, HUD, input and prior mouse capture restore on completion/skip. Damage, death, disconnect, hidden-page lifecycle and interrupted encounters cancel safely. A delayed pointer-unlock event cannot accidentally open the field menu. Snapshot processing and other players continue normally.
+- Playback history is bounded and stored per callsign; completed, skipped and interrupted sequences do not replay on reconnect. The saved Intro cameras setting disables automatic sequences. Reduced-motion preference uses stationary shots. The overlay supports keyboard focus/skip and readable subtitles.
+- Fixed a startup race found in rapid browser QA: Deploy stays disabled until game initialization and authentication handlers are ready. Missing storage remains nonfatal.
+
+Verification: build, complete Phase 1-6 / alpha / Stage 1-6 regression, all 18 production assets, seven-view browser checks and live game checks pass. Camera tests cover seven exit reasons, per-profile persistence and reduced motion. Fifty overlay disposal cycles and warmed scene views add no accumulating DOM or GPU geometry; browser loader/shader warnings and errors are zero. Three real WebSocket peers keep receiving snapshots and another agent keeps moving during the viewer's camera sequence; forged cinematic controls have no authority.
+
+A scripted three-act integration route reaches all four district rewards, eight boss intros, the protected Dreadnought core, phase transitions and the final story beat. It uses QA teleports and direct authoritative damage calls to accelerate progression, so it does not replace an uncoached gameplay/balance playthrough. Live browser evidence separately records natural completion, Escape/Space skip, movement cancellation, damage, death/recovery UI, page-hide interruption, forced disconnect/relogin with no replay, preference changes and mouse-capture restoration.
+
+Native tab/minimize visibility could not be reproduced by the automation host, whose pages continued reporting visible; controller and page-hide paths pass, and native focus/background behavior remains a target-browser release check. Minimum-hardware FPS and eight-player reliability are not certified by these controlled tests. Final bespoke boss/character art and recorded sound are still refinement work.
+
+Preview with `npm run cinematics:preview` at http://127.0.0.1:3206. Reports, screenshots, source build and regression evidence are hashed in the ledger. Changes remain local and uncommitted.
+
 ## Dependency boundary
 
-Stages 1, 2 and 3A-3C are complete. Stage 3D weapon consolidation and the full Stage 3 integration gate are next. Stage 4 textures/vista, Stage 5 effects/spatial audio polish and Stage 6 cinematic direction remain pending. No intro videos or cutscenes were generated. Cinematics must consume the finalized script, character designs and world art after Stages 3-5 pass their gates.
+Stages 1-6 and the controlled Stage 3 integration gate pass their implementation checks. Cinematics are rendered in-engine using the established story and world; no pre-rendered video was substituted. Release qualification, uncoached full playthroughs, hardware performance and final art/audio refinement remain outstanding.
 
 The implementation runs retained the existing deployment, persistence, asset and alpha-release work. The subsequent branch/commit/PR saving checkpoint is tracked in [the project progress ledger](artifacts/project-progress.md). Production deployment and release validation remain outstanding.

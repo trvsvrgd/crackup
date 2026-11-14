@@ -40,13 +40,13 @@ for (const file of manifest.files) {
     const gltf = JSON.parse(buffer.toString('utf8', 20, 20 + buffer.readUInt32LE(12)));
     assert.ok(gltf.skins?.length && gltf.nodes.some((node) => node.skin !== undefined && node.mesh !== undefined));
     const clips = gltf.animations.map((animation) => animation.name);
-    for (const required of file.assetId === 'agent_cyber' ? ['Idle', 'Fast Run', 'Jump', 'Punching Combo', 'Roundhouse Kick', 'Hit To Body', 'Dying'] : ['idle', 'walk', 'run']) {
+    for (const required of file.requiredClips ?? (file.assetId === 'agent_cyber' ? ['Idle', 'Fast Run', 'Jump', 'Punching Combo', 'Roundhouse Kick', 'Hit To Body', 'Dying'] : ['idle', 'walk', 'run'])) {
       assert.ok(clips.some((clip) => clip.toLowerCase() === required.toLowerCase()), `${file.path}: missing ${required}`);
     }
     Object.assign(entry, { clips, skins: gltf.skins.length });
   }
   result.files.push(entry);
-  console.log(`PASS ${file.path}${entry.validationWarnings ? ` (${entry.validationWarnings} upstream non-fatal glTF warnings)` : ''}`);
+  console.log(`PASS ${file.path}${entry.validationWarnings ? ` (${entry.validationWarnings} non-fatal glTF warnings)` : ''}`);
 }
 await mkdir(path.join(root, '.cache/prod-assets'), { recursive: true });
 await writeFile(path.join(root, '.cache/prod-assets/verification.json'), JSON.stringify(result, null, 2));

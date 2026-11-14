@@ -1,0 +1,20 @@
+﻿{
+    "requestedReference":  {
+                               "gpu":  "Desktop RTX 4070",
+                               "status":  "Target only; not qualified on this host",
+                               "ramGiB":  16
+                           },
+    "observedCpu":  {
+                        "Name":  "Intel(R) Core(TM) i7-10700K CPU @ 3.80GHz",
+                        "NumberOfCores":  8,
+                        "NumberOfLogicalProcessors":  16
+                    },
+    "observedRamBytes":  68637118464,
+    "observedOs":  {
+                       "Caption":  "Microsoft Windows 11 Home",
+                       "Version":  "10.0.26300",
+                       "BuildNumber":  "26300"
+                   },
+    "observedGpu":  "NVIDIA GeForce RTX 5070, 12227 MiB, 616.92",
+    "measurementLimit":  "Observed host has different GPU and more RAM than the reference. A local browser diagnostic is not reference qualification."
+}

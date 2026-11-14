@@ -1,3 +1,5 @@
+import { parseCampaignPresentation, type CampaignPresentation } from '../../shared/campaign/presentation.js';
+import { decodeEffects, type EffectPacket } from '../../shared/protocol/presentationProtocol.js';
 /**
  * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
  * Client-Side Prediction (128-Tick Ring Buffer + Rapier3D Replay)
@@ -98,6 +100,8 @@ export class PredictionAndInterpolationManager {
   public districtLoopSnapshots: DistrictLoopBinaryState[] = [];
   public auditorAirshipSnapshots: AuditorAirshipBinaryState[] = [];
   public onOrbCollectedCallback: ((orbId: number, orbType: OrbType) => void) | null = null;
+  public onEffects: ((packet: EffectPacket) => void) | null = null;
+  public onPresentationReset: (() => void) | null = null;
   public onCombatEventCallback: ((event: CombatEventResult) => void) | null = null;
   public onRelicCollectedCallback: ((relicId: string, name: string) => void) | null = null;
   public onPhase5EventCallback: ((notification: Phase5EventNotification) => void) | null = null;
@@ -112,6 +116,11 @@ export class PredictionAndInterpolationManager {
 
   private ws: WebSocket | null = null;
   public connected = false;
+  public mode: 'shared' | 'solo' | 'campaign' = 'shared';
+  public campaignJoin: { campaignRole: 'host' | 'guest'; campaignOwner: string; inviteCode: string } | null = null;
+  public campaignPresentation: CampaignPresentation | null = null;
+  public soloState: { owner?: string; role?: 'host' | 'guest'; inviteCode?: string; members?: string[]; recap: string; revision: number; paused: boolean; saveError: boolean; savedAt: number; checkpoint: string } | null = null;
+  public onSoloState: (() => void) | null = null;
   public playerStatus: PlayerStatus | null = null;
   public phase6Snapshot: Phase6SnapshotPacket | null = null;
   public onConnectionChanged: ((state: string, message: string) => void) | null = null;
@@ -120,6 +129,7 @@ export class PredictionAndInterpolationManager {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private readonly physicsWorld: SharedPhysicsWorld) {
+    this.physicsWorld.effects.enabled = false;
     this.physicsWorld.vehiclePropManager.authoritativeDamage = false;
     this.physicsWorld.relaySystem.authoritative = false;
     for (const o of this.orbs) {
@@ -145,6 +155,11 @@ export class PredictionAndInterpolationManager {
     socket.binaryType = 'arraybuffer';
     this.ws = socket;
     this.connected = false;
+    this.soloState = null;
+    this.playerStatus = null;
+    this.phase6Snapshot = null;
+    this.districtLoopSnapshots = [];
+    this.onPresentationReset?.();
     let authFailed = false;
     const connectTimeout = setTimeout(() => { if (!this.connected && this.ws === socket) socket.close(); }, 8000);
     this.onConnectionChanged?.('connecting', retry ? 'Reconnecting to your squad…' : 'Connecting…');
@@ -153,6 +168,7 @@ export class PredictionAndInterpolationManager {
       socket.send(
         JSON.stringify({
           type: 'AUTH',
+          ...this.campaignJoin,
           callsign,
           pin,
         })
@@ -162,6 +178,8 @@ export class PredictionAndInterpolationManager {
     socket.onmessage = (event) => {
       if (this.ws !== socket) return;
       if (event.data instanceof ArrayBuffer) {
+        const effects = decodeEffects(event.data);
+        if (effects) { this.onEffects?.(effects); return; }
         const snapshot = decodeWorldSnapshot(event.data);
         if (snapshot) {
           this.onWorldSnapshot(snapshot);
@@ -249,6 +267,8 @@ export class PredictionAndInterpolationManager {
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === 'AUTH_OK') {
+            this.mode = msg.mode === 'solo' || msg.mode === 'campaign' ? msg.mode : 'shared';
+            this.campaignPresentation = this.mode !== 'shared' && msg.presentation ? parseCampaignPresentation(msg.presentation) : null;
             clearTimeout(connectTimeout);
             for (const id of [...this.physicsWorld.agents.keys()]) this.physicsWorld.removeAgent(id);
             this.ringBuffer.fill(null);
@@ -287,6 +307,17 @@ export class PredictionAndInterpolationManager {
             );
             onAuthenticated(this.localEntityId, this.localCallsign, attributes);
             this.onConnectionChanged?.('connected', 'Connected');
+          } else if ((msg.type === 'SOLO_STATE' && this.mode === 'solo') || (msg.type === 'CAMPAIGN_STATE' && this.mode === 'campaign')) {
+            const pauseChanged = this.soloState?.paused !== Boolean(msg.paused);
+            this.soloState = { owner: msg.owner, role: msg.role, inviteCode: msg.inviteCode, members: msg.members, paused: Boolean(msg.paused), saveError: Boolean(msg.saveError),
+              recap: String(msg.recap ?? ''), revision: Number(msg.revision), savedAt: Number(msg.savedAt), checkpoint: String(msg.checkpoint) };
+            if (pauseChanged) this.ringBuffer.fill(null);
+            this.onSoloState?.();
+          } else if (msg.type === 'SOLO_PRESENTATION_ERROR') {
+            this.onNotice?.(String(msg.error));
+          } else if ((msg.type === 'SOLO_LEFT' && this.mode === 'solo') || (msg.type === 'CAMPAIGN_LEFT' && this.mode === 'campaign')) {
+            authFailed = true; this.connected = false;
+            window.location.reload();
           } else if (msg.type === 'PLAYER_STATE') {
             this.playerStatus = msg as PlayerStatus;
             const agent = this.getLocalAgent();
@@ -400,6 +431,7 @@ export class PredictionAndInterpolationManager {
 
     socket.onerror = () => { this.onConnectionChanged?.('connecting', 'Unable to reach the server. Retrying…'); };
     socket.onclose = (event) => {
+      if (this.ws === socket) this.onPresentationReset?.();
       clearTimeout(connectTimeout);
       if (this.ws !== socket) return;
       this.connected = false;
@@ -433,6 +465,7 @@ export class PredictionAndInterpolationManager {
     pitch: number,
     buttons: number
   ): void {
+    if (this.mode !== 'shared' && this.soloState?.paused) return;
     const localAgent = this.getLocalAgent();
     if (!localAgent) return;
 

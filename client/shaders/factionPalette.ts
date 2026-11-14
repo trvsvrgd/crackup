@@ -25,7 +25,8 @@ export function stylizePBR(material: THREE.MeshStandardMaterial): THREE.MeshStan
       outgoingLight += vec3(eclipseRim * eclipseHitFlash * 3.0);
       #include <opaque_fragment>`);
   };
-  material.customProgramCacheKey = () => 'eclipse-stylized-pbr-v1';
+  const previousKey = material.customProgramCacheKey.bind(material);
+  material.customProgramCacheKey = () => `${previousKey()}|eclipse-stylized-pbr-v1`;
   material.needsUpdate = true;
   return material;
 }

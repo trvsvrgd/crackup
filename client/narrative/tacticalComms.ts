@@ -1,3 +1,5 @@
+import type { PresentationStorage } from './campaignStorage.js';
+import { newCampaignPresentation, parseCampaignPresentation } from '../../shared/campaign/presentation.js';
 ﻿import * as THREE from 'three';
 import { CHARACTERS, StoryDirector, WHISPER_TRANSCRIPTS, type DialogueNode, type StoryContext } from '../../shared/narrative/storyBible.js';
 
@@ -17,18 +19,21 @@ export class TacticalCommsOverlay {
   private visibleCharacters = 0;
   private ctx: AudioContext | null = null;
   private muted = false;
+  private readonly mute = document.createElement('button');
   private readonly whispers: DialogueNode[] = [];
   private heard = new Set<number>();
   private storageKey = '';
+  private cinematicActive = false;
+  private openingPresented = false;
 
-  constructor() {
+  constructor(private readonly storage: PresentationStorage | null = null) {
     this.element.id = 'tactical-comms';
     this.element.setAttribute('aria-label', 'Tactical communications');
     this.element.style.cssText = 'position:fixed;left:22px;bottom:170px;width:min(460px,calc(100vw - 44px));box-sizing:border-box;padding:16px 16px 14px 112px;border:1px solid var(--comms-color,#42caff);border-left-width:3px;background:linear-gradient(90deg,transparent 104px,rgba(4,13,22,.91) 104px);color:#e8f3f9;font:13px/1.5 Consolas,monospace;z-index:12;pointer-events:auto;min-height:120px;display:none';
     this.text.style.cssText = 'margin:8px 0;min-height:42px';
     this.text.setAttribute('aria-live', 'polite');
-    const mute = document.createElement('button'); mute.textContent = 'Comms audio on';
-    mute.onclick = () => { this.muted = !this.muted; mute.textContent = `Comms audio ${this.muted ? 'off' : 'on'}`; };
+    const mute = this.mute; mute.textContent = 'Comms audio on';
+    mute.onclick = () => { this.setMuted(!this.muted); this.storage?.setItem('crackup.commsMuted', String(this.muted)); };
     mute.style.cssText = 'background:none;border:0;color:#b6c8d3;font:10px monospace;cursor:pointer;padding:3px 0';
     this.element.append(this.name, this.text, this.choices, mute); document.body.append(this.element);
     const mesh = (geometry: THREE.BufferGeometry, x: number, y: number, z: number, sx = 1, sy = 1, sz = 1) => {
@@ -47,19 +52,24 @@ export class TacticalCommsOverlay {
     if (!this.ctx && window.AudioContext) this.ctx = new AudioContext();
     void this.ctx?.resume();
   };
-  public useProfile(callsign: string): void {
-    if (this.storageKey === `crackup:story:v1:${callsign}`) return;
+  public useProfile(callsign: string, force = false): void {
+    if (!force && this.storageKey === `crackup:story:v1:${callsign}`) return;
     this.storageKey = `crackup:story:v1:${callsign}`;
-    this.director.completed.clear(); this.director.beat = null; this.director.node = null; this.heard.clear(); this.whispers.length = 0; this.node = null;
+    this.openingPresented = false;
+    this.director.restore(newCampaignPresentation().story); this.heard.clear(); this.whispers.length = 0; this.node = null;
     try {
-      const saved = JSON.parse(localStorage.getItem(this.storageKey) ?? '{}');
-      for (const id of saved.completed ?? []) this.director.completed.add(id);
-      this.heard = new Set(saved.heard ?? []);
+      const raw = JSON.parse(this.storage?.getItem(this.storageKey) ?? '{}');
+      const saved = parseCampaignPresentation({ ...newCampaignPresentation(), story: { ...newCampaignPresentation().story, ...raw } }).story;
+      this.director.restore(saved);
+      this.heard = new Set(saved.heard);
     } catch { /* Private mode/storage loss only resets local presentation progress. */ }
+  }
+  public setMuted(muted: boolean): void {
+    this.muted = muted; this.mute.textContent = `Comms audio ${muted ? 'off' : 'on'}`;
   }
   private save(): void {
     if (!this.storageKey) return;
-    try { localStorage.setItem(this.storageKey, JSON.stringify({ completed: [...this.director.completed], heard: [...this.heard] })); } catch { /* Optional local storage. */ }
+    try { this.storage?.setItem(this.storageKey, JSON.stringify({ ...this.director.snapshot(), heard: [...this.heard] })); } catch { /* Optional local storage. */ }
   }
   public whisper(index: number): void {
     if (this.heard.has(index)) return;
@@ -79,11 +89,20 @@ export class TacticalCommsOverlay {
     this.node = null; this.save();
   }
   public update(context: StoryContext, dt: number): void {
+    if (this.cinematicActive) { this.element.style.display = 'none'; return; }
+    if (this.openingPresented) {
+      this.director.update(context);
+      if (this.director.beat?.id === 'deployment' && this.director.node?.id === 'mandate') {
+        if (this.node === this.director.node) this.node = null;
+        this.director.advance();
+      }
+      this.openingPresented = false; this.save();
+    }
     if (!context.deployed) { this.element.style.display = 'none'; return; }
     if (!this.node) {
       const next = this.whispers.shift() ?? this.director.update(context);
       if (!next) { this.element.style.display = 'none'; return; }
-      this.node = next; this.elapsed = 0; this.visibleCharacters = 0;
+      this.node = next; this.save(); this.elapsed = 0; this.visibleCharacters = 0;
       const profile = CHARACTERS[next.speaker];
       this.element.style.display = 'block'; this.element.style.setProperty('--comms-color', profile.color);
       this.material.color.set(profile.color); this.name.textContent = `${profile.name} // ${profile.role}`;
@@ -111,7 +130,7 @@ export class TacticalCommsOverlay {
     if (this.elapsed > this.node.text.length / 32 + (this.node.choices ? 10 : 3.5)) this.advance();
   }
   public renderPortrait(renderer: THREE.WebGLRenderer): void {
-    if (this.element.style.display === 'none') return;
+    if (this.cinematicActive || this.element.style.display === 'none') return;
     const rect = this.element.getBoundingClientRect();
     const viewport = renderer.getViewport(new THREE.Vector4()), scissor = renderer.getScissor(new THREE.Vector4());
     const scissorTest = renderer.getScissorTest(), autoClear = renderer.autoClear;
@@ -133,4 +152,10 @@ export class TacticalCommsOverlay {
     this.portrait.traverse(o => { if (o instanceof THREE.Mesh) o.geometry.dispose(); });
     this.material.dispose(); void this.ctx?.close(); this.element.remove();
   }
+  public setCinematicActive(active: boolean): void {
+    this.cinematicActive = active;
+    if (active) this.element.style.display = 'none';
+    else if (this.node) this.element.style.display = 'block';
+  }
+  public acknowledgeOpeningBriefing(): void { this.openingPresented = true; }
 }

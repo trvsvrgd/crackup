@@ -1,0 +1,673 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-11-14T02:22:23.146Z",
+  "finishedAt": "2026-11-14T02:22:25.722Z",
+  "result": "audit_completed",
+  "method": "Three real server processes; private temporary SQLite database. Seeded profile inventory/XP/position, actual WebSocket authentication/skill purchase/terminal input, reconnect, graceful shutdown/restart. District completion is an explicit server fixture, not a normal-play win.",
+  "environment": {
+    "node": "v22.16.0",
+    "platform": "win32",
+    "architecture": "x64"
+  },
+  "build": {
+    "head": "4af95ab1d82d2089cf886858e50cc85af40f6b58",
+    "sourceDigest": "c4382ebabaceb0adc8f87a8fcbddaadbb1ad00e56537c47dd1e80cf5a5eaa1ae",
+    "files": [
+      {
+        "path": "client/animation/combatDebris.ts",
+        "sha256": "eb1212ba74a833b5d2eefc3f4130f5c9ac69f473fec75b7225eb77cd0006d0a2"
+      },
+      {
+        "path": "client/animation/combatEffects.ts",
+        "sha256": "71a1acd287bb0276e0e6f60a14f469f32baabe5a90ef819338dcf764d2d69950"
+      },
+      {
+        "path": "client/animation/humanoidRig.ts",
+        "sha256": "b491cbd87fc5f0d9a0bb3cbf2b9a78e67f8f4acdb176dc3ded53ca3daf725115"
+      },
+      {
+        "path": "client/animation/mixamoMotion.ts",
+        "sha256": "752ba69ca5e48d548b9b622c42bcb69819c7878aedd5680777e4f9c00b17ec4e"
+      },
+      {
+        "path": "client/animation/presentationQueue.ts",
+        "sha256": "32dadfa7088978b0892b7b2a7d9f21314c4582bf7383361d572def843330196b"
+      },
+      {
+        "path": "client/animation/skeletalAnimator.ts",
+        "sha256": "c1a3bca316b87d8820d791f26878a08b5622c18ce0726424503edbe96256ab16"
+      },
+      {
+        "path": "client/assets/pbrTextureLibrary.ts",
+        "sha256": "79db8597e32f5ba174f7c2a7791434c2c340620544a9eada345eacfc0500df3c"
+      },
+      {
+        "path": "client/assets/productionAssets.ts",
+        "sha256": "65884d1cf25d681566636ac26f2acd0800b6432e6b85b4d6d5c74160cf977bf7"
+      },
+      {
+        "path": "client/audio/spatialGameAudio.ts",
+        "sha256": "681ad10f057b052656b3fe89453574fd9b0e8aeffc1dda85e32dfcaff577025a"
+      },
+      {
+        "path": "client/audio/spatialOrbAudio.ts",
+        "sha256": "58a0a4d6e22f59141295ec17914cb86c1069b42d0c50c00a1c0b95f4b1db0c25"
+      },
+      {
+        "path": "client/builders/ArchBuilder.ts",
+        "sha256": "e9192a030cd0e37832d044e8f2f0054726afa5619fdb9fdfa9564573bf97ec51"
+      },
+      {
+        "path": "client/builders/RelayBuilder.ts",
+        "sha256": "7254dffcf7d9c9c82cf35b5ce276bf6c33f6390ac9f837b2aa0436e10e2a56e4"
+      },
+      {
+        "path": "client/builders/VehicleBuilder.ts",
+        "sha256": "af516768f7c4e3614618aa8d4c2a3b479b8cfff681532fac5f01b6a80f143ee9"
+      },
+      {
+        "path": "client/builders/WeaponBuilder.ts",
+        "sha256": "5bb41160891b4d6e31a2087a0c105f0d3e4129c85c027ae481c290b084638fd1"
+      },
+      {
+        "path": "client/builders/builderContract.ts",
+        "sha256": "1b886dc074bb7a43d66793fab0acff887f5281cf41a04cb7c9cb33c9ec5ad671"
+      },
+      {
+        "path": "client/builders/structureFallback.ts",
+        "sha256": "3c71d5b0e38331c099c2fb660c4d76cfdadee0b8ae0838265eab4a48175ca36d"
+      },
+      {
+        "path": "client/camera/springArmCamera.ts",
+        "sha256": "1af6107645a62bb86179cc989de034b20706334671b6d02c34a0a308eea5f9b2"
+      },
+      {
+        "path": "client/entities/agentMesh.ts",
+        "sha256": "6672f2ffccf7d28dcc7734d0a4b8464160a466fcdefa8fa408a4909bd0d6e48c"
+      },
+      {
+        "path": "client/entities/enemyRigMesh.ts",
+        "sha256": "a466d2fb4093b38a8d884472abd6af751f10fd62efda63f62d9b9e5f83b841e4"
+      },
+      {
+        "path": "client/entities/phase5WorldMesh.ts",
+        "sha256": "eb33cf30c8e54de879914ff1f0424197197de8ba6a21cef037bee1960a6e428e"
+      },
+      {
+        "path": "client/entities/phase6WorldMesh.ts",
+        "sha256": "b4750ddb5a2389a38142beb8e76b732a2f8b482f4739f333f64bd60b992d836d"
+      },
+      {
+        "path": "client/entities/vehicleAndPropMesh.ts",
+        "sha256": "4c99ec0f95a20a1b96c38c7b47838d0acf5caf64a1de07eb60a8e6058ee6b23f"
+      },
+      {
+        "path": "client/main.ts",
+        "sha256": "b9f366b651de02dcde4135c9f32f808f5fe583017670dcd5e09e53c2ed7b52a4"
+      },
+      {
+        "path": "client/narrative/cinematicDirector.ts",
+        "sha256": "0d8a4b409cb89fc0af2de0a708d6a4c46f2ca0c0b22f86f31ae426883fd0ab5a"
+      },
+      {
+        "path": "client/narrative/cinematicOverlay.ts",
+        "sha256": "6135f5e98f9be7a97bca8797dbb99b6fea7b75369a54a9d94a0b3b0f178b8651"
+      },
+      {
+        "path": "client/narrative/cinematicTracks.ts",
+        "sha256": "2a2e5344b9829f1a2fd4d60dff9290a49c60061dfce119891b0dfa891e8a4455"
+      },
+      {
+        "path": "client/narrative/tacticalComms.ts",
+        "sha256": "28d3a23b98abf78491110925f33a3060ccf5cdc1e560d9f257b9413f15f5b089"
+      },
+      {
+        "path": "client/net/netcodeClient.ts",
+        "sha256": "8e52e27b7629dc7d9d1bbf22a1d4c0592a109f0a201aaa14baaacb50bd91a51a"
+      },
+      {
+        "path": "client/playerHUD.ts",
+        "sha256": "a7419f4b38ebccf3321494f1a064062fa84d339f1d153d870e73bcdea4c25b33"
+      },
+      {
+        "path": "client/shaders/factionPalette.ts",
+        "sha256": "8b84701635f11a5165a370110464958777c5d69381adbb85d7327739254fd146"
+      },
+      {
+        "path": "client/shaders/inkOutlinePass.ts",
+        "sha256": "67a49e2b698a283486df16b8fd5cca66f2c77bf5ed6ace83b8741a001bc517f7"
+      },
+      {
+        "path": "client/shaders/interiorMapping.ts",
+        "sha256": "d38e7a15a9d5e7110ed13de343a3c882c0566cd73b5915f9bdffc80ec88d3fbb"
+      },
+      {
+        "path": "client/shaders/opaqueSSAOPass.ts",
+        "sha256": "3d0b36871ea70e2b502984d03cab6745942539c49919ef6bd37ca6fc13128cd0"
+      },
+      {
+        "path": "client/shaders/worldSurface.ts",
+        "sha256": "578d13aff0a5c1b6841da92c871432db970503c66d31b4090051f000536f1f34"
+      },
+      {
+        "path": "client/world/bayVista.ts",
+        "sha256": "1a5ae11f1278d9752e00b8b218602fc2716e2480bd7982297c0934dc04ab69ff"
+      },
+      {
+        "path": "client/world/cityBuilder.ts",
+        "sha256": "3eba19f4c9ab70b02ba130e548c103d04aa69755197d73c58cc1a7cc20e12148"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "186d7fe2e6e81fe9901b4e4d9a258cc6c026343c75827420bf3f280364bb4783"
+      },
+      {
+        "path": "package.json",
+        "sha256": "8418e131d17701c05e69ad798ecd798048d32bdaf37463cd89b7b65dfa14c683"
+      },
+      {
+        "path": "server/db.ts",
+        "sha256": "a58b08a7199a7d4ecb90072c04163fc658b70ceb0c838bc1aabde2f6ea66d228"
+      },
+      {
+        "path": "server/gameServer.ts",
+        "sha256": "34e14af5a675ee7f94d29b317f770b5b8b622a26cf4550ce837d3c9b42c4e367"
+      },
+      {
+        "path": "server/index.ts",
+        "sha256": "50a27231d1231f51c3f1ea8aa72f835fc58645aae18849dd3a4036b93c5ded97"
+      },
+      {
+        "path": "shared/combat/combatPresentation.ts",
+        "sha256": "322875ad7d196ea865d9e5a50fbab7569e10f430c219d30167faae714c17ed40"
+      },
+      {
+        "path": "shared/combat/enemyRigSystem.ts",
+        "sha256": "822e080ebca7b51f964be4c1039069bf1db882b789e5161596328f188086cfb1"
+      },
+      {
+        "path": "shared/combat/presentationEvents.ts",
+        "sha256": "0b735f5140eee6570c46a64642dc41c9b8cfdcc13a3fc178f475da17e5d0b495"
+      },
+      {
+        "path": "shared/combat/weaponPresentation.ts",
+        "sha256": "5c25cff0cee18d36836ce941df3f2f06007ccbdc273b18ce409518d960f44b0c"
+      },
+      {
+        "path": "shared/constants.ts",
+        "sha256": "46231bcc3db262a185d7c5c07247a24cf44f5bace2fdaf9a8bd23b7b5ac6b275"
+      },
+      {
+        "path": "shared/narrative/storyBible.ts",
+        "sha256": "cd60564fd49b8533f0eba65e28e00890028c312926c1e899374ae5ebbd1ab604"
+      },
+      {
+        "path": "shared/physics/characterController.ts",
+        "sha256": "025b8f3d53b1e4b8e9f949615a37348e1a92dd128a534bdc9e474f3b3ad85977"
+      },
+      {
+        "path": "shared/physics/vehicleAndPropSystem.ts",
+        "sha256": "f105c4790758631605d9a0b0c97ffe5a0d440995d0f8f0a852894e723f819678"
+      },
+      {
+        "path": "shared/progression/skillTreeSystem.ts",
+        "sha256": "5383bbe804d155e259606a9419f53cbdc7318a4b34101a20c667264d2bef2440"
+      },
+      {
+        "path": "shared/protocol/binaryProtocol.ts",
+        "sha256": "68889d0311f19a7831850d5d2e7a3ddc1d621fea17a89583548f363238ba184e"
+      },
+      {
+        "path": "shared/protocol/presentationProtocol.ts",
+        "sha256": "d977d0ab664d6196ffa15b0e8ff8316d9fa1f28c1849f18055993ffe45654986"
+      },
+      {
+        "path": "shared/protocol/relayProtocol.ts",
+        "sha256": "c8a51b74961dad8b89a61a12cc158b06cb209afc7205dcffaca6acbba372a9ca"
+      },
+      {
+        "path": "shared/protocol/vehicleDamageProtocol.ts",
+        "sha256": "c68d22559dc457054731625b5c8248664c176817109a4beb1621e5a101ca674e"
+      },
+      {
+        "path": "shared/vehicles/vehicleDefinition.ts",
+        "sha256": "3b9b5843ebde3d12dbe80919f480b4a966de90e10f7bacbb47f9f774c3083cea"
+      },
+      {
+        "path": "shared/world/architecture.ts",
+        "sha256": "a0bb06253626e6a12bb1e038c822980a2d90c45ecf1a30ea4c25478148304200"
+      },
+      {
+        "path": "shared/world/bayVista.ts",
+        "sha256": "2c4ffdc7b3eb14bc3910c3a5ad1ce43b9486ef836ec9ef184c86c0a6e4a61684"
+      },
+      {
+        "path": "shared/world/cyberPetArena.ts",
+        "sha256": "1264e1c5aec78d6fd3ed04c49f36fad3279bc3f15e711321de3f4ad55ea31225"
+      },
+      {
+        "path": "shared/world/dreadnoughtBoss.ts",
+        "sha256": "07385135c58d7a15d98e75a2b1cc9711aa22296358eef2420e1775ee76a576aa"
+      },
+      {
+        "path": "shared/world/neoVeridiaBlock.ts",
+        "sha256": "01b786eef03ee73854c63556e5f9867304ada746bd55d86d8f05f777bc6c1ab7"
+      },
+      {
+        "path": "shared/world/orbSystem.ts",
+        "sha256": "5c26e22fcf96318e8f5bb082efecf991095f400e9d9d98e001a3df0322ec8476"
+      },
+      {
+        "path": "shared/world/phase5Systems.ts",
+        "sha256": "48821f385605eb188a4f9f595e8ee5baadb7fe9a720f3a4d658d9d888d3984af"
+      },
+      {
+        "path": "shared/world/relayDefinition.ts",
+        "sha256": "ce8664ca35ed27daa42829b14b04e1df0eb6b94f95a655e12526b6027a2d6758"
+      },
+      {
+        "path": "shared/world/relaySystem.ts",
+        "sha256": "170eeb0fce0e4e88e3c9abbe859478623da58f73332988c54c3fe085bb28a4ce"
+      },
+      {
+        "path": "shared/world/spatialOctree.ts",
+        "sha256": "942f179748a5e98d0b0241173b25c7ff884618be37803510ea35717a9cee0d2a"
+      },
+      {
+        "path": "tests/audit-product-baseline.ts",
+        "sha256": "b123cac34441e7fc80940c17a20b2279eff3d1fc205e6a35d47eb882d64fdd77"
+      }
+    ]
+  },
+  "observations": {
+    "initial": {
+      "pid": 19752,
+      "district": {
+        "id": "NEON_DOCKS",
+        "stage": 1,
+        "terminal1Hacked": false,
+        "terminal2Hacked": false,
+        "lieutenantDefeated": false,
+        "kingpinDefeated": false
+      },
+      "storedProfile": {
+        "hp": 87,
+        "attributes": {
+          "agility": 1,
+          "strength": 1,
+          "driving": 1,
+          "shooting": 1,
+          "explosives": 1,
+          "flying": 1,
+          "vigilante": 1
+        },
+        "xp": {
+          "agility": 100,
+          "strength": 0,
+          "driving": 0,
+          "shooting": 0,
+          "explosives": 0,
+          "flying": 0,
+          "vigilante": 0
+        },
+        "collectedOrbs": [
+          1
+        ],
+        "unlockedSkills": [],
+        "unlockedRelics": [],
+        "unlockedDistrictRewards": [],
+        "pet": {
+          "species": 0,
+          "name": "Audit Fox",
+          "derbyWins": 2,
+          "clashWins": 1
+        }
+      },
+      "liveProfiles": [],
+      "integrity": "ok"
+    },
+    "beforeReconnect": {
+      "pid": 19752,
+      "district": {
+        "id": "NEON_DOCKS",
+        "stage": 1,
+        "terminal1Hacked": true,
+        "terminal2Hacked": false,
+        "lieutenantDefeated": false,
+        "kingpinDefeated": false
+      },
+      "storedProfile": {
+        "hp": 87,
+        "attributes": {
+          "agility": 1,
+          "strength": 1,
+          "driving": 1,
+          "shooting": 1,
+          "explosives": 1,
+          "flying": 1,
+          "vigilante": 1
+        },
+        "xp": {
+          "agility": 100,
+          "strength": 0,
+          "driving": 0,
+          "shooting": 0,
+          "explosives": 0,
+          "flying": 0,
+          "vigilante": 0
+        },
+        "collectedOrbs": [
+          1
+        ],
+        "unlockedSkills": [
+          "titan_1_kinetic_plating"
+        ],
+        "unlockedRelics": [],
+        "unlockedDistrictRewards": [],
+        "pet": {
+          "species": 0,
+          "name": "Audit Fox",
+          "derbyWins": 2,
+          "clashWins": 1
+        }
+      },
+      "liveProfiles": [],
+      "integrity": "ok"
+    },
+    "afterReconnect": {
+      "pid": 19752,
+      "district": {
+        "id": "NEON_DOCKS",
+        "stage": 1,
+        "terminal1Hacked": true,
+        "terminal2Hacked": false,
+        "lieutenantDefeated": false,
+        "kingpinDefeated": false
+      },
+      "storedProfile": {
+        "hp": 87,
+        "attributes": {
+          "agility": 1,
+          "strength": 1,
+          "driving": 1,
+          "shooting": 1,
+          "explosives": 1,
+          "flying": 1,
+          "vigilante": 1
+        },
+        "xp": {
+          "agility": 100,
+          "strength": 0,
+          "driving": 0,
+          "shooting": 0,
+          "explosives": 0,
+          "flying": 0,
+          "vigilante": 0
+        },
+        "collectedOrbs": [
+          1
+        ],
+        "unlockedSkills": [
+          "titan_1_kinetic_plating"
+        ],
+        "unlockedRelics": [],
+        "unlockedDistrictRewards": [],
+        "pet": {
+          "species": 0,
+          "name": "Audit Fox",
+          "derbyWins": 2,
+          "clashWins": 1
+        }
+      },
+      "liveProfiles": [
+        {
+          "callsign": "P0-RESTART",
+          "hp": 87,
+          "skills": [
+            "titan_1_kinetic_plating"
+          ],
+          "districtRewards": []
+        }
+      ],
+      "integrity": "ok"
+    },
+    "afterPartialRestart": {
+      "pid": 24688,
+      "district": {
+        "id": "NEON_DOCKS",
+        "stage": 1,
+        "terminal1Hacked": false,
+        "terminal2Hacked": false,
+        "lieutenantDefeated": false,
+        "kingpinDefeated": false
+      },
+      "storedProfile": {
+        "hp": 87,
+        "attributes": {
+          "agility": 1,
+          "strength": 1,
+          "driving": 1,
+          "shooting": 1,
+          "explosives": 1,
+          "flying": 1,
+          "vigilante": 1
+        },
+        "xp": {
+          "agility": 100,
+          "strength": 0,
+          "driving": 0,
+          "shooting": 0,
+          "explosives": 0,
+          "flying": 0,
+          "vigilante": 0
+        },
+        "collectedOrbs": [
+          1
+        ],
+        "unlockedSkills": [
+          "titan_1_kinetic_plating"
+        ],
+        "unlockedRelics": [],
+        "unlockedDistrictRewards": [],
+        "pet": {
+          "species": 0,
+          "name": "Audit Fox",
+          "derbyWins": 2,
+          "clashWins": 1
+        }
+      },
+      "liveProfiles": [],
+      "integrity": "ok"
+    },
+    "completion": {
+      "pid": 24688,
+      "district": {
+        "id": "NEON_DOCKS",
+        "stage": 4,
+        "terminal1Hacked": false,
+        "terminal2Hacked": false,
+        "lieutenantDefeated": false,
+        "kingpinDefeated": true
+      },
+      "storedProfile": {
+        "hp": 87.12,
+        "attributes": {
+          "agility": 1,
+          "strength": 1,
+          "driving": 1,
+          "shooting": 1,
+          "explosives": 1,
+          "flying": 1,
+          "vigilante": 1
+        },
+        "xp": {
+          "agility": 100,
+          "strength": 0,
+          "driving": 0,
+          "shooting": 0,
+          "explosives": 0,
+          "flying": 0,
+          "vigilante": 0
+        },
+        "collectedOrbs": [
+          1
+        ],
+        "unlockedSkills": [
+          "titan_1_kinetic_plating"
+        ],
+        "unlockedRelics": [],
+        "unlockedDistrictRewards": [
+          "UNLOCK_GRAPPLE_OVERDRIVE"
+        ],
+        "pet": {
+          "species": 0,
+          "name": "Audit Fox",
+          "derbyWins": 2,
+          "clashWins": 1
+        }
+      },
+      "liveProfiles": [
+        {
+          "callsign": "P0-RESTART",
+          "hp": 87.12,
+          "skills": [
+            "titan_1_kinetic_plating"
+          ],
+          "districtRewards": [
+            "UNLOCK_GRAPPLE_OVERDRIVE"
+          ]
+        },
+        {
+          "callsign": "P0-GUEST",
+          "hp": 230,
+          "skills": [],
+          "districtRewards": [
+            "UNLOCK_GRAPPLE_OVERDRIVE"
+          ]
+        }
+      ],
+      "integrity": "ok"
+    },
+    "beforeCompletedRestart": {
+      "pid": 24688,
+      "district": {
+        "id": "NEON_DOCKS",
+        "stage": 4,
+        "terminal1Hacked": false,
+        "terminal2Hacked": false,
+        "lieutenantDefeated": false,
+        "kingpinDefeated": true
+      },
+      "storedProfile": {
+        "hp": 87.12,
+        "attributes": {
+          "agility": 1,
+          "strength": 1,
+          "driving": 1,
+          "shooting": 1,
+          "explosives": 1,
+          "flying": 1,
+          "vigilante": 1
+        },
+        "xp": {
+          "agility": 100,
+          "strength": 0,
+          "driving": 0,
+          "shooting": 0,
+          "explosives": 0,
+          "flying": 0,
+          "vigilante": 0
+        },
+        "collectedOrbs": [
+          1
+        ],
+        "unlockedSkills": [
+          "titan_1_kinetic_plating"
+        ],
+        "unlockedRelics": [],
+        "unlockedDistrictRewards": [
+          "UNLOCK_GRAPPLE_OVERDRIVE"
+        ],
+        "pet": {
+          "species": 0,
+          "name": "Audit Fox",
+          "derbyWins": 2,
+          "clashWins": 1
+        }
+      },
+      "liveProfiles": [],
+      "integrity": "ok"
+    },
+    "afterCompletedRestart": {
+      "pid": 12456,
+      "district": {
+        "id": "NEON_DOCKS",
+        "stage": 1,
+        "terminal1Hacked": false,
+        "terminal2Hacked": false,
+        "lieutenantDefeated": false,
+        "kingpinDefeated": false
+      },
+      "storedProfile": {
+        "hp": 87.12,
+        "attributes": {
+          "agility": 1,
+          "strength": 1,
+          "driving": 1,
+          "shooting": 1,
+          "explosives": 1,
+          "flying": 1,
+          "vigilante": 1
+        },
+        "xp": {
+          "agility": 100,
+          "strength": 0,
+          "driving": 0,
+          "shooting": 0,
+          "explosives": 0,
+          "flying": 0,
+          "vigilante": 0
+        },
+        "collectedOrbs": [
+          1
+        ],
+        "unlockedSkills": [
+          "titan_1_kinetic_plating"
+        ],
+        "unlockedRelics": [],
+        "unlockedDistrictRewards": [
+          "UNLOCK_GRAPPLE_OVERDRIVE"
+        ],
+        "pet": {
+          "species": 0,
+          "name": "Audit Fox",
+          "derbyWins": 2,
+          "clashWins": 1
+        }
+      },
+      "liveProfiles": [],
+      "integrity": "ok"
+    }
+  },
+  "checks": {
+    "profileReconnect": true,
+    "profileProcessRestart": true,
+    "districtRewardProcessRestart": true,
+    "sqliteQuickCheck": true,
+    "partialDistrictProcessRestart": false,
+    "completedDistrictProcessRestart": false
+  },
+  "findings": [
+    {
+      "requirement": "FR-SAVE-01",
+      "status": "Needs work",
+      "detail": "Personal inventory/rewards survived, but owned district objective progress did not survive server process restart."
+    }
+  ],
+  "limits": [
+    "No abrupt termination, disk-full, migration or backup restore qualification.",
+    "No browser rendering, offline package, target-hardware performance or human playtest acceptance.",
+    "Shared world state is observed directly; no claim of personal campaign isolation or guest-consent UI.",
+    "An audit completing successfully does not mean the product requirements passed."
+  ]
+}

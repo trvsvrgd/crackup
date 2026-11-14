@@ -1,3 +1,4 @@
+import { triplanarPBR } from '../shaders/worldSurface.js';
 import * as THREE from 'three';
 import { DistrictId } from '../../shared/constants.js';
 import type { ArchitecturePlan } from '../../shared/world/architecture.js';
@@ -74,6 +75,10 @@ export class ArchBuilder {
     const standard = (role: string, color: number, roughness = 0.65, metalness = 0.3, emissive = false) => {
       const material = scope.get(`mat:${plan.district}:${role}`, () => stylizePBR(new THREE.MeshStandardMaterial({ color, roughness, metalness,
         emissive: emissive ? color : 0, emissiveIntensity: emissive ? 1.1 : 0 })));
+      if (!emissive && ['facade', 'podium', 'steel', 'ceramic'].includes(role)) {
+        productionAssets.applyMaterial(material, role === 'steel' ? 'corrugated_iron_02' : 'concrete_layers_02');
+        triplanarPBR(material, role === 'steel' ? 3 : 5);
+      }
       materials.add(material); return material;
     };
     const facade = standard('facade', palette.facade, 0.48, 0.4), podium = standard('podium', palette.podium, 0.8, 0.15);

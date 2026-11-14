@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "checkedAt": "2026-11-13T13:47:10.114Z",
+  "observers": 3,
+  "identicalAuthoritativeEvents": true,
+  "forgedEventsRejected": true,
+  "lateJoinNoReplay": true,
+  "emptySessionNoReplay": true,
+  "duplicateDelayedPacketOnce": true
+}

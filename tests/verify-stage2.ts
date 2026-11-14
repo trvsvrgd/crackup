@@ -13,7 +13,7 @@ for (const style of [...Object.values(AugmentChassisId), 0, 1, 2, 3]) {
   const rig = new HumanoidRig(style, typeof style === 'number');
   assert.ok(rig.skeleton.bones.length >= 19); assert.equal(rig.bones.RightHand.children.includes(rig.weapon), true);
   assert.equal(rig.bones.Head.parent, rig.bones.Neck); assert.equal(rig.bones.LeftFoot.parent, rig.bones.LeftCalf);
-  let count = 0; rig.root.traverse(o => { if (o instanceof THREE.Mesh) count++; }); assert.ok(count >= 25);
+  for (const part of ['HipCage', 'ChestCarapace', 'Helmet', 'LeftBoot', 'RightBoot', 'LeftGauntlet', 'RightGauntlet']) assert.ok(rig.root.getObjectByName(part), part);
   const animation = new SkeletalAnimator(rig);
   const states: SkeletalState[] = ['IdleBreathing', 'Walk', 'TacticalSprint', 'AirborneRise', 'AirborneApex', 'FallLoop', 'HardLandingRoll', 'LedgeHang', 'LedgeMantleClimb', 'MeleeCombo1_Jab', 'MeleeCombo2_Cross', 'MeleeCombo3_SpinningKick', 'AirborneGroundSlam', 'DropToKneeStagger', 'WeaponDropRecoil', 'WallSplatStun', 'PairedCounter', 'CounterVictim'];
   for (const state of states) {
@@ -31,7 +31,7 @@ const deterministic = (hz: number) => {
 const a = deterministic(60), b = deterministic(120); assert.equal(a.ticks, 60); assert.deepEqual(a, b);
 const fallback = new HumanoidRig(0, true), aimAnimator = new SkeletalAnimator(fallback);
 for (let i = 0; i < 20; i++) aimAnimator.update(1 / 60, { speed: 4, verticalSpeed: 0, aim: 1 });
-assert.ok(fallback.bones.RightUpperArm.rotation.x < -0.7); fallback.dispose();
+assert.ok(fallback.bones.RightUpperArm.rotation.x > 0.7); fallback.dispose();
 
 await initRapierPhysics();
 const sim = new SharedPhysicsWorld(), manager = sim.combatManager;

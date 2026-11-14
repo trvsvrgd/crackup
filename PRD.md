@@ -1,5 +1,7 @@
 # Product Requirements Document (PRD): CRACKUP Protocol Eclipse (v2.0 True 3D AAA Architecture)
 
+> Product planning continues in [Complete-game requirements v3](docs/PRODUCT_REQUIREMENTS_V3.md) and the [P0–P8 production delivery plan](docs/PRODUCTION_DELIVERY_PLAN.md). This v2 document records the existing mechanics/engineering baseline. Passing its implementation phases does not establish complete content, production quality, or release readiness. The owner-confirmed direction is a focused premium PC game with a complete solo campaign and optional co-op.
+
 Document Status: Production Engineering Specification v2.0
 Genre: 8-Player Real-Time Online Co-op Third-Person 3D Open-City Action RPG
 Core Inspiration: Crackdown (3D Vertical Sandbox, Physics Sandbox, Orb Hunting, 7-Stat Evolution) + Fallout V.A.T.S. (3D Bone-Collider Targeting) + Batman Arkham (Timed Third-Person Melee Counters)

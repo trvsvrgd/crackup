@@ -3,6 +3,8 @@ import { AugmentChassisId } from '../../shared/constants.js';
 import { EnemyArchetype, WARDEN_RIG_SCALE } from '../../shared/combat/combatPresentation.js';
 import { createFactionMaterials } from '../shaders/factionPalette.js';
 import { productionAssets } from '../assets/productionAssets.js';
+import { weaponBuilder, type WeaponBuildResult } from '../builders/WeaponBuilder.js';
+import { weaponForStyle } from '../../shared/combat/weaponPresentation.js';
 
 export const JOINT_LAYOUT = {
   Pelvis: ['', 0, 0.94, 0], Spine: ['Pelvis', 0, 0.12, 0], Chest: ['Spine', 0, 0.22, 0], Neck: ['Chest', 0, 0.25, 0], Head: ['Neck', 0, 0.12, 0],
@@ -14,27 +16,13 @@ export const JOINT_LAYOUT = {
 export type JointName = keyof typeof JOINT_LAYOUT;
 export type RigStyle = AugmentChassisId | EnemyArchetype;
 
-/** A prop hierarchy shared by hand sockets and authoritative disarm debris. Forward = -Z. */
-export function createRigFirearm(heavy = false): THREE.Group {
-  const g = new THREE.Group(); g.name = 'SocketFirearm';
-  const m = createFactionMaterials('aegis');
-  const part = (name: string, geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number) => {
-    const mesh = new THREE.Mesh(geo, mat); mesh.name = name; mesh.position.set(x, y, z); mesh.castShadow = true; g.add(mesh); return mesh;
-  };
-  part('Receiver', new THREE.BoxGeometry(0.11, 0.14, heavy ? 0.5 : 0.32), m.joint, 0, 0, -0.1);
-  const barrel = part('BarrelShroud', new THREE.CylinderGeometry(0.035, 0.045, 0.3, 8), m.armor, 0, 0.02, -0.4); barrel.rotation.x = Math.PI / 2;
-  part('Magazine', new THREE.BoxGeometry(0.07, 0.18, 0.09), m.joint, 0, -0.12, -0.1).rotation.x = -0.2;
-  part('Optic', new THREE.TorusGeometry(0.045, 0.012, 4, 8), m.trim, 0, 0.11, -0.13);
-  part('ChargeStrip', new THREE.BoxGeometry(0.012, 0.025, 0.23), m.trim, 0.06, 0.025, -0.13);
-  const muzzle = new THREE.Object3D(); muzzle.name = 'MuzzleFlashEmitter'; muzzle.position.set(0, 0.02, -0.57); g.add(muzzle);
-  return g;
-}
 export class HumanoidRig {
   public readonly root = new THREE.Group();
   public readonly bones = {} as Record<JointName, THREE.Bone>;
   public readonly skeleton: THREE.Skeleton;
   public readonly materials;
   public readonly weapon: THREE.Group;
+  public readonly equipment: WeaponBuildResult;
   constructor(public readonly style: RigStyle, enemy = false) {
     const faction = enemy && (style === EnemyArchetype.STREET_ENFORCER || style === EnemyArchetype.CYBER_RONIN) ? 'syndicate' : !enemy && style === AugmentChassisId.PHANTOM_SHARPSHOOTER ? 'resistance' : 'aegis';
     this.materials = createFactionMaterials(faction);
@@ -95,11 +83,13 @@ export class HumanoidRig {
       plate('Chest', 'TriageBackpack', 0.34, 0.45, 0.2, 0, 0.25);
       plate('LeftClavicle', 'SquadBeacon', 0.045, 0.42, 0.045, 0.28, 0.12, this.materials.trim);
     }
-    this.weapon = createRigFirearm(heavy); this.bones.RightHand.add(this.weapon);
+    this.equipment = weaponBuilder.build(weaponForStyle(style)); this.weapon = this.equipment.root;
+    this.weapon.rotation.x = -Math.PI / 2; this.bones.RightHand.add(this.weapon);
     this.root.userData.entityKind = enemy ? 'enemy' : 'agent';
     this.root.userData.silhouette = style;
   }
   public dispose(): void {
+    this.equipment.dispose();
     const materials = new Set<THREE.Material>();
     this.root.traverse(o => { if (o instanceof THREE.Mesh) { o.geometry.dispose(); (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => materials.add(m)); } });
     materials.forEach(m => { if (m instanceof THREE.MeshStandardMaterial) productionAssets.releaseMaterial(m); m.dispose(); }); this.skeleton.dispose();

@@ -1,0 +1,7 @@
+{
+  "source": "https://raw.githubusercontent.com/mrdoob/three.js/c2345655c56c9de5b2cf4cf925f3c4611734f650/examples/textures/ktx2/2d_etc1s.ktx2",
+  "sha256": "e56ddcc757fc73ff06bb0dac2a3533ce79c1e196ad895a3ff7dcc4d9de6b9d5d",
+  "bytes": 966,
+  "use": "Codec verification only, never installed in the game",
+  "webp": "Converted from the real Poly Haven concrete_layers_02 albedo"
+}

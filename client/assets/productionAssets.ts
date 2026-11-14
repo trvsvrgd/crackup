@@ -2,58 +2,50 @@ import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { PBRTextureLibrary, type PBRMaps } from './pbrTextureLibrary.js';
 import type { ModelKind } from '../builders/builderContract.js';
 
-type Maps = { diffuse: string; roughness: string; normal: string; metalness?: string };
+type Maps = PBRMaps;
 interface Manifest {
   environment: { url: string };
   materials: Record<string, { maps: Maps }>;
-  characters: Record<string, { url: string }>;
+  characters: Record<string, { url: string; optional?: boolean }>;
   models?: Partial<Record<ModelKind, Record<string, { url: string; requiredAnchors?: string[] }>>>;
 }
 
 /** Shared immutable templates; each avatar receives an independent skeleton/mixer. */
-export class ProductionAssetManager {
-  public readonly textures = new Map<string, Record<string, THREE.Texture>>();
+export class ProductionAssetManager extends PBRTextureLibrary {
   public readonly characters = new Map<string, GLTF>();
   public readonly models = new Map<string, GLTF>();
   public readonly modelFailures = new Map<string, string>();
+  public readonly characterFailures = new Map<string, string>();
   public environment: THREE.DataTexture | null = null;
   private environmentTarget: THREE.WebGLRenderTarget | null = null;
-  private readonly materialMaps = new WeakMap<THREE.Material, string>();
-  private readonly loader = new THREE.TextureLoader();
-  private anisotropy = 1;
-
   public async load(renderer: THREE.WebGLRenderer): Promise<void> {
     const response = await fetch('/assets/manifest.json');
     if (!response.ok) throw new Error(`Asset manifest: HTTP ${response.status}; run npm run assets:fetch`);
     const manifest = await response.json() as Manifest;
-    this.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    this.configureTextures(renderer);
     // Stage 2: real HDR environment, decoded by the same Three.js loader as production.
     this.environment = await new RGBELoader().loadAsync(manifest.environment.url);
     this.environment.mapping = THREE.EquirectangularReflectionMapping;
-    // Stage 3: PBR maps. Keep scalar and normal maps in linear color space.
-    for (const [name, material] of Object.entries(manifest.materials)) {
-      const maps: Record<string, THREE.Texture> = {};
-      try {
-        for (const [channel, url] of Object.entries(material.maps)) {
-          const texture = await this.loader.loadAsync(url);
-          texture.colorSpace = channel === 'diffuse' ? THREE.SRGBColorSpace : THREE.NoColorSpace;
-          texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-          texture.anisotropy = this.anisotropy;
-          maps[channel] = texture;
-        }
-      } catch (error) { Object.values(maps).forEach((texture) => texture.dispose()); throw error; }
-      this.textures.set(name, maps);
-    }
+    // Each failed real pack leaves its deterministic procedural fallback available.
+    for (const [name, material] of Object.entries(manifest.materials)) await this.replaceMaterialPack(name, material.maps);
     // Stage 4: skinned humanoid templates and their genuine animation clips.
     const loader = new GLTFLoader();
     for (const [name, model] of Object.entries(manifest.characters)) {
+      try {
       const gltf = await loader.loadAsync(model.url);
       let skinned = 0;
       gltf.scene.traverse((object) => { if ((object as THREE.SkinnedMesh).isSkinnedMesh) skinned++; });
       if (!skinned || !gltf.animations.length) throw new Error(`${name}: missing SkinnedMesh or animation clips`);
       this.characters.set(name, gltf);
+      this.characterFailures.delete(name);
+      } catch (error) {
+        if (!model.optional) throw error;
+        this.characters.delete(name); this.characterFailures.set(name, String(error));
+        console.info(`[Production assets] Optional ${name} unavailable; using procedural animation.`);
+      }
     }
     await this.loadModels(manifest.models ?? {});
     console.info('[Production assets]', { materials: this.textures.size, characters: [...this.characters.keys()] });
@@ -108,33 +100,6 @@ export class ProductionAssetManager {
       scene.backgroundIntensity = 0.35;
       scene.backgroundBlurriness = 0.08;
     } finally { generator.dispose(); }
-  }
-
-  public applyMaterial(material: THREE.MeshStandardMaterial, name: string, repeat: [number, number] = [1, 1]): boolean {
-    const maps = this.textures.get(name);
-    if (!maps) return false;
-    if (this.materialMaps.get(material) === name) return true;
-    this.releaseMaterial(material);
-    const copy = (channel: string) => {
-      const texture = maps[channel]?.clone();
-      if (texture) { texture.repeat.set(...repeat); texture.needsUpdate = true; }
-      return texture ?? null;
-    };
-    material.map = copy('diffuse');
-    material.roughnessMap = copy('roughness');
-    material.normalMap = copy('normal');
-    material.metalnessMap = copy('metalness');
-    material.roughness = 1;
-    if (material.metalnessMap) material.metalness = 1;
-    material.needsUpdate = true;
-    this.materialMaps.set(material, name);
-    return true;
-  }
-
-  public releaseMaterial(material: THREE.MeshStandardMaterial): void {
-    if (!this.materialMaps.has(material)) return;
-    for (const texture of [material.map, material.roughnessMap, material.normalMap, material.metalnessMap]) texture?.dispose();
-    this.materialMaps.delete(material);
   }
 
   public createCharacter(name = 'Soldier'): { scene: THREE.Object3D; animations: THREE.AnimationClip[] } | null {

@@ -12,6 +12,7 @@ and any processing or substitution. Runtime code reads this manifest.
 | Industrial steel | `textures/corrugated_iron_02/` | [Poly Haven](https://polyhaven.com/a/corrugated_iron_02) |
 | Carbon fiber | `textures/carbon_fiber/` | [ambientCG Fabric004](https://ambientcg.com/view?id=Fabric004) |
 | Articulated humanoids | `models/characters/Soldier.glb`, `Xbot.glb` | [Official three.js example models](https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf) |
+| Capoeira motion library | `models/characters/capoeira_ybot.glb`, 39 clips, 5.64 MB | [Adobe Mixamo](https://www.mixamo.com/) |
 
 All material maps are 2048 x 2048. Each set has diffuse, roughness and OpenGL
 normal maps; industrial steel also includes its real metalness map. JPEG color
@@ -63,12 +64,40 @@ the surviving avatar and textured objects. Results are saved to
 `.cache/prod-assets/browser-verification.json`. Offline checks save to
 `.cache/prod-assets/verification.json`.
 
-## Mixamo combat pack
+## Installed Mixamo Capoeira pack
 
-The browser bridge was unavailable during acquisition. **No Mixamo FBXs were
-downloaded and no `agent_cyber.glb` has been fabricated.** The conversion tool is
-installed and the build script is ready, but end-to-end conversion is pending
-real source downloads and browser validation of the resulting file.
+The project owner's real `Capoeira Pack.zip` is preserved under
+`asset-inbox/packages/mixamo-capoeira/`, with Y Bot and 39 original FBXs in
+`extracted/`. Build intermediates stay in `.cache/prod-assets/capoeira/`.
+
+```powershell
+npm run assets:capoeira
+npm run assets:verify
+npm run verify:stage3d
+npm run assets:preview
+```
+
+The preview prints a local URL with a 39-clip selector, original Y Bot and the
+retargeted game armor side by side, weapon variants and a combined city view.
+The build uses FBX2glTF at 30 fps and glTF Transform CLI merge/resample, checks
+joint hierarchy and transforms, rebinds every take to the one base skeleton,
+and records source/output SHA-256 hashes. The short base bind-pose take is
+discarded; it is not presented as an Idle animation. The GLB has zero errors
+and two non-fatal upstream skinned-node hierarchy warnings.
+
+`MixamoMotion` adapts source bind axes and the extra spine joint to the existing
+19-joint armor rig. The third melee strike uses **armada**, fitted to the existing
+0.28-second presentation window with a short blend, using the source's
+1.05–1.50s kick/recovery interval rather than its opening footwork. World X/Z motion and damage
+timing remain authoritative. All 39 clips are available for preview/integration;
+the other 38 are not new player actions. Unsupported states retain procedural
+animation. No hidden per-player GLB clone is needed. See [Mixamo provenance](licenses/Mixamo.md).
+
+## Separate seven-animation starter pack (pending)
+
+The original Idle/Run/Jump/Punch/Kick/Hit/Dying download batch is still incomplete;
+`agent_cyber.glb` has not been fabricated or replaced by the Capoeira file. Continue
+using **Y Bot** for compatible additional downloads from this library.
 
 Use the same selected character for every download, FBX Binary, 30 fps. Download
 Idle **With Skin** as the base character. Download the remaining animations
@@ -99,10 +128,31 @@ resamples, validates and atomically writes
 `models/characters/agent_cyber.glb`. A bare CLI merge would retain separate rigs;
 the rebinding step is required. Missing/incompatible clips fail the build.
 Successful builds update the manifest with source FBX hashes and all seven clip
-names. The runtime selects this custom model when its verified entry exists.
+names. The loader can select this model when its verified entry exists; visible
+gameplay-rig integration remains a separate step in the current client.
 
-The baseline Soldier/Xbot models remain available to the asset loader. Their
-clip sets do not cover the full required combat state machine, so the articulated
-procedural rigs are the active character fallback. Rich procedural builders
-also supply world geometry when a validated optional model is unavailable. Acquiring the combat clips does not by itself implement every combat
-animation transition; gameplay-driven combat playback remains a separate task.
+Soldier/Xbot remain installed and loader-verified. Gameplay renders the armored
+class rig with the selected retargeted Capoeira move. Replacing its appearance
+with a new skinned hero remains a separate art/integration task.
+Procedural builders remain available for characters, effects and world geometry.
+
+For the prioritized next acquisitions and the local download inbox, see the
+[asset sourcing and Codex handoff guide](../../docs/ASSET_ACQUISITION_GUIDE.md).
+
+## Stage 4 texture packs and vista
+
+`ProductionAssetManager` now inherits the PBR texture library. Its
+`replaceMaterialPack(name, maps)` API validates complete diffuse/normal/roughness
+sets with optional metalness and emissive maps, accepts PNG/JPEG/WebP/KTX2,
+updates bound materials atomically and retains the last valid pack on failure.
+New materials have deterministic procedural fallback maps. World surfaces use
+metres per tile; animated character materials retain their existing UV mapping.
+Color/emissive maps use sRGB; normal/scalar maps stay linear. Owned texture clones
+are released when their material is disposed.
+
+Basis Universal transcoders are copied from the installed Three.js distribution
+under `transcoders/`, with its README and Apache license. Browser QA downloads a
+pinned official Three.js KTX2 fixture into ignored output solely for codec testing;
+it is never used as game scenery. The WebP check converts the existing real
+Poly Haven concrete albedo. Run `npm run verify:stage4`, `npm run vista:preview`
+and consult the saved Stage 4 browser evidence.

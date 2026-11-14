@@ -1,3 +1,9 @@
+import crypto from 'node:crypto';
+import { parseCampaignPresentation, campaignRecap, type CampaignPresentation } from '../shared/campaign/presentation.js';
+import { encodeEffects } from '../shared/protocol/presentationProtocol.js';
+import { CampaignStore, type OwnedSoloCampaign } from './campaignStore.js';
+import { captureSoloWorld, restoreSoloWorld } from './soloWorldCheckpoint.js';
+import { SOLO_RESUME_POSITION, soloCheckpointLabel } from '../shared/campaign/soloCampaign.js';
 /**
  * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
  * Authoritative 60Hz Rapier3D Game Server, 182-Orb Manager & 30Hz Binary Broadcaster
@@ -61,6 +67,7 @@ import { isValidPetSpecies } from '../shared/world/cyberPetArena.js';
 
 interface ConnectedClientSession {
   ws: WebSocket;
+  visit?: CampaignPresentation;
   entityId: number;
   callsign: string;
   record: PersistentAgentRecord;
@@ -77,6 +84,8 @@ export interface ServerConfig {
   port?: number;
   dbPath?: string;
   publicDir?: string;
+  mode?: 'shared' | 'solo' | 'campaign';
+  bindAddress?: string;
 }
 
 const MIME_TYPES: Record<string, string> = {
@@ -96,6 +105,13 @@ const MIME_TYPES: Record<string, string> = {
 };
 
 export class CrackupAuthoritativeServer {
+  public readonly mode: 'shared' | 'solo' | 'campaign';
+  public soloPaused = false;
+  public soloSaveError = false;
+  public lastLocalActivityAt = Date.now();
+  private readonly campaignStore: CampaignStore | null;
+  private soloCampaign: OwnedSoloCampaign | null = null;
+  private pendingPresentation: CampaignPresentation | null = null;
   public readonly db: AgentDatabase;
   public physicsWorld!: SharedPhysicsWorld;
   public readonly orbs: WorldOrbInstance[];
@@ -112,10 +128,16 @@ export class CrackupAuthoritativeServer {
   private startTimeMs = Date.now();
   private readonly publicDir: string;
   private port: number;
+  private readonly bindAddress: string;
+  private campaignOwnerRecord: PersistentAgentRecord | null = null;
+  private campaignInvite = '';
 
   constructor(config: ServerConfig = {}) {
+    this.mode = config.mode ?? 'shared';
+    this.bindAddress = this.mode === 'solo' ? '127.0.0.1' : config.bindAddress ?? (this.mode === 'campaign' ? '127.0.0.1' : '0.0.0.0');
     this.port = config.port ?? Number(process.env.PORT || 3000);
     this.db = new AgentDatabase(config.dbPath);
+    this.campaignStore = this.mode !== 'shared' ? new CampaignStore(this.db) : null;
     this.publicDir = config.publicDir || path.resolve(process.cwd(), 'public');
     this.orbs = generateNeoVeridiaOrbs();
   }
@@ -132,7 +154,9 @@ export class CrackupAuthoritativeServer {
       try {
         const origin = req.headers.origin;
         const configured = process.env.ALLOWED_ORIGINS?.split(',').map((s) => s.trim());
-        allowedOrigin ||= Boolean(origin && (configured ? configured.includes(origin) : new URL(origin).host === req.headers.host));
+        allowedOrigin ||= Boolean(origin && (this.mode === 'solo' || (this.mode === 'campaign' && this.bindAddress === '127.0.0.1')
+          ? new URL(origin).host === `127.0.0.1:${this.port}` && new URL(origin).protocol === 'http:'
+          : configured ? configured.includes(origin) : new URL(origin).host === req.headers.host));
       } catch { allowedOrigin = false; }
       if (req.url !== '/ws' || !allowedOrigin || this.wss.clients.size >= 32) {
         socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
@@ -153,7 +177,7 @@ export class CrackupAuthoritativeServer {
 
     await new Promise<void>((resolve, reject) => {
       this.httpServer.once('error', reject);
-      this.httpServer.listen(this.port, '0.0.0.0', () => {
+      this.httpServer.listen(this.port, this.bindAddress, () => {
         const addr = this.httpServer.address();
         if (addr && typeof addr === 'object') {
           this.port = addr.port;
@@ -192,6 +216,7 @@ export class CrackupAuthoritativeServer {
   }
 
   public async stop(): Promise<void> {
+    if (this.mode !== 'shared' && !this.persistAllConnectedAgents()) throw new Error('Solo save failed; shutdown cancelled to preserve the active campaign.');
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
     if (this.physicsInterval) {
       clearInterval(this.physicsInterval);
@@ -226,10 +251,16 @@ export class CrackupAuthoritativeServer {
   }
 
   private handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse): void {
+    // A local server must not become a cross-origin profile API or a DNS-rebinding target.
+    if ((this.mode === 'solo' || (this.mode === 'campaign' && this.bindAddress === '127.0.0.1')) && (req.headers.host !== `127.0.0.1:${this.port}` ||
+        (req.headers.origin && req.headers.origin !== `http://127.0.0.1:${this.port}`))) {
+      res.writeHead(403); res.end('Local solo access only'); return;
+    }
+    if (this.mode === 'solo') this.lastLocalActivityAt = Date.now();
     const urlObj = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
     const pathname = urlObj.pathname;
 
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    if (this.mode === 'shared') res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -242,11 +273,14 @@ export class CrackupAuthoritativeServer {
     if (pathname === '/api/health' && req.method === 'GET') {
       const payload = {
         status: 'ok',
+        product: 'crackup-protocol-eclipse',
+        mode: this.mode,
+        soloPaused: this.mode === 'solo' && (this.soloPaused || this.soloSaveError || this.clientsByEntityId.size === 0),
         version: '2.0.0',
         architecture: 'True-3D-Rapier3D-BinaryNetcode',
         journalMode: this.db.getJournalMode(),
         activeAgents: this.clientsByEntityId.size,
-        maxPlayers: MAX_PLAYERS,
+        maxPlayers: this.mode === 'solo' ? 1 : MAX_PLAYERS,
         tickCount: this.physicsWorld.tickCount,
         serverTimeSec: (Date.now() - this.startTimeMs) / 1000,
         registeredAccounts: this.db.getTotalAgentCount(),
@@ -255,6 +289,10 @@ export class CrackupAuthoritativeServer {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify(payload));
       return;
+    }
+
+    if (this.mode !== 'shared' && pathname.startsWith('/api/')) {
+      res.writeHead(404); res.end('Use the local profile screen.'); return;
     }
 
     if (pathname === '/api/orbs' && req.method === 'GET') {
@@ -411,7 +449,8 @@ export class CrackupAuthoritativeServer {
       if (Date.now() - windowStart >= 1000) { windowStart = Date.now(); inputs = controls = 0; }
       if ((isBinary ? ++inputs > 120 : ++controls > 20)) { ws.close(4008, 'Message rate exceeded'); return; }
       if (isBinary) {
-        if (!activeSession || !activeSession.authenticated) {
+        if ((this.mode === 'solo' && (this.soloPaused || this.soloSaveError)) || this.partySuspended) return;
+        if (!activeSession || !activeSession.authenticated || this.clientsByEntityId.get(activeSession.entityId) !== activeSession) {
           return;
         }
         let buf: ArrayBufferLike;
@@ -446,6 +485,10 @@ export class CrackupAuthoritativeServer {
 
         if (msg.type === 'AUTH') {
           if (activeSession) return;
+          if (this.mode === 'solo' && [...this.clientsByCallsign.keys()].some(name => name !== String(msg.callsign || '').trim().toUpperCase())) {
+            ws.send(JSON.stringify({ type: 'AUTH_ERROR', error: 'Another local profile is playing. Save and return to profiles first.' }));
+            return;
+          }
           if (!this.allowAuthAttempt(ip)) {
             ws.send(JSON.stringify({ type: 'AUTH_ERROR', error: 'Too many login attempts. Try again in a minute.' }));
             return;
@@ -474,9 +517,26 @@ export class CrackupAuthoritativeServer {
             return;
           }
 
+          if (this.mode === 'campaign') {
+            const host = msg.campaignRole === 'host';
+            const owner = this.soloCampaign?.owner;
+            const valid = host ? (!owner || owner === authRes.record.callsign)
+              : msg.campaignRole === 'guest' && owner && owner !== authRes.record.callsign &&
+                this.clientsByCallsign.has(owner) && msg.campaignOwner === owner && msg.inviteCode === this.campaignInvite;
+            if (!valid || (this.soloSaveError && !host)) {
+              ws.send(JSON.stringify({ type: 'AUTH_ERROR', error: this.soloSaveError
+                ? 'Campaign saving needs recovery. The host must retry Save checkpoint.'
+                : 'Host your own campaign, or join an active host with their callsign and current session code.' }));
+              return;
+            }
+          }
+
           const prevSession = this.clientsByCallsign.get(authRes.record.callsign);
           if (prevSession) {
-            this.cleanupSession(prevSession);
+            if (!this.cleanupSession(prevSession)) {
+              ws.send(JSON.stringify({ type: 'AUTH_ERROR', error: 'The active campaign could not be saved. Free disk space and retry.' }));
+              return;
+            }
             // Replacement must use the just-saved state, including health and upgrades.
             const latest = this.db.getAgent(authRes.record.callsign);
             if (latest) authRes.record = latest;
@@ -485,6 +545,35 @@ export class CrackupAuthoritativeServer {
             } catch {
               // Ignore
             }
+          }
+
+          if (this.campaignStore && (this.mode === 'solo' || !this.soloCampaign)) {
+            try {
+              const campaign = this.campaignStore.loadOrCreate(authRes.record.callsign);
+              const restored = new SharedPhysicsWorld();
+              try { restoreSoloWorld(restored, campaign.state); }
+              catch (error) { restored.world.free(); throw error; }
+              this.physicsWorld.world.free();
+              this.physicsWorld = restored;
+              this.soloCampaign = campaign;
+              this.pendingPresentation = null;
+              if (this.mode === 'campaign') this.campaignInvite = crypto.randomBytes(9).toString('base64url');
+              this.soloPaused = false; this.soloSaveError = false;
+              authRes.record.position = { ...SOLO_RESUME_POSITION };
+            } catch {
+              ws.send(JSON.stringify({ type: 'AUTH_ERROR', error: 'This solo campaign could not be loaded. The save has been kept unchanged; check the local save folder before retrying.' }));
+              return;
+            }
+          }
+
+          let visit: CampaignPresentation | undefined;
+          if (this.mode === 'campaign') {
+            if (authRes.record.callsign === this.soloCampaign!.owner) this.campaignOwnerRecord = authRes.record;
+            else {
+              try { visit = this.campaignStore!.loadVisit(this.soloCampaign!, authRes.record.callsign); }
+              catch { ws.send(JSON.stringify({ type: 'AUTH_ERROR', error: 'Your campaign visit could not be loaded. The save was kept unchanged.' })); return; }
+            }
+            authRes.record.position = { ...SOLO_RESUME_POSITION };
           }
 
           const entityId = this.nextEntityId++;
@@ -505,10 +594,15 @@ export class CrackupAuthoritativeServer {
             authRes.record.unlockedDistrictRewards,
             authRes.record.activeNeuralDrifts
           );
+          if (this.mode === 'campaign' && visit) {
+            // Shared mode intentionally grants existing world technology on join. Owned visits do not.
+            agentBody.unlockedDistrictRewards = new Set(authRes.record.unlockedDistrictRewards);
+            this.physicsWorld.recomputeAgentBuild(agentBody);
+          }
           if (typeof authRes.record.hp === 'number') agentBody.hp = Math.min(agentBody.maxHp, authRes.record.hp);
 
           activeSession = {
-            ws,
+            ws, visit,
             entityId,
             callsign: authRes.record.callsign,
             record: authRes.record,
@@ -544,13 +638,67 @@ export class CrackupAuthoritativeServer {
               callsign: activeSession.callsign,
               isNew: authRes.isNew,
               record: activeSession.record,
+              mode: this.mode,
+              presentation: visit ?? this.soloCampaign?.state.presentation ?? null,
               serverTimeSec: (Date.now() - this.startTimeMs) / 1000,
             })
           );
 
           this.broadcastRoster();
           this.sendPlayerState(activeSession);
+          if (this.mode === 'solo') this.sendSoloState(activeSession);
+          if (this.mode === 'campaign') { this.clearPartyInput(); this.persistParty(); this.broadcastPartyState(); }
           return;
+        }
+
+        if (activeSession && this.clientsByEntityId.get(activeSession.entityId) !== activeSession) return;
+        if (activeSession && this.mode === 'campaign') {
+          if (msg.type === 'CAMPAIGN_PRESENTATION') {
+            try {
+              const presentation = parseCampaignPresentation(msg.presentation);
+              if (activeSession.callsign === this.soloCampaign?.owner) this.pendingPresentation = presentation;
+              else activeSession.visit = presentation;
+            } catch { ws.send(JSON.stringify({ type: 'SOLO_PRESENTATION_ERROR', error: 'Invalid campaign presentation update.' })); return; }
+            this.persistParty(); return;
+          }
+          if (msg.type === 'CAMPAIGN_SAVE' || msg.type === 'CAMPAIGN_LEAVE') {
+            if (!this.persistParty()) return;
+            if (msg.type === 'CAMPAIGN_LEAVE') {
+              const leaving = activeSession.callsign === this.soloCampaign?.owner ? [...this.clientsByEntityId.values()] : [activeSession];
+              for (const member of leaving) {
+                member.ws.send(JSON.stringify({ type: 'CAMPAIGN_LEFT' }));
+                this.removeSession(member); member.ws.close(1000, 'Campaign visit saved');
+              }
+              this.releaseEmptyParty(); this.broadcastRoster(); this.broadcastPartyState();
+            }
+            return;
+          }
+          if (this.partySuspended || msg.type.startsWith('SOLO_')) { this.broadcastPartyState(); return; }
+        }
+        if (activeSession && this.mode === 'solo' && msg.type === 'SOLO_PRESENTATION') {
+          try { this.pendingPresentation = parseCampaignPresentation(msg.presentation); }
+          catch { ws.send(JSON.stringify({ type: 'SOLO_PRESENTATION_ERROR', error: 'Invalid story or settings update. Reload to restore your saved campaign.' })); return; }
+          this.persistSession(activeSession);
+          return;
+        }
+        if (activeSession && this.mode === 'solo' && ['SOLO_PAUSE', 'SOLO_SAVE', 'SOLO_LEAVE'].includes(msg.type)) {
+          if (msg.type === 'SOLO_PAUSE') {
+            if (typeof msg.paused !== 'boolean') return;
+            this.soloPaused = msg.paused;
+            activeSession.inputQueue.length = 0;
+            activeSession.lastInput = { ...activeSession.lastInput, moveX: 0, moveZ: 0, buttons: 0 };
+          }
+          const saved = this.persistSession(activeSession);
+          this.sendSoloState(activeSession);
+          if (msg.type === 'SOLO_LEAVE' && saved) {
+            this.cleanupSession(activeSession);
+            ws.send(JSON.stringify({ type: 'SOLO_LEFT' }));
+            ws.close(1000, 'Local profile saved');
+          }
+          return;
+        }
+        if (activeSession && this.mode === 'solo' && this.soloSaveError) {
+          this.sendSoloState(activeSession); return;
         }
 
         if (activeSession && ['PET_ADOPT', 'PET_DERBY_JOIN', 'PET_DERBY_LEAVE', 'PET_CLASH_JOIN', 'PET_CLASH_LEAVE', 'PET_ARENA_LEAVE'].includes(msg.type)) {
@@ -679,11 +827,19 @@ export class CrackupAuthoritativeServer {
       respawnIn: a.hp <= 0 ? Math.max(0, 3 - (Date.now() - session.downedAt) / 1000) : 0 }));
   }
 
-  private cleanupSession(session: ConnectedClientSession): void {
+  private cleanupSession(session: ConnectedClientSession): boolean {
     if (!this.clientsByEntityId.has(session.entityId)) {
-      return;
+      return true;
     }
-    this.persistSession(session);
+    if (!this.persistSession(session)) return false;
+    this.removeSession(session);
+    this.releaseEmptyParty();
+    this.broadcastPartyState();
+    return true;
+  }
+
+  private removeSession(session: ConnectedClientSession): void {
+    if (this.clientsByEntityId.get(session.entityId) !== session) return;
     this.physicsWorld.removeAgent(session.entityId);
     this.clientsByEntityId.delete(session.entityId);
     if (this.clientsByCallsign.get(session.callsign) === session) {
@@ -691,7 +847,7 @@ export class CrackupAuthoritativeServer {
     }
   }
 
-  private persistSession(session: ConnectedClientSession): void {
+  private syncRecord(session: ConnectedClientSession): void {
     session.record.hp = session.agent.hp;
     session.record.position = { ...(this.physicsWorld.cyberPetArenaManager.agentReturnPositions.get(session.entityId) ?? session.agent.position) };
     session.record.pet = this.physicsWorld.cyberPetArenaManager.getPersistedStats(session.entityId);
@@ -706,12 +862,100 @@ export class CrackupAuthoritativeServer {
     session.record.activeNeuralDrifts = Array.from(session.agent.activeNeuralDrifts);
     session.record.neuralDriftRatios = computeNeuralDriftRatios(session.agent.telemetry);
     session.record.updatedAt = Date.now();
-    this.db.saveAgent(session.record);
   }
 
-  private persistAllConnectedAgents(): void {
+  private persistSession(session: ConnectedClientSession): boolean {
+    if (this.mode === 'campaign') return this.persistParty();
+    this.syncRecord(session);
+    if (this.campaignStore && this.soloCampaign) {
+      try {
+        this.soloCampaign = this.campaignStore.commit(this.soloCampaign, session.record, captureSoloWorld(this.physicsWorld, this.pendingPresentation ?? this.soloCampaign.state.presentation));
+        this.pendingPresentation = null;
+        this.soloSaveError = false;
+        this.sendSoloState(session);
+      } catch {
+        this.soloSaveError = true;
+        this.soloPaused = true;
+        this.sendSoloState(session);
+        return false;
+      }
+    } else this.db.saveAgent(session.record);
+    return true;
+  }
+
+  private persistAllConnectedAgents(): boolean {
+    if (this.mode === 'campaign') return this.persistParty();
+    let ok = true;
     for (const session of this.clientsByEntityId.values()) {
-      this.persistSession(session);
+      if (!this.persistSession(session)) ok = false;
+    }
+    return ok;
+  }
+
+  private sendSoloState(session: ConnectedClientSession): void {
+    if (session.ws.readyState !== WebSocket.OPEN || !this.soloCampaign) return;
+    session.ws.send(JSON.stringify({ type: 'SOLO_STATE', paused: this.soloPaused || this.soloSaveError,
+      saveError: this.soloSaveError, savedAt: this.soloCampaign.savedAt,
+      checkpoint: soloCheckpointLabel(this.soloCampaign.state), revision: this.soloCampaign.revision,
+      recap: this.soloCampaign.state.presentation ? campaignRecap(this.soloCampaign.state.presentation) : '' }));
+  }
+
+  private get partySuspended(): boolean {
+    return this.mode === 'campaign' && (this.soloSaveError || !this.soloCampaign ||
+      this.clientsByCallsign.get(this.soloCampaign.owner)?.ws.readyState !== WebSocket.OPEN);
+  }
+
+  private clearPartyInput(): void {
+    for (const session of this.clientsByEntityId.values()) {
+      session.inputQueue.length = 0;
+      session.lastInput = { ...session.lastInput, moveX: 0, moveZ: 0, buttons: 0 };
+    }
+  }
+
+  private releaseEmptyParty(): void {
+    if (this.mode !== 'campaign') return;
+    this.clearPartyInput();
+    if (this.clientsByEntityId.size === 0) {
+      this.soloCampaign = null; this.campaignOwnerRecord = null;
+      this.pendingPresentation = null; this.campaignInvite = ''; this.soloSaveError = false;
+    }
+  }
+
+  private persistParty(): boolean {
+    if (!this.soloCampaign || !this.campaignStore || !this.campaignOwnerRecord) return true;
+    const sessions = [...this.clientsByEntityId.values()];
+    sessions.forEach(s => this.syncRecord(s));
+    const records = sessions.map(s => s.record);
+    const owner = this.clientsByCallsign.get(this.soloCampaign.owner);
+    if (owner) this.campaignOwnerRecord = owner.record;
+    else records.push(this.campaignOwnerRecord);
+    try {
+      this.soloCampaign = this.campaignStore.commitParty(this.soloCampaign, records,
+        captureSoloWorld(this.physicsWorld, this.pendingPresentation ?? this.soloCampaign.state.presentation),
+        sessions.filter(s => s.visit).map(s => ({ guest: s.callsign, presentation: s.visit! })));
+      this.pendingPresentation = null; this.soloSaveError = false;
+      // A failed write keeps disconnected agents in memory for retry. Once durable, release them.
+      const departed = sessions.filter(s => s.ws.readyState !== WebSocket.OPEN);
+      departed.forEach(s => this.removeSession(s));
+      if (departed.length) this.releaseEmptyParty();
+    } catch {
+      this.soloSaveError = true; this.clearPartyInput();
+    }
+    this.broadcastPartyState();
+    return !this.soloSaveError;
+  }
+
+  private broadcastPartyState(): void {
+    if (this.mode !== 'campaign' || !this.soloCampaign) return;
+    for (const member of this.clientsByEntityId.values()) {
+      if (member.ws.readyState !== WebSocket.OPEN) continue;
+      const host = member.callsign === this.soloCampaign.owner;
+      const presentation = member.visit ?? this.soloCampaign.state.presentation;
+      member.ws.send(JSON.stringify({ type: 'CAMPAIGN_STATE', owner: this.soloCampaign.owner,
+        role: host ? 'host' : 'guest', inviteCode: host ? this.campaignInvite : undefined,
+        members: [...this.clientsByCallsign.keys()], paused: this.partySuspended,
+        saveError: this.soloSaveError, savedAt: this.soloCampaign.savedAt, revision: this.soloCampaign.revision,
+        checkpoint: soloCheckpointLabel(this.soloCampaign.state), recap: presentation ? campaignRecap(presentation) : '' }));
     }
   }
 
@@ -736,6 +980,7 @@ export class CrackupAuthoritativeServer {
    * Executes one authoritative 60Hz Rapier3D physics tick, Renegade Orb steering, Orb/Relic collection, Phase 5 Director, and 30Hz binary snapshots
    */
   public tickAuthoritativeSimulation(): void {
+    if ((this.mode === 'solo' && (this.soloPaused || this.soloSaveError || this.clientsByEntityId.size === 0)) || this.partySuspended) return;
     const agentPositions: Vec3[] = [];
 
     for (const session of this.clientsByEntityId.values()) {
@@ -768,6 +1013,10 @@ export class CrackupAuthoritativeServer {
     }
 
     this.physicsWorld.stepWorld();
+    // A single hacked relay has no Phase 5 notification; checkpoint it before publishing success.
+    if (this.soloCampaign && JSON.stringify(captureSoloWorld(this.physicsWorld, this.soloCampaign.state.presentation)) !== JSON.stringify(this.soloCampaign.state)) {
+      if (!this.persistAllConnectedAgents()) return;
+    }
     for (const session of this.clientsByEntityId.values()) {
       if (session.agent.hp <= 0 && !session.downedAt) session.downedAt = Date.now();
       if (session.agent.hp > 0) session.downedAt = 0;
@@ -791,8 +1040,18 @@ export class CrackupAuthoritativeServer {
     }
 
     // Broadcast binary ArrayBuffer World, Renegade Orb, Enemy, Vehicle/Prop & Phase 5 World Events Snapshots at 30Hz (every 2nd 60Hz tick)
-    if (this.physicsWorld.tickCount % 2 === 0 && this.clientsByEntityId.size > 0) {
-      this.broadcastBinaryWorldSnapshots();
+    if (this.physicsWorld.tickCount % 2 === 0) {
+      if (this.clientsByEntityId.size > 0) this.broadcastBinaryWorldSnapshots();
+      // Transient effects never survive an empty session for the next player.
+      const events = this.physicsWorld.effects.drain();
+      if (events.length && this.clientsByEntityId.size > 0) {
+        const packet = encodeEffects({ tick: this.physicsWorld.tickCount >>> 0, events });
+        for (const session of this.clientsByEntityId.values()) {
+          if (session.ws.readyState === WebSocket.OPEN && session.ws.bufferedAmount < 1024 * 1024) {
+            session.ws.send(packet, { binary: true });
+          }
+        }
+      }
     }
   }
 
@@ -912,6 +1171,7 @@ export class CrackupAuthoritativeServer {
 
     let anyLevelUp = false;
     for (const ev of events) {
+      this.physicsWorld.effects.fromCombat(ev);
       const session = this.clientsByEntityId.get(ev.attackerEntityId);
       if (session) {
         if (ev.type === 'WEAPON_HIT') {

@@ -1,3 +1,4 @@
+import type { PresentationStorage } from './narrative/campaignStorage.js';
 import * as THREE from "three";
 import {
   EnemyCombatState,
@@ -55,9 +56,36 @@ export class PlayerHUD {
     private readonly camera: SpringArmCameraController,
     private readonly environment: NeoVeridiaSceneEnvironment,
     private readonly renderer: THREE.WebGLRenderer,
+    private readonly storage: PresentationStorage | null = null,
   ) {
     el("resume-button").onclick = () => this.setMenu(false);
     el("respawn-button").onclick = () => this.net.sendControl("RESPAWN");
+    el("solo-save").onclick = () => this.net.sendControl(this.net.mode === "campaign" ? "CAMPAIGN_SAVE" : "SOLO_SAVE");
+    el("solo-leave").onclick = () => this.net.sendControl(this.net.mode === "campaign" ? "CAMPAIGN_LEAVE" : "SOLO_LEAVE");
+    this.net.onSoloState = () => {
+      const state = this.net.soloState;
+      if (!state) return;
+      el("solo-controls").hidden = false;
+      text("session-note", state.paused ? "Offline solo is paused. Your campaign belongs to this local profile." : "Offline solo. Progress saves on this computer.");
+      text("solo-checkpoint", state.saveError
+        ? "Save failed. Play is paused. Free disk space, then select Save checkpoint to retry."
+        : `Saved ${new Date(state.savedAt).toLocaleTimeString()} · ${state.checkpoint}`);
+      if (this.net.mode === "campaign") {
+        text("session-note", state.paused ? "Campaign paused: waiting for the host or save recovery." : "Co-op remains live while this menu is open.");
+        el("campaign-party").hidden = false;
+        text("campaign-party", `${state.role === 'host' ? 'Hosting your campaign' : `Visiting ${state.owner}'s campaign`} | Party ${state.members?.length ?? 0}/8: ${state.members?.join(', ') ?? ''}${state.inviteCode ? ` | Session code: ${state.inviteCode}` : ''}`);
+        text("campaign-policy", "Only the host's world advances. Connected players keep district unlocks once per character; joining after completion grants no past unlocks. Guest dialogue and settings save for this host's campaign; their own world stays unchanged. No automatic catch-up or host migration.");
+        el("campaign-policy").hidden = false;
+        text("campaign-resume-note", "Rejoin at the agency drop point in the host's latest world checkpoint. An absent host pauses play; unfinished encounters restart after a service restart.");
+        el<HTMLButtonElement>("solo-leave").textContent = state.role === 'host' ? 'Save & end party' : 'Save & leave visit';
+        if (state.paused && !this.menuOpen) this.setMenu(true);
+      }
+      text("solo-recap", state.recap);
+      if (state.saveError) {
+        this.notice("Save failed. Play is paused; retry from the field menu.");
+        if (!this.menuOpen) this.setMenu(true);
+      }
+    };
     document
       .querySelectorAll<HTMLButtonElement>("[data-panel]")
       .forEach((button) => {
@@ -106,7 +134,7 @@ export class PlayerHUD {
 
   public get blocksInput(): boolean {
     return (
-      this.menuOpen || this.downed || !this.net.connected || document.hidden
+      this.menuOpen || this.downed || !this.net.connected || document.hidden || Boolean(this.net.soloState?.paused)
     );
   }
 
@@ -114,6 +142,8 @@ export class PlayerHUD {
     el("auth-overlay").hidden = true;
     el("player-hud").hidden = false;
     text("player-callsign", callsign);
+    el("solo-controls").hidden = this.net.mode === "shared";
+    if (this.net.mode === "solo") text("session-note", "Offline solo pauses in this menu. Progress saves on this computer.");
     this.startPos = null;
     this.previousHp = null;
     this.notice(
@@ -123,7 +153,7 @@ export class PlayerHUD {
   }
 
   public setMenu(open: boolean, panel = "briefing"): void {
-    if (!this.net.connected || this.downed) return;
+    if (!this.net.connected || (this.downed && !this.net.soloState?.paused)) return;
     this.menuOpen = open;
     el("field-menu").hidden = !open;
     this.onMenuChanged?.();
@@ -604,13 +634,13 @@ export class PlayerHUD {
     );
   }
 
-  private bindSettings(): void {
+  public bindSettings(): void {
     const sensitivity = el<HTMLInputElement>("sensitivity-setting");
     const quality = el<HTMLSelectElement>("quality-setting");
     const bloom = el<HTMLInputElement>("bloom-setting");
     try {
       const settings = JSON.parse(
-        localStorage.getItem("crackup.settings") || "{}",
+        this.storage?.getItem("crackup.settings") || "{}",
       );
       sensitivity.value = String(
         Math.max(1, Math.min(10, Number(settings.sensitivity) || 4)),
@@ -621,7 +651,7 @@ export class PlayerHUD {
     } catch {
       /* Defaults remain usable when browser storage is unavailable. */
     }
-    const apply = () => {
+    const apply = (save = true) => {
       this.camera.sensitivity = Number(sensitivity.value) * 0.00055;
       this.environment.bloomPass.enabled = bloom.checked;
       this.environment.ssaoPass.enabled = quality.value !== "performance";
@@ -632,8 +662,9 @@ export class PlayerHUD {
         ),
       );
       this.environment.resize(window.innerWidth, window.innerHeight);
+      if (!save) return;
       try {
-        localStorage.setItem(
+        this.storage?.setItem(
           "crackup.settings",
           JSON.stringify({
             sensitivity: sensitivity.value,
@@ -645,9 +676,11 @@ export class PlayerHUD {
         /* Settings still apply for this session. */
       }
     };
-    sensitivity.oninput = apply;
-    quality.onchange = apply;
-    bloom.onchange = apply;
+    // Preview dragging locally, then save the chosen value without flooding control messages.
+    sensitivity.oninput = () => apply(false);
+    sensitivity.onchange = () => apply();
+    quality.onchange = () => apply();
+    bloom.onchange = () => apply();
     apply();
   }
 }

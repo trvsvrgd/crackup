@@ -1,3 +1,5 @@
+import { PresentationEventBus } from '../combat/presentationEvents.js';
+import { buildBayBridgeColliders } from '../world/bayVista.js';
 /**
  * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
  * Shared Deterministic 3D Physics Core (@dimforge/rapier3d-compat)
@@ -209,6 +211,7 @@ export class SharedPhysicsWorld {
   public readonly cyberPetArenaManager: CyberPetArenaManager;
   public readonly dreadnoughtDirector: ApexDreadnoughtDirector;
   public readonly pendingPhase6Events: Phase6EventNotification[] = [];
+  public readonly effects = new PresentationEventBus(() => this.tickCount);
   public readonly pendingCombatEvents: CombatEventResult[] = [];
   public tickCount = 0;
 
@@ -218,11 +221,13 @@ export class SharedPhysicsWorld {
     }
     this.world = new RAPIER.World(WORLD_GRAVITY);
     this.world.timestep = FIXED_TIMESTEP;
-    this.structures = [...buildNeoVeridiaSector01(), ...buildSkyboxPetArenaStructures()];
+    this.structures = [...buildNeoVeridiaSector01(), ...buildSkyboxPetArenaStructures(), ...buildBayBridgeColliders()];
     this.buildStaticCityColliders();
     this.combatManager = new EnemyCombatManager(this.world);
+    this.combatManager.onEffect = e => this.effects.emit(e);
     this.combatManager.spawnDefaultSquads();
     this.vehiclePropManager = new VehicleAndPropManager(this.world, this.combatManager);
+    this.vehiclePropManager.onEffect = e => this.effects.emit(e);
     this.vehiclePropManager.spawnDefaultVehiclesAndProps();
     this.phase5Director = new Phase5WorldDirector(this.combatManager);
     this.relaySystem = new RelaySystem(this.world, this.combatManager, getRelayPlans(this.structures), plan => {
@@ -247,6 +252,7 @@ export class SharedPhysicsWorld {
           { faction: FactionId.AEGIS_AUDITOR_HIT_SQUAD, rank: 'AUDITOR', maxHp: 380, maxArmor: 150, disableAutoRespawn: true });
       }
     });
+    this.dreadnoughtDirector.onEffect = e => this.effects.emit(e);
     this.world.step();
   }
 
@@ -1138,6 +1144,7 @@ export class SharedPhysicsWorld {
     this.dreadnoughtDirector.step(this.agents, FIXED_TIMESTEP,
       [...this.phase5Director.districtLoops.values()].every((loop) => loop.currentStage === 4));
     this.world.step();
+    this.effects.footsteps(this.agents.values());
     this.tickCount += 1;
   }
 

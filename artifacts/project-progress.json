@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "project": "CRACKUP: Protocol Eclipse",
-  "updatedAt": "2026-11-11T20:57:00Z",
+  "updatedAt": "2026-11-13T19:18:27.109948Z",
   "delivery": {
     "branch": "feat/section6-progress-checkpoint",
     "base": "main",
@@ -9,11 +9,11 @@
     "prUrl": "https://github.com/trvsvrgd/crackup/pull/1",
     "approval": {
       "status": "blocked_by_github_self_review_rule",
-      "summary": "GitHub rejected author self-approval (HTTP 422): authenticated account trvsvrgd is also the PR author. An eligible reviewer must approve PR #1.",
+      "summary": "Last checked November 11: GitHub rejected author self-approval (HTTP 422): authenticated account trvsvrgd is also the PR author. An eligible reviewer must approve PR #1.",
       "attemptedCommit": "65a06a2f8e9434e487ebe6882da8c31bf35f96de"
     },
     "checkpointCommit": "65a06a2f8e9434e487ebe6882da8c31bf35f96de",
-    "ciSummary": "No remote status checks were reported when the PR was created. Validation results in this ledger are local runs and saved browser evidence."
+    "ciSummary": "November 12-13 changes are local and uncommitted. No push, merge or deployment was performed in these implementation batches. The earlier PR/approval record is historical."
   },
   "stages": [
     {
@@ -62,58 +62,59 @@
     {
       "id": "3d",
       "title": "3D - WeaponBuilder",
-      "status": "next",
+      "status": "complete",
       "dependsOn": [
         "3c"
       ],
-      "summary": "Consolidate socket/disarm weapons, add firearm variants and verify muzzle/socket orientation through every combat pose."
+      "summary": "Three shared weapon variants, normalized grip/muzzle anchors, aim/disarm replication, pooled cleanup and genuine Mixamo Armada integration."
     },
     {
       "id": "3gate",
       "title": "3 - Integration and performance gate",
-      "status": "blocked",
+      "status": "complete",
       "dependsOn": [
         "3d"
       ],
-      "summary": "Verify all four builders together, collision/model contracts, destruction, disposal, browser shots and combined rendering cost."
+      "summary": "Combined builders, collision/model/destruction/network/resource gates and controlled browser render budgets passed. Minimum-hardware FPS qualification remains a release gate."
     },
     {
       "id": "4",
       "title": "4 - PBR pipeline and Bay Area vista",
-      "status": "blocked",
+      "status": "complete",
       "dependsOn": [
         "3gate"
       ],
-      "summary": "Triplanar fallback/external PBR, 10 km Gerstner bay, two suspension bridges, terrain/headlands, fog and dusk/night."
+      "summary": "Five-channel world triplanar PBR, validated atomic WebP/KTX2 packs, deterministic fallbacks, 10 km Gerstner bay, two shared-collision bridges, 3-8 km headlands and dusk/night. Physics, browser, cleanup and controlled draw budgets pass."
     },
     {
       "id": "5",
       "title": "5 - Combat effects and spatial audio",
-      "status": "blocked",
+      "status": "complete",
       "dependsOn": [
         "4"
       ],
-      "summary": "Pooled tracers/sparks/shockwaves/skid marks and bounded HRTF footsteps/engines/gunfire/counters/orbs."
+      "summary": "Authoritative deduplicated packet 0x0B; four fixed tracer/spark/wave/mark pools; bounded synthesized HRTF footsteps, engines, gunfire, counters and orbs. Shared, three-client, browser, WebAudio and live settings checks pass."
     },
     {
       "id": "6",
       "title": "6 - In-engine cinematics",
-      "status": "blocked",
+      "status": "complete",
       "dependsOn": [
         "5"
       ],
-      "summary": "Skippable bridge fly-in and boss introductions using finalized upstream assets; restore camera/input/HUD and verify co-op interruption."
+      "summary": "Four-shot in-engine bridge opening; eight authoritative district boss introductions and Dreadnought. Skip, camera/FOV/HUD/input/mouse restoration, profile history, damage/death/disconnect/page-hide handling, three-client continuity and scripted three-act route pass. Native background and release playtests remain open."
     }
   ],
   "resume": {
-    "summary": "Start Stage 3D WeaponBuilder; then pass the full Stage 3 integration gate before beginning Stage 4.",
+    "summary": "Begin release qualification. Stage 1-6 implementation gates pass; the game remains a playable alpha pending hardware, multiplayer, uncoached playthrough and final art/audio qualification.",
     "steps": [
-      "Run npm run build and npm run verify to refresh the baseline.",
-      "Promote createRigFirearm into client/builders/WeaponBuilder.ts and reuse it for equipped, dropped and disarmed weapons.",
-      "Add receiver/barrel/optic/magazine/muzzle variants with named Grip and MuzzleFlashEmitter anchors and a rich procedural fallback.",
-      "Verify right-hand socket alignment through locomotion, aim, all three melee strikes, paired counters and disarms; preserve existing combat timing and progression.",
-      "Run the combined Stage 3 collision, optional-model, destruction, disposal, network and browser/performance gate.",
-      "Update this ledger and SECTION6_PROGRESS_REPORT.md with evidence before moving to Stage 4."
+      "Preserve the completed mechanics, Capoeira retargeting, authoritative snapshots, bounded effects/audio, cinematics and saved evidence. Do not rewrite Phase 1-5 gameplay.",
+      "Run the opening district with five unfamiliar players and record time-to-understanding, deaths, navigation errors and required coaching.",
+      "Run an eight-player 30-minute session on realistic network conditions with declared minimum hardware; measure frame times, reconnects, progression/persistence and combat readability.",
+      "Check native tab/minimize visibility, focus, pointer capture, reduced motion, sound preference and cinematic interruptions in target browsers.",
+      "Perform an uncoached full three-act playthrough. The passing scripted route uses QA teleports/direct damage and does not establish balance or playability.",
+      "Prioritize missing genuine Mixamo locomotion/reaction clips and final hero/boss art/audio over more kick variants. The seven-clip agent_cyber starter remains pending; existing Capoeira has 39 real clips.",
+      "Validate hosted TLS, persistent volumes, backups, monitoring and rollback. Review local changes before any separately requested commit/push/deployment."
     ]
   },
   "foundation": [
@@ -127,24 +128,34 @@
     },
     {
       "title": "Asset provisioning",
-      "summary": "HDR, four 2K PBR material sets and Soldier/Xbot GLBs are saved with provenance/hashes and licenses; 17 manifest assets validate. Unsupported combat poses continue to use articulated procedural rigs."
+      "summary": "HDR, four 2K PBR sets, Soldier/Xbot and the 39-clip Capoeira Y Bot GLB are installed with hashes/provenance. 18 manifest files validate; Armada drives the visible armor rig; other motion states retain procedural fallbacks."
     }
   ],
   "verification": [
     {
       "command": "npm run build",
-      "result": "Passed at saving checkpoint",
-      "evidence": "Strict TypeScript compilation and browser bundle."
+      "result": "Passed November 13 UTC",
+      "evidence": "Strict TypeScript compile and regenerated public/game.js with camera director, scene tracks, live skip/restoration and startup loading gate."
     },
     {
       "command": "npm run verify",
-      "result": "Passed at saving checkpoint",
-      "evidence": "Phases 1-6, alpha, art stages 1-2 and 3A-3C, including live WebSocket tests."
+      "result": "Passed November 13 UTC",
+      "evidence": "Complete Phases 1-6, alpha and Stages 1-6 including real WebSocket checks; saved stage6-regression.log."
     },
     {
       "command": "npm run assets:verify",
-      "result": "Passed at saving checkpoint",
-      "evidence": "17 assets; hashes, full image/HDR decode and glTF validation. Six upstream non-fatal GLB warnings remain."
+      "result": "Passed: 18 files",
+      "evidence": "Full image/HDR decode, hashes, GLB validation; zero errors and eight non-fatal upstream warnings."
+    },
+    {
+      "command": "npm run verify:stage3d:browser",
+      "result": "Passed",
+      "evidence": "39 clips, retargeted armor, two-draw weapons, shared normal/shadow buffers, invisible-effect/quality fallback, GPU geometry cleanup and combined city budgets."
+    },
+    {
+      "command": "Production loader + live game browser",
+      "result": "Passed",
+      "evidence": "Every GLB clip, independent skins, PBR/environment, login/render/downed recovery; zero loader/render warnings or errors."
     },
     {
       "command": "npm run verify:art:browser",
@@ -165,6 +176,51 @@
       "command": "npm run verify:stage3c:browser",
       "result": "Saved implementation-run evidence passed",
       "evidence": "evidence/stage3c-browser.json; isolated relay 94 calls, city 2,895 calls / 382,200 triangles."
+    },
+    {
+      "command": "npm run verify:stage4",
+      "result": "Passed",
+      "evidence": "Four deterministic fallback sets, atomic/racing/invalid pack swaps and disposal; 422 visible colliders, 330 bridge ray samples and four controller ramp walks."
+    },
+    {
+      "command": "npm run verify:stage4:browser",
+      "result": "Passed; zero warnings/errors",
+      "evidence": "Six views; real WebP/Basis KTX2 and invalid-file retention; baked/instanced texture scale pixel error 0; three disposal cycles return GPU resource counts to baseline; incremental 20-32 calls and 235032-249224 triangles."
+    },
+    {
+      "command": "Live game Stage 4 browser",
+      "result": "Passed; zero warnings/errors",
+      "evidence": "Authentication, production assets, live rendering, resize and downed recovery at 230/230 HP on an isolated in-memory QA server."
+    },
+    {
+      "command": "npm run verify:stage5",
+      "result": "Passed November 13 UTC",
+      "evidence": "Strict protocol boundaries, authority and surface normals, 120-second pool simulation, counter contact/dedup/expiry, grounded footsteps/skids; three observers, forged packets, late join and delayed duplicate delivery. Empty sessions discard transient effects before the next player joins."
+    },
+    {
+      "command": "npm run verify:stage5:browser + Enable audio / verify",
+      "result": "Passed; zero warnings/errors",
+      "evidence": "120-second simulated effect load; mixed burst +3 calls / 512 triangles; GPU cleanup; real HRTF left/right, voice limits/priority, natural source end, mute, disconnect and context disposal. Six-second stereo WAV peak 0.178."
+    },
+    {
+      "command": "Live game Stage 5 browser",
+      "result": "Passed; zero warnings/errors",
+      "evidence": "Production assets, login, recovery and live rendering; Game sound checkbox stores true/false mute preference. Saved menu/game screenshots."
+    },
+    {
+      "command": "npm run verify:stage6",
+      "result": "Passed November 13 UTC",
+      "evidence": "Seven restoration reasons, bounded profile history, reduced motion and a scripted four-district/three-act route with eight boss intros and Dreadnought finale. Three real peers keep moving/receiving snapshots during playback."
+    },
+    {
+      "command": "npm run verify:stage6:browser",
+      "result": "Passed; zero warnings/errors",
+      "evidence": "Seven rendered views, skip at every shot, FOV restoration, fifty overlay disposals and stable warmed GPU geometry counts."
+    },
+    {
+      "command": "Live game Stage 6 browser",
+      "result": "Passed; native tab/minimize qualification pending",
+      "evidence": "Natural completion; Escape/Space and movement skip; damage/death/page-hide; preference storage; forced disconnect/relogin without replay; mouse capture restores and field menu stays closed. Automation did not produce native hidden-tab state."
     }
   ],
   "decisions": [
@@ -172,16 +228,29 @@
     "Preserve legacy world/orb/objective data and established gameplay; maintain rich multipart procedural fallbacks and validated optional GLTF models.",
     "Vehicles use 1,000 HP: hood below 50%, doors/trunk below 25%; physical debris expires after 12 seconds with a global cap of 64; wrecks reset after 20 seconds.",
     "Relays have three 120-HP vents. Lost cooling raises heat; shutdown parks dishes and triggers an eight-second automatic repair/reboot. It does not bypass hacking or boss requirements.",
-    "Existing packet layouts remain compatible; presentation and damage extensions use packets 0x08, 0x09 and 0x0A.",
-    "Rendering budgets are controlled-view checks, not hardware-independent FPS guarantees. The combined Stage 3 integration gate and minimum-hardware profiling are still open.",
-    "Save the combined current checkout: Phase 6, alpha, installed assets, art stages through 3C, deployment configuration and progress evidence. Do not merge or deploy as part of this checkpoint.",
-    "Generated local databases, credentials, node_modules, build maps, QA server helpers and caches remain excluded by .gitignore. Runtime asset binaries and the existing tracked public/game.js bundle are saved."
+    "Controlled Stage 3 render budgets pass; shared buffer reuse reduces matched city draw calls by 44%. Minimum-hardware GPU/frame-time and sustained multiplayer qualification remain open.",
+    "Generated local databases, credentials, node_modules, build maps, QA server helpers and caches remain excluded by .gitignore. Runtime asset binaries and the existing tracked public/game.js bundle are saved.",
+    "Packet 0x08 v2 adds 8 bytes per dropped weapon for visual variant/scale. The new decoder accepts v1; deploy matching browser/server builds together. Other packet layouts and damage timing remain unchanged.",
+    "The Capoeira ZIP/FBXs stay in the ignored local inbox; the verified GLB is a game runtime asset. Y Bot remains the consistent source for future animations. No missing Idle/Run/Jump/Hit/Death clips were fabricated.",
+    "Bridge highways start on the existing 14 m city sea-wall and end at visible viewing barriers. Their decks/rails have matching shared collision; distant headlands and peninsula neck are scenery, not a new playable terrain system.",
+    "World triplanar mapping applies to static surfaces. Animated rigs retain UV maps. Valid texture packs swap atomically; deterministic procedural maps remain an explicit fallback.",
+    "The sky and water reuse the installed real HDR; neon water streaks are stylized, not screen-space reflections. The pinned official KTX2 test fixture is kept in ignored QA output, never used as production scenery.",
+    "Keep the 18 km camera range, world-distance SSAO thresholds and distant ink fade together. Controlled complexity checks are not hardware FPS certification.",
+    "Effects packet 0x0B is a versioned cosmetic server-to-client extension. Strict validation, stable IDs and bounded queues suppress prediction/reconciliation duplicates; deploy matching client/server bundles. Gameplay damage and awards remain authoritative and unchanged.",
+    "Counter audiovisual contact is 0.48 seconds within the existing 0.65-second paired pose. Replicated pair progress drives visual contact; damage/input-lock timing is preserved.",
+    "Four fixed instanced effect batches cap GPU resources. Audio uses 16 prioritized one-shot HRTF channels, six orb loops and four engines; hidden/disconnected state silences and clears pending presentation.",
+    "Stage 5 sound is honestly synthesized procedural PCM, not a downloaded sound pack. Final recorded audio may refine it later through the same bounded event path. No placeholder files were added.",
+    "Cinematics own only presentation and never pause multiplayer, add immunity or award progression. The 11.5-second opening starts only while more than 11.5 seconds of existing deployment protection remain.",
+    "Boss introductions require authoritative mission-stage and living entity snapshots. Camera tracks follow current actor facing/position; seen/skip/interruption history is per callsign and local to this browser.",
+    "Camera/HUD/input restore on every exit; prior pointer capture is requested again only when gameplay/focus permit, with safe fallback to clicking the city. Reduced motion uses stationary shots.",
+    "The three-act route is a scripted integration check using QA teleport/damage acceleration. Uncoached playability, minimum-hardware FPS, native background behavior and eight-player reliability remain separate release gates."
   ],
   "releaseGates": [
-    "Complete Stage 3D, the Stage 3 integration gate and ordered Stages 4-6.",
+    "Qualify the completed Stage 1-6 implementation on declared minimum hardware; preserve controlled resource budgets and regression coverage.",
     "Have five unfamiliar players finish the opening district without coaching.",
     "Run an eight-player, 30-minute playtest on realistic network conditions and declared minimum hardware.",
     "Validate frame times, combat balance, accessibility, reconnects and persistence.",
+    "Qualify native tab/minimize visibility, focus and pointer capture in target browsers; automation page-hide and controller interruption checks already pass.",
     "Validate the hosted build, TLS, persistent volumes, backup restoration, monitoring and rollback.",
     "Perform the final three-act playthrough and record remaining release limitations."
   ],
@@ -221,6 +290,22 @@
     {
       "at": "2026-11-11T20:57:00Z",
       "summary": "Attempted an APPROVE review; GitHub returned HTTP 422 because the authenticated account is the PR author. Recorded the delivery outcome and reviewer handoff in this artifact."
+    },
+    {
+      "at": "2026-11-12T20:52:50.868Z",
+      "summary": "Completed Stage 3D and controlled combined Stage 3 gate. Built the genuine 39-clip Capoeira/Y Bot library, retargeted Armada onto visible armor, added three shared weapons/scaled disarms, reduced city draw calls by 44%, and passed build/regression/assets/browser/live QA. Stage 4 is next; no commit, push or deployment."
+    },
+    {
+      "at": "2026-11-13T03:49:47.023177Z",
+      "summary": "Stage 4 completed and verified: triplanar/fallback/external PBR, real codecs, Gerstner bay, two physical bridges, headlands, height fog and dusk/night. Build, full regression, 18 assets, six-view browser budgets and live game pass. Stage 5 is next; work remains local and uncommitted."
+    },
+    {
+      "at": "2026-11-13T13:48:10.375217Z",
+      "summary": "Completed Stage 5 authoritative combat effects and bounded HRTF sound. Build, complete regression, 18 real assets, three-client replication and empty-session no-replay, two-minute simulated pools, actual WebAudio and live game settings/recovery pass. Stage 6 is next. All new work remains local and uncommitted; hardware FPS and sustained eight-player qualification remain open."
+    },
+    {
+      "at": "2026-11-13T19:18:27.109948Z",
+      "summary": "Completed Stage 6 in-engine opening and authoritative boss intros; verified skip, camera/HUD/input/pointer restoration, profile history, damage/death/page-hide/disconnect recovery, three-client continuity and scripted three-act route. Build, complete regression, 18 assets and browser checks pass. Release qualification remains open. Work is local and uncommitted."
     }
   ],
   "evidence": [
@@ -373,6 +458,281 @@
       "path": "artifacts/evidence/asset-verification.json",
       "kind": "verification report",
       "sha256": "467822c418bf85f03c20d08a9c5d68122ced17a46b67e28e41f27e826a8d6436"
+    },
+    {
+      "path": "artifacts/evidence/stage3d-verification.json",
+      "kind": "verification report",
+      "sha256": "8fccf5e660f4ca91ff2b20e7ef7bef4138d53287d314dd5b3e3038cda87b1e6e"
+    },
+    {
+      "path": "artifacts/evidence/stage3d-browser.json",
+      "kind": "verification report",
+      "sha256": "df8e6f74410dbc208308d36fc888332ca136060dc3d131ae76ce21e098be7887"
+    },
+    {
+      "path": "artifacts/evidence/stage3d-regression.log",
+      "kind": "full regression log",
+      "sha256": "27d23f5a8512ec7ff92adec2b0dfd30e7591c254c2e9b7435aa2022ce98cf4fb"
+    },
+    {
+      "path": "artifacts/evidence/capoeira-build.json",
+      "kind": "source hashes and conversion report",
+      "sha256": "ceb934a2d0a2b17afd82ca2e65815b9323621607cbbb024ca8abb463b23b9e14"
+    },
+    {
+      "path": "artifacts/evidence/stage3d-assets.json",
+      "kind": "asset validation report",
+      "sha256": "05443d8cdc3103345e01d9559b9cc6001ca61e485a01022a537a9c729f5d574d"
+    },
+    {
+      "path": "artifacts/evidence/stage3d-assets-browser.json",
+      "kind": "production loader browser report",
+      "sha256": "b588b7216ea52dc8f0e3bfc8ba6eb153da446cad2e785a4695d6cec36e07d4e9"
+    },
+    {
+      "path": "artifacts/evidence/stage3d-weapons.png",
+      "kind": "browser screenshot",
+      "sha256": "533f320224db5ef019b2a232915cbe5f25183e824258218db6a7100d7c187ded"
+    },
+    {
+      "path": "artifacts/evidence/stage3d-capoeira.png",
+      "kind": "browser screenshot",
+      "sha256": "382bd33d79052001c5a8bb8dac7d485c4bbce0b5907d328b984fb6deb42b527c"
+    },
+    {
+      "path": "artifacts/evidence/stage3d-aim.png",
+      "kind": "browser screenshot",
+      "sha256": "186ec1c5f9e45c91d0048e55638a35f43667309c087b50bd36a1524c101d63f2"
+    },
+    {
+      "path": "artifacts/evidence/stage3d-city.png",
+      "kind": "browser screenshot",
+      "sha256": "0b7aee8e58b2db3df61ba5b1bcb98c1ca45e80aab0924056774532e85080de3a"
+    },
+    {
+      "path": "artifacts/evidence/stage3d-live.png",
+      "kind": "browser screenshot",
+      "sha256": "44ded8a2bbb3b4e3648d14ad8d52d9d29cf6633e87905931f3171073e63f4f77"
+    },
+    {
+      "path": "artifacts/evidence/stage4-verification.json",
+      "kind": "shared physics and texture ownership checks",
+      "sha256": "39d20b63aa93eef958273d978c9ff4e400c5fd1b437b5058c51e2dff5dc444e7"
+    },
+    {
+      "path": "artifacts/evidence/stage4-browser.json",
+      "kind": "six-view GPU/browser codec and resource report",
+      "sha256": "a7dae8242102cb0e3bb3d9846b0ec25a6858b6cdee1d91a5ae7d4a694d7c2666"
+    },
+    {
+      "path": "artifacts/evidence/stage4-regression.log",
+      "kind": "full Phase 1-6 and Stage 1-4 regression log",
+      "sha256": "958963efa4a7d921279a8fc27a0f670de957df728b9c835174c5570548b4ce99"
+    },
+    {
+      "path": "artifacts/evidence/stage4-codec-source.json",
+      "kind": "real codec fixture provenance and hash",
+      "sha256": "6c522b150e2097a7840e1c897b68af8925e00837e0871698f39b9728722d891c"
+    },
+    {
+      "path": "artifacts/evidence/stage4-assets.json",
+      "kind": "18 production assets hash and decode report",
+      "sha256": "e15dea089379b96b2b81f39c96c0c91d0f5b6b601d62e972e715cac064ffec0d"
+    },
+    {
+      "path": "artifacts/evidence/stage4-live-console.log",
+      "kind": "live game console: zero warnings and errors",
+      "sha256": "967da0bb0a3d10d17ff6afecbaa5ad69380d4c35da7e3b2aeff33829e84608d3"
+    },
+    {
+      "path": "artifacts/evidence/stage4-live-recovery.yml",
+      "kind": "live agent recovery and mission HUD",
+      "sha256": "d55be762f185e89322e409513264b64373832bec629630dfbfb58df9484b7e2b"
+    },
+    {
+      "path": "artifacts/evidence/stage4-roof.png",
+      "kind": "browser screenshot",
+      "sha256": "1edc2a8e4a17b2f868d21b8ccb3089192fc2fe00ab55dd0893eefad727c85f5a"
+    },
+    {
+      "path": "artifacts/evidence/stage4-street.png",
+      "kind": "browser screenshot",
+      "sha256": "184bfdff08facf296601624d64acad336e0f0fe32caa54585cec872bc26a84c4"
+    },
+    {
+      "path": "artifacts/evidence/stage4-bridge.png",
+      "kind": "browser screenshot",
+      "sha256": "6848d5b9a3abb35cba9198c7b74d73edb2aad5e0eefb18552bc93a32762daf82"
+    },
+    {
+      "path": "artifacts/evidence/stage4-night.png",
+      "kind": "browser screenshot",
+      "sha256": "2a0c9414135124bb3e8b594a35a0726dffe3e3fab65393cdfcc4baa27388dd70"
+    },
+    {
+      "path": "artifacts/evidence/stage4-live.png",
+      "kind": "browser screenshot",
+      "sha256": "d74b50092b5f876a1498af66b47256e4ae5d0ae007cd0a30f31851cbb676c538"
+    },
+    {
+      "path": "artifacts/evidence/stage5-verification.json",
+      "kind": "shared physics, event, queue and pool checks",
+      "sha256": "ba9497dee1a560a8344136356c1934116126bc9cf44ff7b00bd8838a8a908de9"
+    },
+    {
+      "path": "artifacts/evidence/stage5-network.json",
+      "kind": "three-client authoritative effect replication and forged-packet checks",
+      "sha256": "f7548bf68b2b8ef26b9979e27872d84150151dbe62fed90e35094dd5e3854a91"
+    },
+    {
+      "path": "artifacts/evidence/stage5-browser.json",
+      "kind": "real GPU pool and WebAudio HRTF/resource checks",
+      "sha256": "a10f9bd3014db5bf7dd5c5437117583665c36a8f5628f9773cb39a177f569a46"
+    },
+    {
+      "path": "artifacts/evidence/stage5-build.log",
+      "kind": "TypeScript and browser bundle build",
+      "sha256": "44b4253c26a55e04d972e6e55f69e4c46aae0df3ab402ba9ddfa0b0a3c212282"
+    },
+    {
+      "path": "artifacts/evidence/stage5-regression.log",
+      "kind": "complete Phase 1-6, alpha and Stage 1-5 regression log",
+      "sha256": "a21066c9f8014abffde4ca1a31b381f1dd0b22c4727b8369f2e1d0b221c6a70e"
+    },
+    {
+      "path": "artifacts/evidence/stage5-effects.png",
+      "kind": "pooled blast and impact screenshot",
+      "sha256": "932595d5cb7807784ce33ff712957f16de09bd683741317c3a6943556cbd3b79"
+    },
+    {
+      "path": "artifacts/evidence/stage5-counter.png",
+      "kind": "paired counter wave screenshot",
+      "sha256": "f6932129a22c078e3762b11c342504e7492083c099750cacf372ee02ad2f79a4"
+    },
+    {
+      "path": "artifacts/evidence/stage5-skids.png",
+      "kind": "tire skid strip screenshot",
+      "sha256": "db9e5e3af3b79cccf87671af177a2a08fcc0fadd748ebad53f269781d4eeab5f"
+    },
+    {
+      "path": "artifacts/evidence/stage5-live-menu.png",
+      "kind": "live sound preference and credits screenshot",
+      "sha256": "9ab6e7a7314a9a622683749edb8991ff0e5d66eef6737331aefe9a3c6b0a80e8"
+    },
+    {
+      "path": "artifacts/evidence/stage5-live.png",
+      "kind": "live game and recovery screenshot",
+      "sha256": "d3f01b815ceaf201b77e8299cd94f17f4c9e345635dc9b830095492d1936ba04"
+    },
+    {
+      "path": "artifacts/evidence/stage5-audio.wav",
+      "kind": "six-second stereo synthesized cue audition",
+      "sha256": "062e0ed5a5c2290b0592c1544890e901b02ccb8fb5550e829ed5a04e2018b683"
+    },
+    {
+      "path": "artifacts/evidence/stage5-assets.json",
+      "kind": "18 production asset hashes and decode checks",
+      "sha256": "0ef8a4f7246492e7fda63378113333e617a75ce71e48e57156df2910cf5ddb63"
+    },
+    {
+      "path": "artifacts/evidence/stage5-live-console.log",
+      "kind": "live game console: zero warnings and errors",
+      "sha256": "51e66ca25f5091fe4a6d32b959847a8a050dc9f7df8a66e70fe505fc92e41d54"
+    },
+    {
+      "path": "artifacts/evidence/stage6-verification.json",
+      "kind": "camera lifecycle and scripted three-act integration",
+      "sha256": "02ce9268e09aff8e6ddcc2dcb52ce7287de524080db4113ab824be224ef257a4"
+    },
+    {
+      "path": "artifacts/evidence/stage6-network.json",
+      "kind": "three-client continuity and authoritative encounter checks",
+      "sha256": "364d30934e388a7122dbf2e2d68f9aa0dd546f9be3f860d18c77d222ec195529"
+    },
+    {
+      "path": "artifacts/evidence/stage6-browser.json",
+      "kind": "seven-view GPU and overlay cleanup report",
+      "sha256": "3d9ed3d93b45d0b139f3ce64634a74e44a7b96e52337b652f50049c8ee9975b0"
+    },
+    {
+      "path": "artifacts/evidence/stage6-live.json",
+      "kind": "live UI histories, restoration checks and automation limits",
+      "sha256": "a14fd1fe3ecd7dbc0024e58af1324ece8980e791b765b211430693d2ad312c8f"
+    },
+    {
+      "path": "artifacts/evidence/stage6-build.log",
+      "kind": "strict TypeScript and client bundle build",
+      "sha256": "70028a59faf337ae9c1173e3f0fdd6c7c22371262a37008aaa1773e9e02f4582"
+    },
+    {
+      "path": "artifacts/evidence/stage6-regression.log",
+      "kind": "complete Phase 1-6, alpha and Stage 1-6 regression",
+      "sha256": "f110353d80a68f9f07e5e8a13a459546f57cd966e3ab1cc4441b78e43dc95496"
+    },
+    {
+      "path": "artifacts/evidence/stage6-assets.json",
+      "kind": "18 production asset hashes and decode checks",
+      "sha256": "5308089c37a689c72b7c17f11b6c977efddedfdf3f95d21aeec77431e91930e8"
+    },
+    {
+      "path": "artifacts/evidence/stage6-live-console.log",
+      "kind": "live game console: zero warnings and errors",
+      "sha256": "7e38de4a495c8e10b4e46f803300650493b4b08002a8128d7ee9c8b11c9096cd"
+    },
+    {
+      "path": "artifacts/evidence/stage6-bridge.png",
+      "kind": "bridge fly-in screenshot",
+      "sha256": "66f56a438f0debc748b85054a02dddcc88b58f6cf5220159f8a651b90d89637e"
+    },
+    {
+      "path": "artifacts/evidence/stage6-agent.png",
+      "kind": "agent arrival shot",
+      "sha256": "0f949479df4c9a67e341904788e40b84e11442627bd4191b7afcc2afcbacebe2"
+    },
+    {
+      "path": "artifacts/evidence/stage6-lieutenant.png",
+      "kind": "lieutenant introduction shot",
+      "sha256": "7c433dab356b0da093e7e1b5240c1747d3d63a9c9007dd5c7a8aa5a87d76adab"
+    },
+    {
+      "path": "artifacts/evidence/stage6-kingpin.png",
+      "kind": "kingpin introduction shot",
+      "sha256": "50f98382cdaabeaa626b2d1795b9bf34590f1c91a6af82dc1f6351934c594a11"
+    },
+    {
+      "path": "artifacts/evidence/stage6-dreadnought.png",
+      "kind": "existing Dreadnought introduction shot",
+      "sha256": "41ddd2a9c8717f1c74a900b7fc197591ebe9fe6465c09c5abca61fe35be7559d"
+    },
+    {
+      "path": "artifacts/evidence/stage6-live-settings.png",
+      "kind": "live Intro cameras setting",
+      "sha256": "b4cf6a6a7da0cd7681015d64a13a3739db72b464662dfc2aa604a356e478f5b9"
+    },
+    {
+      "path": "artifacts/evidence/stage6-live-reconnected.png",
+      "kind": "live game restored after reconnect without replay",
+      "sha256": "82e4a51bc7e1eacb93fdffffda40cec349be509a6388f7a7464d2f01a276b505"
+    },
+    {
+      "path": "artifacts/evidence/stage6-live-death.png",
+      "kind": "live downed UI restored during interrupted intro",
+      "sha256": "0491f3f5911fa4ab3bc10396e8da119c91b63701130b0ce86e7de5032b1e659f"
+    },
+    {
+      "path": "artifacts/evidence/stage6-live-city.png",
+      "kind": "live opening city view",
+      "sha256": "085bf84bb9a8ee0e2b2659e62cb506d553258387af1c2571d88c3c4a3ad157bc"
+    },
+    {
+      "path": "artifacts/evidence/stage6-live-vehicle.png",
+      "kind": "live opening vehicle view",
+      "sha256": "7376ee96be5a54155013fc9e9dbc4f01b9139bfa2833d8bacd38c8a93969e26c"
+    },
+    {
+      "path": "artifacts/evidence/stage6-live-restored.png",
+      "kind": "live opening completion and resumed Sera briefing",
+      "sha256": "36e996bfcca9dfa3ca472b0de76ee8f61cc477d56be44eaa12796e1b2c11472f"
     }
   ]
 }

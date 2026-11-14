@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-11-12",
+  "purpose": "Acquisition backlog for the Neon Docks opening operation. Entries are requests, not downloaded or integrated assets.",
+  "guide": "docs/ASSET_ACQUISITION_GUIDE.md",
+  "dropFolder": "asset-inbox/packages",
+  "items": [
+    {
+      "id": "combat-animation", "priority": "P0", "status": "awaiting-acquisition",
+      "target": "Visible humanoid animation adaptation; preserve Stage 2 timing",
+      "delivery": "Seven same-character Mixamo FBX Binary clips, 30 fps; then directional movement, landings, aim and reactions",
+      "sourcePages": ["https://www.mixamo.com/", "https://quaternius.com/packs/universalanimationlibrary.html"],
+      "integrationNote": "Quaternius requires retargeting rather than the Mixamo-only merger. Current imported visuals are hidden."
+    },
+    {
+      "id": "weapon-kit", "priority": "P0", "status": "awaiting-acquisition",
+      "target": "Stage 3D WeaponBuilder",
+      "delivery": "Two assembled guns, modular source parts and textures",
+      "sourcePages": ["https://quaternius.com/packs/scifimodularguns.html"],
+      "integrationNote": "Add Grip/MuzzleFlashEmitter and verify equipped, dropped and disarmed poses."
+    },
+    {
+      "id": "gameplay-audio", "priority": "P0", "status": "awaiting-acquisition",
+      "target": "Stage 5 spatial audio and feedback",
+      "delivery": "Curated 40-60-file set of footsteps, impacts, weapons, counters, engines and UI with variants",
+      "sourcePages": ["https://kenney.nl/assets/sci-fi-sounds", "https://kenney.nl/assets/impact-sounds", "https://sonniss.com/gameaudiogdc/"],
+      "integrationNote": "Archive applicable licenses; implement sample playback, bounded mixing and event hooks."
+    },
+    {
+      "id": "character-identity", "priority": "P1", "status": "awaiting-selection-or-commission",
+      "target": "One agent and two faction enemies",
+      "delivery": "Coherent skinned hero/light/heavy source designs, neutral pose, maps and lower LODs",
+      "sourcePages": ["https://quaternius.com/packs/scifiessentialskit.html", "https://syntystore.com/products/polygon-sci-fi-city"],
+      "integrationNote": "Candidate sources require style and rig review. Check paid-license workflow before purchase; artist brief is in the guide."
+    },
+    {
+      "id": "docks-dressing", "priority": "P1", "status": "awaiting-acquisition",
+      "target": "Architecture and relay approach",
+      "delivery": "12-20 coordinated industrial modules/props plus original faction signs and decals",
+      "sourcePages": ["https://quaternius.com/packs/scifiessentialskit.html", "https://quaternius.com/packs/modularscifimegakit.html", "https://kenney.nl/assets/city-kit-industrial"],
+      "integrationNote": "Dress existing shared collision plans, batch repeated details and add generic prop support."
+    },
+    {
+      "id": "surface-expansion", "priority": "P1", "status": "awaiting-selection",
+      "target": "Stage 4 faction PBR and decals",
+      "delivery": "A few 2K ceramic, rubber, grating and painted/rusted metal materials and masks",
+      "sourcePages": ["https://polyhaven.com/textures", "https://ambientcg.com/list"],
+      "integrationNote": "Register materials/color spaces; retain existing four material sets and HDR."
+    },
+    {
+      "id": "effect-textures", "priority": "P1", "status": "awaiting-acquisition",
+      "target": "Stage 5 pooled effects",
+      "delivery": "Small sprite atlas for sparks, smoke, muzzle flash, shockwave and skid/impact marks",
+      "sourcePages": ["https://kenney.nl/assets/particle-pack"],
+      "integrationNote": "Confirm included license and implement Three.js emitters."
+    },
+    {
+      "id": "input-glyphs", "priority": "P2", "status": "awaiting-acquisition",
+      "target": "Onboarding and field menu",
+      "delivery": "Keyboard/mouse glyph subset",
+      "sourcePages": ["https://kenney.nl/assets/input-prompts"],
+      "integrationNote": "Gamepad glyphs do not implement controller support."
+    },
+    {
+      "id": "vehicle-identity", "priority": "P2", "status": "awaiting-selection-or-commission",
+      "target": "Vehicle rendering and destruction",
+      "delivery": "Two editable body designs with separate wheels and four removable panels",
+      "sourcePages": ["https://syntystore.com/products/polygon-sci-fi-city"],
+      "integrationNote": "Validate pivots, hierarchy, mounts and hull against vehicleDefinition.ts."
+    },
+    {
+      "id": "bay-vista", "priority": "P2", "status": "awaiting-art-direction",
+      "target": "Stage 4 bridges, shoreline and distant hills",
+      "delivery": "Editable bridge detail modules, shoreline rocks and terrain silhouettes",
+      "sourcePages": [],
+      "integrationNote": "Procedural/commissioned assembly recommended; specific source selection remains open. Water, fog and dusk/night are engine work."
+    },
+    {
+      "id": "voice-music", "priority": "P2", "status": "awaiting-commission",
+      "target": "Tactical comms, adaptive music and later cinematics",
+      "delivery": "Vance/Sera/Voss auditions, dry takes/transcripts; exploration/combat layers and stingers",
+      "sourcePages": [],
+      "integrationNote": "Use written commercial game rights and line IDs; artist/source selection remains open."
+    },
+    {
+      "id": "boss-pets", "priority": "P3", "status": "deferred-until-upstream-art-stable",
+      "target": "Dreadnought/cyber-pet identity and Stage 6",
+      "delivery": "Damageable boss modules and pet rigs matching their locomotion families",
+      "sourcePages": [],
+      "integrationNote": "Preserve engine/turret/reactor and pet dimensions; custom source selection remains open."
+    }
+  ]
+}

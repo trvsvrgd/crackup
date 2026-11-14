@@ -1,3 +1,4 @@
+import { EffectKind, effectSpec, type EffectSpec } from '../protocol/presentationProtocol.js';
 /**
  * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
  * Phase 4: Raycast 4-Wheel Suspension Vehicles & Strength-Based 3D Dynamic Object Picking/Throwing
@@ -150,6 +151,8 @@ export const DYNAMIC_PROP_SPECS: Record<DynamicPropType, PropSpecsDefinition> = 
 const WHEEL_MOUNTS = VEHICLE_WHEEL_MOUNTS;
 
 export class VehicleAndPropManager {
+  public onEffect: ((event: EffectSpec) => void) | null = null;
+  private readonly skidPoints = new Map<string, Vec3>();
   public authoritativeDamage = true;
   public readonly vehicleDebris = new Map<number, { body: RAPIER.RigidBody; state: Omit<VehicleDebrisState, 'position' | 'rotation' | 'velocity'> }>();
   private nextDebrisId = 1;
@@ -237,7 +240,7 @@ export class VehicleAndPropManager {
     const damage = Math.min(v.hp, amount), before = v.detachedMask; v.hp -= damage;
     if (v.hp < v.maxHp * 0.5) this.detachPanel(v, VehiclePanelId.HOOD);
     if (v.hp < v.maxHp * 0.25) for (const part of [VehiclePanelId.LEFT_DOOR, VehiclePanelId.RIGHT_DOOR, VehiclePanelId.TRUNK]) this.detachPanel(v, part);
-    if (v.hp === 0) { v.destroyed = true; v.respawnSec = VEHICLE_RESPAWN_SEC; v.wallThrusterActive = false; this.ejectDriver(v); }
+    if (v.hp === 0) { this.onEffect?.(effectSpec(EffectKind.DESTRUCTION, v.position, { actor: attackerEntityId, target: vehicleId, radius: 4 })); v.destroyed = true; v.respawnSec = VEHICLE_RESPAWN_SEC; v.wallThrusterActive = false; this.ejectDriver(v); }
     return { type: 'VEHICLE_HIT', attackerEntityId, targetEnemyId: 0, targetVehicleId: vehicleId, vehicleHp: v.hp, detachedPanelMask: v.detachedMask ^ before,
       damageDealt: damage, armorStripped: 0, isCrit: false, limbCrippled: false, shockwaveTriggered: false, shockwaveHits: 0, impactPoint: { ...v.position } };
   }
@@ -744,6 +747,19 @@ export class VehicleAndPropManager {
       const signedSpeed = v.velocity.x * -Math.sin(v.yaw) + v.velocity.z * -Math.cos(v.yaw);
       v.wheelAngle = (v.wheelAngle + signedSpeed * dt / VEHICLE_WHEEL_RADIUS_M) % (Math.PI * 2);
 
+      if (this.authoritativeDamage) for (let wheel = 2; wheel < 4; wheel++) {
+        const key = `${v.vehicleId}:${wheel}`, w = v.wheels[wheel]!;
+        if (!w.grounded || v.destroyed || Math.abs(signedSpeed) < 4 || (!v.braking && Math.abs(v.steerAngleRad * signedSpeed) < 2.5)) { this.skidPoints.delete(key); continue; }
+        const mount = { x: v.position.x + Math.cos(v.yaw) * w.localMountOffset.x + Math.sin(v.yaw) * w.localMountOffset.z, y: v.position.y + 1, z: v.position.z - Math.sin(v.yaw) * w.localMountOffset.x + Math.cos(v.yaw) * w.localMountOffset.z };
+        const hit = this.world.castRayAndGetNormal(new RAPIER.Ray(mount,{x:0,y:-1,z:0}),4,true,RAPIER.QueryFilterFlags.ONLY_FIXED|RAPIER.QueryFilterFlags.EXCLUDE_SENSORS);
+        if (!hit) { this.skidPoints.delete(key); continue; }
+        const point={x:mount.x,y:mount.y-hit.timeOfImpact+.025,z:mount.z}, previous=this.skidPoints.get(key);
+        if (!previous) { this.skidPoints.set(key,point); continue; }
+        const distance=Math.hypot(point.x-previous.x,point.y-previous.y,point.z-previous.z);
+        if(distance<.8)continue;
+        if(distance<4)this.onEffect?.(effectSpec(EffectKind.SKID,point,{actor:v.driverEntityId,target:v.vehicleId,origin:previous,normal:hit.normal,radius:.2}));
+        this.skidPoints.set(key,point);
+      }
       v.rigidBody.setTranslation(v.position, true);
       v.rigidBody.setNextKinematicTranslation(v.position);
       v.rigidBody.setRotation(v.rotation, true);
@@ -1081,6 +1097,7 @@ export class VehicleAndPropManager {
     const maxImpulseNs = expParams.impulseNs * mods.blastImpulseMultiplier * yieldScale;
     const baseBlastDamage = (110 + attacker.attributes.explosives * 32) * yieldScale;
 
+    this.onEffect?.(effectSpec(EffectKind.BLAST, blastOrigin, { actor: attacker.entityId, radius: Math.min(100, blastRadius) }));
     const sphereShape = new RAPIER.Ball(blastRadius);
     const shapeRot = { x: 0, y: 0, z: 0, w: 1 };
     const hitEnemyIds = new Set<number>();

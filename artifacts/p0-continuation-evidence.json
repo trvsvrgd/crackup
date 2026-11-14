@@ -1,0 +1,101 @@
+{
+    "schemaVersion":  1,
+    "recordedAt":  "2026-11-14T02:23:21.1358069Z",
+    "scope":  "P0 continuation evidence, not product acceptance. Browser bundle matched the earlier P0 build and the fresh rebuild byte-for-byte.",
+    "sourceHead":  "4af95ab1d82d2089cf886858e50cc85af40f6b58",
+    "workingTreeHasUncommittedChanges":  true,
+    "checks":  [
+                   {
+                       "command":  "npm run build",
+                       "exitCode":  0,
+                       "result":  "passed"
+                   },
+                   {
+                       "command":  "npm run verify:alpha",
+                       "exitCode":  0,
+                       "result":  "6/6 passed"
+                   },
+                   {
+                       "command":  "npm run progress:check",
+                       "exitCode":  0,
+                       "result":  "10 checkpoints, 85 evidence files verified"
+                   },
+                   {
+                       "command":  "npm run product:audit:saves",
+                       "exitCode":  0,
+                       "result":  "audit completed; partial and completed district state fail process-restart continuity"
+                   }
+               ],
+    "files":  [
+                  {
+                      "path":  "artifacts/evidence/p0-save-continuity.json",
+                      "sha256":  "4e5dc73851aba71584c705032b169149b9d7961e7b75174643fb25dccecf90b7",
+                      "bytes":  20126
+                  },
+                  {
+                      "path":  "artifacts/evidence/p0-offline-local.json",
+                      "sha256":  "085111c17c4f1f116b34eb1ee734eb1b0d06d3d533e550e0ab4eb71651f941c9",
+                      "bytes":  18358
+                  },
+                  {
+                      "path":  "artifacts/evidence/p0-offline-local.png",
+                      "sha256":  "d9d9a48704ee00fd75334f92f8b3daab583e2b522d3ce4ae85d8f050a7ca487f",
+                      "bytes":  1149923
+                  },
+                  {
+                      "path":  "tests/audit-product-baseline.ts",
+                      "sha256":  "b123cac34441e7fc80940c17a20b2279eff3d1fc205e6a35d47eb882d64fdd77",
+                      "bytes":  13053
+                  },
+                  {
+                      "path":  "scripts/verify-product-requirements.mjs",
+                      "sha256":  "d57f9bf2935ea7a6bf567adec8b66c9cad7bd31163125c81ce7c0b38ebddaa26",
+                      "bytes":  7036
+                  },
+                  {
+                      "path":  "docs/PRODUCT_REQUIREMENTS_V3.md",
+                      "sha256":  "6560e165469b85de856f6a0c9450b1816c9637134ece94706ba0d7b356288669",
+                      "bytes":  60928
+                  },
+                  {
+                      "path":  "docs/PRODUCTION_DELIVERY_PLAN.md",
+                      "sha256":  "ac5e45fe8f63fe2603af5914bc83f3f18517af58e878df9178dd6238d32b254e",
+                      "bytes":  28543
+                  },
+                  {
+                      "path":  "docs/PRODUCT_BASELINE_DECISIONS.md",
+                      "sha256":  "b35a1e4b4b9fad39da7d1b5b0616077024002bcc52f9f8cb8ff1fe331c114995",
+                      "bytes":  5159
+                  },
+                  {
+                      "path":  "docs/OPENING_OPERATION_SPEC.md",
+                      "sha256":  "9bddfce1ac605a9be6bfe3bd8981dadb5361934ca9cbe93e718452402fefaa1b",
+                      "bytes":  17560
+                  },
+                  {
+                      "path":  "artifacts/product-delivery-status.md",
+                      "sha256":  "e424d6e77daacd8ca1893320b81cf984db58c18f67ddcd7fcbfcc3f6b986d365",
+                      "bytes":  12206
+                  },
+                  {
+                      "path":  "artifacts/product-p0-continuation.md",
+                      "sha256":  "2de4944d77250ce72b6dada0c0076aca8753c18e25a1f5b1ceefdbcde312552b",
+                      "bytes":  7471
+                  },
+                  {
+                      "path":  "package.json",
+                      "sha256":  "8418e131d17701c05e69ad798ecd798048d32bdaf37463cd89b7b65dfa14c683",
+                      "bytes":  4227
+                  },
+                  {
+                      "path":  "public/game.js",
+                      "sha256":  "bfc27fec41f1871db9a328f75a9367236ed474d20e882b6c6abb4f9ae0c9d544",
+                      "bytes":  4053108
+                  },
+                  {
+                      "path":  "public/assets/manifest.json",
+                      "sha256":  "207862dc81e306c6774d72d0c5978cad50433d80b43bbd74c4f9d0e6d3af0492",
+                      "bytes":  24268
+                  }
+              ]
+}

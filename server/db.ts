@@ -106,7 +106,7 @@ export class AgentDatabase {
   private readonly stmtCountAgents: Database.Statement<[], { count: number }>;
 
   constructor(customDbPath?: string) {
-    const dataDir = process.env.DATA_DIR || path.resolve(process.cwd(), 'data');
+    const dataDir = customDbPath ? path.dirname(customDbPath) : process.env.DATA_DIR || path.resolve(process.cwd(), 'data');
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }

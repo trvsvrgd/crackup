@@ -26,7 +26,7 @@ export const INK_FRAGMENT_SHADER = `
     float edge = max(smoothstep(0.045, 0.14, length(vec2(dx, dy))),
                      smoothstep(0.8, 1.8, length(nx) + length(ny)));
     vec4 color = texture2D(tDiffuse, vUv);
-    gl_FragColor = vec4(mix(color.rgb, vec3(0.008, 0.014, 0.025), edge * 0.9), color.a);
+    gl_FragColor = vec4(mix(color.rgb, vec3(0.008, 0.014, 0.025), edge * 0.9 * (1.0 - smoothstep(350.0, 1200.0, center))), color.a);
   }`;
 
 /** A genuine depth+normal Sobel pass; never uses color edges that outline window textures. */
@@ -35,6 +35,8 @@ export class InkOutlinePass extends Pass {
   private readonly normal = new THREE.MeshNormalMaterial();
   private readonly material: THREE.ShaderMaterial;
   private readonly quad: FullScreenQuad;
+  /** Optional opaque normal/depth buffer produced earlier in this same frame. Not owned here. */
+  public sharedNormals: THREE.WebGLRenderTarget | null = null;
   constructor(private readonly scene: THREE.Scene, private readonly camera: THREE.PerspectiveCamera) {
     super();
     this.target.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
@@ -50,6 +52,8 @@ export class InkOutlinePass extends Pass {
     this.target.setSize(w, h); this.material.uniforms.resolution.value.set(w, h);
   }
   public override render(renderer: THREE.WebGLRenderer, write: THREE.WebGLRenderTarget, read: THREE.WebGLRenderTarget): void {
+    const shared = this.sharedNormals?.depthTexture ? this.sharedNormals : null;
+    if (!shared) {
     const override = this.scene.overrideMaterial, background = this.scene.background;
     const clear = renderer.getClearColor(new THREE.Color()), alpha = renderer.getClearAlpha();
     const shadowUpdate = renderer.shadowMap.autoUpdate;
@@ -59,7 +63,7 @@ export class InkOutlinePass extends Pass {
       // a zero-opacity dash ring must not leave a black silhouette around an idle agent.
       this.scene.traverse(object => {
         if (!object.visible) return;
-        if (object instanceof THREE.Sprite || object instanceof THREE.Line || object instanceof THREE.Points ||
+        if (object.userData.excludeSurfacePass || object instanceof THREE.Sprite || object instanceof THREE.Line || object instanceof THREE.Points ||
           object instanceof THREE.Mesh && (Array.isArray(object.material) ? object.material : [object.material]).every(m => m.opacity <= 0.001 || m.transparent && m.opacity < 1)) {
           hidden.push(object); object.visible = false;
         }
@@ -73,6 +77,10 @@ export class InkOutlinePass extends Pass {
       for (const object of hidden) object.visible = true;
       renderer.setClearColor(clear, alpha); renderer.shadowMap.autoUpdate = shadowUpdate;
     }
+    }
+    const target = shared ?? this.target;
+    this.material.uniforms.tNormal.value = target.texture;
+    this.material.uniforms.tDepth.value = target.depthTexture;
     this.material.uniforms.tDiffuse.value = read.texture;
     this.material.uniforms.cameraNear.value = this.camera.near;
     this.material.uniforms.cameraFar.value = this.camera.far;

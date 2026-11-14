@@ -56,7 +56,7 @@ async function verify() {
       for (const mesh of meshesA) for (const bone of mesh.skeleton.bones) assert(bone.matrixWorld.elements.every(Number.isFinite), `${name}/${clip.name}: nonfinite bone transform`);
       action.stop();
     }
-    const idle = first.animations.find((clip) => clip.name.toLowerCase() === 'idle')!;
+    const idle = first.animations.find((clip) => clip.name.toLowerCase() === 'idle') ?? first.animations[0];
     mixer.clipAction(idle).play(); mixer.update(0.1);
     first.scene.position.x = index++ * 2 - 1;
     scene.add(first.scene);
@@ -66,9 +66,9 @@ async function verify() {
   const disposed = new ArticulatedAgentRig('DISPOSED', true);
   const survivor = new ArticulatedAgentRig('SURVIVOR', true);
   survivor.root.updateMatrixWorld(true);
-  const importedBounds = new THREE.Box3().setFromObject(survivor.root.getObjectByName('ProductionHumanoid')!);
-  const importedHeight = importedBounds.max.y - importedBounds.min.y;
-  assert(importedHeight > 1.5 && importedHeight < 2.2, `Production avatar has incorrect height: ${importedHeight}`);
+  const visibleBounds = new THREE.Box3().setFromObject(survivor.humanoid.root);
+  const visibleHeight = visibleBounds.max.y - visibleBounds.min.y;
+  assert(visibleHeight > 1.5 && visibleHeight < 2.2, `Visible avatar has incorrect height: ${visibleHeight}`);
   disposed.dispose();
   survivor.update({ x: 0, y: 0, z: -2 }, { x: 0, y: 0, z: 0, w: 1 }, { x: 0, y: 0, z: 0 }, AgentAnimState.IDLE, 0, 0.1);
   scene.add(survivor.root);

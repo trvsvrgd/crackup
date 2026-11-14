@@ -74,6 +74,53 @@
       ],
       "skins": 1,
       "bones": 67
+    },
+    "capoeira_ybot": {
+      "url": "/assets/models/characters/capoeira_ybot.glb",
+      "optional": true,
+      "clips": [
+        "armada to esquiva",
+        "armada",
+        "au to role",
+        "au",
+        "bencao",
+        "capoeira (2)",
+        "capoeira (3)",
+        "capoeira",
+        "chapa 2",
+        "chapa giratoria 2",
+        "chapa-giratoria",
+        "chapaeu de couro",
+        "esquiva 1",
+        "esquiva 2",
+        "esquiva 3",
+        "esquiva 4",
+        "esquiva 5",
+        "ginga backward",
+        "ginga forward",
+        "ginga sideways 1",
+        "ginga sideways 2",
+        "ginga sideways to au",
+        "ginga variation 1",
+        "ginga variation 2",
+        "ginga variation 3",
+        "macaco side",
+        "martelo 2",
+        "martelo 3",
+        "martelo do chau sem mao",
+        "martelo do chau",
+        "meia lua de compasso back",
+        "meia lua de compasso",
+        "meia lua de frente",
+        "pontera",
+        "queshada 1",
+        "queshada 2",
+        "rasteira 1",
+        "rasteira 2",
+        "troca 1"
+      ],
+      "skins": 1,
+      "purpose": "Capoeira motion source; retargeted onto game armor"
     }
   },
   "files": [
@@ -307,6 +354,339 @@
       "bytes": 1081,
       "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc",
       "md5": "b3fc5f5e1fb66bb4c7e45d1a905627e5"
+    },
+    {
+      "path": "/assets/models/characters/capoeira_ybot.glb",
+      "kind": "glb",
+      "provider": "Adobe Mixamo",
+      "assetId": "capoeira_ybot",
+      "sourceUrl": "https://www.mixamo.com/",
+      "license": "Adobe Mixamo terms; incorporated game asset",
+      "sources": [
+        {
+          "file": "Y Bot.fbx",
+          "sha256": "ba45e7b1003712fdaa62b286cf978f81c6ed7dbd10c95de53e879b4d2aea2cb7",
+          "bytes": 1982369,
+          "role": "skinned-base",
+          "bakedFps": 30
+        },
+        {
+          "file": "armada to esquiva.fbx",
+          "sha256": "4b25229419f8f3c013ad718839c837fc6702a8d895b2228d452c22d86dbdaf5d",
+          "bytes": 693137,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "armada.fbx",
+          "sha256": "60a2bdb6b3d8e67edc31069dc753566aa9d39f5de60d20aebc841df6cd76af1e",
+          "bytes": 443441,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "au to role.fbx",
+          "sha256": "4875fa16bfd5700537674f3a0f13d6409232cc138cc17aa61b5159e07e104c84",
+          "bytes": 689905,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "au.fbx",
+          "sha256": "08f3a329c1dac5ae25464df511026754739bd1aeab0a8bfd13fa04d665e24fcb",
+          "bytes": 572817,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "bencao.fbx",
+          "sha256": "bddee6e869991d0dc24f455ea9f1ebfb0d7e6bb9d72e686a8e3988323dc2aa17",
+          "bytes": 418929,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "capoeira (2).fbx",
+          "sha256": "4674a6f4b20723cc8d42b1830b20ad54868d784c491e78a5193306cbb0d76c35",
+          "bytes": 1693921,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "capoeira (3).fbx",
+          "sha256": "30e1ae3c5fc59c745f9805fce620d11a9f1f2a5b9a8f0ae76978e7a4cd0d8a13",
+          "bytes": 715841,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "capoeira.fbx",
+          "sha256": "4b4d28e3b8b493b9ce8d17f81760790abb0727e149ab774585e02d3d7d314778",
+          "bytes": 634209,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "chapa 2.fbx",
+          "sha256": "f30e1b35a6c61bd37875dbe6458f826779799960dd3884aeef90ecc1833f11ee",
+          "bytes": 415105,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "chapa giratoria 2.fbx",
+          "sha256": "9d5f75fb3b5eb7da380d592bc40440c387617d3e2a8e608a53e2fff2f115fb0c",
+          "bytes": 520881,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "chapa-giratoria.fbx",
+          "sha256": "61f6af189419b50db81da2e98f847752dfb98acb5c0b139a0fbb53b1a3b99bce",
+          "bytes": 581169,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "chapaeu de couro.fbx",
+          "sha256": "b4aef20ca2541bb98dc08c6d0dfb3823f333f6c64535d5dd8ad87f4314096377",
+          "bytes": 632017,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "esquiva 1.fbx",
+          "sha256": "ad7ff009533ee722c3e9507cb5bafbefc70b2333dd6715d7ef9aa94c1375b9dd",
+          "bytes": 694897,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "esquiva 2.fbx",
+          "sha256": "cd5daf68e95c29abc31dc399355f8fd8963b8929df70b8731a966a97a02c6851",
+          "bytes": 509649,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "esquiva 3.fbx",
+          "sha256": "39dcd0bd32bc711c6ad3f2aaffd5428ab4e932023602491d7289794babd500ff",
+          "bytes": 490561,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "esquiva 4.fbx",
+          "sha256": "c0f7d2bfa2c1439be85dbec49eb86e7735555972fe2c3953d1108b5bf4f4852e",
+          "bytes": 552849,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "esquiva 5.fbx",
+          "sha256": "2be51b02d6b47bcb83a72137e1ee75f207d87c049a98006c079307b4ef5e087a",
+          "bytes": 489089,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga backward.fbx",
+          "sha256": "3164e92d5a35acafc6f7d9fc12afeabc36fe7b41fe8ea68a0a75094dbfaaa056",
+          "bytes": 392465,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga forward.fbx",
+          "sha256": "e1604abc580deeb244dc00db633ee2dca26260db2f573138c120cb814fcfdf64",
+          "bytes": 399985,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga sideways 1.fbx",
+          "sha256": "4d9e7a6f895b01731e92b606de834614fcadee774692c441f4b189407ab6a7e1",
+          "bytes": 447217,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga sideways 2.fbx",
+          "sha256": "a8d3fb946d48212c40e974b5ce6ba03eb81f605122bbc9f8c4c55f3ee1920ea8",
+          "bytes": 503809,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga sideways to au.fbx",
+          "sha256": "fe08678c7d2bbf9809e8bade0ac4b1ffd308d30bd1ac722c840b22b2c279916b",
+          "bytes": 653521,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga variation 1.fbx",
+          "sha256": "7288dd864c91f862cc0b0e3107906c4ef9fd5982635e7ced0576c1ab5f85013c",
+          "bytes": 637009,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga variation 2.fbx",
+          "sha256": "d5323d4f30cc8772fd4288ad88a94e78a5ffb08c6156f265a03b3d425c5058dc",
+          "bytes": 671937,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "ginga variation 3.fbx",
+          "sha256": "aa216642ccfcfb0e5edb044bfc6f51a02fc3277edfc6adc3ee50df75ea61df91",
+          "bytes": 567313,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "macaco side.fbx",
+          "sha256": "c3638f101e3d4ad023af146438c46b4098df64f3379c863d8456284718883b68",
+          "bytes": 619745,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "martelo 2.fbx",
+          "sha256": "c1b521e808f09b9a16f532054dada67ecfd2ec85335bd592c68ec6fe1b03a245",
+          "bytes": 409457,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "martelo 3.fbx",
+          "sha256": "0d73c2251efd118c957362612213df38b7b6dd87903f9ec61eafbc294a9c9b83",
+          "bytes": 477425,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "martelo do chau sem mao.fbx",
+          "sha256": "18acadfdd1b0145d46782bf02ffa18795bbbab643cccc96a8b3aa600d89140d2",
+          "bytes": 597489,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "martelo do chau.fbx",
+          "sha256": "d0f49e5c468dd84214e46dde6e4adb5593c72d0e6d17dfcf20e77093c86c96b1",
+          "bytes": 582145,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "meia lua de compasso back.fbx",
+          "sha256": "6c852baa18fe49e45905897e57590907448989f5258608d21624521e2b259a3d",
+          "bytes": 507697,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "meia lua de compasso.fbx",
+          "sha256": "f4e31aed4302db916bd486023db8aeccb1fda145fdcc19e1bd8ebd862370e59e",
+          "bytes": 453121,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "meia lua de frente.fbx",
+          "sha256": "1be0fe4b70495f89ed6ab3c3a406f9b9d007bbf085aef7deac08ca353836e7e1",
+          "bytes": 536033,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "pontera.fbx",
+          "sha256": "8913cb6c837810cb3b4ca32a24a076fabc29fd109ceaacb0bb7620d56a5fd8c3",
+          "bytes": 410673,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "queshada 1.fbx",
+          "sha256": "0692961b2323842a6c5757a766fd0455b97cb27c4ae4a2a158ab2efbae3e9151",
+          "bytes": 547329,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "queshada 2.fbx",
+          "sha256": "a578f20c71d3327bb32540400cbe742e891025bdbb3f287641e62735d60779ff",
+          "bytes": 485025,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "rasteira 1.fbx",
+          "sha256": "4c4f2bdb42fb8af246854a8a533dfaf539192670c7c5dd71de76593a391e24af",
+          "bytes": 467489,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "rasteira 2.fbx",
+          "sha256": "aa615f974644b51ebded3f65f48a3612945a8a756e949129cca9e21ac3791d2a",
+          "bytes": 524577,
+          "role": "motion",
+          "bakedFps": 30
+        },
+        {
+          "file": "troca 1.fbx",
+          "sha256": "28be732c585da91caa7ba9d3f0dc91517a5feb1e8b74c5f799576448ed9be67a",
+          "bytes": 691809,
+          "role": "motion",
+          "bakedFps": 30
+        }
+      ],
+      "requiredClips": [
+        "armada to esquiva",
+        "armada",
+        "au to role",
+        "au",
+        "bencao",
+        "capoeira (2)",
+        "capoeira (3)",
+        "capoeira",
+        "chapa 2",
+        "chapa giratoria 2",
+        "chapa-giratoria",
+        "chapaeu de couro",
+        "esquiva 1",
+        "esquiva 2",
+        "esquiva 3",
+        "esquiva 4",
+        "esquiva 5",
+        "ginga backward",
+        "ginga forward",
+        "ginga sideways 1",
+        "ginga sideways 2",
+        "ginga sideways to au",
+        "ginga variation 1",
+        "ginga variation 2",
+        "ginga variation 3",
+        "macaco side",
+        "martelo 2",
+        "martelo 3",
+        "martelo do chau sem mao",
+        "martelo do chau",
+        "meia lua de compasso back",
+        "meia lua de compasso",
+        "meia lua de frente",
+        "pontera",
+        "queshada 1",
+        "queshada 2",
+        "rasteira 1",
+        "rasteira 2",
+        "troca 1"
+      ],
+      "bytes": 5642328,
+      "sha256": "ca7f9e617d3f75796132add53515ffc30c7d3a3f592f00cf44f6fb8bfc061e98"
     }
   ],
   "substitutions": [

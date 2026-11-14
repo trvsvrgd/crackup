@@ -4,7 +4,6 @@ import type { Quat4, Vec3 } from '../../shared/protocol/binaryProtocol.js';
 import type { CombatEventResult } from '../../shared/combat/enemyRigSystem.js';
 import { HumanoidRig } from '../animation/humanoidRig.js';
 import { SkeletalAnimator, type AnimationInput } from '../animation/skeletalAnimator.js';
-import { productionAssets } from '../assets/productionAssets.js';
 
 export class ArticulatedAgentRig {
   public readonly root = new THREE.Group();
@@ -17,7 +16,8 @@ export class ArticulatedAgentRig {
   private actionSec = 0;
   private combo = 1;
   private recoil = 0;
-  private productionVisual: THREE.Group | null = null;
+  private shotPoseSec = 0;
+  private shotPitch = 0;
   private disposed = false;
   constructor(callsign: string, local: boolean) {
     this.root.name = `AgentRig_${callsign}`;
@@ -29,18 +29,8 @@ export class ArticulatedAgentRig {
       shear.position.set(side * 0.32, 1.25, 0.75); this.windShearGroup.add(shear);
     }
     this.root.add(this.windShearGroup);
-    // Retain installed imported assets for packs with a complete pose set. The procedural fallback
-    // guarantees class silhouettes, all joints, aim layers and reactions when clips are missing.
-    const imported = productionAssets.createCharacter(productionAssets.characters.has('agent_cyber') ? 'agent_cyber' : local ? 'Soldier' : 'Xbot');
-    if (imported) {
-      this.productionVisual = new THREE.Group(); this.productionVisual.name = 'ProductionHumanoid';
-      imported.scene.updateMatrixWorld(true);
-      imported.scene.traverse(o => { if ((o as THREE.SkinnedMesh).isSkinnedMesh) (o as THREE.SkinnedMesh).skeleton.update(); });
-      const bounds = new THREE.Box3().setFromObject(imported.scene), scale = 1.84 / Math.max(0.001, bounds.max.y - bounds.min.y);
-      imported.scene.scale.multiplyScalar(scale); imported.scene.position.y -= bounds.min.y * scale;
-      this.productionVisual.rotation.y = Math.PI; this.productionVisual.add(imported.scene); this.root.add(this.productionVisual);
-      this.productionVisual.visible = false;
-    }
+    // Genuine Mixamo motion is retargeted by SkeletalAnimator onto this visible class rig.
+    // No hidden per-player GLB clone or second skin is allocated.
     this.setCallsign(callsign, local);
   }
   public setChassis(chassis: AugmentChassisId): void {
@@ -57,26 +47,24 @@ export class ArticulatedAgentRig {
     this.label = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), depthTest: false }));
     this.label.position.y = 2.2; this.label.scale.set(1.4, 0.35, 1); this.root.add(this.label);
   }
+  public showShot(pitch: number): void { this.recoil = 1; this.shotPoseSec = .16; this.shotPitch = pitch; }
   public combat(event: CombatEventResult): void {
     if (event.type === 'MELEE_HIT') { this.combo = event.comboStep ?? 1; this.actionSec = 0.28; }
     if (event.type === 'WEAPON_HIT' || event.type === 'WEAPON_MISS' || event.type === 'VEHICLE_HIT' || event.type === 'RELAY_VENT_HIT') this.recoil = 1;
   }
   public update(position: Vec3, rotation: Quat4, velocity: Vec3, animState: AgentAnimState, mantleProgress: number, dt: number, agilityLevel = 1, options: Partial<AnimationInput> = {}): void {
     this.root.position.set(position.x, position.y, position.z); this.root.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+    this.shotPoseSec = Math.max(0, this.shotPoseSec - dt);
     this.actionSec = Math.max(0, this.actionSec - dt); this.recoil = Math.max(0, this.recoil - dt * 10);
     const dashMaterial = this.dashTrailMesh.material as THREE.MeshBasicMaterial;
     dashMaterial.opacity = animState === AgentAnimState.AIR_DASH ? 0.85 : Math.max(0, dashMaterial.opacity - dt * 4);
     const speed = Math.hypot(velocity.x, velocity.y, velocity.z);
     for (const o of this.windShearGroup.children as THREE.Mesh[]) (o.material as THREE.MeshBasicMaterial).opacity = speed > 8.5 ? Math.min(0.75, (speed - 8.5) / 14 * (0.35 + agilityLevel * 0.08)) : 0;
     this.windShearGroup.scale.z = 0.6 + (agilityLevel - 1) * 0.3 + Math.min(1.5, speed * 0.06);
-    this.animator.update(dt, { speed: Math.hypot(velocity.x, velocity.z), verticalSpeed: velocity.y, animState: this.actionSec > 0 ? AgentAnimState.MELEE_STRIKE : animState, mantleProgress, combo: this.combo, recoil: this.recoil, ...options });
+    this.animator.update(dt, { speed: Math.hypot(velocity.x, velocity.z), verticalSpeed: velocity.y, animState: this.actionSec > 0 ? AgentAnimState.MELEE_STRIKE : animState, mantleProgress, combo: this.combo, recoil: this.recoil, ...options, aim: Math.max(options.aim ?? 0, this.shotPoseSec > 0 ? 1 : 0), aimPitch: options.aimPitch ?? this.shotPitch });
   }
   public dispose(): void {
     if (this.disposed) return; this.disposed = true; this.humanoid.dispose();
-    this.productionVisual?.traverse(o => {
-      if ((o as THREE.SkinnedMesh).isSkinnedMesh) (o as THREE.SkinnedMesh).skeleton.dispose();
-      if (o instanceof THREE.Mesh) { o.geometry.dispose(); (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose()); }
-    });
     this.label?.material.map?.dispose(); this.label?.material.dispose();
     for (const mesh of [this.dashTrailMesh, ...this.windShearGroup.children as THREE.Mesh[]]) { mesh.geometry.dispose(); (mesh.material as THREE.Material).dispose(); }
   }

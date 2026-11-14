@@ -1,3 +1,6 @@
+import { BayVista } from './bayVista.js';
+import { heightFog, triplanarPBR } from '../shaders/worldSurface.js';
+import { VISTA_FAR } from '../../shared/world/bayVista.js';
 /**
  * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
  * Neo-Veridia 4-District 3D Metropolis Builder, 182 Rotating Icosahedron Orbs,
@@ -9,7 +12,7 @@ import { CSM } from 'three/examples/jsm/csm/CSM.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js';
+import { OpaqueSSAOPass } from '../shaders/opaqueSSAOPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OrbType } from '../../shared/constants.js';
 import {
@@ -73,11 +76,14 @@ function createProceduralGridTexture(
 
 export class NeoVeridiaSceneEnvironment {
   public readonly scene: THREE.Scene;
+  public readonly vista: BayVista;
+  private readonly hemisphere: THREE.HemisphereLight;
   public readonly csm: CSM;
   public readonly composer: EffectComposer;
   public readonly bloomPass: UnrealBloomPass;
-  public readonly ssaoPass: SSAOPass;
+  public readonly ssaoPass: OpaqueSSAOPass;
   public readonly inkPass: InkOutlinePass;
+  private readonly pixelRatio: number;
 
   private readonly orbMeshes: Map<number, THREE.Group> = new Map();
   private readonly updraftRings: THREE.Mesh[] = [];
@@ -95,12 +101,17 @@ export class NeoVeridiaSceneEnvironment {
     private readonly architectureRollout: ArchitectureRollout | 'none' = ARCHITECTURE_ROLLOUT
   ) {
     this.camera = camera;
+    this.pixelRatio = renderer.getPixelRatio();
+    camera.far = VISTA_FAR; camera.updateProjectionMatrix();
+    this.vista = new BayVista();
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x050811);
-    this.scene.fog = new THREE.FogExp2(0x060b16, 0.0018);
+    this.scene.fog = new THREE.FogExp2(0x657b89, 0.00024);
+    this.scene.add(this.vista.root);
 
     // 1. Physical Sky Dome & Ambient Hemisphere Illumination
     const hemiLight = new THREE.HemisphereLight(0x9db9d5, 0x344854, 1.4);
+    this.hemisphere = hemiLight;
     hemiLight.position.set(0, 320, 0);
     this.scene.add(hemiLight);
 
@@ -118,7 +129,9 @@ export class NeoVeridiaSceneEnvironment {
 
     // 3. Build 3D Neo-Veridia 4-District Metropolis Structures (1:1 with SharedPhysicsWorld)
     const structures = buildNeoVeridiaSector01();
+    this.vista.root.traverse(o => { if (o instanceof THREE.Mesh) for (const m of Array.isArray(o.material) ? o.material : [o.material]) this.setupArchitectureMaterial(m); });
     this.buildCityMeshes(structures);
+    this.applyProductionMaterials();
     this.buildThermalUpdraftColumns();
     if (orbs.length > 0) {
       this.buildOrbMeshes(orbs);
@@ -132,10 +145,12 @@ export class NeoVeridiaSceneEnvironment {
     const renderPass = new RenderPass(this.scene, camera);
     this.composer.addPass(renderPass);
 
-    this.ssaoPass = new SSAOPass(this.scene, camera, width, height);
+    this.ssaoPass = new OpaqueSSAOPass(this.scene, camera, width, height);
     this.ssaoPass.kernelRadius = 6;
-    this.ssaoPass.minDistance = 0.002;
-    this.ssaoPass.maxDistance = 0.08;
+    // SSAO thresholds are expressed in normalized linear depth. Preserve world distances
+    // when extending the camera from 900 m to the 18 km vista range.
+    this.ssaoPass.minDistance = 1.8 / (camera.far - camera.near);
+    this.ssaoPass.maxDistance = 72 / (camera.far - camera.near);
     this.composer.addPass(this.ssaoPass);
 
     this.bloomPass = new UnrealBloomPass(
@@ -147,6 +162,7 @@ export class NeoVeridiaSceneEnvironment {
     this.composer.addPass(this.bloomPass);
 
     this.inkPass = new InkOutlinePass(this.scene, camera);
+    this.inkPass.sharedNormals = this.ssaoPass.normalRenderTarget;
     this.composer.addPass(this.inkPass);
 
     const outputPass = new OutputPass();
@@ -227,9 +243,7 @@ export class NeoVeridiaSceneEnvironment {
       }),
     };
 
-    for (const mat of Object.values(materials)) {
-      this.csm.setupMaterial(mat);
-    }
+    for (const mat of Object.values(materials)) this.setupArchitectureMaterial(mat);
 
     const trimColors = {
       cyan: materials.neon_cyan,
@@ -295,8 +309,9 @@ export class NeoVeridiaSceneEnvironment {
     ] as const) {
       const material = this.cityMaterials[type];
       if (material) {
-        productionAssets.applyMaterial(material, name, [...repeat]);
-        material.color.set(0xffffff);
+        productionAssets.applyMaterial(material, name);
+        triplanarPBR(material, type === 'plaza_asphalt' ? 5 : 4);
+        material.color.set(0xb8c5d3);
       }
     }
   }
@@ -436,17 +451,25 @@ export class NeoVeridiaSceneEnvironment {
 
   public resize(width: number, height: number): void {
     this.composer.setSize(width, height);
-    this.ssaoPass.setSize(width, height);
+    this.ssaoPass.setSize(width * this.pixelRatio, height * this.pixelRatio);
   }
 
   public render(): void {
+    this.inkPass.sharedNormals = this.ssaoPass.enabled && this.ssaoPass.reuseShadows ? this.ssaoPass.normalRenderTarget : null;
     const dt = Math.max(0, Math.min(0.1, (performance.now() - this.lastArchitectureFrame) / 1000));
     this.lastArchitectureFrame = performance.now();
     for (const { built } of this.architecture) built.update(dt, this.camera.position);
+    this.vista.update(dt, this.camera);
+    const night = this.vista.night;
+    this.hemisphere.intensity = THREE.MathUtils.lerp(1.4, 0.65, night);
+    for (const light of this.csm.lights) { light.intensity = THREE.MathUtils.lerp(2.1, 0.35, night); light.color.set(0xffd8ac).lerp(new THREE.Color(0x6c91ce), night); }
+    this.scene.environmentIntensity = THREE.MathUtils.lerp(0.55, 0.25, night);
+    (this.scene.fog as THREE.FogExp2).color.copy(this.vista.atmosphere.color.value);
+    (this.scene.fog as THREE.FogExp2).density = this.vista.atmosphere.density.value;
     this.scene.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
       for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
-        if (material instanceof THREE.MeshStandardMaterial) stylizePBR(material);
+        if (material instanceof THREE.MeshStandardMaterial) { stylizePBR(material); heightFog(material, this.vista.atmosphere); }
       }
     });
     this.csm.update();
@@ -463,6 +486,7 @@ export class NeoVeridiaSceneEnvironment {
     this.csmMaterials.add(material); material.needsUpdate = true;
   }
   public dispose(): void {
+    this.vista.dispose();
     this.architecture.forEach(({ built }) => built.dispose()); this.architecture.length = 0;
     this.csm.dispose();
     const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>(), textures = new Set<THREE.Texture>();

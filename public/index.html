@@ -156,7 +156,17 @@
               placeholder="Your security PIN"
               required
               autocomplete="current-password"
-            /><button type="submit" id="deploy-button" class="primary">
+            />
+            <section id="campaign-options" hidden aria-label="Campaign co-op">
+              <label for="campaign-role">Campaign</label>
+              <select id="campaign-role"><option value="host">Host my campaign</option><option value="guest">Join a host</option></select>
+              <div id="campaign-guest-fields" hidden>
+                <label for="campaign-owner">Host callsign</label><input id="campaign-owner" maxlength="20" autocomplete="off" />
+                <label for="campaign-code">Session code</label><input id="campaign-code" maxlength="32" autocomplete="off" />
+              </div>
+              <p>Only the host's world advances. Guests keep earned character unlocks, while their own campaign stays unchanged. No level scaling or automatic catch-up. Menus do not pause co-op.</p>
+            </section>
+            <button type="submit" id="deploy-button" class="primary" disabled>
               Deploy agent <span>↗</span>
             </button>
             <div id="auth-error" role="status" aria-live="polite">
@@ -191,9 +201,18 @@
             Return to city <kbd>ESC</kbd>
           </button>
         </div>
-        <p class="online-note">
+        <p class="online-note" id="session-note">
           The online world keeps running while this menu is open.
         </p>
+        <section id="solo-controls" hidden aria-label="Local campaign save">
+          <p id="campaign-party" hidden role="status" style="user-select: text" title="Select and copy the session code to share with your party."></p>
+          <p id="campaign-policy" hidden></p>
+          <p id="solo-recap" aria-label="Campaign recap"></p>
+          <p id="solo-checkpoint" role="status"></p>
+          <p id="campaign-resume-note">Resume at the agency drop point with your district objectives preserved. Unfinished fights restart.</p>
+          <button id="solo-save" class="secondary">Save checkpoint</button>
+          <button id="solo-leave" class="secondary">Save &amp; return to profiles</button>
+        </section>
         <p class="fine-print asset-credits">
           <a href="https://polyhaven.com" target="_blank" rel="noopener noreferrer">Powered by Poly Haven</a>
           · Carbon-fiber textures by <a href="https://ambientcg.com/view?id=Fabric004" target="_blank" rel="noopener noreferrer">ambientCG</a>
@@ -254,6 +273,8 @@
             </section>
           </div>
           <div class="settings-row">
+            <label class="checkbox"><input id="audio-setting" type="checkbox" checked /> Game sound</label>
+            <label class="checkbox"><input id="cinematics-setting" type="checkbox" checked /> Intro cameras</label>
             <label
               >Mouse sensitivity
               <input

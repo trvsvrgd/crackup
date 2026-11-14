@@ -1,3 +1,7 @@
+import { CampaignStorage } from './narrative/campaignStorage.js';
+import { CombatEffects } from './animation/combatEffects.js';
+import { PresentationQueue } from './animation/presentationQueue.js';
+import { EffectKind } from '../shared/protocol/presentationProtocol.js';
 /**
  * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
  * Browser 3D Client Entrypoint — Three.js + Rapier3D + V.A.T.S. 6-Limb Targeting + Motion-Warped Melee
@@ -42,7 +46,6 @@ import { SpringArmCameraController } from './camera/springArmCamera.js';
 import { ArticulatedAgentRig } from './entities/agentMesh.js';
 import {
   ArticulatedEnemyRigMesh,
-  KineticShockwaveEffect,
 } from './entities/enemyRigMesh.js';
 import { ClientPhase5WorldRenderer } from './entities/phase5WorldMesh.js';
 import { ClientVehiclePropRenderer } from './entities/vehicleAndPropMesh.js';
@@ -54,6 +57,9 @@ import { productionAssets } from './assets/productionAssets.js';
 import { TacticalCommsOverlay } from './narrative/tacticalComms.js';
 import { CombatDebrisRenderer } from './animation/combatDebris.js';
 import type { CombatPresentation } from '../shared/combat/combatPresentation.js';
+import { CinematicDirector } from './narrative/cinematicDirector.js';
+import { CinematicOverlay } from './narrative/cinematicOverlay.js';
+import { encounterTracks, openingTrack, OPENING_ID } from './narrative/cinematicTracks.js';
 
 class Crackup3DClientApp {
   private renderer!: THREE.WebGLRenderer;
@@ -62,12 +68,21 @@ class Crackup3DClientApp {
   private physicsWorld!: SharedPhysicsWorld;
   private netcode!: PredictionAndInterpolationManager;
   private spatialAudio!: SpatialOrbAudioEngine;
-  private shockwaveEffect!: KineticShockwaveEffect;
+  private readonly effects = new CombatEffects();
+  private readonly presentationQueue = new PresentationQueue();
   private vehiclePropRenderer!: ClientVehiclePropRenderer;
   private phase5Renderer!: ClientPhase5WorldRenderer;
   private phase6Renderer!: Phase6WorldRenderer;
   private playerHUD!: PlayerHUD;
   private comms!: TacticalCommsOverlay;
+  private cinematics!: CinematicDirector;
+  private cinematicOverlay!: CinematicOverlay;
+  private campaignStorage!: CampaignStorage;
+  private loadPresentationSettings: (() => void) | null = null;
+  private cinematicIntros = true;
+  private nextCinematicAt = 0;
+  private cinematicHadPointerLock = false;
+  private cinematicUnlockPending = false;
   private readonly combatDebris = new CombatDebrisRenderer();
 
   private localRig: ArticulatedAgentRig | null = null;
@@ -88,6 +103,12 @@ class Crackup3DClientApp {
     this.physicsWorld = new SharedPhysicsWorld();
     this.netcode = new PredictionAndInterpolationManager(this.physicsWorld);
     this.spatialAudio = new SpatialOrbAudioEngine();
+    this.netcode.onEffects = packet => {
+      if (document.hidden) return;
+      const accepted = this.presentationQueue.receive(packet, performance.now() / 1000);
+      for (const event of accepted) if (event.kind === EffectKind.SHOT) (event.actor === this.netcode.localEntityId ? this.localRig : this.remoteRigs.get(event.actor))?.showShot(Math.atan2(event.point.y-event.origin.y, Math.hypot(event.point.x-event.origin.x,event.point.z-event.origin.z)));
+    };
+    this.netcode.onPresentationReset = () => { this.presentationQueue.reset(); this.effects.reset(); this.spatialAudio.stopWorld(); this.cinematics?.end('disconnected'); };
 
     this.netcode.onOrbCollectedCallback = (_orbId, orbType) => {
       this.spatialAudio.playOrbCollectedChime(orbType);
@@ -98,14 +119,8 @@ class Crackup3DClientApp {
     this.netcode.onCombatEventCallback = (ev) => {
       (ev.attackerEntityId === this.netcode.localEntityId ? this.localRig : this.remoteRigs.get(ev.attackerEntityId))?.combat(ev);
       this.playerHUD.combat(ev);
-      if (ev.attackerEntityId === this.netcode.localEntityId && ['WEAPON_HIT', 'VEHICLE_HIT', 'RELAY_VENT_HIT', 'MELEE_HIT', 'PARRY_TAKEDOWN'].includes(ev.type)) {
-        this.spatialAudio.playCombatCue(ev.isCrit ? 'critical' : 'hit');
-      }
       if (ev.type === 'PARRY_TAKEDOWN') {
         this.lastCombatLog = `Q COUNTER-PARRY TAKEDOWN! (${ev.damageDealt.toFixed(0)} DMG${ev.shockwaveTriggered ? ` + 6.0m SHOCKWAVE [${ev.shockwaveHits} HIT]` : ''})`;
-        if (ev.shockwaveTriggered) {
-          this.shockwaveEffect.trigger(ev.impactPoint);
-        }
       } else if (ev.type === 'COUNTER_BOUNCE_THROW') {
         this.lastCombatLog = `STRIKE BOUNCED OFF ELITE CRIMSON COUNTER-SHIELD!`;
       } else if (ev.type === 'MELEE_HIT') {
@@ -149,16 +164,72 @@ class Crackup3DClientApp {
       this.cameraController.camera,
       this.netcode.orbs
     );
-    this.shockwaveEffect = new KineticShockwaveEffect(this.environment.scene);
+    this.environment.scene.add(this.effects.root);
     this.environment.scene.add(this.combatDebris.root);
     this.vehiclePropRenderer = new ClientVehiclePropRenderer();
     this.environment.scene.add(this.vehiclePropRenderer.rootGroup);
     this.phase5Renderer = new ClientPhase5WorldRenderer(this.environment.scene, material => this.environment.prepareArtMaterial(material));
     this.phase6Renderer = new Phase6WorldRenderer(this.environment.scene);
-    this.playerHUD = new PlayerHUD(this.netcode, this.cameraController, this.environment, this.renderer);
-    this.comms = new TacticalCommsOverlay();
-    this.playerHUD.onMenuChanged = () => this.clearInput();
-    this.playerHUD.onDamage = () => this.spatialAudio.playCombatCue('hurt');
+    let browserStorage: Storage | null = null;
+    try { browserStorage = localStorage; } catch {}
+    this.campaignStorage = new CampaignStorage(browserStorage, presentation => this.netcode.sendControl(this.netcode.mode === 'campaign' ? 'CAMPAIGN_PRESENTATION' : 'SOLO_PRESENTATION', { presentation }));
+    this.playerHUD = new PlayerHUD(this.netcode, this.cameraController, this.environment, this.renderer, this.campaignStorage);
+    this.comms = new TacticalCommsOverlay(this.campaignStorage);
+    this.cinematicOverlay = new CinematicOverlay(() => this.cinematics.end('skipped'));
+    this.cinematics = new CinematicDirector(this.cameraController.camera, this.campaignStorage, {
+      start: track => {
+        this.cinematicHadPointerLock = document.pointerLockElement === this.renderer.domElement;
+        this.cinematicUnlockPending = this.cinematicHadPointerLock;
+        this.clearInput(); this.comms.setCinematicActive(true); this.cinematicOverlay.show(track);
+        document.exitPointerLock?.();
+      },
+      frame: (_track, sample) => this.cinematicOverlay.update(sample),
+      finish: (track, reason) => {
+        this.clearInput(); this.cinematicOverlay.hide(); this.comms.setCinematicActive(false);
+        this.nextCinematicAt = performance.now() / 1000 + 4;
+        if (track.id === OPENING_ID && reason === 'completed') this.comms.acknowledgeOpeningBriefing();
+        if (this.cinematicHadPointerLock && (reason === 'completed' || reason === 'skipped') && this.netcode.connected && document.hasFocus() && !document.hidden && !this.playerHUD.blocksInput) {
+          Promise.resolve(this.renderer.domElement.requestPointerLock?.()).catch(() => {});
+        }
+        this.cinematicHadPointerLock = false;
+      },
+      resolvePosition: (track, sample) => {
+        if (!track.targetEnemyId && !(track.id === OPENING_ID && sample.shotIndex === 3)) return undefined;
+        const direction = new THREE.Vector3(sample.position.x - sample.target.x, sample.position.y - sample.target.y, sample.position.z - sample.target.z);
+        const length = direction.length(); direction.normalize();
+        const safe = this.physicsWorld.computeCameraSafeDistance(sample.target, direction, length, this.netcode.getLocalAgent());
+        return direction.multiplyScalar(safe).add(new THREE.Vector3(sample.target.x, sample.target.y, sample.target.z));
+      },
+    });
+    this.cinematics.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.playerHUD.onMenuChanged = () => {
+      this.clearInput();
+      this.syncSoloPause();
+      if (this.playerHUD.downed) this.cinematics.end('death');
+      else if (this.playerHUD.menuOpen) this.cinematics.end('interrupted');
+    };
+    const cinematicSetting = document.getElementById('cinematics-setting') as HTMLInputElement;
+    try { cinematicSetting.checked = this.campaignStorage.getItem('crackup.cinematicIntros') !== 'false'; } catch {}
+    this.cinematicIntros = cinematicSetting.checked;
+    cinematicSetting.onchange = () => {
+      this.cinematicIntros = cinematicSetting.checked;
+      if (!this.cinematicIntros) this.cinematics.end('skipped');
+      try { this.campaignStorage.setItem('crackup.cinematicIntros', String(this.cinematicIntros)); } catch {}
+    };
+    const audioSetting = document.getElementById('audio-setting') as HTMLInputElement;
+    try { audioSetting.checked = this.campaignStorage.getItem('crackup.audioMuted') !== 'true'; } catch {}
+    this.spatialAudio.setMuted(!audioSetting.checked);
+    audioSetting.onchange = () => { this.spatialAudio.unlockAndInit(); this.spatialAudio.setMuted(!audioSetting.checked); try { this.campaignStorage.setItem('crackup.audioMuted', String(!audioSetting.checked)); } catch {} };
+    this.loadPresentationSettings = () => {
+      this.playerHUD.bindSettings();
+      cinematicSetting.checked = this.campaignStorage.getItem('crackup.cinematicIntros') !== 'false';
+      this.cinematicIntros = cinematicSetting.checked;
+      audioSetting.checked = this.campaignStorage.getItem('crackup.audioMuted') !== 'true';
+      this.spatialAudio.setMuted(!audioSetting.checked);
+      this.comms.setMuted(this.campaignStorage.getItem('crackup.commsMuted') === 'true');
+    };
+    window.addEventListener('pagehide', event => { this.cinematics.end('hidden'); this.presentationQueue.reset(); this.effects.reset(); this.spatialAudio.setActive(false); if (!event.persisted) { this.cinematics.dispose(); this.cinematicOverlay.dispose(); this.comms.dispose(); this.effects.dispose(); void this.spatialAudio.dispose(); } });
+    this.playerHUD.onDamage = () => { this.cinematics.end('damage'); this.spatialAudio.playCombatCue('hurt'); };
     this.playerHUD.onDefeat = () => this.spatialAudio.playCombatCue('defeat');
 
     try {
@@ -185,6 +256,11 @@ class Crackup3DClientApp {
 
   private bindControls(): void {
     window.addEventListener('keydown', (e) => {
+      if (this.cinematics.active) {
+        if (e.code === 'Escape' || e.code === 'Space') { e.preventDefault(); this.cinematics.end('skipped'); return; }
+        if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyV', 'KeyQ', 'KeyE', 'KeyH', 'KeyB'].includes(e.code)) this.cinematics.end('skipped');
+        else return;
+      }
       if (!elIsAuthVisible() && !e.repeat && this.playerHUD.handleKey(e.code)) {
         e.preventDefault();
         return;
@@ -208,6 +284,7 @@ class Crackup3DClientApp {
     });
 
     window.addEventListener('wheel', (e) => {
+      if (this.cinematics.active) return;
       if (this.cameraController.isAiming) {
         const delta = e.deltaY > 0 ? 1 : 5;
         this.selectedVatsLimb = ((this.selectedVatsLimb + delta) % 6) as EnemyLimbId;
@@ -215,6 +292,7 @@ class Crackup3DClientApp {
     });
 
     window.addEventListener('mousedown', (e) => {
+      if (this.cinematics.active) return;
       if (e.target !== this.renderer.domElement || this.playerHUD.blocksInput) return;
       this.spatialAudio.unlockAndInit();
       if (document.pointerLockElement !== this.renderer.domElement) {
@@ -238,16 +316,19 @@ class Crackup3DClientApp {
     window.addEventListener('contextmenu', (e) => e.preventDefault());
 
     window.addEventListener('mousemove', (e) => {
+      if (this.cinematics.active) return;
       if (document.pointerLockElement === this.renderer.domElement) {
         this.cameraController.onMouseMove(e.movementX, e.movementY);
       }
     });
-    window.addEventListener('blur', () => this.clearInput());
-    document.addEventListener('visibilitychange', () => { if (document.hidden) this.clearInput(); });
+    window.addEventListener('blur', () => { this.clearInput(); this.syncSoloPause(); });
+    window.addEventListener('focus', () => this.syncSoloPause());
+    document.addEventListener('visibilitychange', () => { this.syncSoloPause(); if (document.hidden) { this.cinematics.end('hidden'); this.clearInput(); this.presentationQueue.reset(); this.effects.reset(); this.spatialAudio.setActive(false); } });
     document.addEventListener('pointerlockchange', () => {
       if (!document.pointerLockElement) {
         this.clearInput();
-        if (!this.playerHUD.menuOpen && !this.playerHUD.downed && document.hasFocus() && !document.hidden) this.playerHUD.setMenu(true);
+        if (this.cinematicUnlockPending) { this.cinematicUnlockPending = false; return; }
+        if (!this.cinematics.active && !this.playerHUD.menuOpen && !this.playerHUD.downed && document.hasFocus() && !document.hidden) this.playerHUD.setMenu(true);
       }
     });
   }
@@ -259,6 +340,15 @@ class Crackup3DClientApp {
     this.pendingMouseButtons = 0;
     this.cameraController.isAiming = false;
     this.physicsAccumulator = 0;
+  }
+
+  private requestedSoloPause: boolean | null = null;
+  private syncSoloPause(): void {
+    if (this.netcode.mode !== 'solo' || !this.netcode.connected) return;
+    const paused = this.playerHUD.menuOpen || document.hidden || !document.hasFocus();
+    if (paused === this.requestedSoloPause) return;
+    this.requestedSoloPause = paused;
+    this.netcode.sendControl('SOLO_PAUSE', { paused });
   }
 
   private bindAuthUI(): void {
@@ -280,12 +370,17 @@ class Crackup3DClientApp {
       const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${proto}//${window.location.host}/ws`;
 
+      this.netcode.campaignJoin = { campaignRole: (document.getElementById('campaign-role') as HTMLSelectElement).value === 'guest' ? 'guest' : 'host',
+        campaignOwner: (document.getElementById('campaign-owner') as HTMLInputElement).value.trim().toUpperCase(),
+        inviteCode: (document.getElementById('campaign-code') as HTMLInputElement).value.trim() };
       this.netcode.connect(
         wsUrl,
         callsign,
         pin,
         (_entityId, authedCallsign, attributes) => {
+          this.requestedSoloPause = null;
           this.playerHUD.deploy(authedCallsign);
+          this.syncSoloPause();
           this.spawnOrUpdateLocalRig(authedCallsign, attributes);
           const position = this.netcode.getLocalAgent()?.position;
           if (position) {
@@ -307,12 +402,17 @@ class Crackup3DClientApp {
       this.localRig.dispose();
     }
     this.localRig = new ArticulatedAgentRig(callsign, true);
-    this.comms.useProfile(callsign);
+    this.campaignStorage.suspend();
+    this.cinematics.end('interrupted');
+    this.campaignStorage.useCampaign(callsign, this.netcode.mode !== 'shared', this.netcode.campaignPresentation);
+    this.comms.useProfile(callsign, true);
+    this.cinematics.useProfile(callsign, true);
+    this.loadPresentationSettings?.();
     this.environment.scene.add(this.localRig.root);
   }
 
   private sampleMovementAxesAndButtons(): { moveX: number; moveZ: number; buttons: number } {
-    if (this.playerHUD.blocksInput) return { moveX: 0, moveZ: 0, buttons: 0 };
+    if (this.playerHUD.blocksInput || this.cinematics.active) return { moveX: 0, moveZ: 0, buttons: 0 };
     let moveX = 0;
     let moveZ = 0;
     if (this.keysDown.has('KeyD') || this.keysDown.has('ArrowRight')) moveX += 1;
@@ -346,8 +446,10 @@ class Crackup3DClientApp {
 
   private renderLoop(nowMs: number): void {
     requestAnimationFrame((t) => this.renderLoop(t));
+    this.cinematics.restoreGameplayCamera();
 
-    const dt = Math.min(0.1, Math.max(0.001, (nowMs - this.lastFrameTimeMs) / 1000));
+    const dt = this.netcode.mode !== 'shared' && this.netcode.soloState?.paused ? 0
+      : Math.min(0.1, Math.max(0.001, (nowMs - this.lastFrameTimeMs) / 1000));
     this.lastFrameTimeMs = nowMs;
 
     this.environment.updateOrbsAndUpdrafts(
@@ -355,7 +457,7 @@ class Crackup3DClientApp {
       this.netcode.collectedOrbIds,
       dt
     );
-    this.shockwaveEffect.update(dt);
+    this.spatialAudio.setActive(this.netcode.connected && !document.hidden && !this.netcode.soloState?.paused);
     this.phase6Renderer.update(this.netcode.phase6Snapshot, dt);
 
     const localAgent = this.netcode.getLocalAgent();
@@ -385,6 +487,7 @@ class Crackup3DClientApp {
     );
 
     if (this.netcode.connected && localAgent) {
+      this.updateCinematics(localAgent, nowMs / 1000);
       this.physicsAccumulator += dt;
       while (this.physicsAccumulator >= FIXED_TIMESTEP) {
         this.physicsAccumulator -= FIXED_TIMESTEP;
@@ -429,7 +532,8 @@ class Crackup3DClientApp {
         this.cameraController.camera,
         localAgent.position,
         this.netcode.orbs,
-        this.netcode.collectedOrbIds
+        this.netcode.collectedOrbIds,
+        this.netcode.vehicleSnapshots.filter(v => !this.netcode.vehicleDamageSnapshot.vehicles.find(d => d.vehicleId === v.vehicleId)?.destroyed)
       );
 
       this.updateEnemiesAndVats(localAgent, dt);
@@ -492,9 +596,45 @@ class Crackup3DClientApp {
       }
     }
 
+    this.cinematics.update(nowMs / 1000);
+    this.presentationQueue.update(nowMs / 1000, event => {
+      const rig = event.actor === this.netcode.localEntityId ? this.localRig : this.remoteRigs.get(event.actor);
+      const muzzle = event.kind === EffectKind.SHOT ? rig?.humanoid.weapon.getObjectByName('MuzzleFlashEmitter')?.getWorldPosition(new THREE.Vector3()) : undefined;
+      this.effects.emit(event, this.cameraController.camera.position, muzzle);
+      this.spatialAudio.playEffect(muzzle ? { ...event, origin: muzzle } : event);
+    }, event => {
+      if (event.kind !== EffectKind.COUNTER) return undefined;
+      const pair = this.netcode.combatPresentations.get(event.target);
+      return pair?.pairedAgentId === event.actor ? pair.pairedElapsed : undefined;
+    });
+    this.effects.update(dt);
     this.combatDebris.update(this.netcode.droppedWeapons);
     this.environment.render();
     this.comms.renderPortrait(this.renderer);
+  }
+
+  private updateCinematics(agent: ReturnType<PredictionAndInterpolationManager['getLocalAgent']> & {}, now: number): void {
+    const status = this.netcode.playerStatus;
+    if (!status || this.playerHUD.blocksInput || !this.cinematicIntros) return;
+    if (status.hp <= 0) { this.cinematics.end('death'); return; }
+    const source = { player: agent.position, districts: this.netcode.districtLoopSnapshots, enemies: this.netcode.enemySnapshots, phase6: this.netcode.phase6Snapshot };
+    const encounters = encounterTracks(source);
+    if (this.cinematics.active) {
+      if (this.cinematics.activeId !== OPENING_ID) {
+        const current = encounters.find(track => track.id === this.cinematics.activeId);
+        if (current) this.cinematics.follow(current);
+        else this.cinematics.end('interrupted');
+      }
+      return;
+    }
+    if (now < this.nextCinematicAt || this.keysDown.size || this.mouseButtons || agent.mountedVehicleId || agent.mantling) return;
+    if (!this.cinematics.seen(OPENING_ID) && !this.comms.director.completed.has('deployment') && status.protectionSec > 11.5) {
+      const car = [...this.netcode.vehicleSnapshots].sort((a,b) => Math.hypot(a.position.x-agent.position.x,a.position.z-agent.position.z) - Math.hypot(b.position.x-agent.position.x,b.position.z-agent.position.z))[0];
+      this.cinematics.start(openingTrack(agent.position, car?.position, 2 * Math.atan2(agent.rotation.y, agent.rotation.w)), now);
+    } else {
+      const next = encounters.find(track => !this.cinematics.seen(track.id));
+      if (next) this.cinematics.start(next, now);
+    }
   }
 
   private positionPairedRig(rig: ArticulatedAgentRig, pair: CombatPresentation): void {
@@ -702,10 +842,29 @@ class Crackup3DClientApp {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  void fetch('/api/health').then(response => response.json()).then(health => {
+    if (health.mode === 'campaign') {
+      const options = document.getElementById('campaign-options')!; options.hidden = false;
+      const role = document.getElementById('campaign-role') as HTMLSelectElement;
+      const guest = document.getElementById('campaign-guest-fields')!;
+      role.onchange = () => { guest.hidden = role.value !== 'guest'; };
+      const note = document.querySelector('#auth-overlay .fine-print');
+      if (note) note.textContent = 'Profiles and campaign saves belong to this server. Use Host to continue your world, or Join with a current session code.';
+      return;
+    }
+    if (health.mode !== 'solo') return;
+    const tag = document.querySelector('.alpha-tag');
+    if (tag) tag.textContent = 'OFFLINE SOLO';
+    const note = document.querySelector('#auth-overlay .auth-layout .fine-print');
+    if (note) note.textContent = 'Local profiles · No internet required · Progress saves on this computer.';
+    setInterval(() => { void fetch('/api/health').catch(() => {}); }, 10000);
+  }).catch(() => {});
   const app = new Crackup3DClientApp();
   app.bootstrap().then(() => {
     const status = document.getElementById('auth-error');
     if (status) status.textContent = 'Ready to deploy. Your agent saves automatically.';
+    const button = document.getElementById('deploy-button') as HTMLButtonElement | null;
+    if (button) button.disabled = false;
   }).catch((err) => {
     console.error('[CRACKUP 3D CLIENT] Bootstrap error:', err);
     const status = document.getElementById('auth-error');

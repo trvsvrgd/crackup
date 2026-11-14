@@ -1,0 +1,46 @@
+{
+  "status": "passed",
+  "checkedAt": "2026-11-13T13:45:33.920Z",
+  "errors": [],
+  "warnings": [],
+  "stressSeconds": 120,
+  "poolLimits": {
+    "tracer": 64,
+    "spark": 384,
+    "wave": 12,
+    "mark": 256
+  },
+  "maxActive": {
+    "tracer": 1,
+    "spark": 373,
+    "wave": 12,
+    "mark": 228
+  },
+  "renderCalls": 3,
+  "renderTriangles": 512,
+  "cleanup": true,
+  "audio": {
+    "status": "passed",
+    "limits": {
+      "oneShots": 16,
+      "orbs": 6,
+      "engines": 4
+    },
+    "hrtfLeft": [
+      0.004905839025613206,
+      0.0028096175323945763
+    ],
+    "hrtfRight": [
+      0.002790143762046597,
+      0.004922759729356855
+    ],
+    "peak": 0.17754782736301422,
+    "voiceBound": true,
+    "priorityProtected": true,
+    "naturalCleanup": true,
+    "muted": true,
+    "disconnect": true,
+    "disposed": true
+  },
+  "hardwareFpsCertified": false
+}

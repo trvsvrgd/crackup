@@ -198,11 +198,12 @@ async function main() {
   // Reprovisioning the public baselines must keep a verified custom Mixamo pack.
   try {
     const previous = JSON.parse(await readFile(path.join(assets, 'manifest.json'), 'utf8'));
-    const custom = previous.files?.find((file) => file.assetId === 'agent_cyber');
-    if (custom && previous.characters?.agent_cyber) {
-      const filename = path.join(assets, 'models/characters/agent_cyber.glb');
-      if ((await hashes(filename)).sha256 !== custom.sha256) throw new Error('Existing custom Mixamo pack fails its SHA-256 check');
-      manifest.characters.agent_cyber = previous.characters.agent_cyber;
+    for (const id of ['agent_cyber', 'capoeira_ybot']) {
+      const custom = previous.files?.find((file) => file.assetId === id);
+      if (!custom || !previous.characters?.[id]) continue;
+      const filename = path.join(assets, `models/characters/${id}.glb`);
+      if ((await hashes(filename)).sha256 !== custom.sha256) throw new Error(`Existing ${id} pack fails its SHA-256 check`);
+      manifest.characters[id] = previous.characters[id];
       manifest.files.push(custom);
     }
   } catch (error) { if (error.code !== 'ENOENT') throw error; }

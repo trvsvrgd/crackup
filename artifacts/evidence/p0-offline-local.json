@@ -1,0 +1,304 @@
+{
+    "schemaVersion":  1,
+    "startedAt":  "2026-11-14T02:19:31.370Z",
+    "finishedAt":  "2026-11-14T02:19:46.168Z",
+    "method":  "Chrome with HTTP cache cleared/disabled and all non-loopback browser HTTP requests aborted. Fresh isolated local-server test profile, normal form entry and keyboard controls. WebSocket destinations observed; operating-system networking was not disabled.",
+    "boot":  {
+                 "measuredAtMs":  314.5,
+                 "navigation":  {
+                                    "name":  "http://127.0.0.1:3218/",
+                                    "entryType":  "navigation",
+                                    "startTime":  0,
+                                    "duration":  123,
+                                    "navigationId":  5168,
+                                    "initiatorType":  "navigation",
+                                    "deliveryType":  "",
+                                    "nextHopProtocol":  "http/1.1",
+                                    "renderBlockingStatus":  "non-blocking",
+                                    "contentType":  "text/html",
+                                    "contentEncoding":  "",
+                                    "workerStart":  0,
+                                    "workerRouterEvaluationStart":  0,
+                                    "workerCacheLookupStart":  0,
+                                    "workerMatchedSourceType":  "",
+                                    "workerFinalSourceType":  "",
+                                    "redirectStart":  0,
+                                    "redirectEnd":  0,
+                                    "fetchStart":  0.5,
+                                    "domainLookupStart":  0.5,
+                                    "domainLookupEnd":  0.5,
+                                    "connectStart":  0.5,
+                                    "secureConnectionStart":  0,
+                                    "connectEnd":  0.5,
+                                    "requestStart":  3.4000000059604645,
+                                    "responseStart":  5.300000011920929,
+                                    "firstInterimResponseStart":  0,
+                                    "finalResponseHeadersStart":  5.300000011920929,
+                                    "responseEnd":  5.800000011920929,
+                                    "transferSize":  13542,
+                                    "encodedBodySize":  13242,
+                                    "decodedBodySize":  13242,
+                                    "responseStatus":  200,
+                                    "serverTiming":  [
+
+                                                     ],
+                                    "unloadEventStart":  14.599999994039536,
+                                    "unloadEventEnd":  14.599999994039536,
+                                    "domInteractive":  34.400000005960464,
+                                    "domContentLoadedEventStart":  112.7000000178814,
+                                    "domContentLoadedEventEnd":  121.2000000178814,
+                                    "domComplete":  122.90000000596046,
+                                    "loadEventStart":  122.90000000596046,
+                                    "loadEventEnd":  123,
+                                    "type":  "navigate",
+                                    "redirectCount":  0,
+                                    "activationStart":  0,
+                                    "criticalCHRestart":  0,
+                                    "notRestoredReasons":  null,
+                                    "confidence":  {
+                                                       "randomizedTriggerRate":  0.4994798,
+                                                       "value":  "low"
+                                                   }
+                                }
+             },
+    "requests":  [
+                     {
+                         "url":  "http://127.0.0.1:3218/",
+                         "type":  "document"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/style.css",
+                         "type":  "stylesheet"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/game.js",
+                         "type":  "script"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/manifest.json",
+                         "type":  "fetch"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/env/bay_dusk.hdr",
+                         "type":  "fetch"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/textures/concrete_layers_02/diffuse.jpg",
+                         "type":  "image"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/textures/concrete_layers_02/roughness.jpg",
+                         "type":  "image"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/textures/concrete_layers_02/normal.png",
+                         "type":  "image"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/textures/asphalt_02/diffuse.jpg",
+                         "type":  "image"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/textures/asphalt_02/roughness.jpg",
+                         "type":  "image"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/textures/asphalt_02/normal.png",
+                         "type":  "image"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/textures/corrugated_iron_02/diffuse.jpg",
+                         "type":  "image"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/textures/corrugated_iron_02/roughness.jpg",
+                         "type":  "image"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/textures/corrugated_iron_02/normal.png",
+                         "type":  "image"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/textures/corrugated_iron_02/metalness.jpg",
+                         "type":  "image"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/textures/carbon_fiber/diffuse.png",
+                         "type":  "image"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/textures/carbon_fiber/roughness.png",
+                         "type":  "image"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/textures/carbon_fiber/normal.png",
+                         "type":  "image"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/models/characters/Soldier.glb",
+                         "type":  "fetch"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/models/characters/Xbot.glb",
+                         "type":  "fetch"
+                     },
+                     {
+                         "url":  "http://127.0.0.1:3218/assets/models/characters/capoeira_ybot.glb",
+                         "type":  "fetch"
+                     }
+                 ],
+    "sockets":  [
+                    "ws://127.0.0.1:3218/ws"
+                ],
+    "blocked":  [
+
+                ],
+    "failures":  [
+
+                 ],
+    "errors":  [
+
+               ],
+    "deployed":  "ACT I / THE SAFETY MANDATE\n\nNEO-VERIDIA\nSkip intro · Esc / Space",
+    "afterInput":  "CRACKUP\nPROTOCOL ECLIPSE\nNeon Docks\nALPHA\nSW 233°\nDISTRICT OPERATION\n01 / 03\nBreak the smuggler grid\n\nSabotage the relay network (1/2). Press H near each relay.\n\n13m · Relay\nREWARD · GRAPPLE OVERDRIVE\n◇\nRELAY · 13m\n×\nHOSTILE\n240 / 240\n\nRMB aim · V melee\n\nWelcome to Neon Docks. Follow the gold diamond to disrupt the relay network.\nP0-OFFLINE\nDROP SHIELD 3s\nVITALS\n230 / 230\nTitan Juggernaut\n0 ORBS\nFIELD BRIEFING\n\nClick the city to look around. Press Esc to open your field kit.\n\nEsc · Full controls and mission briefing\nSPACE\nJump\nCTRL\nDash · 1\nJ\nFuel · 6.0s\nR\nRelic locked\nB\nUpgrades\nESC\nField menu\nDirector Julian Vance // Aegis Directorate\n\nAgents. Neo-Veridia is a city under siege. Voss has poisoned its relays. You are the cure.\n\nContinue\nComms audio on",
+    "runtime":  {
+                    "resources":  [
+                                      {
+                                          "name":  "http://127.0.0.1:3218/style.css",
+                                          "duration":  13.099999994039536,
+                                          "transferSize":  15795,
+                                          "decodedBodySize":  15495
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/game.js",
+                                          "duration":  33.900000005960464,
+                                          "transferSize":  4053408,
+                                          "decodedBodySize":  4053108
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/manifest.json",
+                                          "duration":  6.5,
+                                          "transferSize":  24568,
+                                          "decodedBodySize":  24268
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/env/bay_dusk.hdr",
+                                          "duration":  20.69999998807907,
+                                          "transferSize":  4563504,
+                                          "decodedBodySize":  4563204
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/textures/concrete_layers_02/diffuse.jpg",
+                                          "duration":  20.400000005960464,
+                                          "transferSize":  2555397,
+                                          "decodedBodySize":  2555097
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/textures/concrete_layers_02/roughness.jpg",
+                                          "duration":  12.300000011920929,
+                                          "transferSize":  1920863,
+                                          "decodedBodySize":  1920563
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/textures/concrete_layers_02/normal.png",
+                                          "duration":  85.2000000178814,
+                                          "transferSize":  24800790,
+                                          "decodedBodySize":  24800490
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/textures/asphalt_02/diffuse.jpg",
+                                          "duration":  13.900000005960464,
+                                          "transferSize":  3075976,
+                                          "decodedBodySize":  3075676
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/textures/asphalt_02/roughness.jpg",
+                                          "duration":  8.900000005960464,
+                                          "transferSize":  2230757,
+                                          "decodedBodySize":  2230457
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/textures/asphalt_02/normal.png",
+                                          "duration":  38.900000005960464,
+                                          "transferSize":  9122644,
+                                          "decodedBodySize":  9122344
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/textures/corrugated_iron_02/diffuse.jpg",
+                                          "duration":  9.400000005960464,
+                                          "transferSize":  2325635,
+                                          "decodedBodySize":  2325335
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/textures/corrugated_iron_02/roughness.jpg",
+                                          "duration":  12.600000023841858,
+                                          "transferSize":  3492946,
+                                          "decodedBodySize":  3492646
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/textures/corrugated_iron_02/normal.png",
+                                          "duration":  64.69999998807907,
+                                          "transferSize":  20398259,
+                                          "decodedBodySize":  20397959
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/textures/corrugated_iron_02/metalness.jpg",
+                                          "duration":  5.299999982118607,
+                                          "transferSize":  542330,
+                                          "decodedBodySize":  542030
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/textures/carbon_fiber/diffuse.png",
+                                          "duration":  3,
+                                          "transferSize":  77503,
+                                          "decodedBodySize":  77203
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/textures/carbon_fiber/roughness.png",
+                                          "duration":  4,
+                                          "transferSize":  666596,
+                                          "decodedBodySize":  666296
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/textures/carbon_fiber/normal.png",
+                                          "duration":  14.900000005960464,
+                                          "transferSize":  1384498,
+                                          "decodedBodySize":  1384198
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/models/characters/Soldier.glb",
+                                          "duration":  8.5,
+                                          "transferSize":  1893208,
+                                          "decodedBodySize":  1892908
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/models/characters/Xbot.glb",
+                                          "duration":  9.799999982118607,
+                                          "transferSize":  2880772,
+                                          "decodedBodySize":  2880472
+                                      },
+                                      {
+                                          "name":  "http://127.0.0.1:3218/assets/models/characters/capoeira_ybot.glb",
+                                          "duration":  23.30000001192093,
+                                          "transferSize":  5642628,
+                                          "decodedBodySize":  5642328
+                                      }
+                                  ],
+                    "heap":  {
+                                 "usedJSHeapSize":  147057451,
+                                 "totalJSHeapSize":  195603747
+                             },
+                    "canvas":  [
+                                   {
+                                       "width":  1440,
+                                       "height":  900
+                                   }
+                               ]
+                },
+    "limits":  [
+                   "Developer server was already running and uses a private test database.",
+                   "This is not installed offline qualification, an OS-level internet outage, a complete mission, or a reference-hardware performance result.",
+                   "HTTP response/resource durations are loopback diagnostics, not internet cold-download measurements.",
+                   "No purchase, remote account, or existing player database was used."
+               ]
+}

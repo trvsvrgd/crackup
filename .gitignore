@@ -10,4 +10,9 @@ public/game.js.map
 npm-debug.log*
 .playwright-cli/
 output/playwright/
+output/solo/
+.cache/solo-runtime/
 .cache/prod-assets/
+/asset-inbox/packages/
+/asset-inbox/index.generated.json
+/asset-inbox/index.generated.md

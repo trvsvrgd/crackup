@@ -1,3 +1,4 @@
+import { EffectKind, effectSpec, type EffectSpec } from '../protocol/presentationProtocol.js';
 /** Narrative Act III: Director Vance's Apex Eclipse Dreadnought. */
 import RAPIER from '@dimforge/rapier3d-compat';
 import {
@@ -32,6 +33,9 @@ export { PART_SPECS as DREADNOUGHT_PART_SPECS };
 const TURRET_IDS = [DreadnoughtPartId.FLAK_TURRET_PORT, DreadnoughtPartId.FLAK_TURRET_STARBOARD];
 
 export class ApexDreadnoughtDirector {
+  /** Local campaigns retain their ending; shared raid servers keep the existing respawn loop. */
+  public allowRespawn = true;
+  public onEffect: ((event: EffectSpec) => void) | null = null;
   public phase = DreadnoughtPhase.DORMANT;
   public position: Vec3 = {
     x: DREADNOUGHT_ORBIT_CENTER.x + DREADNOUGHT_ORBIT_RADIUS_M,
@@ -138,11 +142,12 @@ export class ApexDreadnoughtDirector {
     const cp = Math.cos(pitch);
     const ray = new RAPIER.Ray(origin, { x: -Math.sin(yaw) * cp, y: Math.sin(pitch), z: -Math.cos(yaw) * cp });
     // A single nearest-hit query respects cover, other parts, agents and enemy bone sensors.
-    const hit = this.world.castRay(ray, DREADNOUGHT_WEAPON_RANGE_M, true, undefined, undefined, agent.collider);
+    const hit = this.world.castRayAndGetNormal(ray, DREADNOUGHT_WEAPON_RANGE_M, true, undefined, undefined, agent.collider);
     if (!hit) return false;
     const partId = this.colliderParts.get(hit.collider.handle);
     if (partId === undefined) return false;
     this.damagePart(agent, partId, WEAPON_BASE_DAMAGE * agent.buildModifiers.weaponDamageMultiplier);
+    this.onEffect?.(effectSpec(EffectKind.SHOT, { x: origin.x + ray.dir.x * hit.timeOfImpact, y: origin.y + ray.dir.y * hit.timeOfImpact, z: origin.z + ray.dir.z * hit.timeOfImpact }, { origin, normal: hit.normal, flags: 1, actor: agent.entityId }));
     return true;
   }
 
@@ -194,6 +199,7 @@ export class ApexDreadnoughtDirector {
 
   public step(agents: Map<number, AgentPhysicsBody>, dt = FIXED_TIMESTEP, actIIIUnlocked = false): void {
     if (this.phase === DreadnoughtPhase.DEFEATED) {
+      if (!this.allowRespawn) { this.respawnTimerSec = 0; return; }
       this.respawnTimerSec = Math.max(0, this.respawnTimerSec - dt);
       if (this.respawnTimerSec === 0) this.phase = DreadnoughtPhase.DORMANT;
       return;

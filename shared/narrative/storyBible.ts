@@ -23,6 +23,13 @@ export interface DialogueNode {
   id: string; speaker: SpeakerId; text: string; next?: string;
   choices?: { label: string; next: string }[];
 }
+/** Short timed cues share the narrative source with live comms. The opening also uses deployment/mandate verbatim. */
+export const CINEMATIC_LINES: Record<'arrival' | 'lieutenant' | 'kingpin' | 'dreadnought', DialogueNode> = {
+  arrival: { id: 'cinema-arrival', speaker: 'sera', text: 'Squad link stable. Neon Docks is ahead. Follow the relay signal.' },
+  lieutenant: { id: 'cinema-lieutenant', speaker: 'sera', text: 'Lieutenant on the field. Watch for the counter window.' },
+  kingpin: { id: 'cinema-kingpin', speaker: 'sera', text: 'The kingpin holds the core. Break their guard.' },
+  dreadnought: { id: 'cinema-dreadnought', speaker: 'sera', text: 'Break the engines. Expose the core. End the Dreadnought.' },
+};
 export interface StoryContext {
   deployed: boolean; districtIndex: number; vigilanteLevel: number; whisperOrbs: number;
   nonLethalBounties: number; relaySabotage: boolean; citadelLoopStage: number; bossDefeated: boolean;
@@ -92,11 +99,27 @@ export const WHISPER_TRANSCRIPTS = [
   'When the signal clears, leave the channel open. We want to hear the bay again.',
 ] as const;
 
+export interface StoryProgress {
+  completed: string[];
+  active: { beat: string; node: string } | null;
+  choices: { beat: string; node: string; index: number }[];
+}
 /** Serial progression; milestones may arrive early but dialogue never jumps ahead of prerequisites. */
 export class StoryDirector {
   public readonly completed = new Set<string>();
+  public choices: StoryProgress['choices'] = [];
   public beat: StoryBeat | null = null;
   public node: DialogueNode | null = null;
+  public snapshot(): StoryProgress {
+    return { completed: [...this.completed], active: this.beat && this.node ? { beat: this.beat.id, node: this.node.id } : null,
+      choices: this.choices.map(c => ({ ...c })) };
+  }
+  public restore(saved: StoryProgress): void {
+    this.completed.clear(); saved.completed.forEach(id => this.completed.add(id));
+    this.choices = saved.choices.map(c => ({ ...c }));
+    this.beat = STORY_BEATS.find(b => b.id === saved.active?.beat) ?? null;
+    this.node = this.beat?.nodes.find(n => n.id === saved.active?.node) ?? null;
+  }
   public update(context: StoryContext): DialogueNode | null {
     if (this.node) return this.node;
     const currentAct = Math.max(1, ...STORY_BEATS.filter(b => this.completed.has(b.id)).map(b => b.act));
@@ -106,6 +129,11 @@ export class StoryDirector {
   }
   public advance(choice = 0): void {
     if (!this.node || !this.beat) return;
+    if (this.node.choices) {
+      if (!this.node.choices[choice]) return;
+      this.choices = this.choices.filter(c => c.beat !== this.beat!.id || c.node !== this.node!.id);
+      this.choices.push({ beat: this.beat.id, node: this.node.id, index: choice });
+    }
     const next = this.node.choices?.[choice]?.next ?? this.node.next;
     if (next) this.node = this.beat.nodes.find(n => n.id === next) ?? null;
     else { this.completed.add(this.beat.id); this.node = null; this.beat = null; }
