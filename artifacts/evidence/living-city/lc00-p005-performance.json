@@ -1,0 +1,1263 @@
+{
+  "result": "passed",
+  "startedAt": "2026-11-21T01:48:35.010Z",
+  "finishedAt": "2026-11-21T01:48:46.169Z",
+  "builds": {
+    "serverBuild": "server-1eca2c2ffbfe226a",
+    "contentBuild": "content-3278076a2d790a71"
+  },
+  "checks": [
+    "Raw long frames retain lifecycle state; fixed metric/sample caps and privacy validation reject arbitrary labels",
+    "Real 500 ms blocked event loop produces a delayed paused heartbeat/stall; disabled capture writes no client events",
+    "Real save/serialization/resource/traffic metrics, 500 ms server stall and TCP backpressure guard are observable"
+  ],
+  "method": "Isolated actual solo/SQLite/WebSocket; 500 ms busy-loop and paused TCP reads are intentional staging faults, not spontaneous-crash attribution.",
+  "traces": [
+    {
+      "schemaVersion": 1,
+      "sequence": 1,
+      "at": "2026-11-21T01:48:35.630Z",
+      "elapsedMs": 610.05,
+      "component": "server",
+      "name": "performance.stall",
+      "severity": "info",
+      "context": {
+        "runId": "29bc3105-8808-4c20-bde2-f642e8b98f69"
+      },
+      "payload": {
+        "durationMs": 359.91,
+        "state": "paused",
+        "metric": "eventloop.delay"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 2,
+      "at": "2026-11-21T01:48:37.179Z",
+      "elapsedMs": 2158.78,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "29bc3105-8808-4c20-bde2-f642e8b98f69"
+      },
+      "payload": {
+        "durationMs": 359.91,
+        "sampleCount": 7,
+        "retainedSamples": 7,
+        "truncatedSamples": 0,
+        "meanMs": 58.41,
+        "p50Ms": 13.53,
+        "p95Ms": 359.91,
+        "state": "paused",
+        "metric": "eventloop.delay"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3,
+      "at": "2026-11-21T01:48:37.179Z",
+      "elapsedMs": 2158.91,
+      "component": "server",
+      "name": "performance.heartbeat",
+      "severity": "info",
+      "context": {
+        "runId": "29bc3105-8808-4c20-bde2-f642e8b98f69"
+      },
+      "payload": {
+        "durationMs": 2158.58,
+        "state": "paused"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 4,
+      "at": "2026-11-21T01:48:37.845Z",
+      "elapsedMs": 2825.33,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "29bc3105-8808-4c20-bde2-f642e8b98f69"
+      },
+      "payload": {
+        "durationMs": 13.51,
+        "sampleCount": 2,
+        "retainedSamples": 2,
+        "truncatedSamples": 0,
+        "meanMs": 12.89,
+        "p50Ms": 13.51,
+        "p95Ms": 13.51,
+        "state": "paused",
+        "metric": "eventloop.delay"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 2,
+      "at": "2026-11-21T01:48:37.995Z",
+      "elapsedMs": 147.2,
+      "component": "server",
+      "name": "server.ready",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "port": 60108,
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3,
+      "at": "2026-11-21T01:48:38.039Z",
+      "elapsedMs": 191.12,
+      "component": "server",
+      "name": "connection.open",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 4,
+      "at": "2026-11-21T01:48:38.042Z",
+      "elapsedMs": 194.49,
+      "component": "server",
+      "name": "connection.attempt",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 5,
+      "at": "2026-11-21T01:48:38.122Z",
+      "elapsedMs": 274.08,
+      "component": "server",
+      "name": "campaign.loaded",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 0
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 6,
+      "at": "2026-11-21T01:48:38.123Z",
+      "elapsedMs": 275.79,
+      "component": "server",
+      "name": "connection.authenticated",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "isNew": true,
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 7,
+      "at": "2026-11-21T01:48:38.145Z",
+      "elapsedMs": 297.15,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "saveAttemptId": "ab3b6d66-a456-453d-845f-28f52321e694",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 0,
+        "serverTick": 1
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 8,
+      "at": "2026-11-21T01:48:38.146Z",
+      "elapsedMs": 298.4,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "saveAttemptId": "ab3b6d66-a456-453d-845f-28f52321e694",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 1,
+        "durationMs": 1.26
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 9,
+      "at": "2026-11-21T01:48:38.179Z",
+      "elapsedMs": 331.81,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "saveAttemptId": "309c911f-ac34-4e81-b842-d37d144b66a8",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 1,
+        "serverTick": 6
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 10,
+      "at": "2026-11-21T01:48:38.180Z",
+      "elapsedMs": 332.46,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "saveAttemptId": "309c911f-ac34-4e81-b842-d37d144b66a8",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 2,
+        "durationMs": 0.67
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 11,
+      "at": "2026-11-21T01:48:38.249Z",
+      "elapsedMs": 401.7,
+      "component": "server",
+      "name": "performance.lifecycle",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "state": "active"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 12,
+      "at": "2026-11-21T01:48:40.059Z",
+      "elapsedMs": 2211.3,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 19.86,
+        "sampleCount": 120,
+        "retainedSamples": 120,
+        "truncatedSamples": 0,
+        "meanMs": 3.06,
+        "p50Ms": 2.8,
+        "p95Ms": 4.44,
+        "state": "mixed",
+        "metric": "simulation.work"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 13,
+      "at": "2026-11-21T01:48:40.059Z",
+      "elapsedMs": 2211.48,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 0.01,
+        "sampleCount": 2,
+        "retainedSamples": 2,
+        "truncatedSamples": 0,
+        "meanMs": 0.01,
+        "p50Ms": 0.01,
+        "p95Ms": 0.01,
+        "state": "active",
+        "metric": "save.serialize"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 14,
+      "at": "2026-11-21T01:48:40.059Z",
+      "elapsedMs": 2211.53,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 0.87,
+        "sampleCount": 2,
+        "retainedSamples": 2,
+        "truncatedSamples": 0,
+        "meanMs": 0.67,
+        "p50Ms": 0.87,
+        "p95Ms": 0.87,
+        "state": "active",
+        "metric": "save.commit"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 15,
+      "at": "2026-11-21T01:48:40.059Z",
+      "elapsedMs": 2211.58,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 3.62,
+        "sampleCount": 59,
+        "retainedSamples": 59,
+        "truncatedSamples": 0,
+        "meanMs": 0.36,
+        "p50Ms": 0.25,
+        "p95Ms": 0.69,
+        "state": "active",
+        "metric": "network.encode"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 16,
+      "at": "2026-11-21T01:48:40.059Z",
+      "elapsedMs": 2211.62,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 13.86,
+        "sampleCount": 8,
+        "retainedSamples": 8,
+        "truncatedSamples": 0,
+        "meanMs": 7.99,
+        "p50Ms": 10.77,
+        "p95Ms": 13.86,
+        "state": "mixed",
+        "metric": "eventloop.delay"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 17,
+      "at": "2026-11-21T01:48:40.059Z",
+      "elapsedMs": 2211.92,
+      "component": "server",
+      "name": "network.traffic",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 2020.82,
+        "bufferedBytes": 0,
+        "inputQueue": 0,
+        "bytes": 529876,
+        "messages": 616,
+        "state": "active"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 18,
+      "at": "2026-11-21T01:48:40.060Z",
+      "elapsedMs": 2212.1,
+      "component": "server",
+      "name": "performance.resources",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "serverTick": 118,
+        "activeAgents": 1,
+        "bufferedBytes": 0,
+        "inputQueue": 0,
+        "heapBytes": 35071344,
+        "rssBytes": 165928960,
+        "externalBytes": 25471603,
+        "bodies": 2541,
+        "colliders": 3035,
+        "journalQueue": 5,
+        "saveAgeMs": 1881,
+        "state": "active"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 19,
+      "at": "2026-11-21T01:48:40.060Z",
+      "elapsedMs": 2212.21,
+      "component": "server",
+      "name": "performance.heartbeat",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 2063.76,
+        "state": "active"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 20,
+      "at": "2026-11-21T01:48:40.979Z",
+      "elapsedMs": 3131.77,
+      "component": "server",
+      "name": "performance.stall",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 503.94,
+        "catchupDroppedMs": 451.99,
+        "state": "active",
+        "metric": "simulation.interval"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 21,
+      "at": "2026-11-21T01:48:40.988Z",
+      "elapsedMs": 3140.09,
+      "component": "server",
+      "name": "performance.stall",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 417.06,
+        "state": "active",
+        "metric": "eventloop.delay"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 22,
+      "at": "2026-11-21T01:48:42.266Z",
+      "elapsedMs": 4418.9,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 5,
+        "sampleCount": 107,
+        "retainedSamples": 107,
+        "truncatedSamples": 0,
+        "meanMs": 2.72,
+        "p50Ms": 2.62,
+        "p95Ms": 3.93,
+        "state": "active",
+        "metric": "simulation.work"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 23,
+      "at": "2026-11-21T01:48:42.267Z",
+      "elapsedMs": 4419.08,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 0.4,
+        "sampleCount": 53,
+        "retainedSamples": 53,
+        "truncatedSamples": 0,
+        "meanMs": 0.24,
+        "p50Ms": 0.23,
+        "p95Ms": 0.37,
+        "state": "active",
+        "metric": "network.encode"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 24,
+      "at": "2026-11-21T01:48:42.267Z",
+      "elapsedMs": 4419.16,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 417.06,
+        "sampleCount": 7,
+        "retainedSamples": 7,
+        "truncatedSamples": 0,
+        "meanMs": 65.39,
+        "p50Ms": 7.58,
+        "p95Ms": 417.06,
+        "state": "active",
+        "metric": "eventloop.delay"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 25,
+      "at": "2026-11-21T01:48:42.267Z",
+      "elapsedMs": 4419.28,
+      "component": "server",
+      "name": "network.traffic",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 2207.24,
+        "bufferedBytes": 35359,
+        "inputQueue": 0,
+        "bytes": 473038,
+        "messages": 548,
+        "state": "active"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 26,
+      "at": "2026-11-21T01:48:42.267Z",
+      "elapsedMs": 4419.39,
+      "component": "server",
+      "name": "performance.resources",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "serverTick": 225,
+        "activeAgents": 1,
+        "bufferedBytes": 35359,
+        "inputQueue": 0,
+        "heapBytes": 39926128,
+        "rssBytes": 171892736,
+        "externalBytes": 25466205,
+        "bodies": 2541,
+        "colliders": 3035,
+        "journalQueue": 3,
+        "saveAgeMs": 4088,
+        "state": "active"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 27,
+      "at": "2026-11-21T01:48:42.267Z",
+      "elapsedMs": 4419.47,
+      "component": "server",
+      "name": "performance.heartbeat",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 2207.71,
+        "state": "active"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 28,
+      "at": "2026-11-21T01:48:42.996Z",
+      "elapsedMs": 5148.1,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "saveAttemptId": "d203acf1-c778-4c83-84cc-1ed783274f46",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 2,
+        "serverTick": 268
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 29,
+      "at": "2026-11-21T01:48:42.996Z",
+      "elapsedMs": 5148.65,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "saveAttemptId": "d203acf1-c778-4c83-84cc-1ed783274f46",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 3,
+        "durationMs": 0.57
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 30,
+      "at": "2026-11-21T01:48:44.327Z",
+      "elapsedMs": 6479.66,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 0.4,
+        "sampleCount": 62,
+        "retainedSamples": 62,
+        "truncatedSamples": 0,
+        "meanMs": 0.23,
+        "p50Ms": 0.21,
+        "p95Ms": 0.35,
+        "state": "active",
+        "metric": "network.encode"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 31,
+      "at": "2026-11-21T01:48:44.327Z",
+      "elapsedMs": 6479.79,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 4.13,
+        "sampleCount": 123,
+        "retainedSamples": 120,
+        "truncatedSamples": 3,
+        "meanMs": 2.51,
+        "p50Ms": 2.38,
+        "p95Ms": 3.34,
+        "state": "active",
+        "metric": "simulation.work"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 32,
+      "at": "2026-11-21T01:48:44.327Z",
+      "elapsedMs": 6479.84,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 12.23,
+        "sampleCount": 8,
+        "retainedSamples": 8,
+        "truncatedSamples": 0,
+        "meanMs": 7.59,
+        "p50Ms": 9.94,
+        "p95Ms": 12.23,
+        "state": "active",
+        "metric": "eventloop.delay"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 33,
+      "at": "2026-11-21T01:48:44.327Z",
+      "elapsedMs": 6479.9,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 0,
+        "sampleCount": 1,
+        "retainedSamples": 1,
+        "truncatedSamples": 0,
+        "meanMs": 0,
+        "p50Ms": 0,
+        "p95Ms": 0,
+        "state": "active",
+        "metric": "save.serialize"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 34,
+      "at": "2026-11-21T01:48:44.327Z",
+      "elapsedMs": 6479.94,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 0.37,
+        "sampleCount": 1,
+        "retainedSamples": 1,
+        "truncatedSamples": 0,
+        "meanMs": 0.37,
+        "p50Ms": 0.37,
+        "p95Ms": 0.37,
+        "state": "active",
+        "metric": "save.commit"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 35,
+      "at": "2026-11-21T01:48:44.328Z",
+      "elapsedMs": 6480.02,
+      "component": "server",
+      "name": "network.traffic",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 2060.65,
+        "bufferedBytes": 590664,
+        "inputQueue": 0,
+        "bytes": 553109,
+        "messages": 642,
+        "state": "active"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 36,
+      "at": "2026-11-21T01:48:44.328Z",
+      "elapsedMs": 6480.12,
+      "component": "server",
+      "name": "performance.resources",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "serverTick": 348,
+        "activeAgents": 1,
+        "bufferedBytes": 590664,
+        "inputQueue": 0,
+        "heapBytes": 44650208,
+        "rssBytes": 157495296,
+        "externalBytes": 25725653,
+        "bodies": 2541,
+        "colliders": 3035,
+        "journalQueue": 5,
+        "saveAgeMs": 1332,
+        "state": "active"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 37,
+      "at": "2026-11-21T01:48:44.328Z",
+      "elapsedMs": 6480.17,
+      "component": "server",
+      "name": "performance.heartbeat",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 2060.74,
+        "state": "active"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 38,
+      "at": "2026-11-21T01:48:46.119Z",
+      "elapsedMs": 8271.96,
+      "component": "server",
+      "name": "network.pressure",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "serverTick": 456,
+        "closeCode": 4008,
+        "bufferedBytes": 1065567,
+        "inputQueue": 0,
+        "code": "CONNECTION_TOO_SLOW"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 39,
+      "at": "2026-11-21T01:48:46.149Z",
+      "elapsedMs": 8301.41,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "saveAttemptId": "3ec93556-34e3-421e-bc32-9e72d27c0eaa",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 3,
+        "serverTick": 457
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 40,
+      "at": "2026-11-21T01:48:46.150Z",
+      "elapsedMs": 8302.18,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "saveAttemptId": "3ec93556-34e3-421e-bc32-9e72d27c0eaa",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 4,
+        "durationMs": 0.78
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 41,
+      "at": "2026-11-21T01:48:46.150Z",
+      "elapsedMs": 8302.37,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 3.62,
+        "sampleCount": 109,
+        "retainedSamples": 109,
+        "truncatedSamples": 0,
+        "meanMs": 2.36,
+        "p50Ms": 2.28,
+        "p95Ms": 3.2,
+        "state": "active",
+        "metric": "simulation.work"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 42,
+      "at": "2026-11-21T01:48:46.150Z",
+      "elapsedMs": 8302.48,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 0.32,
+        "sampleCount": 54,
+        "retainedSamples": 54,
+        "truncatedSamples": 0,
+        "meanMs": 0.2,
+        "p50Ms": 0.18,
+        "p95Ms": 0.29,
+        "state": "active",
+        "metric": "network.encode"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 43,
+      "at": "2026-11-21T01:48:46.150Z",
+      "elapsedMs": 8302.53,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 11.84,
+        "sampleCount": 7,
+        "retainedSamples": 7,
+        "truncatedSamples": 0,
+        "meanMs": 7.89,
+        "p50Ms": 10.41,
+        "p95Ms": 11.84,
+        "state": "active",
+        "metric": "eventloop.delay"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 44,
+      "at": "2026-11-21T01:48:46.150Z",
+      "elapsedMs": 8302.58,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 0,
+        "sampleCount": 1,
+        "retainedSamples": 1,
+        "truncatedSamples": 0,
+        "meanMs": 0,
+        "p50Ms": 0,
+        "p95Ms": 0,
+        "state": "active",
+        "metric": "save.serialize"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 45,
+      "at": "2026-11-21T01:48:46.150Z",
+      "elapsedMs": 8302.62,
+      "component": "server",
+      "name": "performance.sample",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 0.6,
+        "sampleCount": 1,
+        "retainedSamples": 1,
+        "truncatedSamples": 0,
+        "meanMs": 0.6,
+        "p50Ms": 0.6,
+        "p95Ms": 0.6,
+        "state": "active",
+        "metric": "save.commit"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 46,
+      "at": "2026-11-21T01:48:46.150Z",
+      "elapsedMs": 8302.72,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "saveAttemptId": "35bdbf8d-89f2-4f47-9993-02e47d72c71f",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 4,
+        "serverTick": 457
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 47,
+      "at": "2026-11-21T01:48:46.151Z",
+      "elapsedMs": 8303.08,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "saveAttemptId": "35bdbf8d-89f2-4f47-9993-02e47d72c71f",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 5,
+        "durationMs": 0.38
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 48,
+      "at": "2026-11-21T01:48:46.154Z",
+      "elapsedMs": 8306.12,
+      "component": "server",
+      "name": "connection.closed",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "connectionId": "03524368-26ea-404f-a6a2-e595f1b975c9",
+        "serverRunId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "agentRef": "f52cf9eefb8c428d3e34ad684f64b395",
+        "campaignRef": "ef991aab00797d5a60397844d0a9d829",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "closeCode": 1006,
+        "code": "UNKNOWN"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 49,
+      "at": "2026-11-21T01:48:46.157Z",
+      "elapsedMs": 8309.36,
+      "component": "server",
+      "name": "server.stop",
+      "severity": "info",
+      "context": {
+        "runId": "365d68d2-ef5e-48c8-90e6-e6a341de4211",
+        "serverBuild": "server-1eca2c2ffbfe226a",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+    "payload":  {
+                    "code":  "LAUNCHER_BUILD"
+                },
+    "name":  "launcher.failed",
+    "context":  {
+                    "runId":  "72cf46d9-acc6-40aa-8ac8-498a0b7f35a6"
+                },
+    "severity":  "error",
+    "at":  "2026-11-20T14:00:47.943Z",
+    "suppressedBefore":  0,
+    "elapsedMs":  0,
+    "component":  "launcher",
+    "sequence":  1,
+    "schemaVersion":  1
+}

@@ -1,0 +1,131 @@
+{
+  "completedAt": "2026-11-15T22:59:54.455363Z",
+  "result": "passed",
+  "commands": [
+    {
+      "command": "npm run build",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run verify:lore",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run verify",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run progress:check",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "browser": {
+    "ok": true,
+    "checks": [
+      "Reversed chord swells toward its end",
+      "MEM_001 served",
+      "MEM_001 decodes to 2 seconds of non-silent speech",
+      "MEM_002 served",
+      "MEM_002 decodes to 2 seconds of non-silent speech",
+      "MEM_003 served",
+      "MEM_003 decodes to 2 seconds of non-silent speech",
+      "MEM_004 served",
+      "MEM_004 decodes to 2 seconds of non-silent speech",
+      "MEM_005 served",
+      "MEM_005 decodes to 2 seconds of non-silent speech",
+      "MEM_006 served",
+      "MEM_006 decodes to 2 seconds of non-silent speech",
+      "MEM_007 served",
+      "MEM_007 decodes to 2 seconds of non-silent speech",
+      "MEM_008 served",
+      "MEM_008 decodes to 2 seconds of non-silent speech",
+      "MEM_009 served",
+      "MEM_009 decodes to 2 seconds of non-silent speech",
+      "MEM_010 served",
+      "MEM_010 decodes to 2 seconds of non-silent speech",
+      "MEM_011 served",
+      "MEM_011 decodes to 2 seconds of non-silent speech",
+      "MEM_012 served",
+      "MEM_012 decodes to 2 seconds of non-silent speech",
+      "MEM_013 served",
+      "MEM_013 decodes to 2 seconds of non-silent speech",
+      "MEM_014 served",
+      "MEM_014 decodes to 2 seconds of non-silent speech",
+      "MEM_015 served",
+      "MEM_015 decodes to 2 seconds of non-silent speech",
+      "MEM_016 served",
+      "MEM_016 decodes to 2 seconds of non-silent speech",
+      "MEM_017 served",
+      "MEM_017 decodes to 2 seconds of non-silent speech",
+      "MEM_018 served",
+      "MEM_018 decodes to 2 seconds of non-silent speech",
+      "MEM_019 served",
+      "MEM_019 decodes to 2 seconds of non-silent speech",
+      "MEM_020 served",
+      "MEM_020 decodes to 2 seconds of non-silent speech",
+      "MEM_021 served",
+      "MEM_021 decodes to 2 seconds of non-silent speech",
+      "MEM_022 served",
+      "MEM_022 decodes to 2 seconds of non-silent speech",
+      "MEM_023 served",
+      "MEM_023 decodes to 2 seconds of non-silent speech",
+      "MEM_024 served",
+      "MEM_024 decodes to 2 seconds of non-silent speech",
+      "MEM_025 served",
+      "MEM_025 decodes to 2 seconds of non-silent speech",
+      "MEM_026 served",
+      "MEM_026 decodes to 2 seconds of non-silent speech",
+      "MEM_027 served",
+      "MEM_027 decodes to 2 seconds of non-silent speech",
+      "MEM_028 served",
+      "MEM_028 decodes to 2 seconds of non-silent speech",
+      "MEM_029 served",
+      "MEM_029 decodes to 2 seconds of non-silent speech",
+      "MEM_030 served",
+      "MEM_030 decodes to 2 seconds of non-silent speech",
+      "Collection creates twelve shard bodies",
+      "Renderer holds the frame for at least 40ms",
+      "All ballistic shards expire"
+    ],
+    "firstRenderAfterStopMs": 44.900000011919474,
+    "renderer": {
+      "frame": 2052,
+      "calls": 13,
+      "triangles": 2762,
+      "points": 0,
+      "lines": 0
+    }
+  },
+  "sourceSha256": {
+    "docs/WORLD_BIBLE.md": "1f4ff2234b7ee41892629f232c35344fe727647416b537569bc4558da48e04cd",
+    "shared/content/worldLore.ts": "17e1d8748317bef1f5fde7b9d10fcd3362ae425d3ad913a882c59016a0c3a37c",
+    "shared/content/characterRegistry.ts": "cb4b7be3cfb6b0d9a2f1c30622b6a5b84bf8279e2e5815a68416b9d796577205",
+    "shared/content/campaignGraph.ts": "4ea8c40ac3d944d29b4d8fe55ecb29903d375f5c8d90b8c33eec8cf5c5f60657",
+    "shared/content/storyScript.ts": "848438503a492d4b588c9ec7ea315841972caf9b993f5e286eb52f5d025d7fe9",
+    "shared/content/districtEncounters.ts": "44da50c921e6796e61dc4073d78755b204a67df71c68699786d10407950558b1",
+    "shared/world/resonanceSpire.ts": "cbce188adecbd2907815420cbc3622d38f34666a8820231d8b77c4adf9319d1d",
+    "shared/world/cyberPetArena.ts": "ddd106cd9af668d9bf32a0817bf4c687754d218c936c3bcbf022176dc44c133f",
+    "server/db.ts": "08d361678117f39e87dab6555afe452ca3626e35cab46e4cfd04eeec3728736a",
+    "server/gameServer.ts": "a52d629be215f35fd2ad3702f52ee1d2b1dc49ff63fcf7b977159da5dac20185",
+    "client/entities/resonanceSpire.ts": "86a2ada0fbe0131a7c9a06955b4d1657de0e4a9420022f58d8f5755781ef4132",
+    "client/entities/citizenDoorways.ts": "e7a30b330b5b34dd51b9772857784dc8a7f593dbb1fe2d387b0835043bba2049",
+    "client/audio/spatialGameAudio.ts": "8973bd3e94c0dcbd0b373c2716f0ad65291790a2fef02c31885703c19d51392a",
+    "client/net/netcodeClient.ts": "40ff154e28c531a4a79d5599f9f400ca54d37470939544d7761ef266a5d5bad6",
+    "client/main.ts": "e1eb15b74e6c867297997b6ffaed0c213e5764112316c26f86e469c86ae72f55",
+    "client/playerHUD.ts": "d41d5876fd2c7ff96bd04eb06052506ab678bdcb470fc679b66fe6e96f408f3b",
+    "client/world/cityBuilder.ts": "5d5cf4f3decb8c64231392e6e369d7dc589d01a730418842bd51dff879d6c5a6",
+    "tests/verify-tier1-lore.ts": "58817c8aeaeb412c73530891acafcee7da8433639c5a87f1a4c05b265547e3fb",
+    "tests/verify-tier1-browser.ts": "2aaedb1ac76e6f9176087fad4e246558d7a1608e9a1efc9fb0bcda0f99be35a4",
+    "public/assets/audio/lore/manifest.json": "662521710ba3325ce39796e343274a629b4fab36915c0d7e0794105ecc0c87d1"
+  },
+  "limits": [
+    "24 authored missions and gates are registry data; the existing mission runtime is retained.",
+    "Catastrophe parameters and ruin locations are lore data, not newly built flood simulations or ruin interiors.",
+    "Voice assets are locally synthesized two-second speech, not actor recordings.",
+    "Browser check exercises the production spire/audio components in a diagnostic scene; WebSocket integration is verified separately."
+  ]
+}

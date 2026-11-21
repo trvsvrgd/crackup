@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "durationSec": 0.5836988000000001,
+  "checks": [
+    "All seven curves, every level boundary, finite inputs, dash rounding and conserved 50/50 XP",
+    "42 nodes: 11-point branches, two-point bridges, level/predecessor/duplicate/insufficient-point checks",
+    "28 weapons, four relics, 15 vehicles and four pet field definitions with finite equip validation",
+    "Real weapon executor: 7/18/35-m launches, 30 m/s intercept, 8-m slash, 22 m/s surf and repeat-fire rejection",
+    "Magazine exhaustion requires the full reload interval",
+    "Relic legacy aliases, four-second zero gravity, doubled focus, parry SAM protection and co-op revive",
+    "All four live pet abilities: limb slow, leg pin/tracking, aerial anchor/scan, directional shield and cooldown",
+    "Raven anchor tracks the actual moving pet, survives ordinary inputs and expires cleanly",
+    "Shooting Lv5 refills half a magazine and Crown overkill grants co-op overshield",
+    "All 15 vehicles spawn through cleared-site services with registered masses/HP",
+    "Registered grenades use real moving Rapier bodies and fuse expiry removes their colliders",
+    "Stinger locks and steers toward a moving target; Orbital Painter designates a delayed impact instead of a grenade",
+    "Sky-Crane winch lifts actual cargo, releases on input, rejects over-4000kg loads; destroyed aircraft eject pilots",
+    "Fox phases through a registered vent before unlocking the physical cache door collider",
+    "Normal Q input opens a bounded bullet-deflect window; incoming flak returns damage and damages the player after expiry",
+    "Key-Cipher overrides an actual Dreadnought turret, turns its fire against the ship and expires after 30 seconds",
+    "Zero-Terminal Fall cancels severe landing damage at Lv5; aimed Lv4 shooting consumes two rounds for its dual-limb queue",
+    "Ten distinct traversal poses, finite blending, grounded recovery and moving combat legs",
+    "SQLite retains equipment/skills; versioned legacy XP migration preserves earned levels and is idempotent",
+    "Live WebSocket equip/unlock authority rejects forged levels/points and persists valid equipment"
+  ]
+}

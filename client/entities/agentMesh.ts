@@ -61,7 +61,7 @@ export class ArticulatedAgentRig {
     const speed = Math.hypot(velocity.x, velocity.y, velocity.z);
     for (const o of this.windShearGroup.children as THREE.Mesh[]) (o.material as THREE.MeshBasicMaterial).opacity = speed > 8.5 ? Math.min(0.75, (speed - 8.5) / 14 * (0.35 + agilityLevel * 0.08)) : 0;
     this.windShearGroup.scale.z = 0.6 + (agilityLevel - 1) * 0.3 + Math.min(1.5, speed * 0.06);
-    this.animator.update(dt, { speed: Math.hypot(velocity.x, velocity.z), verticalSpeed: velocity.y, animState: this.actionSec > 0 ? AgentAnimState.MELEE_STRIKE : animState, mantleProgress, combo: this.combo, recoil: this.recoil, ...options, aim: Math.max(options.aim ?? 0, this.shotPoseSec > 0 ? 1 : 0), aimPitch: options.aimPitch ?? this.shotPitch });
+    this.animator.update(dt, { speed: Math.hypot(velocity.x, velocity.z), verticalSpeed: velocity.y, velocityX: velocity.x, velocityZ: velocity.z, agilityLevel, facingYaw: Math.atan2(2 * (rotation.w * rotation.y + rotation.x * rotation.z), 1 - 2 * (rotation.y * rotation.y + rotation.z * rotation.z)), animState: this.actionSec > 0 ? AgentAnimState.MELEE_STRIKE : animState, mantleProgress, combo: this.combo, recoil: this.recoil, ...options, aim: Math.max(options.aim ?? 0, this.shotPoseSec > 0 ? 1 : 0), aimPitch: options.aimPitch ?? this.shotPitch });
   }
   public dispose(): void {
     if (this.disposed) return; this.disposed = true; this.humanoid.dispose();

@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "build": "client-84cc111e494ccc81",
+  "checks": [
+    "Report opens before deployment and typing B keeps it open",
+    "Report contains reproducible client-build identity",
+    "Auth fields are absent from automatic report",
+    "Closing report restores keyboard focus",
+    "Typing B in a live report does not switch field-menu tabs",
+    "Server acknowledges authoritative solo pause",
+    "Diagnostics count the complete rendered frame, including the world",
+    "Downloaded JSON exactly matches the reviewed snapshot",
+    "Escape closes only the report and leaves the paused field menu intact",
+    "Returning to city resumes authoritative solo play",
+    "Actual WebGL context loss exposes recovery and is reportable",
+    "Deployment stays disabled after fatal graphics failure",
+    "Reload restores the deploy screen after context loss",
+    "Unhandled promise rejection is recorded without serializing its payload",
+    "Render-loop exception leaves report and reload controls usable",
+    "Automatic runtime capture excludes injected secret messages",
+    "Startup engine failure remains reportable",
+    "Startup error messages cannot leak credentials into reports",
+    "Startup failure cannot enable deployment"
+  ],
+  "checkedAt": "2026-11-15T20:22:32.110Z",
+  "targetHardwareQualified": false
+}

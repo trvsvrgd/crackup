@@ -1,0 +1,21 @@
+{
+    "processExit":  1,
+    "method":  "Actual root BAT with Node/npm removed from only the child command PATH, stdin closed for pause; isolated SOLO_DATA_DIR",
+    "result":  "passed",
+    "event":  {
+                  "payload":  {
+                                  "code":  "LAUNCHER_PREREQUISITE"
+                              },
+                  "name":  "launcher.failed",
+                  "context":  {
+                                  "runId":  "805ba022-5b19-411d-a2ab-f257c5ed71f1"
+                              },
+                  "severity":  "error",
+                  "at":  "2026-11-20T14:04:00.812Z",
+                  "suppressedBefore":  0,
+                  "elapsedMs":  0,
+                  "component":  "launcher",
+                  "sequence":  1,
+                  "schemaVersion":  1
+              }
+}

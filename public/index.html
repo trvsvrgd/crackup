@@ -38,6 +38,11 @@
         <span class="objective-diamond">◇</span
         ><span id="objective-label">RELAY</span>
       </div>
+      <div id="waypoint-marker" hidden aria-hidden="true"><span class="objective-diamond">◇</span><span id="waypoint-label"></span></div>
+      <section id="waypoint-guidance" hidden aria-label="Waypoint navigation">
+        <span id="waypoint-arrow" aria-hidden="true">↑</span><span id="waypoint-guidance-text"></span>
+        <button type="button" id="waypoint-clear" aria-label="Clear waypoint">×</button>
+      </section>
       <div id="reticle" aria-hidden="true">
         <span></span><b id="hit-marker">×</b>
       </div>
@@ -91,6 +96,7 @@
           ><span id="player-rewind">Relic locked</span>
         </div>
         <div class="menu-hints">
+          <button type="button" class="hud-map-button" data-open-map><kbd>N</kbd> Map</button>
           <span><kbd>B</kbd> Upgrades <b id="upgrade-badge"></b></span
           ><span><kbd>ESC</kbd> Field menu</span>
         </div>
@@ -173,10 +179,12 @@
               Connecting to the city…
             </div>
           </form>
+          <button type="button" class="secondary" data-bug-report>Report a problem</button>
           <p class="fine-print">
-            Desktop keyboard + mouse required. Progress saves automatically.
+            Keyboard + mouse or Xbox controller on Windows. Use the keyboard for callsign and PIN. Progress saves automatically.
             This alpha is still in development.
           </p>
+          <p class="fine-print" data-controller-status role="status">Connect an Xbox controller in Windows, then press a button.</p>
         </div>
       </div>
       <footer class="auth-footer">
@@ -204,6 +212,7 @@
         <p class="online-note" id="session-note">
           The online world keeps running while this menu is open.
         </p>
+        <button type="button" class="secondary" data-bug-report>Report a problem</button>
         <section id="solo-controls" hidden aria-label="Local campaign save">
           <p id="campaign-party" hidden role="status" style="user-select: text" title="Select and copy the session code to share with your party."></p>
           <p id="campaign-policy" hidden></p>
@@ -213,6 +222,7 @@
           <button id="solo-save" class="secondary">Save checkpoint</button>
           <button id="solo-leave" class="secondary">Save &amp; return to profiles</button>
         </section>
+        <button type="button" class="secondary" data-open-map>Open tactical map <kbd>N</kbd></button>
         <p class="fine-print asset-credits">
           <a href="https://polyhaven.com" target="_blank" rel="noopener noreferrer">Powered by Poly Haven</a>
           · Carbon-fiber textures by <a href="https://ambientcg.com/view?id=Fabric004" target="_blank" rel="noopener noreferrer">ambientCG</a>
@@ -255,6 +265,8 @@
               <dl class="controls-list">
                 <dt>Move / sprint</dt>
                 <dd>WASD / Shift</dd>
+                <dt>Tactical map / close</dt>
+                <dd>N / Esc</dd>
                 <dt>Jump / dash / mantle</dt>
                 <dd>Space / Ctrl / M</dd>
                 <dt>Aim / fire / change limb</dt>
@@ -270,9 +282,33 @@
                 <dt>Chrono rewind (relic)</dt>
                 <dd>R</dd>
               </dl>
+              <details class="controller-controls">
+                <summary>Xbox controller controls</summary>
+                <p data-controller-status role="status">Connect an Xbox controller in Windows, then press a button.</p>
+                <dl class="controls-list">
+                  <dt>Move / look / sprint</dt><dd>Left stick / right stick / hold left stick click</dd>
+                  <dt>Aim / fire</dt><dd>LT / RT</dd>
+                  <dt>Jump / dash / interact</dt><dd>A / B / X (hold for jetpack)</dd>
+                  <dt>Reload / melee / counter</dt><dd>Y / right stick click / RB</dd>
+                  <dt>Change limb / pet / upgrades</dt><dd>D-pad left or right / up / down</dd>
+                  <dt>Map / field menu</dt><dd>View / Menu</dd>
+                  <dt>Mantle / rewind</dt><dd>Hold LB + A / B</dd>
+                  <dt>Grab or throw / enter or exit vehicle</dt><dd>Hold LB + X / Y</dd>
+                  <dt>Grapple / jetpack</dt><dd>Hold LB + RT / LT</dd>
+                  <dt>Wingsuit / jet dash</dt><dd>Hold LB + D-pad up / down</dd>
+                  <dt>Threat / weakpoint scan</dt><dd>Hold LB + D-pad left / right</dd>
+                  <dt>Hover aim / airborne focus</dt><dd>Hold LB + left / right stick click</dd>
+                  <dt>Menus</dt><dd>D-pad or left stick to navigate; right stick to scroll; A select; B back. Left/right adjusts sliders and selections.</dd>
+                  <dt>Map</dt><dd>Right stick pans; LB / RB zoom; A on the focused map places a center waypoint.</dd>
+                  <dt>Skip cinematic</dt><dd>A / B / Menu</dd>
+                </dl>
+                <p>Release sticks and buttons after connecting or closing a menu to resume control. Aim + D-pad up commands a pet pounce. Abilities require their usual unlocks.</p>
+              </details>
             </section>
           </div>
           <div class="settings-row">
+            <label>Controller sensitivity <input id="controller-sensitivity" type="range" min="0.25" max="2" step="0.05" value="1" /></label>
+            <label class="checkbox"><input id="controller-invert" type="checkbox" /> Invert controller look Y</label>
             <label class="checkbox"><input id="audio-setting" type="checkbox" checked /> Game sound</label>
             <label class="checkbox"><input id="cinematics-setting" type="checkbox" checked /> Intro cameras</label>
             <label
@@ -301,8 +337,7 @@
             <span id="skill-points">0 upgrade points</span>
           </div>
           <p>
-            Switch chassis freely. Upgrades cost one earned point and unlock in
-            branch order.
+            Swap chassis at cleared safe houses. Seven paths cost 1, 1, 2, 3 and 4 points per tier. Bridges cost 2 points and require both linked attributes at level 3.
           </p>
           <div id="chassis-options" class="chassis-options"></div>
           <div id="skill-options" class="skill-options"></div>
@@ -347,8 +382,83 @@
         <button id="respawn-button" class="primary" disabled>
           Recovery available shortly
         </button>
+        <button type="button" class="secondary" data-bug-report>Report a problem</button>
+        <button type="button" class="secondary" data-open-map>View squad map <kbd>N</kbd></button>
       </div>
     </section>
+    <dialog id="tactical-map" aria-labelledby="map-title" aria-describedby="map-instructions">
+      <header class="map-header">
+        <div><span class="eyebrow">NEO-VERIDIA / FIELD NAVIGATION</span><h2 id="map-title">Tactical map</h2><p id="map-session"></p></div>
+        <button type="button" id="map-close" class="secondary">Return <kbd>N / Esc</kbd></button>
+      </header>
+      <div class="map-toolbar" aria-label="Map controls">
+        <button type="button" id="map-zoom-in" class="secondary" aria-label="Zoom in">+</button>
+        <span id="map-zoom-level" aria-label="Zoom level">1.0×</span>
+        <button type="button" id="map-zoom-out" class="secondary" aria-label="Zoom out">−</button>
+        <button type="button" id="map-recenter" class="secondary">Center on me</button>
+        <button type="button" id="map-city" class="secondary">City overview</button>
+        <button type="button" id="map-world" class="secondary">City &amp; bridges</button>
+      </div>
+      <div class="map-layout">
+        <div class="map-surface"><canvas id="map-canvas" tabindex="0" aria-label="Interactive north-up city map" aria-describedby="map-instructions"></canvas></div>
+        <aside class="map-sidebar" aria-label="Map markers and waypoint">
+          <label for="map-search">Find a marker</label><input id="map-search" type="search" placeholder="Player, district or landmark" maxlength="60" />
+          <fieldset class="map-filters"><legend>Show on map</legend>
+            <label><input type="checkbox" id="map-filter-player" data-map-filter checked /> ▲ Squad</label>
+            <label><input type="checkbox" id="map-filter-objective" data-map-filter checked /> ◆ Objectives</label>
+            <label><input type="checkbox" id="map-filter-event" data-map-filter checked /> ! Events</label>
+            <label><input type="checkbox" id="map-filter-landmark" data-map-filter checked /> ■ Landmarks</label>
+            <label><input type="checkbox" id="map-filter-complete" data-map-filter /> ✓ Completed</label>
+          </fieldset>
+          <div id="map-marker-list" aria-label="Markers"></div><p id="map-empty" hidden>No matching markers.</p>
+          <section class="map-selection" aria-label="Selected destination">
+            <h3 id="map-selection-title">Choose a destination</h3><p id="map-selection-detail"></p><p id="map-selection-position"></p>
+            <button type="button" id="map-track" class="primary" disabled>Track selected marker</button>
+          </section>
+          <section class="map-waypoint" aria-label="Personal waypoint">
+            <p id="map-active-waypoint">No active waypoint</p>
+            <label for="map-waypoint-name">Waypoint name</label><input id="map-waypoint-name" maxlength="48" disabled />
+            <button type="button" id="map-clear" class="secondary" disabled>Clear waypoint</button>
+            <p class="map-fine-print">Personal waypoint · Saved in this browser for this profile and campaign. Guidance is a direct bearing; terrain may require a different route.</p>
+          </section>
+        </aside>
+      </div>
+      <footer class="map-footer"><p id="map-instructions">Click empty space: place waypoint · Click marker: inspect · Drag: pan · Scroll / + −: zoom · Arrow keys: pan · Enter: pin center · Home: recenter · Delete / right-click: clear</p><p id="map-status" role="status" aria-live="polite"></p></footer>
+    </dialog>
+    <aside id="runtime-recovery" role="alert" hidden>
+      <p id="runtime-recovery-message"></p>
+      <button type="button" class="secondary" data-bug-report>Report a problem</button>
+      <button type="button" class="secondary" id="runtime-reload">Reload game</button>
+    </aside>
+    <dialog id="bug-report" aria-labelledby="bug-report-title" aria-describedby="bug-report-help">
+      <h2 id="bug-report-title">Report a problem</h2>
+      <p id="bug-report-help">Describe what happened, what you expected, and how to repeat it. Review the report before downloading. Reports are not sent to the maintainer automatically.</p>
+      <p>Automatic details exclude callsigns, PINs, session codes and saved profiles. Do not include personal information in your notes. Offline solo pauses while this window is open; co-op continues.</p>
+      <label for="bug-report-session">Session to report</label>
+      <select id="bug-report-session"></select>
+      <p id="bug-report-history" role="status" aria-live="polite"></p>
+      <p id="bug-report-completeness" role="status" aria-live="polite"></p>
+      <label for="bug-report-notes">Steps to reproduce</label>
+      <textarea id="bug-report-notes" maxlength="4000" rows="3"></textarea>
+      <label for="bug-report-expected">What did you expect?</label>
+      <textarea id="bug-report-expected" maxlength="2000" rows="2"></textarea>
+      <label for="bug-report-actual">What happened?</label>
+      <textarea id="bug-report-actual" maxlength="2000" rows="2"></textarea>
+      <details id="bug-report-location">
+        <summary>Find local game logs</summary>
+        <p>A browser, including the packaged game's browser window, cannot open this folder directly. Copy the path and paste it into your file manager.</p>
+        <input id="bug-report-folder" readonly aria-label="Local diagnostic folder" value="Local folder unavailable" />
+        <button type="button" id="bug-report-copy-folder" class="secondary" disabled>Copy folder path</button>
+        <p id="bug-report-folder-status" role="status" aria-live="polite"></p>
+      </details>
+      <label for="bug-report-preview">Report preview</label>
+      <textarea id="bug-report-preview" readonly rows="7" spellcheck="false"></textarea>
+      <div class="report-actions">
+        <button type="button" id="bug-report-download" class="primary">Download report</button>
+        <button type="button" id="bug-report-close" class="secondary">Close</button>
+      </div>
+      <p id="bug-report-status" role="status" aria-live="polite"></p>
+    </dialog>
     <script type="module" src="/game.js"></script>
   </body>
 </html>

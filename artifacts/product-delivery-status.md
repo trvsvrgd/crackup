@@ -8,6 +8,8 @@ Source documents: [requirements v3.1](../docs/PRODUCT_REQUIREMENTS_V3.md), [deli
 
 ## Confirmed owner decisions
 
+Latest focused maintenance: [November 15 quality-of-life, animation and hardening checkpoint](quality-hardening-checkpoint.md). Local bug reporting, failure recovery, continuous gait and stale held-input release are verified; this does not accept a product gate.
+
 - Focused premium PC game, dense explorable world, complete offline solo campaign and optional 1–8-player co-op. Working baseline: four districts, 24 campaign missions and 12–18-hour solo campaign.
 - Reference desktop has an RTX 4070 and 16 GB system RAM. It is a reasonable benchmark, not a mandate to maximize hardware use. Exact CPU/SSD/OS remain to be recorded.
 - Solo development with AI assistance and no additional spending. Weekly owner capacity remains unknown; no paid assets, services or specialists are authorized.
@@ -162,3 +164,5 @@ Keep this register synchronized with the requirement IDs, accountable discipline
 | 2026-11-14 | Implemented opt-in owned co-op with private Host/Join UI, atomic party saves, separate guest visits, once-only character technology and host reconnect suspension. Eight campaign scenarios, twelve solo cases, full regression and two-browser UI pass. FR-NET-02 is In progress; no full gate accepted. | [Ownership policy](../docs/CAMPAIGN_COOP_POLICY.md), [checkpoint](product-p1-campaign.md). |
 
 No product requirement or milestone is accepted by these implementation checkpoints.
+
+Tier 3 implementation checkpoint (November 18): [progression, arsenal, vehicles, pets and animation](tier3-progression-checkpoint.md). All five supplied implementation deliverables and regression gates pass; this does not advance product acceptance or release qualification.

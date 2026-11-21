@@ -355,7 +355,7 @@ async function verifyServer(dbPath: string): Promise<void> {
     assert.equal(server.physicsWorld.cyberPetArenaManager.agentReturnPositions.size, 0);
     assert.ok(server.db.getAgent('PHASE6-LIVE')!.position.y < 10, 'Arena spectators must persist their return position');
     const second = await connect();
-    assert.deepEqual(second.auth.record.pet, { species: CyberPetSpecies.GRID_HOUND, name: 'Circuit', derbyWins: 2, clashWins: 3 });
+    assert.deepEqual(second.auth.record.pet, { species: CyberPetSpecies.GRID_HOUND, name: 'Circuit', derbyWins: 2, clashWins: 3, originCitizenId: pet.originCitizenId, formerOccupation: pet.formerOccupation, districtOfOrigin: pet.districtOfOrigin, dormantMemoryTriggerCoords: pet.dormantMemoryTriggerCoords, provenanceDiscovered: pet.provenanceDiscovered });
     assert.equal(server.physicsWorld.cyberPetArenaManager.getPetForOwner(second.auth.entityId)!.name, 'Circuit');
     second.ws.close(); await once(second.ws, 'close');
     await second.waitFor(() => server.getActiveAgentCount() === 0, 'reconnect cleanup');

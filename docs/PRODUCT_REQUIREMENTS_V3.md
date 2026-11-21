@@ -2,6 +2,8 @@
 
 Version: 3.1 working baseline · Updated: November 13, 2026 · Product owner: Travis
 
+**November 19 addendum:** [Reliable return and living-city requirements](PRD_ADDENDUM_RELIABILITY_AND_LIVING_CITY.md) add 12 implementation phases and [72 coding work packages](RELIABILITY_LIVING_CITY_PROMPTS.md). The owner-confirmed total of **1,000 persistent orbs** supersedes this baseline's historical 182-orb quantity; shards and orbs refer to the same pickups. Other baseline obligations and acceptance statuses remain in force. See the [separate execution ledger](../artifacts/reliability-living-city-status.md).
+
 **Product direction confirmed by the owner:** a focused premium PC game with a dense explorable world, a complete offline-capable solo campaign, and optional 1–8-player co-op. Four districts, 24 campaign missions and a 12–18-hour solo campaign are the approved working baseline. A desktop RTX 4070 and 16 GB system RAM are the reference machine, not a reason to maximize hardware consumption. Development is solo with AI assistance, with **no additional spending** authorized. There is no committed release date. See the [owner decision record](PRODUCT_BASELINE_DECISIONS.md).
 
 **Current classification:** a playable technical alpha with substantial implemented systems. Completion of the old engineering phases does not establish a finished campaign, production art, a complete city, or release readiness. Under this document's stricter product milestones, a production-quality vertical slice has not yet been demonstrated.

@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-11-19T20:46:29.161Z",
+  "finishedAt": "2026-11-19T20:46:33.362Z",
+  "result": "baseline_captured",
+  "dataRoot": "output/solo/lc00-storage-Te8RJ5",
+  "observations": [
+    {
+      "id": "S01-occupied-solo-port-different-store",
+      "source": "controlled two-store fixture, real launcher processes",
+      "result": "reproduced",
+      "secondLauncherExit": 0,
+      "secondLauncherReadyEvent": false,
+      "runningStoreRemainsA": true,
+      "reason": "EADDRINUSE reuse validates product/mode only; it does not compare intended save directory or build.",
+      "sourceACampaign": "9fad6a41-2b6d-4ce3-99ae-298270f54b28",
+      "sourceBCampaign": "ce1cc76c-d167-4aad-9200-a4e30984fe96"
+    },
+    {
+      "id": "S02-partial-checkpoint-real-process-restart",
+      "fixture": "one relay completion seeded through real CampaignStore transaction",
+      "result": "retained",
+      "revision": 2,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 1/2",
+      "preservedCampaignId": "9fad6a41-2b6d-4ce3-99ae-298270f54b28"
+    },
+    {
+      "id": "S03-same-callsign-different-data-root",
+      "result": "separate campaign confirmed",
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2",
+      "limitation": "Intentional storage isolation; no current save-picker/discovery workflow explains the other source."
+    },
+    {
+      "id": "S04-unsupported-campaign-reentry",
+      "induced": true,
+      "result": "refused without overwrite",
+      "message": "This solo campaign could not be loaded. The save has been kept unchanged; check the local save folder before retrying.",
+      "launcherLogCreated": false,
+      "serverLoggedLoadFailure": false,
+      "remainingGap": "No detailed durable load-failure event or selectable backup recovery in this flow."
+    },
+    {
+      "id": "S05-corrupt-database-startup",
+      "induced": true,
+      "result": "process exits",
+      "exitCode": 1,
+      "sqliteNotADatabase": true,
+      "launcherLogCreated": false,
+      "reason": "Database/server construction occurs before launcher try/catch; advertised launcher.log is absent for this failure."
+    }
+  ],
+  "limits": [
+    "All source data is synthetic and isolated.",
+    "Partial relay state is a fixture, not normal mission completion.",
+    "Faults are deliberately induced, not proof of the cause of an owner-reported spontaneous crash."
+  ]
+}

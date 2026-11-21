@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { RESONANCE_MEMORY_FRAGMENTS, RESONANCE_SPIRE_RULES } from '../../shared/content/worldLore.js';
+import type { SpireCollectionPresentation } from '../../shared/world/resonanceSpire.js';
 import { OrbType } from "../../shared/constants.js";
 import type {
   Vec3,
@@ -11,6 +13,16 @@ import {
 } from "../../shared/protocol/presentationProtocol.js";
 
 export const AUDIO_LIMITS = { oneShots: 16, orbs: 6, engines: 4 };
+export function createReversedResonanceChord(ctx: BaseAudioContext): AudioBuffer {
+  const duration = 0.6, buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate);
+  const samples = buffer.getChannelData(0);
+  for (let i = 0; i < samples.length; i++) {
+    const t = i / ctx.sampleRate;
+    const chord = RESONANCE_SPIRE_RULES.chordHz.reduce((sum, frequency) => sum + Math.sin(2 * Math.PI * frequency * t), 0) / 3;
+    samples[samples.length - 1 - i] = chord * Math.exp(-t * 8) * Math.min(1, t / 0.008) * 0.45;
+  }
+  return buffer;
+}
 export type AudioCue =
   | "shot"
   | "hit"
@@ -107,6 +119,9 @@ export function createCueBuffer(
   return buffer;
 }
 export class SpatialOrbAudioEngine {
+  private memorySource: AudioBufferSourceNode | null = null;
+  private memoryRequest = 0;
+  private readonly memoryBuffers = new Map<string, Promise<AudioBuffer>>();
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private compressor: DynamicsCompressorNode | null = null;
@@ -320,6 +335,33 @@ export class SpatialOrbAudioEngine {
   public playOrbCollectedChime(_orbType: OrbType): void {
     this.play("orb");
   }
+  public async playResonanceMemory(memory: SpireCollectionPresentation): Promise<void> {
+    const ctx = this.ctx;
+    if (!ctx || !this.master || ctx.state !== 'running' || this.muted || !this.active || this.disposed) return;
+    const request = ++this.memoryRequest;
+    this.memorySource?.stop(); this.memorySource = null;
+    let buffer: AudioBuffer;
+    if (memory.filtered) {
+      buffer = createReversedResonanceChord(ctx);
+    } else {
+      const entry = RESONANCE_MEMORY_FRAGMENTS.find(m => m.id === memory.memoryId);
+      if (!entry) return;
+      let pending = this.memoryBuffers.get(entry.id);
+      if (!pending) {
+        pending = fetch(entry.audioUrl).then(response => {
+          if (!response.ok) throw new Error(`Memory audio ${response.status}`);
+          return response.arrayBuffer();
+        }).then(data => ctx.decodeAudioData(data));
+        this.memoryBuffers.set(entry.id, pending);
+      }
+      try { buffer = await pending; }
+      catch { this.memoryBuffers.delete(entry.id); return; } // Caption remains available even if an asset fails.
+    }
+    if (request !== this.memoryRequest || this.muted || !this.active || this.disposed) return;
+    const source = ctx.createBufferSource(); source.buffer = buffer; source.connect(this.master);
+    source.onended = () => { source.disconnect(); if (this.memorySource === source) this.memorySource = null; };
+    this.memorySource = source; source.start();
+  }
   public setMuted(muted: boolean): void {
     this.muted = muted;
     this.applyGain();
@@ -342,6 +384,8 @@ export class SpatialOrbAudioEngine {
     }
   }
   public stopWorld(): void {
+    this.memoryRequest++;
+    this.memorySource?.stop(); this.memorySource = null;
     this.shots.forEach((v) => this.stop(v));
     for (const v of [...this.orbVoices, ...this.engines]) {
       v.id = -1;

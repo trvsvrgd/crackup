@@ -1,3 +1,4 @@
+import { CHASSIS_REGISTRY, TIER3_SKILL_BY_ID, tier3SkillError } from '../content/skillTreeRegistry.js';
 /**
  * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
  * Phase 4: 5 Augment Chassis Classes, 20-Node Multi-Branch Skill Tree (REQ-BUILDS),
@@ -39,11 +40,12 @@ export function earnedSkillPoints(xp: AgentAttributeXP): number {
 }
 
 export function availableSkillPoints(xp: AgentAttributeXP, unlocked: Iterable<string>): number {
-  const spent = new Set(Array.from(unlocked).filter((id) => SKILL_NODE_BY_ID.has(id))).size;
+  const spent = [...new Set(unlocked)].reduce((sum, id) => sum + (TIER3_SKILL_BY_ID.get(id)?.cost ?? (SKILL_NODE_BY_ID.has(id) ? 1 : 0)), 0);
   return Math.max(0, earnedSkillPoints(xp) - spent);
 }
 
 export function skillUnlockError(id: string, xp: AgentAttributeXP, unlocked: Set<string>): string | null {
+  if (TIER3_SKILL_BY_ID.has(id)) return tier3SkillError(id, xp, unlocked, availableSkillPoints(xp, unlocked));
   const node = SKILL_NODE_BY_ID.get(id);
   if (!node) return 'Unknown upgrade.';
   if (unlocked.has(id)) return 'Upgrade already installed.';
@@ -435,7 +437,7 @@ export function computeAgentBuildModifiers(
     vigilanteAuraMultiplier: 1.0,
     parryWindowBonusMs: 0,
     vehicleTopSpeedMultiplier: 1.0,
-    wallThrusterMinDrivingLevel: 4,
+    wallThrusterMinDrivingLevel: 3,
     siphonHpOnParryOrCripple: 0,
 
     chronoRewindUnlocked: relics.has(PrototypeRelicId.CHRONO_SHIFT_ANCHOR),
@@ -451,28 +453,21 @@ export function computeAgentBuildModifiers(
     vigilanteTriageRegenHpPerSec: 0.0,
   };
 
+  for (const id of skills) {
+    const node = TIER3_SKILL_BY_ID.get(id);
+    if (!node) continue;
+    for (const [key, value] of Object.entries(node.modifiers)) {
+      const target = mods as unknown as Record<string, number | boolean>;
+      if (typeof target[key] === 'number') target[key] = (target[key] as number) + value;
+    }
+  }
+  mods.chronoRewindUnlocked ||= relics.has('RELIC_01');
   // 1. Apply Augment Chassis baseline passive
-  switch (chassis) {
-    case AugmentChassisId.TITAN_JUGGERNAUT:
-      mods.maxHpMultiplier += 0.15;
-      mods.throwMassBonusMultiplier += 0.2;
-      break;
-    case AugmentChassisId.PHANTOM_SHARPSHOOTER:
-      mods.spreadConeMultiplier *= 0.85;
-      mods.lockOnRangeBonusM += 10.0;
-      break;
-    case AugmentChassisId.AERO_VALKYRIE:
-      mods.grappleRangeBonusM += 10.0;
-      mods.airDashSpeedMultiplier += 0.1;
-      break;
-    case AugmentChassisId.DEMOLITION_SAVANT:
-      mods.blastRadiusMultiplier += 0.15;
-      mods.blastImpulseMultiplier += 0.15;
-      break;
-    case AugmentChassisId.PACK_VANGUARD:
-      mods.vehicleTopSpeedMultiplier += 0.1;
-      mods.parryWindowBonusMs += 60;
-      break;
+  const chassisSpec = CHASSIS_REGISTRY.find(spec => spec.legacyId === chassis);
+  for (const [key, value] of Object.entries(chassisSpec?.modifiers ?? {})) {
+    const target = mods as unknown as Record<string, number>;
+    if (key === 'spreadConeMultiplier') target[key] *= 1 + value;
+    else target[key] += value;
   }
 
   // 2. Apply unlocked Skill Tree Nodes (20 nodes across 5 branches)

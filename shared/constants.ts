@@ -1,3 +1,4 @@
+import { attributeParams, PROGRESSION_XP_THRESHOLDS } from './content/progressionRegistry.js';
 /**
  * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
  * Shared Deterministic Constants, 4-District Bounds, Orb Specs & 7-Attribute Curves
@@ -35,7 +36,7 @@ export const TOTAL_WHISPER_ORBS = 12;
 export const TOTAL_ORBS = TOTAL_AGILITY_ORBS + TOTAL_RENEGADE_ORBS + TOTAL_WHISPER_ORBS; // 182 Orbs
 export const RENEGADE_FLEE_RADIUS_M = 18.0; // 18m trigger radius for 3D flee steering
 export const RENEGADE_MAX_SPEED_MPS = 14.5; // m/s along rooftop waypoint graph
-export const ORB_COLLECT_RADIUS_M = 1.85; // 3D center-to-core collection distance in meters
+export const ORB_COLLECT_RADIUS_M = 3.0; // Resonance Spire: capsule-center collection distance
 
 export enum OrbType {
   AGILITY = 0,
@@ -428,7 +429,7 @@ export const DEFAULT_TELEMETRY: AgentTelemetry = {
 };
 
 // XP thresholds for Attribute Levels 1..5
-export const ATTRIBUTE_XP_THRESHOLDS = [0, 100, 250, 500, 900] as const;
+export const ATTRIBUTE_XP_THRESHOLDS = PROGRESSION_XP_THRESHOLDS;
 
 export function computeAttributeLevelFromXP(xp: number): number {
   if (!Number.isFinite(xp) || xp < ATTRIBUTE_XP_THRESHOLDS[1]) return 1;
@@ -443,25 +444,26 @@ export function computeAttributeLevelFromXP(xp: number): number {
  */
 export function clampAttributeLevel(level: number): number {
   if (!Number.isFinite(level)) return 1;
-  return Math.max(1, Math.min(5, level));
+  return Math.max(1, Math.min(5, Math.floor(level)));
 }
 
 export function getAgilityParams(agilityLevel: number) {
   const lv = clampAttributeLevel(agilityLevel);
   const t = (lv - 1) / 4; // 0.0 at Lv 1 -> 1.0 at Lv 5
-  const runSpeed = 8.0 + t * (16.5 - 8.0); // 8.0 m/s -> 16.5 m/s
+  const runSpeed = attributeParams('agility', lv).runSpeed; // 8.0 m/s -> 16.5 m/s
   const sprintMultiplier = 1.28;
-  const jumpApexMeters = 3.2 + t * (14.5 - 3.2); // 3.2m -> 14.5m
+  const jumpApexMeters = attributeParams('agility', lv).jumpApexMeters; // 3.2m -> 14.5m
   // Dynamically scale gravity multiplier during ascent (PRD 4.1.1)
   const ascentGravityMultiplier = 1.0 - t * 0.32; // 1.0 -> 0.68
   const effectiveAscentGravity = Math.abs(WORLD_GRAVITY.y) * ascentGravityMultiplier;
   // v0 = sqrt(2 * g_eff * h_apex) so jump apex in meters matches PRD specification
   const jumpImpulseVelocity = Math.sqrt(2 * effectiveAscentGravity * jumpApexMeters);
-  const maxAirDashes = Math.round(1 + t * 2); // 1 -> 3
-  const ledgeGrabReach = 0.8 + t * (1.8 - 0.8); // 0.8m -> 1.8m
+  const maxAirDashes = attributeParams('agility', lv).maxAirDashes; // 1 -> 3
+  const ledgeGrabReach = attributeParams('agility', lv).ledgeGrabReach; // 0.8m -> 1.8m
 
   return {
     level: lv,
+    ...attributeParams('agility', lv),
     runSpeed,
     sprintSpeed: runSpeed * sprintMultiplier,
     jumpApexMeters,
@@ -477,9 +479,7 @@ export function getStrengthParams(strengthLevel: number) {
   const t = (lv - 1) / 4;
   return {
     level: lv,
-    meleeBaseDamage: 35 + t * (140 - 35), // 35 -> 140 dmg
-    maxHp: Math.round(200 + t * (600 - 200)), // 200 -> 600 HP
-    throwMassLimitKg: 150 + t * (4000 - 150), // 150 kg -> 4000 kg
+    ...attributeParams('strength', lv),
   };
 }
 
@@ -488,12 +488,11 @@ export function getDrivingParams(drivingLevel: number) {
   const t = (lv - 1) / 4;
   return {
     level: lv,
-    topSpeedMps: 28.0 + t * (55.0 - 28.0), // 28 m/s -> 55 m/s
-    chassisMassKg: 1400 + t * (3200 - 1400), // 1400 kg -> 3200 kg
+    ...attributeParams('driving', lv),
     springStiffness: 42.0 + t * (78.0 - 42.0), // Suspension spring stiffness (N/m normalized)
     damping: 6.5 + t * (12.5 - 6.5), // Suspension velocity damping
     lateralTireFriction: 8.5 + t * (18.0 - 8.5), // Lateral grip / anti-drift coefficient
-    unlockWallThrusterHop: lv >= 4,
+    unlockWallThrusterHop: lv >= 3,
   };
 }
 
@@ -502,8 +501,7 @@ export function getShootingParams(shootingLevel: number) {
   const t = (lv - 1) / 4;
   return {
     level: lv,
-    spreadConeDeg: 4.2 - t * (4.2 - 0.4), // 4.2 deg -> 0.4 deg
-    lockOnRangeMeters: 40.0 + t * (110.0 - 40.0), // 40m -> 110m
+    ...attributeParams('shooting', lv),
   };
 }
 
@@ -512,8 +510,7 @@ export function getExplosivesParams(explosivesLevel: number) {
   const t = (lv - 1) / 4;
   return {
     level: lv,
-    blastRadiusMeters: 4.5 + t * (12.0 - 4.5), // 4.5m -> 12.0m
-    impulseNs: 18.0 + t * (65.0 - 18.0), // 18 N*s -> 65 N*s
+    ...attributeParams('explosives', lv),
   };
 }
 
@@ -522,8 +519,7 @@ export function getFlyingParams(flyingLevel: number) {
   const t = (lv - 1) / 4;
   return {
     level: lv,
-    jetpackFuelSeconds: 3.0 + t * (12.0 - 3.0), // 3.0s -> 12.0s
-    maxUpwardAccelMps2: 12.0 + t * (28.0 - 12.0), // 12 m/s^2 -> 28 m/s^2
+    ...attributeParams('flying', lv),
     diveBombRadiusMeters: 15.0,
   };
 }
@@ -533,8 +529,7 @@ export function getVigilanteParams(vigilanteLevel: number) {
   const t = (lv - 1) / 4;
   return {
     level: lv,
-    auraRadiusMeters: 15.0 + t * (45.0 - 15.0), // 15m -> 45m
-    counterWindowMs: 220 + t * (420 - 220), // 220ms -> 420ms
+    ...attributeParams('vigilante', lv),
   };
 }
 

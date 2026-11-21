@@ -1,0 +1,101 @@
+{
+  "result": "passed",
+  "checkedAt": "2026-11-20T14:10:49.406Z",
+  "method": "Actual BAT-launched solo process stopped after browser closure/zero Agents, then restarted against the same isolated root.",
+  "clientBuild": "client-89684873d268013c",
+  "currentRuntime": {
+    "serverRunId": "67f5af60-7e4c-472b-bd89-45f272c123a1",
+    "serverBuild": "server-59e9091e77228abe",
+    "contentBuild": "content-3278076a2d790a71",
+    "journal": {
+      "runId": "67f5af60-7e4c-472b-bd89-45f272c123a1",
+      "queued": 0,
+      "queueBytes": 0,
+      "dropped": 0,
+      "writeFailures": 0,
+      "lastError": "",
+      "lastPersisted": {
+        "runId": "3c01a145-aac1-46cd-8f55-caede040bf95",
+        "component": "client",
+        "sequence": 24,
+        "at": "2026-11-20T14:10:45.660Z"
+      },
+      "available": true,
+      "closed": false
+    }
+  },
+  "previousSummaries": [
+    {
+      "schemaVersion": 1,
+      "runId": "45d259ec-ca2d-4c5f-8784-e3e154dbd451",
+      "startedAt": "2026-11-20T14:02:10.112Z",
+      "updatedAt": "2026-11-20T14:02:10.299Z",
+      "clean": false,
+      "possibleMissingTail": true,
+      "lastPersisted": {
+        "runId": "45d259ec-ca2d-4c5f-8784-e3e154dbd451",
+        "component": "launcher",
+        "sequence": 2,
+        "at": "2026-11-20T14:02:10.250Z"
+      },
+      "dropped": 0,
+      "writeFailures": 0
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "67f5af60-7e4c-472b-bd89-45f272c123a1",
+      "startedAt": "2026-11-20T14:09:05.351Z",
+      "updatedAt": "2026-11-20T14:10:46.209Z",
+      "clean": false,
+      "possibleMissingTail": true,
+      "lastPersisted": {
+        "runId": "3c01a145-aac1-46cd-8f55-caede040bf95",
+        "component": "client",
+        "sequence": 24,
+        "at": "2026-11-20T14:10:45.660Z"
+      },
+      "dropped": 0,
+      "writeFailures": 0
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "b1dbcb4e-fd5a-4221-a90f-eaae5bf114e9",
+      "startedAt": "2026-11-20T14:07:18.912Z",
+      "updatedAt": "2026-11-20T14:08:18.925Z",
+      "clean": false,
+      "possibleMissingTail": true,
+      "lastPersisted": {
+        "runId": "b1dbcb4e-fd5a-4221-a90f-eaae5bf114e9",
+        "component": "launcher",
+        "sequence": 2,
+        "at": "2026-11-20T14:07:19.048Z"
+      },
+      "dropped": 0,
+      "writeFailures": 0
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "b6a27ecd-99c7-4d3d-bf73-4b88846b696e",
+      "startedAt": "2026-11-20T13:55:44.871Z",
+      "updatedAt": "2026-11-20T14:02:01.283Z",
+      "clean": false,
+      "possibleMissingTail": true,
+      "lastPersisted": {
+        "runId": "b6a27ecd-99c7-4d3d-bf73-4b88846b696e",
+        "component": "server",
+        "sequence": 132,
+        "at": "2026-11-20T14:02:01.166Z"
+      },
+      "dropped": 0,
+      "writeFailures": 0
+    }
+  ],
+  "persistedEvents": 283,
+  "sourceDirectory": "output/solo/lc00-p003-browser/logs",
+  "assertions": [
+    "Previous process events and unclean marker retained",
+    "New runtime writes to same configured root",
+    "Real browser pre-authentication error history uploaded after local authentication",
+    "Sanitized files exclude profile, PIN, message, host and filesystem path sentinels"
+  ]
+}

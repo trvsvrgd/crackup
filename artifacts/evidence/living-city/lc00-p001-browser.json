@@ -1,0 +1,1396 @@
+{
+  "startedAt": "2026-11-19T20:42:01.943Z",
+  "endedAt": "2026-11-19T20:42:24.918Z",
+  "method": "Headed Chromium via normal DOM controls/keyboard; read-only timing/socket observation. No teleport/progression fixture.",
+  "scenarios": [
+    {
+      "id": "B01-fresh-deploy",
+      "outcome": "observed",
+      "elapsedMs": 4401,
+      "authenticated": {
+        "at": 1795120922690,
+        "mode": "solo",
+        "entityId": 1,
+        "collected": 0
+      },
+      "save": {
+        "at": 1795120926409,
+        "revision": 4,
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1795120922720,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+      }
+    },
+    {
+      "id": "B02-input-and-frames",
+      "outcome": "observed",
+      "elapsedMs": 7876,
+      "frames": [
+        {
+          "ms": -17.9,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 66.7,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 66.7,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 50,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 50,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 49.9,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 49.9,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.5,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 50.1,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.5,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.5,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 50,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.7,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.2,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.5,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.2,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.7,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.7,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.8,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.7,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.5,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.2,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.5,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.7,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.6,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.2,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.7,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.6,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.5,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.2,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 17.1,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 32.9,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.7,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.5,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.2,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.8,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.7,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.5,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.6,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.5,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.2,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.8,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.2,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.7,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.7,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.6,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.4,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 33.3,
+          "hidden": false,
+          "focused": true
+        },
+        {
+          "ms": 16.7,
+          "hidden": false,
+          "focused": true
+        }
+      ],
+      "focused": true,
+      "recoveryVisible": false
+    },
+    {
+      "id": "B03-manual-save",
+      "outcome": "observed",
+      "elapsedMs": 1257,
+      "before": 12,
+      "after": {
+        "at": 1795120935944,
+        "revision": 13,
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1795120935892,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+      },
+      "text": "Saved 2:42:15 PM \u00b7 Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "id": "B04-save-leave",
+      "outcome": "observed",
+      "elapsedMs": 421,
+      "deployDisabled": true,
+      "status": "Connecting to the city\u2026",
+      "saved": {
+        "at": 1795120936985,
+        "revision": 16,
+        "paused": true,
+        "saveError": false,
+        "savedAt": 1795120936932,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+      }
+    },
+    {
+      "id": "B05-wrong-pin",
+      "outcome": "observed",
+      "elapsedMs": 2630,
+      "status": "Invalid Security PIN for this Agent Callsign.",
+      "retryEnabled": true
+    },
+    {
+      "id": "B06-same-page-reentry",
+      "outcome": "observed",
+      "elapsedMs": 500,
+      "authenticated": {
+        "at": 1795120939993,
+        "mode": "solo",
+        "entityId": 2,
+        "collected": 0,
+        "hp": 230
+      },
+      "saved": {
+        "at": 1795120940213,
+        "revision": 17,
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1795120939997,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+      }
+    },
+    {
+      "id": "B07-reload-reentry",
+      "outcome": "observed",
+      "elapsedMs": 2761,
+      "authenticated": {
+        "at": 1795120942612,
+        "mode": "solo",
+        "entityId": 3,
+        "collected": 0,
+        "hp": 230
+      },
+      "saved": {
+        "at": 1795120942923,
+        "revision": 20,
+        "paused": false,
+        "saveError": false,
+        "savedAt": 1795120942608,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+      }
+    },
+    {
+      "id": "B08-paused-report",
+      "outcome": "observed",
+      "elapsedMs": 1934,
+      "report": {
+        "schemaVersion": 1,
+        "product": "CRACKUP",
+        "build": "client-dd1c4731be6fb880",
+        "createdAt": "2026-11-19T20:42:23.536Z",
+        "notes": "",
+        "session": {
+          "mode": "solo",
+          "connected": true,
+          "paused": true,
+          "saveError": false,
+          "saveRevision": 21,
+          "serverTick": 32,
+          "district": "NEON_DOCKS",
+          "position": {
+            "x": -14,
+            "y": 0,
+            "z": 13
+          }
+        },
+        "rendering": {
+          "drawCalls": 4181,
+          "triangles": 585596,
+          "frameSamples": 49,
+          "medianFrameMs": 16.7,
+          "p95FrameMs": 300.2
+        },
+        "events": []
+      },
+      "fieldMenuStillVisible": true
+    }
+  ],
+  "states": [
+    {
+      "at": 1795120924607,
+      "revision": 0,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120922605,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120924607,
+      "revision": 1,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120922685,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120926406,
+      "revision": 2,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120922700,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120926406,
+      "revision": 2,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120922700,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120926406,
+      "revision": 3,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120922702,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120926409,
+      "revision": 4,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120922720,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120927967,
+      "revision": 5,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120926677,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120928056,
+      "revision": 6,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120927661,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120928057,
+      "revision": 7,
+      "paused": true,
+      "saveError": false,
+      "savedAt": 1795120927790,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120928057,
+      "revision": 7,
+      "paused": true,
+      "saveError": false,
+      "savedAt": 1795120927790,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120928301,
+      "revision": 8,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120928269,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120928334,
+      "revision": 8,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120928269,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120928937,
+      "revision": 9,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120928863,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120931733,
+      "revision": 10,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120931677,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120934227,
+      "revision": 11,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120934170,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120935571,
+      "revision": 12,
+      "paused": true,
+      "saveError": false,
+      "savedAt": 1795120935477,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120935571,
+      "revision": 12,
+      "paused": true,
+      "saveError": false,
+      "savedAt": 1795120935477,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120935919,
+      "revision": 13,
+      "paused": true,
+      "saveError": false,
+      "savedAt": 1795120935892,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120935944,
+      "revision": 13,
+      "paused": true,
+      "saveError": false,
+      "savedAt": 1795120935892,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120936697,
+      "revision": 14,
+      "paused": true,
+      "saveError": false,
+      "savedAt": 1795120936684,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120936958,
+      "revision": 15,
+      "paused": true,
+      "saveError": false,
+      "savedAt": 1795120936932,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120936985,
+      "revision": 15,
+      "paused": true,
+      "saveError": false,
+      "savedAt": 1795120936932,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120936985,
+      "revision": 16,
+      "paused": true,
+      "saveError": false,
+      "savedAt": 1795120936932,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120940210,
+      "revision": 16,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120936932,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120940213,
+      "revision": 17,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120939997,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120940213,
+      "revision": 17,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120939997,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120942613,
+      "revision": 19,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120940456,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120942923,
+      "revision": 20,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120942608,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120942923,
+      "revision": 20,
+      "paused": false,
+      "saveError": false,
+      "savedAt": 1795120942608,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120943175,
+      "revision": 21,
+      "paused": true,
+      "saveError": false,
+      "savedAt": 1795120943066,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    },
+    {
+      "at": 1795120943175,
+      "revision": 21,
+      "paused": true,
+      "saveError": false,
+      "savedAt": 1795120943066,
+      "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+    }
+  ],
+  "auth": [
+    {
+      "at": 1795120922690,
+      "mode": "solo",
+      "entityId": 1,
+      "collected": 0
+    },
+    {
+      "at": 1795120939993,
+      "mode": "solo",
+      "entityId": 2,
+      "collected": 0,
+      "hp": 230
+    },
+    {
+      "at": 1795120942612,
+      "mode": "solo",
+      "entityId": 3,
+      "collected": 0,
+      "hp": 230
+    }
+  ],
+  "errors": [],
+  "status": "Connecting\u2026"
+}

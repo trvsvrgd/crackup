@@ -1,3 +1,6 @@
+import { Tier4WorldSystem } from '../world/tier4World.js';
+import { buildTier4Structures } from '../content/tier4WorldGeometry.js';
+import { Tier3System, createTier3State, type Tier3State } from '../progression/tier3System.js';
 import { PresentationEventBus } from '../combat/presentationEvents.js';
 import { buildBayBridgeColliders } from '../world/bayVista.js';
 /**
@@ -47,6 +50,7 @@ import {
   INPUT_FLAG_MELEE,
   INPUT_FLAG_OBJECTIVE_JETPACK,
   INPUT_FLAG_PARRY,
+  INPUT_FLAG_AIM,
   INPUT_FLAG_RELIC_REWIND,
   INPUT_FLAG_SPRINT,
   INPUT_FLAG_VEHICLE_INTERACT,
@@ -79,6 +83,8 @@ import { buildSkyboxPetArenaStructures, CyberPetArenaManager, type Phase6EventNo
 import { ApexDreadnoughtDirector } from '../world/dreadnoughtBoss.js';
 import { getRelayPlans } from '../world/relayDefinition.js';
 import { RelaySystem } from '../world/relaySystem.js';
+import { Tier2WorldSystem } from '../world/tier2World.js';
+import { buildTier2Structures } from '../content/worldSystemsRegistry.js';
 
 let rapierInitialized = false;
 let rapierInitPromise: Promise<void> | null = null;
@@ -121,6 +127,7 @@ export function eulerToQuat(rx: number, ry: number, rz: number): Quat4 {
 }
 
 export interface AgentPhysicsBody {
+  tier3: Tier3State;
   entityId: number;
   callsign: string;
   rigidBody: RAPIER.RigidBody;
@@ -208,6 +215,9 @@ export class SharedPhysicsWorld {
   public readonly vehiclePropManager: VehicleAndPropManager;
   public readonly phase5Director: Phase5WorldDirector;
   public readonly relaySystem: RelaySystem;
+  public readonly tier2: Tier2WorldSystem;
+  public readonly tier3: Tier3System;
+  public readonly tier4: Tier4WorldSystem;
   public readonly cyberPetArenaManager: CyberPetArenaManager;
   public readonly dreadnoughtDirector: ApexDreadnoughtDirector;
   public readonly pendingPhase6Events: Phase6EventNotification[] = [];
@@ -221,7 +231,7 @@ export class SharedPhysicsWorld {
     }
     this.world = new RAPIER.World(WORLD_GRAVITY);
     this.world.timestep = FIXED_TIMESTEP;
-    this.structures = [...buildNeoVeridiaSector01(), ...buildSkyboxPetArenaStructures(), ...buildBayBridgeColliders()];
+    this.structures = [...buildNeoVeridiaSector01(), ...buildSkyboxPetArenaStructures(), ...buildBayBridgeColliders(), ...buildTier2Structures(), ...buildTier4Structures()];
     this.buildStaticCityColliders();
     this.combatManager = new EnemyCombatManager(this.world);
     this.combatManager.onEffect = e => this.effects.emit(e);
@@ -235,6 +245,7 @@ export class SharedPhysicsWorld {
       return !!loop && (plan.terminalIndex === 0 ? loop.terminal1Hacked : loop.terminal2Hacked);
     });
     this.vehiclePropManager.extraExplosionHandlers.push((agent, origin, scale) => this.relaySystem.applyBlast(agent, origin, scale));
+    this.tier2 = new Tier2WorldSystem(this.world, this.combatManager, this.vehiclePropManager);
     this.cyberPetArenaManager = new CyberPetArenaManager(this.world, this.pendingPhase6Events, (agent, pos) => {
       agent.position = { ...pos };
       agent.velocity = { x: 0, y: 0, z: 0 };
@@ -253,6 +264,9 @@ export class SharedPhysicsWorld {
       }
     });
     this.dreadnoughtDirector.onEffect = e => this.effects.emit(e);
+    this.tier3 = new Tier3System(this);
+    this.tier4 = new Tier4WorldSystem(this);
+    this.combatManager.afterLimbDamage = (agent, event, overkill) => { this.tier3.afterHit(agent, event, overkill); };
     this.world.step();
   }
 
@@ -273,6 +287,7 @@ export class SharedPhysicsWorld {
         s.halfExtents.y,
         s.halfExtents.z
       ).setFriction(0.8);
+      if (s.isSensorOnly) colliderDesc.setSensor(true);
       this.world.createCollider(colliderDesc, body);
     }
   }
@@ -346,6 +361,7 @@ export class SharedPhysicsWorld {
       controller,
       position: { x: spawnPos.x, y: spawnPos.y, z: spawnPos.z },
       rotation: { ...spawnQuat },
+      tier3: createTier3State(),
       velocity: { x: 0, y: 0, z: 0 },
       facingYaw: 0,
       grounded: true,
@@ -471,7 +487,7 @@ export class SharedPhysicsWorld {
     agent.velocity = { ...rewindFrame.velocity };
     agent.rotation = { ...rewindFrame.rotation };
     agent.facingYaw = rewindFrame.facingYaw;
-    agent.hp = Math.max(agent.hp, rewindFrame.hp);
+    agent.hp = Math.min(agent.maxHp, rewindFrame.hp);
     agent.mantling = false;
     agent.grappleActive = false;
     agent.animState = AgentAnimState.CHRONO_REWIND;
@@ -483,6 +499,9 @@ export class SharedPhysicsWorld {
   }
 
   public removeAgent(entityId: number): void {
+    this.tier3.releaseAgent(entityId);
+    this.tier4.releaseAgent(entityId);
+    this.tier2.releaseAgent(entityId);
     this.combatManager.releaseAgent(entityId);
     this.vehiclePropManager.releaseAgent(entityId);
     const agent = this.agents.get(entityId);
@@ -676,7 +695,7 @@ export class SharedPhysicsWorld {
       (input.buttons & INPUT_FLAG_VEHICLE_INTERACT) !== 0 &&
       (agent.prevButtons & INPUT_FLAG_VEHICLE_INTERACT) === 0;
     if (vehicleInteractJustPressed) {
-      this.vehiclePropManager.toggleVehicleMount(agent);
+      if (!this.tier2.airspace.toggleMount(agent)) this.vehiclePropManager.toggleVehicleMount(agent);
     }
 
     // Check H Key: District Operational Loop Terminal / Core Override / Co-op Revive Interaction
@@ -684,11 +703,12 @@ export class SharedPhysicsWorld {
     const objectiveJustPressed =
       objectiveJetpackHeld && (agent.prevButtons & INPUT_FLAG_OBJECTIVE_JETPACK) === 0;
     if (objectiveJustPressed) {
-      this.phase5Director.tryInteractObjectiveOrRevive(agent, this.agents);
+      if (!this.tier4.interact(agent) && !this.tier2.interact(agent)) this.phase5Director.tryInteractObjectiveOrRevive(agent, this.agents);
     }
 
     // If currently seated in a 4-Wheel Raycast Suspension Vehicle, route inputs to vehicle chassis
     if (agent.mountedVehicleId > 0) {
+      this.tier3.mountedInput(agent, input);
       agent.lastDriveThrottle = input.moveZ;
       agent.lastDriveSteer = input.moveX;
       agent.lastDriveButtons = input.buttons;
@@ -730,6 +750,7 @@ export class SharedPhysicsWorld {
         agent.airDashesRemaining = agility.maxAirDashes + mods.bonusAirDashes;
         agent.animState = AgentAnimState.IDLE;
         agent.telemetry.mantlesCompleted += 1;
+        if (agent.attributes.agility >= 4) { agent.velocity.x = -Math.sin(agent.facingYaw) * 22; agent.velocity.z = -Math.cos(agent.facingYaw) * 22; }
       }
 
       this.syncAgentKinematicTransform(agent);
@@ -769,7 +790,7 @@ export class SharedPhysicsWorld {
 
     if (grappleJustPressed && !agent.grappleActive) {
       this.fireGrappleTether(agent, input.yaw, input.pitch);
-    } else if (!grappleHeld && agent.grappleActive) {
+    } else if (!grappleHeld && agent.grappleActive && agent.tier3.petAnchorSec <= 0) {
       agent.grappleActive = false;
       // Release boost at top of swing arc
       agent.velocity.y = Math.max(agent.velocity.y, 6.5);
@@ -909,11 +930,14 @@ export class SharedPhysicsWorld {
       }
     }
 
+    this.tier2.applyHazards(agent, !agent.grounded && objectiveJetpackHeld, dt);
+
     // Re-enable snap to ground when descending or grounded (unless grappling or jetpacking)
     if (agent.velocity.y <= 0 && !agent.grappleActive && !agent.jetpackActive) {
       agent.controller.enableSnapToGround(CONTROLLER_SNAP_TO_GROUND_DIST);
     }
 
+    this.tier3.beforeMove(agent, input, dt);
     const preStepImpactVelY = agent.velocity.y;
     const wasGroundedBefore = agent.grounded;
 
@@ -952,6 +976,7 @@ export class SharedPhysicsWorld {
     agent.telemetry.totalDistanceMeters += horizDist;
 
     if (isNowGrounded && agent.velocity.y <= 0 && !agent.grappleActive) {
+      if (!wasGroundedBefore) this.tier3.landing(agent, preStepImpactVelY);
       agent.grounded = true;
       agent.velocity.y = 0;
       agent.airDashesRemaining = agility.maxAirDashes + mods.bonusAirDashes;
@@ -1008,17 +1033,27 @@ export class SharedPhysicsWorld {
 
     let combatAnimOverride: AgentAnimState | null = null;
 
-    if (grabThrowJustPressed || (fireJustPressed && agent.heldPropId > 0)) {
+    const architectureAttack = this.tier2.processAttack(agent, input, dt);
+    if (architectureAttack) {
+      combatAnimOverride = AgentAnimState.MELEE_STRIKE;
+    } else if (grabThrowJustPressed || (fireJustPressed && agent.heldPropId > 0)) {
       this.vehiclePropManager.tryPickupOrThrowProp(agent, input.yaw, input.pitch);
     } else if (parryJustPressed) {
+      this.tier3.beginCounter(agent);
       const parryEvent = this.combatManager.executeCounterParry(agent);
       if (parryEvent) {
+        this.tier3.onParry(agent);
         this.pendingCombatEvents.push(parryEvent);
         this.syncAgentKinematicTransform(agent);
         combatAnimOverride = AgentAnimState.PARRY_TAKEDOWN;
       }
+    } else if (meleeJustPressed && agent.tier3.weaponId.startsWith('ML_')) {
+      this.tier3.fire(agent, input.yaw, input.pitch, unpackTargetLimbFromButtons(input.buttons));
     } else if (meleeJustPressed || meleePressed) {
-      if (!agent.grounded) { agent.groundSlamPending = true; agent.velocity.y = -24; }
+      if (!agent.grounded) {
+        if (agent.attributes.strength >= 4) this.tier3.activateAttribute(agent, 'seismic_crater');
+        else { agent.groundSlamPending = true; agent.velocity.y = -24; }
+      }
       if (agent.groundSlamPending && agent.grounded) {
         this.pendingCombatEvents.push(...this.vehiclePropManager.triggerSphericalExplosion(agent, agent.position, 0.55));
         agent.groundSlamPending = false;
@@ -1029,6 +1064,8 @@ export class SharedPhysicsWorld {
         this.pendingCombatEvents.push(meleeEvent);
         combatAnimOverride = AgentAnimState.MELEE_STRIKE;
       }
+    } else if (fireJustPressed && this.tier3.fire(agent, input.yaw, input.pitch, unpackTargetLimbFromButtons(input.buttons), !!(input.buttons & INPUT_FLAG_AIM))) {
+      // Tier 3 weapon authority consumed this input, including cooldown/reload rejection.
     } else if (fireJustPressed && !this.dreadnoughtDirector.resolveWeaponShot(agent, input.yaw, input.pitch)) {
       const targetLimb = unpackTargetLimbFromButtons(input.buttons);
       const shotEvent = this.combatManager.resolveWeaponShot(
@@ -1135,16 +1172,22 @@ export class SharedPhysicsWorld {
       }
     }
 
+    this.tier3.tick(FIXED_TIMESTEP);
     this.vehiclePropManager.stepVehicles(this.agents, FIXED_TIMESTEP, this.pendingCombatEvents);
     this.vehiclePropManager.stepDynamicProps(this.agents, FIXED_TIMESTEP, this.pendingCombatEvents);
     this.phase5Director.stepPhase5Systems(this.agents, FIXED_TIMESTEP);
     this.relaySystem.step(FIXED_TIMESTEP);
+    this.tier2.airspace.liberated.clear();
+    for (const loop of this.phase5Director.districtLoops.values()) if (loop.currentStage === 4) this.tier2.airspace.liberated.add(loop.spec.district);
+    this.tier2.step(FIXED_TIMESTEP, this.agents);
+    this.tier4.step(FIXED_TIMESTEP);
     this.combatManager.stepEnemies(this.agents.values(), FIXED_TIMESTEP);
     this.cyberPetArenaManager.step(this.agents, FIXED_TIMESTEP);
     this.dreadnoughtDirector.step(this.agents, FIXED_TIMESTEP,
       [...this.phase5Director.districtLoops.values()].every((loop) => loop.currentStage === 4));
     this.world.step();
     this.effects.footsteps(this.agents.values());
+    this.tier2.afterPhysics(this.agents, this.pendingCombatEvents);
     this.tickCount += 1;
   }
 

@@ -1,0 +1,149 @@
+{
+  "endedAt": "2026-11-19T20:47:20.466Z",
+  "observations": [
+    {
+      "id": "saved-downed-agent",
+      "action": "Use normal Recover at drop point control before opening field menu."
+    },
+    {
+      "id": "B10-explicit-reload-after-restart",
+      "recovered": true,
+      "state": {
+        "revision": 118,
+        "paused": true,
+        "saveError": false,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+      },
+      "health": {
+        "status": "ok",
+        "product": "crackup-protocol-eclipse",
+        "mode": "solo",
+        "soloPaused": true,
+        "version": "2.0.0",
+        "architecture": "True-3D-Rapier3D-BinaryNetcode",
+        "journalMode": "wal",
+        "activeAgents": 1,
+        "maxPlayers": 1,
+        "tickCount": 225,
+        "serverTimeSec": 196.185,
+        "registeredAccounts": 1,
+        "totalOrbs": 182
+      }
+    },
+    {
+      "id": "B11-injected-1250ms-stall",
+      "induced": true,
+      "observedMaxFrameMs": 1283.7999999999993,
+      "report": {
+        "schemaVersion": 1,
+        "product": "CRACKUP",
+        "build": "client-dd1c4731be6fb880",
+        "createdAt": "2026-11-19T20:47:15.828Z",
+        "notes": "",
+        "session": {
+          "mode": "solo",
+          "connected": true,
+          "paused": true,
+          "saveError": false,
+          "saveRevision": 120,
+          "serverTick": 364,
+          "district": "NEON_DOCKS",
+          "position": {
+            "x": -14.73,
+            "y": 0.01,
+            "z": 12.94
+          }
+        },
+        "rendering": {
+          "drawCalls": 4170,
+          "triangles": 585196,
+          "frameSamples": 120,
+          "medianFrameMs": 33.4,
+          "p95FrameMs": 50
+        },
+        "events": []
+      },
+      "limitation": "Current report discards frame intervals above 1000ms; no frame maximum or stall event is exported."
+    },
+    {
+      "id": "B12-induced-graphics-context-loss",
+      "induced": true,
+      "recoveryVisible": true,
+      "report": {
+        "schemaVersion": 1,
+        "product": "CRACKUP",
+        "build": "client-dd1c4731be6fb880",
+        "createdAt": "2026-11-19T20:47:16.408Z",
+        "notes": "",
+        "session": {
+          "mode": "solo",
+          "connected": true,
+          "paused": true,
+          "saveError": false,
+          "saveRevision": 120,
+          "serverTick": 364,
+          "district": "NEON_DOCKS",
+          "position": {
+            "x": -14.73,
+            "y": 0.01,
+            "z": 12.94
+          }
+        },
+        "rendering": {
+          "drawCalls": 4170,
+          "triangles": 585196,
+          "frameSamples": 120,
+          "medianFrameMs": 33.4,
+          "p95FrameMs": 50
+        },
+        "events": [
+          {
+            "kind": "graphics-lost",
+            "at": "2026-11-19T20:47:16.377Z",
+            "category": "Unknown",
+            "frames": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "B13-reload-loses-previous-crash-events",
+      "afterReload": {
+        "schemaVersion": 1,
+        "product": "CRACKUP",
+        "build": "client-dd1c4731be6fb880",
+        "createdAt": "2026-11-19T20:47:18.582Z",
+        "notes": "",
+        "session": {
+          "mode": "shared",
+          "connected": false,
+          "paused": false,
+          "saveError": false,
+          "saveRevision": null,
+          "serverTick": 0,
+          "district": null,
+          "position": null
+        },
+        "rendering": {
+          "drawCalls": 1698,
+          "triangles": 441874,
+          "frameSamples": 12,
+          "medianFrameMs": 33.3,
+          "p95FrameMs": 950.4
+        },
+        "events": []
+      },
+      "previousEventCount": 1
+    },
+    {
+      "id": "B14-reentry-after-graphics-recovery",
+      "state": {
+        "revision": 123,
+        "paused": true,
+        "saveError": false,
+        "checkpoint": "Neon Docks Smuggler Grid: relays 0/2"
+      },
+      "activeAgents": 1
+    }
+  ]
+}

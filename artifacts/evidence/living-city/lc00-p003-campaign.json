@@ -1,0 +1,176 @@
+{
+  "startedAt": "2026-11-20T13:56:01.797Z",
+  "finishedAt": "2026-11-20T13:56:08.165Z",
+  "result": "passed",
+  "checks": [
+    "Explicit host/guest admission, private invite, single owner and unequal-progress join isolation",
+    "Guest visit story/settings persist separately; solo pause commands cannot pause co-op",
+    "Host disconnect freezes guest simulation/input; authenticated owner reconnect resumes same party",
+    "Guest-triggered completion commits all characters and host world atomically; failed guest write rolls everything back and retry grants once",
+    "Actual process death/restart preserves host completion, both reward receipts, guest visit and untouched guest world",
+    "Two/four/eight-player rosters, capacity limit and late-join policy; no retroactive or repeated unique rewards",
+    "Host ends the whole party; former guest hosts their own checkpoint/settings and cannot duplicate technology earned in another world",
+    "Owned campaign remains readable by offline solo on the same explicitly supplied database"
+  ],
+  "method": "Real child processes and authenticated WebSocket clients (2/4/8 players), actual H input at a fixture-prepared core, SQLite guest-write fault injection, abrupt process death and restart.",
+  "limits": [
+    "Combat prerequisites are explicit fixtures, not human mission completion.",
+    "No real WAN, latency/loss, UI, target-hardware, matchmaking or identity-provider qualification."
+  ],
+  "finalState": {
+    "tick": 9,
+    "world": {
+      "version": 2,
+      "districts": [
+        {
+          "district": "NEON_DOCKS",
+          "stage": 4,
+          "terminal1Hacked": true,
+          "terminal2Hacked": true,
+          "kingpinDefeated": true
+        },
+        {
+          "district": "FOUNDRY_SLUMS",
+          "stage": 2,
+          "terminal1Hacked": true,
+          "terminal2Hacked": true,
+          "kingpinDefeated": false
+        },
+        {
+          "district": "HELIOS_SPIRE",
+          "stage": 1,
+          "terminal1Hacked": false,
+          "terminal2Hacked": false,
+          "kingpinDefeated": false
+        },
+        {
+          "district": "AEGIS_CITADEL",
+          "stage": 1,
+          "terminal1Hacked": false,
+          "terminal2Hacked": false,
+          "kingpinDefeated": false
+        }
+      ],
+      "dreadnoughtDefeated": false,
+      "presentation": null
+    },
+    "clients": 1,
+    "error": false,
+    "campaigns": [
+      {
+        "owner": "GUEST",
+        "revision": 5,
+        "state_json": "{\"version\":2,\"districts\":[{\"district\":\"NEON_DOCKS\",\"stage\":4,\"terminal1Hacked\":true,\"terminal2Hacked\":true,\"kingpinDefeated\":true},{\"district\":\"FOUNDRY_SLUMS\",\"stage\":2,\"terminal1Hacked\":true,\"terminal2Hacked\":true,\"kingpinDefeated\":false},{\"district\":\"HELIOS_SPIRE\",\"stage\":1,\"terminal1Hacked\":false,\"terminal2Hacked\":false,\"kingpinDefeated\":false},{\"district\":\"AEGIS_CITADEL\",\"stage\":1,\"terminal1Hacked\":false,\"terminal2Hacked\":false,\"kingpinDefeated\":false}],\"dreadnoughtDefeated\":false,\"presentation\":{\"story\":{\"completed\":[\"deployment\"],\"active\":null,\"choices\":[],\"heard\":[]},\"cinematics\":{},\"settings\":{\"sensitivity\":9,\"quality\":\"standard\",\"bloom\":true,\"cinematicIntros\":true,\"audioMuted\":false,\"commsMuted\":false}}}"
+      },
+      {
+        "owner": "HOST",
+        "revision": 21,
+        "state_json": "{\"version\":2,\"districts\":[{\"district\":\"NEON_DOCKS\",\"stage\":4,\"terminal1Hacked\":true,\"terminal2Hacked\":true,\"kingpinDefeated\":true},{\"district\":\"FOUNDRY_SLUMS\",\"stage\":1,\"terminal1Hacked\":false,\"terminal2Hacked\":false,\"kingpinDefeated\":false},{\"district\":\"HELIOS_SPIRE\",\"stage\":1,\"terminal1Hacked\":false,\"terminal2Hacked\":false,\"kingpinDefeated\":false},{\"district\":\"AEGIS_CITADEL\",\"stage\":1,\"terminal1Hacked\":false,\"terminal2Hacked\":false,\"kingpinDefeated\":false}],\"dreadnoughtDefeated\":false,\"presentation\":{\"story\":{\"completed\":[],\"active\":{\"beat\":\"deployment\",\"node\":\"dispatch\"},\"choices\":[],\"heard\":[]},\"cinematics\":{},\"settings\":{\"sensitivity\":4,\"quality\":\"standard\",\"bloom\":true,\"cinematicIntros\":true,\"audioMuted\":false,\"commsMuted\":false}}}"
+      }
+    ],
+    "visits": [
+      {
+        "guest": "ALLY-2",
+        "presentation_json": "{\"story\":{\"completed\":[],\"active\":{\"beat\":\"deployment\",\"node\":\"dispatch\"},\"choices\":[],\"heard\":[]},\"cinematics\":{},\"settings\":{\"sensitivity\":4,\"quality\":\"standard\",\"bloom\":true,\"cinematicIntros\":true,\"audioMuted\":false,\"commsMuted\":false}}"
+      },
+      {
+        "guest": "ALLY-3",
+        "presentation_json": "{\"story\":{\"completed\":[],\"active\":{\"beat\":\"deployment\",\"node\":\"dispatch\"},\"choices\":[],\"heard\":[]},\"cinematics\":{},\"settings\":{\"sensitivity\":4,\"quality\":\"standard\",\"bloom\":true,\"cinematicIntros\":true,\"audioMuted\":false,\"commsMuted\":false}}"
+      },
+      {
+        "guest": "ALLY-4",
+        "presentation_json": "{\"story\":{\"completed\":[],\"active\":{\"beat\":\"deployment\",\"node\":\"dispatch\"},\"choices\":[],\"heard\":[]},\"cinematics\":{},\"settings\":{\"sensitivity\":4,\"quality\":\"standard\",\"bloom\":true,\"cinematicIntros\":true,\"audioMuted\":false,\"commsMuted\":false}}"
+      },
+      {
+        "guest": "ALLY-5",
+        "presentation_json": "{\"story\":{\"completed\":[],\"active\":{\"beat\":\"deployment\",\"node\":\"dispatch\"},\"choices\":[],\"heard\":[]},\"cinematics\":{},\"settings\":{\"sensitivity\":4,\"quality\":\"standard\",\"bloom\":true,\"cinematicIntros\":true,\"audioMuted\":false,\"commsMuted\":false}}"
+      },
+      {
+        "guest": "ALLY-6",
+        "presentation_json": "{\"story\":{\"completed\":[],\"active\":{\"beat\":\"deployment\",\"node\":\"dispatch\"},\"choices\":[],\"heard\":[]},\"cinematics\":{},\"settings\":{\"sensitivity\":4,\"quality\":\"standard\",\"bloom\":true,\"cinematicIntros\":true,\"audioMuted\":false,\"commsMuted\":false}}"
+      },
+      {
+        "guest": "ALLY-7",
+        "presentation_json": "{\"story\":{\"completed\":[],\"active\":{\"beat\":\"deployment\",\"node\":\"dispatch\"},\"choices\":[],\"heard\":[]},\"cinematics\":{},\"settings\":{\"sensitivity\":4,\"quality\":\"standard\",\"bloom\":true,\"cinematicIntros\":true,\"audioMuted\":false,\"commsMuted\":false}}"
+      },
+      {
+        "guest": "GUEST",
+        "presentation_json": "{\"story\":{\"completed\":[],\"active\":{\"beat\":\"deployment\",\"node\":\"move\"},\"choices\":[{\"beat\":\"deployment\",\"node\":\"dispatch\",\"index\":1}],\"heard\":[]},\"cinematics\":{},\"settings\":{\"sensitivity\":6,\"quality\":\"standard\",\"bloom\":true,\"cinematicIntros\":true,\"audioMuted\":false,\"commsMuted\":false}}"
+      }
+    ],
+    "rewards": [
+      {
+        "callsign": "GUEST",
+        "reward_id": "UNLOCK_GRAPPLE_OVERDRIVE",
+        "granted_at": 1795182963761
+      },
+      {
+        "callsign": "HOST",
+        "reward_id": "UNLOCK_GRAPPLE_OVERDRIVE",
+        "granted_at": 1795182963761
+      }
+    ],
+    "worldReceipts": [
+      {
+        "campaign_id": "1870e436-4cfc-4671-a762-faae64f6f6c6",
+        "reward_id": "UNLOCK_GRAPPLE_OVERDRIVE",
+        "granted_at": 1795182963761
+      },
+      {
+        "campaign_id": "6327550f-9685-459b-af45-8c4650e692c1",
+        "reward_id": "UNLOCK_GRAPPLE_OVERDRIVE",
+        "granted_at": 1795182967374
+      }
+    ],
+    "profiles": [
+      {
+        "callsign": "ALLY-2",
+        "unlocked_district_rewards_json": "[]"
+      },
+      {
+        "callsign": "ALLY-3",
+        "unlocked_district_rewards_json": "[]"
+      },
+      {
+        "callsign": "ALLY-4",
+        "unlocked_district_rewards_json": "[]"
+      },
+      {
+        "callsign": "ALLY-5",
+        "unlocked_district_rewards_json": "[]"
+      },
+      {
+        "callsign": "ALLY-6",
+        "unlocked_district_rewards_json": "[]"
+      },
+      {
+        "callsign": "ALLY-7",
+        "unlocked_district_rewards_json": "[]"
+      },
+      {
+        "callsign": "BAD-GUEST",
+        "unlocked_district_rewards_json": "[]"
+      },
+      {
+        "callsign": "EXPIRED",
+        "unlocked_district_rewards_json": "[]"
+      },
+      {
+        "callsign": "GUEST",
+        "unlocked_district_rewards_json": "[\"UNLOCK_GRAPPLE_OVERDRIVE\"]"
+      },
+      {
+        "callsign": "HOST",
+        "unlocked_district_rewards_json": "[\"UNLOCK_GRAPPLE_OVERDRIVE\"]"
+      },
+      {
+        "callsign": "OTHER",
+        "unlocked_district_rewards_json": "[]"
+      },
+      {
+        "callsign": "WRONG-CODE",
+        "unlocked_district_rewards_json": "[]"
+      }
+    ]
+  }
+}

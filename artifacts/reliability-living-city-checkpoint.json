@@ -1,0 +1,261 @@
+﻿{
+    "schemaVersion":  1,
+    "program":  "reliability-living-city",
+    "updatedOn":  "2026-11-20",
+    "updatedAt":  "2026-11-21T01:33:29.3015960+00:00",
+    "timezone":  "America/Chicago",
+    "executionStatus":  "in_progress",
+    "currentPhase":  "LC00",
+    "currentPrompt":  "P005",
+    "currentSubtask":  "P005 seven real browser stall/state checks and desktop six-run comparison passed/measured; repeat at declared 1920x1080 viewport running, then final save/co-op regressions and evidence",
+    "lastCompletedWork":  "P004 bounded selected-session reports verified through real browser surfaces and forced runtime restart; all affected regressions passed.",
+    "nextPrompt":  "P005",
+    "nextAction":  "Inspect six final comparison JSONs and process session output; summarize with tests/summarize-performance-comparison.mjs only once all six measured. Preserve external tick windows, run affected regressions, write budget/limitations, stop verified owned runtimes and update P006 cursor.",
+    "lastVerifiedImplementationCheckpoint":  "artifacts/lc00-p004-recovery-reports.md",
+    "workingTree":  {
+                        "baseCommit":  "1d107a661a0ac070130194ae45890dd8bc721d07",
+                        "fingerprint":  "e0ee8f9bd3388644facb12b98dfbd1240100c9e982b331736fb4f39d2e9b1af2",
+                        "manifest":  "artifacts/evidence/living-city/lc00-p004-baseline.json",
+                        "note":  "Final P004 source/runtime manifest; pre-existing uncommitted work preserved."
+                    },
+    "completedSubtasks":  [
+                              "Read actual project resume instructions and current work orders",
+                              "Inspected real launcher, save ownership, recovery report and reconnect entry points",
+                              "Built current client/server successfully",
+                              "Real normal-input save/leave/re-entry and wrong-PIN observations captured",
+                              "Reproduced exhausted reconnect after server return",
+                              "Reproduced different-store port reuse and missing startup log on corrupt SQLite",
+                              "Existing 12-case solo regression passed",
+                              "P002 allowlisted bounded event schema and runtime integration",
+                              "Six focused diagnostic scenario groups passed",
+                              "Existing quality, 12 solo and eight campaign regression groups passed",
+                              "Final BAT-launched browser save/report/leave passed; earlier slow-connection failures preserved",
+                              "63 sanitized events joined across launcher/server/client; schema and triage documentation written",
+                              "Owned browser/server stopped after identity and zero-active-Agent checks",
+                              "P003 asynchronous bounded JSONL rotation, retention, reserved metadata and save-space checks",
+                              "Persistent browser journal and authenticated local-only flush with bounded fallback",
+                              "Nine journal scenario groups and seven final Chromium checks passed",
+                              "Actual missing-Node BAT capture and 283 persisted events across four runtime sessions verified",
+                              "Final build, quality and progress checks passed; prior broad save regressions preserved",
+                              "Storage/retrieval documentation written; owned processes cleaned up",
+                              "P004 bounded local-only session catalogue and export with privacy/access/large-tail tests",
+                              "P004 16 final Chromium surface/control checks and seven runtime restart/race checks",
+                              "Actual previous runtime commit revision 26 exported after forced stop/restart; 458 correlated events",
+                              "P004 suppression accounting, guides, evidence and all affected regressions verified",
+                              "Owned P004 browser/runtime stopped after fresh identity and zero-agent checks"
+                          ],
+    "partialChanges":  [
+                           "shared/diagnostics/performance.ts and events allowlist",
+                           "client main/report/browser journal/netcode instrumentation",
+                           "server gameServer/campaignStore/diagnostic journal capture-off",
+                           "tests/verify-performance.ts and quality expectation updated for retained long frames"
+                       ],
+    "pendingOperations":  [
+                              {
+                                  "command":  "Six 1920x1080 Playwright measure-performance-browser runs on/off/off/on/on/off",
+                                  "output":  "artifacts/evidence/living-city/lc00-p005-comparison-1..6.json",
+                                  "repeatSafe":  true
+                              }
+                          ],
+    "ownedProcesses":  [
+                           {
+                               "pid":  15524,
+                               "start":  "2026-11-21T01:28:36.9772660Z",
+                               "command":  "\"C:\\Program Files\\nodejs\\node.exe\" --require C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\node_modules\\tsx\\dist\\preflight.cjs --import file:///C:/Users/travi/Documents/Python_Projects/crackup/node_modules/tsx/dist/loader.mjs tests/performance-runtime.ts",
+                               "port":  33523,
+                               "runId":  "41b198fe-da3a-4c5f-a41b-64be80445a80",
+                               "workingDirectory":  "C:\\Users\\travi\\Documents\\Python_Projects\\crackup",
+                               "dataRoot":  "output/solo/lc00-p005-comparison"
+                           },
+                           {
+                               "pid":  5592,
+                               "start":  "2026-11-21T01:28:03.0308980Z",
+                               "command":  "\"C:\\Program Files\\nodejs\\node.exe\" --require C:\\Users\\travi\\Documents\\Python_Projects\\crackup\\node_modules\\tsx\\dist\\preflight.cjs --import file:///C:/Users/travi/Documents/Python_Projects/crackup/node_modules/tsx/dist/loader.mjs tests/performance-runtime.ts",
+                               "port":  33524,
+                               "runId":  "a43950c3-efab-4a58-8b4d-3d1e917e414a",
+                               "workingDirectory":  "C:\\Users\\travi\\Documents\\Python_Projects\\crackup",
+                               "dataRoot":  "output/solo/lc00-p005-comparison"
+                           }
+                       ],
+    "testResults":  [
+                        {
+                            "command":  "npm run build",
+                            "exitCode":  0,
+                            "clientBuild":  "client-dd1c4731be6fb880",
+                            "output":  "artifacts/evidence/living-city/lc00-p001-build.log"
+                        },
+                        {
+                            "command":  "npm run verify:solo",
+                            "exitCode":  0,
+                            "checks":  12,
+                            "output":  "artifacts/evidence/living-city/lc00-p001-solo-regression.json"
+                        },
+                        {
+                            "output":  "artifacts/evidence/living-city/lc00-p002-diagnostics.json",
+                            "exitCode":  0,
+                            "command":  "npm run verify:diagnostics"
+                        },
+                        {
+                            "output":  "artifacts/evidence/living-city/lc00-p002-quality.log",
+                            "exitCode":  0,
+                            "command":  "npm run verify:quality"
+                        },
+                        {
+                            "output":  "artifacts/evidence/living-city/lc00-p002-solo.json",
+                            "exitCode":  0,
+                            "command":  "npm run verify:solo",
+                            "checks":  12
+                        },
+                        {
+                            "output":  "artifacts/evidence/living-city/lc00-p002-campaign.json",
+                            "exitCode":  0,
+                            "command":  "npm run verify:campaign",
+                            "checks":  8
+                        },
+                        {
+                            "output":  "artifacts/evidence/living-city/lc00-p002-final-build.log",
+                            "exitCode":  0,
+                            "command":  "npm run build and npm run progress:check"
+                        },
+                        {
+                            "output":  "artifacts/evidence/living-city/lc00-p002-browser.json",
+                            "exitCode":  0,
+                            "command":  "playwright-cli run-code tests/verify-diagnostics-browser.mjs",
+                            "note":  "Final journey passed; earlier attempts failed and are retained",
+                            "clientBuild":  "client-bb06f71e9dbc115e"
+                        },
+                        {
+                            "output":  "artifacts/evidence/living-city/lc00-p002-trace-validation.json",
+                            "exitCode":  0,
+                            "command":  "node tests/verify-diagnostics-trace.mjs",
+                            "events":  63
+                        },
+                        {
+                            "output":  "artifacts/evidence/living-city/lc00-p003-journal.json",
+                            "exitCode":  0,
+                            "command":  "npm run verify:journal"
+                        },
+                        {
+                            "output":  "artifacts/evidence/living-city/lc00-p003-build.log",
+                            "exitCode":  0,
+                            "command":  "npm run build"
+                        },
+                        {
+                            "output":  "artifacts/evidence/living-city/lc00-p003-campaign.log",
+                            "exitCode":  0,
+                            "command":  "verify:diagnostics, verify:quality, verify:solo, verify:campaign"
+                        },
+                        {
+                            "output":  "artifacts/evidence/living-city/lc00-p003-journal.json",
+                            "exitCode":  0,
+                            "command":  "npm run verify:journal",
+                            "checks":  9,
+                            "serverBuild":  "server-59e9091e77228abe"
+                        },
+                        {
+                            "output":  "artifacts/evidence/living-city/lc00-p003-browser.json",
+                            "exitCode":  0,
+                            "command":  "playwright-cli run-code tests/verify-journal-browser.mjs",
+                            "clientBuild":  "client-89684873d268013c",
+                            "checks":  7
+                        },
+                        {
+                            "output":  "artifacts/evidence/living-city/lc00-p003-restart.json",
+                            "exitCode":  0,
+                            "command":  "tsx tests/verify-journal-evidence.ts",
+                            "events":  283
+                        },
+                        {
+                            "expectedChildExit":  1,
+                            "exitCode":  0,
+                            "command":  "actual BAT missing-Node fixture",
+                            "output":  "artifacts/evidence/living-city/lc00-p003-bootstrap-bat.json"
+                        },
+                        {
+                            "output":  "artifacts/evidence/living-city/lc00-p003-final-build.log",
+                            "exitCode":  0,
+                            "command":  "npm run build, npm run verify:quality, npm run progress:check"
+                        },
+                        {
+                            "command":  "npm run verify:reports",
+                            "exitCode":  0,
+                            "output":  "artifacts/evidence/living-city/lc00-p004-export.json",
+                            "checks":  4
+                        },
+                        {
+                            "command":  "P004 browser walkthrough before suppression fix",
+                            "exitCode":  0,
+                            "checks":  16,
+                            "output":  "artifacts/evidence/living-city/lc00-p004-browser.json"
+                        },
+                        {
+                            "command":  "verify:journal, verify:diagnostics, verify:quality, verify:controller",
+                            "exitCode":  0,
+                            "output":  "artifacts/evidence/living-city/lc00-p004-journal.log"
+                        },
+                        {
+                            "command":  "npm run verify:reports",
+                            "exitCode":  0,
+                            "checks":  4,
+                            "output":  "artifacts/evidence/living-city/lc00-p004-export.json"
+                        },
+                        {
+                            "command":  "playwright-cli report and restart browser scripts",
+                            "exitCode":  0,
+                            "checks":  23,
+                            "clientBuild":  "client-ddb95d151b5656d0",
+                            "output":  "artifacts/evidence/living-city/lc00-p004-browser.json",
+                            "additionalOutput":  "artifacts/evidence/living-city/lc00-p004-restart-browser.json"
+                        },
+                        {
+                            "command":  "npm run verify:solo and npm run verify:campaign",
+                            "exitCode":  0,
+                            "checks":  20,
+                            "output":  "artifacts/evidence/living-city/lc00-p004-campaign.log"
+                        },
+                        {
+                            "command":  "npm run build, verify:quality, progress:check and scoped git diff --check",
+                            "exitCode":  0,
+                            "output":  "artifacts/evidence/living-city/lc00-p004-progress.log"
+                        },
+                        {
+                            "command":  "verify:performance, build, verify:diagnostics and verify:quality",
+                            "exitCode":  0,
+                            "output":  "artifacts/evidence/living-city/lc00-p005-performance.json"
+                        }
+                    ],
+    "evidencePaths":  [
+                          "artifacts/evidence/living-city/lc00-p001-baseline.json",
+                          "artifacts/evidence/living-city/lc00-p001-browser.json",
+                          "artifacts/evidence/living-city/lc00-p001-storage.json",
+                          "artifacts/evidence/living-city/lc00-p001-outage-after-restart.json",
+                          "artifacts/lc00-p002-correlated-diagnostics.md",
+                          "artifacts/evidence/living-city/lc00-p002-diagnostics.json",
+                          "artifacts/evidence/living-city/lc00-p002-trace.jsonl",
+                          "artifacts/evidence/living-city/lc00-p002-slow-connection.json",
+                          "artifacts/lc00-p003-durable-diagnostics.md",
+                          "artifacts/evidence/living-city/lc00-p003-journal.json",
+                          "artifacts/evidence/living-city/lc00-p003-browser.json",
+                          "artifacts/evidence/living-city/lc00-p003-persisted.jsonl",
+                          "artifacts/evidence/living-city/lc00-p003-restart.json",
+                          "artifacts/lc00-p004-recovery-reports.md",
+                          "artifacts/evidence/living-city/lc00-p004-browser.json",
+                          "artifacts/evidence/living-city/lc00-p004-restart-browser.json",
+                          "artifacts/evidence/living-city/lc00-p004-export.json",
+                          "artifacts/evidence/living-city/lc00-p004-cleanup.json"
+                      ],
+    "blockers":  [
+
+                 ],
+    "decisions":  [
+                      "Exactly 1,000 total orbs; shards means the same pickups.",
+                      "Preserve offline solo and no additional spending.",
+                      "Continue the active task; use on-disk state to recover across interrupted or fresh conversations.",
+                      "Traversal animation pack acquisition/retargeting/runtime integration is required by LC08, with explicit jump, ledge, landing and fall-damage states.",
+                      "Owner confirmed affected launch path: Start CRACKUP.bat",
+                      "Do not disable backpressure speculatively: investigate LC-BUG-007 queue growth in P005 and recovery in LC02; final successful journey does not close intermittent failure.",
+                      "P003 defaults: 98 MB runtime plus 2 MB browser allowance within 100 MB; seven days, 10 MB segments; proposed 256 MiB free-space save reserve."
+                  ],
+    "estimatedEffort":  "Unchanged program planning envelope: 37-66 focused workdays; re-estimate after coverage audit and actual throughput.",
+    "stopReason":  null
+}

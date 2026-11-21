@@ -1,0 +1,216 @@
+{
+  "source": "Original CRACKUP transcripts rendered with installed Microsoft Zira Desktop speech synthesis; synthetic voices, not actor recordings.",
+  "generator": "scripts/build-lore-voices.ts",
+  "entries": [
+    {
+      "id": "MEM_001",
+      "citizenId": "CIT_001",
+      "transcript": "Hold my hand. Tide is rising.",
+      "durationMs": 2000,
+      "sha256": "3ac4af5ac47753874ea6373972d1b7a8f1a76c2c305d05bfc902bda5489f6dd3"
+    },
+    {
+      "id": "MEM_002",
+      "citizenId": "CIT_002",
+      "transcript": "Two bowls. One for your sister.",
+      "durationMs": 2000,
+      "sha256": "9c5698e9fbd8bde81a5e53a8046bc90f7612a0ce7cc9b1744895407f3e0aa48b"
+    },
+    {
+      "id": "MEM_003",
+      "citizenId": "CIT_003",
+      "transcript": "Sleep now. The lights are ours.",
+      "durationMs": 2000,
+      "sha256": "36778d79a354705837e759660071b3db0b316b0b00760b16c9a3d77c059e219f"
+    },
+    {
+      "id": "MEM_004",
+      "citizenId": "CIT_004",
+      "transcript": "Your kite cleared the last crane.",
+      "durationMs": 2000,
+      "sha256": "53351a92e8ed13c45da77f61bb4ed9d6b7bb22f1e1db70c8425b598cc4475d47"
+    },
+    {
+      "id": "MEM_005",
+      "citizenId": "CIT_005",
+      "transcript": "Listen. That engine knows our names.",
+      "durationMs": 2000,
+      "sha256": "01a145f17c6cea616c5de1f1866d82f949086f2b63f09374f5eb29c74b5345eb"
+    },
+    {
+      "id": "MEM_006",
+      "citizenId": "CIT_006",
+      "transcript": "Grandad tied this knot for me.",
+      "durationMs": 2000,
+      "sha256": "44675415f748150e5368fab9448f8a9878d795828db7c2344121bf108d86d9e4"
+    },
+    {
+      "id": "MEM_007",
+      "citizenId": "CIT_007",
+      "transcript": "Three knocks means I am home.",
+      "durationMs": 2000,
+      "sha256": "da338871ce445dfd7c326a7101a6c5d4c538b7e8e926ca386da99e91f45bb1df"
+    },
+    {
+      "id": "MEM_008",
+      "citizenId": "CIT_008",
+      "transcript": "Keep the lamp above the water.",
+      "durationMs": 2000,
+      "sha256": "365b58bf11031a8da711e9949e7df7aad0d753bfae6106a957c7132bb313820e"
+    },
+    {
+      "id": "MEM_009",
+      "citizenId": "CIT_009",
+      "transcript": "Rain smelled different before the furnaces.",
+      "durationMs": 2000,
+      "sha256": "30cf184d28c009975caa6ebaea9f46e0f4fb774bc00e2efc46d99461dfe8adc8"
+    },
+    {
+      "id": "MEM_010",
+      "citizenId": "CIT_010",
+      "transcript": "I made this blue bird yours.",
+      "durationMs": 2000,
+      "sha256": "bd1d170825bd37ecc6f30526591ea1266785745df03463249a536c00440d36ee"
+    },
+    {
+      "id": "MEM_011",
+      "citizenId": "CIT_011",
+      "transcript": "Mercy promised you would remember me.",
+      "durationMs": 2000,
+      "sha256": "7220dd7872c377dd3a843e4d9ac27a56a88cec411d038a027e90470ac49894eb"
+    },
+    {
+      "id": "MEM_012",
+      "citizenId": "CIT_012",
+      "transcript": "Do not touch the red wire.",
+      "durationMs": 2000,
+      "sha256": "4332eb2000f457e36d26fdba44a776dc31d727cd276e4fd26664ef262fc509e1"
+    },
+    {
+      "id": "MEM_013",
+      "citizenId": "CIT_013",
+      "transcript": "Your coat still smells of oranges.",
+      "durationMs": 2000,
+      "sha256": "3c731b905c5899ab5bbe40ea4de7810a943e7a5eab8b7ec2d124d50c3502bd88"
+    },
+    {
+      "id": "MEM_014",
+      "citizenId": "CIT_014",
+      "transcript": "First loaf is always for you.",
+      "durationMs": 2000,
+      "sha256": "e417c4af0c33d1549ae177dd8df73ae52608f0d6eefe92f7c99378313dc8e1e5"
+    },
+    {
+      "id": "MEM_015",
+      "citizenId": "CIT_015",
+      "transcript": "That tag belongs to someone living.",
+      "durationMs": 2000,
+      "sha256": "8c18a5069308878d5b97f4cccce7d9e5e33b065c7ce65962acf7945550a6a68b"
+    },
+    {
+      "id": "MEM_016",
+      "citizenId": "CIT_016",
+      "transcript": "Wait here until the morning bell.",
+      "durationMs": 2000,
+      "sha256": "a6d70dffbed2457830f79de8e8f065611f2a7d679cc7594fda2142438ad56e1e"
+    },
+    {
+      "id": "MEM_017",
+      "citizenId": "CIT_017",
+      "transcript": "Platform seven. I will find you.",
+      "durationMs": 2000,
+      "sha256": "1690f53faa5d344e72f0df82bc2f92859dee2db4281f4e6eedd6b9c0d83049e5"
+    },
+    {
+      "id": "MEM_018",
+      "citizenId": "CIT_018",
+      "transcript": "A second lasted all winter here.",
+      "durationMs": 2000,
+      "sha256": "9b98be67efaa58cd2cf2ae1ddba9a466d0e254c7d5cafcbf2fdfce2db064460d"
+    },
+    {
+      "id": "MEM_019",
+      "citizenId": "CIT_019",
+      "transcript": "Look down. Our old street remains.",
+      "durationMs": 2000,
+      "sha256": "b0d7b096021bdfe63ccc110d699a96204c122bf4a584292cd437663d892f8c72"
+    },
+    {
+      "id": "MEM_020",
+      "citizenId": "CIT_020",
+      "transcript": "Race you around the seventh turn.",
+      "durationMs": 2000,
+      "sha256": "b4fd00c85d93041ea70546e1ca59e52a89ea9f6f67304a983066276cc23fb886"
+    },
+    {
+      "id": "MEM_021",
+      "citizenId": "CIT_021",
+      "transcript": "These flowers grew without a lease.",
+      "durationMs": 2000,
+      "sha256": "94d6ba2540fadc2045890b18d4d0ead79c2b20c11fefad745b95cd88098c0f25"
+    },
+    {
+      "id": "MEM_022",
+      "citizenId": "CIT_022",
+      "transcript": "Your birthday is still marked here.",
+      "durationMs": 2000,
+      "sha256": "41525c2ae5c4cc1b3bad429a1b1b9e093365ffbbde0f879fbb27b753e61f0ba5"
+    },
+    {
+      "id": "MEM_023",
+      "citizenId": "CIT_023",
+      "transcript": "One floor more. Then open sky.",
+      "durationMs": 2000,
+      "sha256": "8d65dceca158c4d917bd7605761dea3b1e765ad10fb3c182e5a06cc9e6234301"
+    },
+    {
+      "id": "MEM_024",
+      "citizenId": "CIT_024",
+      "transcript": "They cannot erase the paper copy.",
+      "durationMs": 2000,
+      "sha256": "504fbfec1e304cdd980a82037b866d740c407dee8cf8845a1e01120c01759a1b"
+    },
+    {
+      "id": "MEM_025",
+      "citizenId": "CIT_025",
+      "transcript": "This leaf is breathing with you.",
+      "durationMs": 2000,
+      "sha256": "7066ec567c6a54920cdf34642510b91ff3dba7af1a1435485f0f4eaf7c82969a"
+    },
+    {
+      "id": "MEM_026",
+      "citizenId": "CIT_026",
+      "transcript": "Your name is inside this book.",
+      "durationMs": 2000,
+      "sha256": "df28ef43fb1d6619a6105ff72cf75cd2a993cda2268540d26ed6573adf899459"
+    },
+    {
+      "id": "MEM_027",
+      "citizenId": "CIT_027",
+      "transcript": "We carried our house above water.",
+      "durationMs": 2000,
+      "sha256": "2c501b1d9a4b1f4753cceb55e1f865ebfc0df29f9a9c6da1b462129486e0e2ff"
+    },
+    {
+      "id": "MEM_028",
+      "citizenId": "CIT_028",
+      "transcript": "I signed for sleep. Only sleep.",
+      "durationMs": 2000,
+      "sha256": "863421094e22b6c8c829ae681ff4b7b097cb697e7fbb345489335b11c48250d6"
+    },
+    {
+      "id": "MEM_029",
+      "citizenId": "CIT_029",
+      "transcript": "Stay awake until I come back.",
+      "durationMs": 2000,
+      "sha256": "6e408da03a3dc29e8632f5d857ff12ec9cf1c8c9fdb569851bd0fecc2d5ee4bc"
+    },
+    {
+      "id": "MEM_030",
+      "citizenId": "CIT_030",
+      "transcript": "Hear that? Morning belongs to everyone.",
+      "durationMs": 2000,
+      "sha256": "2ab0d033f75b4d44186c2f5f493f0633e11f16b81eb978d5c39873fd56881005"
+    }
+  ]
+}

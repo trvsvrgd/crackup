@@ -1,0 +1,1248 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-11-20T19:56:23.101Z",
+  "scope": "Source/runtime/configuration identity only. No personal saves, credentials, environment dump, or gameplay acceptance.",
+  "baseCommit": "1d107a661a0ac070130194ae45890dd8bc721d07",
+  "branch": "feat/section6-progress-checkpoint",
+  "workingTreeStatus": [
+    "M README.md",
+    " M artifacts/product-delivery-status.md",
+    " M artifacts/product-requirements-validation.json",
+    " M artifacts/project-progress.json",
+    " M artifacts/project-progress.md",
+    " M client/animation/skeletalAnimator.ts",
+    " M client/audio/spatialGameAudio.ts",
+    " M client/camera/springArmCamera.ts",
+    " M client/entities/agentMesh.ts",
+    " M client/entities/enemyRigMesh.ts",
+    " M client/main.ts",
+    " M client/narrative/cinematicTracks.ts",
+    " M client/net/netcodeClient.ts",
+    " M client/playerHUD.ts",
+    " M client/world/cityBuilder.ts",
+    " M docs/ASSET_ACQUISITION_GUIDE.md",
+    " M docs/PRODUCT_REQUIREMENTS_V3.md",
+    " M package.json",
+    " M public/game.js",
+    " M public/index.html",
+    " M public/style.css",
+    " M scripts/package-solo.mjs",
+    " M server/campaign.ts",
+    " M server/db.ts",
+    " M server/gameServer.ts",
+    " M server/index.ts",
+    " M server/solo.ts",
+    " M server/soloWorldCheckpoint.ts",
+    " M shared/combat/enemyRigSystem.ts",
+    " M shared/constants.ts",
+    " M shared/narrative/storyBible.ts",
+    " M shared/physics/characterController.ts",
+    " M shared/physics/vehicleAndPropSystem.ts",
+    " M shared/progression/skillTreeSystem.ts",
+    " M shared/world/cyberPetArena.ts",
+    " M shared/world/dreadnoughtBoss.ts",
+    " M shared/world/phase5Systems.ts",
+    " M tests/verify-alpha.ts",
+    " M tests/verify-campaign.ts",
+    " M tests/verify-phase2.ts",
+    " M tests/verify-phase4.ts",
+    " M tests/verify-phase6.ts",
+    "?? AGENTS.md",
+    "?? Recurring-Truths.md",
+    "?? \"Start CRACKUP.bat\"",
+    "?? artifacts/evidence/living-city/",
+    "?? artifacts/evidence/quality-browser.json",
+    "?? artifacts/evidence/quality-campaign-verification.json",
+    "?? artifacts/evidence/quality-recovery.png",
+    "?? artifacts/evidence/quality-regression.log",
+    "?? artifacts/evidence/quality-report.png",
+    "?? artifacts/evidence/quality-runtime-failure.png",
+    "?? artifacts/evidence/quality-solo-verification.json",
+    "?? artifacts/evidence/quality-startup-failure.png",
+    "?? artifacts/evidence/tier1-browser.json",
+    "?? artifacts/evidence/tier1-regression.log",
+    "?? artifacts/evidence/tier1-spires.png",
+    "?? artifacts/evidence/tier1-verification.json",
+    "?? artifacts/evidence/tier2-browser.json",
+    "?? artifacts/evidence/tier2-clinic.png",
+    "?? artifacts/evidence/tier2-facility.png",
+    "?? artifacts/evidence/tier2-regression.log",
+    "?? artifacts/evidence/tier2-robbery.png",
+    "?? artifacts/evidence/tier2-verification.json",
+    "?? artifacts/evidence/tier2-vtol.png",
+    "?? artifacts/evidence/tier3-browser-console.log",
+    "?? artifacts/evidence/tier3-browser.json",
+    "?? artifacts/evidence/tier3-build.log",
+    "?? artifacts/evidence/tier3-menu.png",
+    "?? artifacts/evidence/tier3-regression.log",
+    "?? artifacts/evidence/tier3-tier2-regression.log",
+    "?? artifacts/evidence/tier3-verification.json",
+    "?? artifacts/evidence/tier4-browser.json",
+    "?? artifacts/evidence/tier4-build.log",
+    "?? artifacts/evidence/tier4-factions.png",
+    "?? artifacts/evidence/tier4-focused.log",
+    "?? artifacts/evidence/tier4-hunter.png",
+    "?? artifacts/evidence/tier4-journal.png",
+    "?? artifacts/evidence/tier4-lore-regression.log",
+    "?? artifacts/evidence/tier4-regression.log",
+    "?? artifacts/evidence/tier4-tier2-regression.log",
+    "?? artifacts/evidence/tier4-tier3-regression.log",
+    "?? artifacts/evidence/tier4-verification.json",
+    "?? artifacts/evidence/xbox-controller-browser.json",
+    "?? artifacts/evidence/xbox-controller.png",
+    "?? artifacts/lc00-p001-failure-baseline.md",
+    "?? artifacts/lc00-p002-correlated-diagnostics.md",
+    "?? artifacts/lc00-p003-durable-diagnostics.md",
+    "?? artifacts/quality-hardening-checkpoint.md",
+    "?? artifacts/reliability-living-city-checkpoint.json",
+    "?? artifacts/reliability-living-city-status.md",
+    "?? artifacts/tier1-lore-checkpoint.md",
+    "?? artifacts/tier2-world-checkpoint.md",
+    "?? artifacts/tier3-progression-checkpoint.md",
+    "?? artifacts/tier4-combat-missions-checkpoint.md",
+    "?? artifacts/xbox-controller-checkpoint.md",
+    "?? client/diagnostics/",
+    "?? client/entities/citizenDoorways.ts",
+    "?? client/entities/resonanceSpire.ts",
+    "?? client/entities/tier2WorldMesh.ts",
+    "?? client/entities/tier3Effects.ts",
+    "?? client/entities/tier4WorldMesh.ts",
+    "?? client/input/",
+    "?? client/map/",
+    "?? docs/BUG_REPORTING.md",
+    "?? docs/DIAGNOSTIC_EVENT_SCHEMA.md",
+    "?? docs/DIAGNOSTIC_STORAGE.md",
+    "?? docs/PRD_ADDENDUM_RELIABILITY_AND_LIVING_CITY.md",
+    "?? docs/RELIABILITY_LIVING_CITY_PROMPTS.md",
+    "?? docs/TRAVERSAL_ANIMATION_PACK_SPEC.md",
+    "?? docs/WORLD_BIBLE.md",
+    "?? public/assets/audio/",
+    "?? scripts/build-client.mjs",
+    "?? scripts/build-lore-voices.ts",
+    "?? scripts/capture-living-city-baseline.mjs",
+    "?? scripts/log-launcher-failure.ps1",
+    "?? scripts/verify-tier1-browser.mjs",
+    "?? scripts/verify-tier2-browser.mjs",
+    "?? server/diagnosticJournal.ts",
+    "?? server/diagnosticReports.ts",
+    "?? server/diagnostics.ts",
+    "?? shared/content/",
+    "?? shared/diagnostics/",
+    "?? shared/physics/airspaceController.ts",
+    "?? shared/progression/tier3System.ts",
+    "?? shared/protocol/tier2Protocol.ts",
+    "?? shared/world/missionArchetypeControllers.ts",
+    "?? shared/world/resonanceSpire.ts",
+    "?? shared/world/roamingHunterDirector.ts",
+    "?? shared/world/skirmishSystem.ts",
+    "?? shared/world/tier2World.ts",
+    "?? shared/world/tier4World.ts",
+    "?? tests/audit-living-city-browser.mjs",
+    "?? tests/audit-living-city-recovery.mjs",
+    "?? tests/audit-living-city-storage.ts",
+    "?? tests/tier2-integration.ts",
+    "?? tests/tier2-objectives.ts",
+    "?? tests/tier4-activities-integration.ts",
+    "?? tests/tier4-combat-integration.ts",
+    "?? tests/tier4-network-integration.ts",
+    "?? tests/verify-controller-browser.mjs",
+    "?? tests/verify-controller.ts",
+    "?? tests/verify-diagnostic-journal.ts",
+    "?? tests/verify-diagnostics-browser.mjs",
+    "?? tests/verify-diagnostics-trace.mjs",
+    "?? tests/verify-diagnostics.ts",
+    "?? tests/verify-journal-browser.mjs",
+    "?? tests/verify-journal-evidence.ts",
+    "?? tests/verify-map-browser.mjs",
+    "?? tests/verify-map.ts",
+    "?? tests/verify-quality-browser.mjs",
+    "?? tests/verify-quality.ts",
+    "?? tests/verify-report-browser.mjs",
+    "?? tests/verify-report-export.ts",
+    "?? tests/verify-report-restart-browser.mjs",
+    "?? tests/verify-tier1-browser.ts",
+    "?? tests/verify-tier1-lore.ts",
+    "?? tests/verify-tier2-browser.ts",
+    "?? tests/verify-tier2-world.ts",
+    "?? tests/verify-tier3-progression.ts",
+    "?? tests/verify-tier4-combat-missions.ts"
+  ],
+  "fingerprint": "e0ee8f9bd3388644facb12b98dfbd1240100c9e982b331736fb4f39d2e9b1af2",
+  "clientBuild": "client-ddb95d151b5656d0",
+  "host": {
+    "platform": "win32",
+    "release": "10.0.26300",
+    "arch": "x64",
+    "node": "v22.16.0",
+    "cpu": "Intel(R) Core(TM) i7-10700K CPU @ 3.80GHz",
+    "logicalCpus": 16,
+    "totalRamGiB": 64
+  },
+  "files": [
+    {
+      "path": "Start CRACKUP.bat",
+      "bytes": 1533,
+      "sha256": "fec28aeb36f93454f21585355865a4d1fd96bc55f131022151363e1346fc8a73"
+    },
+    {
+      "path": "client/animation/combatDebris.ts",
+      "bytes": 1388,
+      "sha256": "eb1212ba74a833b5d2eefc3f4130f5c9ac69f473fec75b7225eb77cd0006d0a2"
+    },
+    {
+      "path": "client/animation/combatEffects.ts",
+      "bytes": 10174,
+      "sha256": "71a1acd287bb0276e0e6f60a14f469f32baabe5a90ef819338dcf764d2d69950"
+    },
+    {
+      "path": "client/animation/humanoidRig.ts",
+      "bytes": 7132,
+      "sha256": "b491cbd87fc5f0d9a0bb3cbf2b9a78e67f8f4acdb176dc3ded53ca3daf725115"
+    },
+    {
+      "path": "client/animation/mixamoMotion.ts",
+      "bytes": 6345,
+      "sha256": "752ba69ca5e48d548b9b622c42bcb69819c7878aedd5680777e4f9c00b17ec4e"
+    },
+    {
+      "path": "client/animation/presentationQueue.ts",
+      "bytes": 1979,
+      "sha256": "32dadfa7088978b0892b7b2a7d9f21314c4582bf7383361d572def843330196b"
+    },
+    {
+      "path": "client/animation/skeletalAnimator.ts",
+      "bytes": 18032,
+      "sha256": "09f75a69d19e7ba443c19145ab42a72660982d8784e06b005d58013b315593af"
+    },
+    {
+      "path": "client/assets/pbrTextureLibrary.ts",
+      "bytes": 8487,
+      "sha256": "79db8597e32f5ba174f7c2a7791434c2c340620544a9eada345eacfc0500df3c"
+    },
+    {
+      "path": "client/assets/productionAssets.ts",
+      "bytes": 7246,
+      "sha256": "65884d1cf25d681566636ac26f2acd0800b6432e6b85b4d6d5c74160cf977bf7"
+    },
+    {
+      "path": "client/audio/spatialGameAudio.ts",
+      "bytes": 17298,
+      "sha256": "8973bd3e94c0dcbd0b373c2716f0ad65291790a2fef02c31885703c19d51392a"
+    },
+    {
+      "path": "client/audio/spatialOrbAudio.ts",
+      "bytes": 64,
+      "sha256": "58a0a4d6e22f59141295ec17914cb86c1069b42d0c50c00a1c0b95f4b1db0c25"
+    },
+    {
+      "path": "client/builders/ArchBuilder.ts",
+      "bytes": 20573,
+      "sha256": "e9192a030cd0e37832d044e8f2f0054726afa5619fdb9fdfa9564573bf97ec51"
+    },
+    {
+      "path": "client/builders/RelayBuilder.ts",
+      "bytes": 21577,
+      "sha256": "7254dffcf7d9c9c82cf35b5ce276bf6c33f6390ac9f837b2aa0436e10e2a56e4"
+    },
+    {
+      "path": "client/builders/VehicleBuilder.ts",
+      "bytes": 23778,
+      "sha256": "af516768f7c4e3614618aa8d4c2a3b479b8cfff681532fac5f01b6a80f143ee9"
+    },
+    {
+      "path": "client/builders/WeaponBuilder.ts",
+      "bytes": 9713,
+      "sha256": "5bb41160891b4d6e31a2087a0c105f0d3e4129c85c027ae481c290b084638fd1"
+    },
+    {
+      "path": "client/builders/builderContract.ts",
+      "bytes": 2135,
+      "sha256": "1b886dc074bb7a43d66793fab0acff887f5281cf41a04cb7c9cb33c9ec5ad671"
+    },
+    {
+      "path": "client/builders/structureFallback.ts",
+      "bytes": 4188,
+      "sha256": "3c71d5b0e38331c099c2fb660c4d76cfdadee0b8ae0838265eab4a48175ca36d"
+    },
+    {
+      "path": "client/camera/springArmCamera.ts",
+      "bytes": 5731,
+      "sha256": "afb9d1f0f1be21476ff1c51450c3e145319221305e37d6507d5f20f1525c3a0b"
+    },
+    {
+      "path": "client/diagnostics/browserJournal.ts",
+      "bytes": 7320,
+      "sha256": "df5556efd7548a992e429f810737e14653f9dd4f8ebf2c93fccfb412e3339779"
+    },
+    {
+      "path": "client/diagnostics/bugReport.ts",
+      "bytes": 3970,
+      "sha256": "8707dec172b93d2d6c04f6010bb1ffd8e2cb96bc4342a972ce2e3c14c927dc89"
+    },
+    {
+      "path": "client/diagnostics/reportExport.ts",
+      "bytes": 7102,
+      "sha256": "339888f2bace02e2594cf6f1856e881048541c0f1f60d33020cd125a94076db5"
+    },
+    {
+      "path": "client/diagnostics/reportUI.ts",
+      "bytes": 12510,
+      "sha256": "d38d87b55a95fa557c22d9ffd4236593d1c7f836012aa3e1c9ba0070aa0e4baf"
+    },
+    {
+      "path": "client/entities/agentMesh.ts",
+      "bytes": 5541,
+      "sha256": "0ee8dd8127a5708975be4cd8ef2761a91043b3eb0267206c6055c722abda9b50"
+    },
+    {
+      "path": "client/entities/citizenDoorways.ts",
+      "bytes": 1610,
+      "sha256": "e7a30b330b5b34dd51b9772857784dc8a7f593dbb1fe2d387b0835043bba2049"
+    },
+    {
+      "path": "client/entities/enemyRigMesh.ts",
+      "bytes": 8111,
+      "sha256": "959bc08023287671f8109f6577215b5ba2fe4879f2f538d4185898116ffc8242"
+    },
+    {
+      "path": "client/entities/phase5WorldMesh.ts",
+      "bytes": 12900,
+      "sha256": "eb33cf30c8e54de879914ff1f0424197197de8ba6a21cef037bee1960a6e428e"
+    },
+    {
+      "path": "client/entities/phase6WorldMesh.ts",
+      "bytes": 8291,
+      "sha256": "b4750ddb5a2389a38142beb8e76b732a2f8b482f4739f333f64bd60b992d836d"
+    },
+    {
+      "path": "client/entities/resonanceSpire.ts",
+      "bytes": 4409,
+      "sha256": "86a2ada0fbe0131a7c9a06955b4d1657de0e4a9420022f58d8f5755781ef4132"
+    },
+    {
+      "path": "client/entities/tier2WorldMesh.ts",
+      "bytes": 11406,
+      "sha256": "03f7a020696b964bf6ab13e2e3b3d4ab3b7ecbd1aad9d717ef01af96c80bd044"
+    },
+    {
+      "path": "client/entities/tier3Effects.ts",
+      "bytes": 3876,
+      "sha256": "588fcd9943055c5cd272dff9daec8c8eb8a3c45e154dadcf0c274dc54931f583"
+    },
+    {
+      "path": "client/entities/tier4WorldMesh.ts",
+      "bytes": 11989,
+      "sha256": "efe0ce2d44ff282290fb5e9ff5772727258c84a9674cff1ba2ea994c1cd04995"
+    },
+    {
+      "path": "client/entities/vehicleAndPropMesh.ts",
+      "bytes": 11439,
+      "sha256": "4c99ec0f95a20a1b96c38c7b47838d0acf5caf64a1de07eb60a8e6058ee6b23f"
+    },
+    {
+      "path": "client/input/controllerMenus.ts",
+      "bytes": 2648,
+      "sha256": "2fbc4a2c986074976d84a15e89d4d24993666db9efbe0b5d3cb0eae753933570"
+    },
+    {
+      "path": "client/input/xboxController.ts",
+      "bytes": 4707,
+      "sha256": "9881853f05865dcddda14d4604ab35fdce345c92aef4e762d38b62d5c595c721"
+    },
+    {
+      "path": "client/main.ts",
+      "bytes": 56684,
+      "sha256": "ec7fe9b8fc44219e1bde3edcfb80577faa64c152da92be9b5704e6a2998bd5b5"
+    },
+    {
+      "path": "client/map/mapModel.ts",
+      "bytes": 9349,
+      "sha256": "5a91d05b0e1d8ad443e7c833eeaf8b94c3aa8ce867ee7c2c662c2ab9fb89a5ab"
+    },
+    {
+      "path": "client/map/tacticalMap.ts",
+      "bytes": 22989,
+      "sha256": "110e16744e1e4ececffde29358b8d4416a52f726283f579936ee7a5d039d6735"
+    },
+    {
+      "path": "client/narrative/campaignStorage.ts",
+      "bytes": 5016,
+      "sha256": "37f926cab90cb20e339669cc7cd2e67558e8ace0b0f79c5425d348ebe2da40d6"
+    },
+    {
+      "path": "client/narrative/cinematicDirector.ts",
+      "bytes": 5065,
+      "sha256": "d2b7adb651ad898e6db63e5fa78bc0b87cb1804019e99cf536f59888db2db815"
+    },
+    {
+      "path": "client/narrative/cinematicOverlay.ts",
+      "bytes": 4635,
+      "sha256": "6135f5e98f9be7a97bca8797dbb99b6fea7b75369a54a9d94a0b3b0f178b8651"
+    },
+    {
+      "path": "client/narrative/cinematicTracks.ts",
+      "bytes": 7203,
+      "sha256": "7dbfde2cd5084c6c19afc4d00ffaf4384ac4afb359d8f10eb824aed73cc4c69e"
+    },
+    {
+      "path": "client/narrative/tacticalComms.ts",
+      "bytes": 10476,
+      "sha256": "d36bee90068898a186f39dcd3a52ddf4d0bc8af8551a750a7ec71f746676e501"
+    },
+    {
+      "path": "client/net/netcodeClient.ts",
+      "bytes": 39038,
+      "sha256": "26db878800c17cb88459b2e7ed2472f7bcb8acdcbfdd2d0561fb2fca9f8e2d9c"
+    },
+    {
+      "path": "client/playerHUD.ts",
+      "bytes": 37108,
+      "sha256": "a37434c42c194d7da9e847eb8c13a463ccaf0428ca4a92df2c90a75b86082e47"
+    },
+    {
+      "path": "client/shaders/factionPalette.ts",
+      "bytes": 2381,
+      "sha256": "8b84701635f11a5165a370110464958777c5d69381adbb85d7327739254fd146"
+    },
+    {
+      "path": "client/shaders/inkOutlinePass.ts",
+      "bytes": 5226,
+      "sha256": "67a49e2b698a283486df16b8fd5cca66f2c77bf5ed6ace83b8741a001bc517f7"
+    },
+    {
+      "path": "client/shaders/interiorMapping.ts",
+      "bytes": 3368,
+      "sha256": "d38e7a15a9d5e7110ed13de343a3c882c0566cd73b5915f9bdffc80ec88d3fbb"
+    },
+    {
+      "path": "client/shaders/opaqueSSAOPass.ts",
+      "bytes": 1415,
+      "sha256": "3d0b36871ea70e2b502984d03cab6745942539c49919ef6bd37ca6fc13128cd0"
+    },
+    {
+      "path": "client/shaders/worldSurface.ts",
+      "bytes": 5889,
+      "sha256": "578d13aff0a5c1b6841da92c871432db970503c66d31b4090051f000536f1f34"
+    },
+    {
+      "path": "client/world/bayVista.ts",
+      "bytes": 16657,
+      "sha256": "1a5ae11f1278d9752e00b8b218602fc2716e2480bd7982297c0934dc04ab69ff"
+    },
+    {
+      "path": "client/world/cityBuilder.ts",
+      "bytes": 19515,
+      "sha256": "cef6b8a091032f625db43b9377a85627b524f0a6670d6bfc9bc96ec636fb732a"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 145877,
+      "sha256": "186d7fe2e6e81fe9901b4e4d9a258cc6c026343c75827420bf3f280364bb4783"
+    },
+    {
+      "path": "package.json",
+      "bytes": 5057,
+      "sha256": "f4eaeab9f35222fbf853e177e6ff30c0bfd0453691842045ebbdf11c4e123707"
+    },
+    {
+      "path": "public/assets/manifest.json",
+      "bytes": 24268,
+      "sha256": "207862dc81e306c6774d72d0c5978cad50433d80b43bbd74c4f9d0e6d3af0492"
+    },
+    {
+      "path": "public/game.js",
+      "bytes": 4438051,
+      "sha256": "ad27d4aa2ae56b08604cd3c70dd4f87aa9e38fe133d9cfd39792d477741daa1d"
+    },
+    {
+      "path": "public/index.html",
+      "bytes": 24344,
+      "sha256": "821b60ba3ccbd23a79c61e2417da890b34797564ae69d000b5571beabf04ae2f"
+    },
+    {
+      "path": "public/style.css",
+      "bytes": 22106,
+      "sha256": "5daf664cecd7ace6365ce99770d4dfa3d4aae1051bc03d757e726d2218c9af40"
+    },
+    {
+      "path": "scripts/build-capoeira-pack.mjs",
+      "bytes": 8140,
+      "sha256": "02f36245345a9c1911ec8635a3213ae60dda5e1583a1a91a14ecc5a6ccbc6a60"
+    },
+    {
+      "path": "scripts/build-client.mjs",
+      "bytes": 1012,
+      "sha256": "0276170d8dbb44f3d197c6d9543b8c1a282b4d4be97912c40d74b2d3341932af"
+    },
+    {
+      "path": "scripts/build-lore-voices.ts",
+      "bytes": 3607,
+      "sha256": "5fbcbf5004d957ac178804e44d5cf35f5d2b94b67d795ef2932663809daeb700"
+    },
+    {
+      "path": "scripts/build-mixamo-agent.mjs",
+      "bytes": 9002,
+      "sha256": "73cc76cd07679e06be3b8acc83f88bf4216dce022de75f0b8f5025f041131fe1"
+    },
+    {
+      "path": "scripts/build-progress-artifact.mjs",
+      "bytes": 4934,
+      "sha256": "7ce947e8ef1b0573b82b2b7a0fb0911ab52d7fd18d6fe3ae01c29a527f4c3987"
+    },
+    {
+      "path": "scripts/capture-living-city-baseline.mjs",
+      "bytes": 2463,
+      "sha256": "13bce138c6aa849cb9e9df20889c2db03d8331eb54159fef18fceb6ca7fef8e0"
+    },
+    {
+      "path": "scripts/fetch-prod-assets.mjs",
+      "bytes": 12450,
+      "sha256": "7224ff6af75e0643173840d6bfe16e226ea14893d7f15569ddf690ea1af62301"
+    },
+    {
+      "path": "scripts/host_online.js",
+      "bytes": 4193,
+      "sha256": "61cb42a5647216bc086c36adcd8f085934827e6896b3b232658c1a7e20566bfc"
+    },
+    {
+      "path": "scripts/index-asset-inbox.mjs",
+      "bytes": 9022,
+      "sha256": "7bed9a5a12b6c537e8349b40cf4c5efce3836131745861eac19d5af1947b33ac"
+    },
+    {
+      "path": "scripts/log-launcher-failure.ps1",
+      "bytes": 1584,
+      "sha256": "a6b7c4b5206324e1fd784cd94457044a56ed64e4528003fce6ff81aa7f5deaa0"
+    },
+    {
+      "path": "scripts/package-solo.mjs",
+      "bytes": 7686,
+      "sha256": "f2a8e1be10544cde187390331d41950e90b950f9a009d939681e513426149fbc"
+    },
+    {
+      "path": "scripts/verify-art-browser.mjs",
+      "bytes": 1192,
+      "sha256": "40dfd6a515277069c6333aba37054d2d51ce607d964e9797dc8b24346eb80b88"
+    },
+    {
+      "path": "scripts/verify-prod-assets-browser.ts",
+      "bytes": 5595,
+      "sha256": "d172a0f5c8effced67e8c9ed57d9a90aa3631476fdc1fb00faba1d7ecd142329"
+    },
+    {
+      "path": "scripts/verify-prod-assets.mjs",
+      "bytes": 5981,
+      "sha256": "c47edebb7df84b75852560202b28be9656bee10d860a8d0328e1bbbafb65b4dd"
+    },
+    {
+      "path": "scripts/verify-product-requirements.mjs",
+      "bytes": 7285,
+      "sha256": "41652b74f4c4aceebc8ff70121caf56935c5034e7e4a9ae2692cdce70f8073bb"
+    },
+    {
+      "path": "scripts/verify-stage3a-browser.mjs",
+      "bytes": 1390,
+      "sha256": "68b12aa79ce4393bdbb83f061d9b08b502c3757e99be5129ce1fe2e978b1c7f8"
+    },
+    {
+      "path": "scripts/verify-stage3b-browser.mjs",
+      "bytes": 1376,
+      "sha256": "e165bd580767b9b6d5587ba1ebb1b8852af272a47a6e3551e0909053bd73e653"
+    },
+    {
+      "path": "scripts/verify-stage3c-browser.mjs",
+      "bytes": 1385,
+      "sha256": "6d1ecca8cda5a8e134b0792e4bc7f9beaf6f78909901be701358d4bec3ae1fb2"
+    },
+    {
+      "path": "scripts/verify-stage3d-browser.mjs",
+      "bytes": 2615,
+      "sha256": "72744901ec75fbee8ad0dc9a545261ac7d3053839d1d4a7e0d411ede1b6475c1"
+    },
+    {
+      "path": "scripts/verify-stage4-browser.mjs",
+      "bytes": 4907,
+      "sha256": "62381f51f33048285a1c15c6c6f0f5e52871d448844bafd9186dccbf1dfb5261"
+    },
+    {
+      "path": "scripts/verify-stage5-browser.mjs",
+      "bytes": 3553,
+      "sha256": "a442571e24604a62a19bbf509c10521957528938f938fed641cc511125ba4bfc"
+    },
+    {
+      "path": "scripts/verify-stage6-browser.mjs",
+      "bytes": 2980,
+      "sha256": "4a0827b579c0af1099da6b6a061de572de58a7a02d127c5720ec77dd0b58faed"
+    },
+    {
+      "path": "scripts/verify-tier1-browser.mjs",
+      "bytes": 2314,
+      "sha256": "612f226c22f6fe962077865adbdb6964ba65f99ff402031ed72ccde98cb66a56"
+    },
+    {
+      "path": "scripts/verify-tier2-browser.mjs",
+      "bytes": 1821,
+      "sha256": "d244ba7b1372c8be88b391d24beea959b2365922f8ffc3fd08aa86972fd4ec20"
+    },
+    {
+      "path": "server/campaign.ts",
+      "bytes": 1990,
+      "sha256": "f6ebd8c5cc20b4510a1df0e78d8bc68d60e7ac5f4cb34d81daeb06bc84161e19"
+    },
+    {
+      "path": "server/campaignStore.ts",
+      "bytes": 6298,
+      "sha256": "c874c67efe0cdb370fe80dbbccdd9b286f6520d26cc4982184306a48de207a2c"
+    },
+    {
+      "path": "server/db.ts",
+      "bytes": 29456,
+      "sha256": "17c4296c8fef56f64eaca7804c2203fc6784b7140756e8c080cb318dab88870d"
+    },
+    {
+      "path": "server/diagnosticJournal.ts",
+      "bytes": 14136,
+      "sha256": "f739e9dafa98f07431f62e7596190910aa140cd24d69626e8257b19cad3e0827"
+    },
+    {
+      "path": "server/diagnosticReports.ts",
+      "bytes": 4677,
+      "sha256": "8026c01cf788f68a151b979dc9150b4dfc77b317dcf7927bf51d88259c91884c"
+    },
+    {
+      "path": "server/diagnostics.ts",
+      "bytes": 1999,
+      "sha256": "738b6107b4d8f9c8ee0bbd0401a15be73a0aa671b05bb2bae61c8b1c66c66bb6"
+    },
+    {
+      "path": "server/gameServer.ts",
+      "bytes": 75827,
+      "sha256": "6ad726257f6d2cf033a5603f4d4003b1ac26c6f23b4384514cd593dc5cf98a6b"
+    },
+    {
+      "path": "server/index.js",
+      "bytes": 82133,
+      "sha256": "92b4229e3cd80d645f925a2b36e8e35dad146375df279956bd2147d4f76d7080"
+    },
+    {
+      "path": "server/index.ts",
+      "bytes": 1771,
+      "sha256": "bc6c283b565ab1ff458084ffc5a2aac5dbafdf6c945f19ddd043d71b4837313e"
+    },
+    {
+      "path": "server/persistence.js",
+      "bytes": 6650,
+      "sha256": "a62aec7e94d355d9027e22f5bcfd8c9813cdd5d675496238cddaa24883f85102"
+    },
+    {
+      "path": "server/solo.ts",
+      "bytes": 3597,
+      "sha256": "90ba2c97b391056868b4790474b1a1cd01422c34bb3f57475973435fd2420fb2"
+    },
+    {
+      "path": "server/soloWorldCheckpoint.ts",
+      "bytes": 2551,
+      "sha256": "7cb0e0653e0e91108684ef77df3683da384632f352b046e4c13b9563ca9cb3c8"
+    },
+    {
+      "path": "server/world_data.js",
+      "bytes": 31385,
+      "sha256": "7a06c5c1625e7e673e57194c8ccdeb08352250520465f7d0fb6ea3a334c7dc41"
+    },
+    {
+      "path": "server/ws_server.js",
+      "bytes": 4864,
+      "sha256": "36c4a52c46d6747e71d629aecbea26d3f1f0fe27cca9635258ffb9749ee88e01"
+    },
+    {
+      "path": "shared/campaign/openingOperation.ts",
+      "bytes": 6977,
+      "sha256": "0918a6eb32552cf24377553839d0efa8a7abfc66cfba3a9bd10ca39b0d1181ed"
+    },
+    {
+      "path": "shared/campaign/openingSite.ts",
+      "bytes": 2140,
+      "sha256": "a3dd90bc2ecbe1c53d4562867b1f4e1c5a7c3e380a3d3fa2e810584b21c4b400"
+    },
+    {
+      "path": "shared/campaign/presentation.ts",
+      "bytes": 4504,
+      "sha256": "ceacdb04c981c6c9c90f618a9bea454379847bbecf2c8bebcaf83571f7e2399d"
+    },
+    {
+      "path": "shared/campaign/soloCampaign.ts",
+      "bytes": 3505,
+      "sha256": "254dd58fb121b076c53a65ce02d2c4bcae3627603a6a8894c47b2e9e900a5e98"
+    },
+    {
+      "path": "shared/combat/combatPresentation.ts",
+      "bytes": 4710,
+      "sha256": "322875ad7d196ea865d9e5a50fbab7569e10f430c219d30167faae714c17ed40"
+    },
+    {
+      "path": "shared/combat/enemyRigSystem.ts",
+      "bytes": 64191,
+      "sha256": "7fe08488f5401c41d012f42c4d46db0475e03ecf98dcec97da727f7c212483e5"
+    },
+    {
+      "path": "shared/combat/presentationEvents.ts",
+      "bytes": 3921,
+      "sha256": "0b735f5140eee6570c46a64642dc41c9b8cfdcc13a3fc178f475da17e5d0b495"
+    },
+    {
+      "path": "shared/combat/weaponPresentation.ts",
+      "bytes": 898,
+      "sha256": "5c25cff0cee18d36836ce941df3f2f06007ccbdc273b18ce409518d960f44b0c"
+    },
+    {
+      "path": "shared/constants.ts",
+      "bytes": 21922,
+      "sha256": "761223b9f53dcca7459264c6a40446343deeeb75f7e3fc4d5ae7358264fcfeaa"
+    },
+    {
+      "path": "shared/content/activitiesAndCollectiblesRegistry.ts",
+      "bytes": 12026,
+      "sha256": "35ff92e5a22359e0f9cf3e82873073c6d293f1c55764911e75c6f18845d85e1c"
+    },
+    {
+      "path": "shared/content/arsenalAndVehicleRegistry.ts",
+      "bytes": 10022,
+      "sha256": "4156d068aeec162d19022c1338c9f808853cdedfa5ef1559ed9e918828d696be"
+    },
+    {
+      "path": "shared/content/campaignGraph.ts",
+      "bytes": 11757,
+      "sha256": "a1cbf19d9a404cfc018d5a91dfe87a4dc25e1e8017a9914436fec52e33eb62ae"
+    },
+    {
+      "path": "shared/content/characterRegistry.ts",
+      "bytes": 9415,
+      "sha256": "cb4b7be3cfb6b0d9a2f1c30622b6a5b84bf8279e2e5815a68416b9d796577205"
+    },
+    {
+      "path": "shared/content/districtEncounters.ts",
+      "bytes": 3644,
+      "sha256": "44da50c921e6796e61dc4073d78755b204a67df71c68699786d10407950558b1"
+    },
+    {
+      "path": "shared/content/enemyAndBossRegistry.ts",
+      "bytes": 5778,
+      "sha256": "f69d55a8419308de388b7b6ef8aad39a1f19f818688a9aa525260a2fe76fcab6"
+    },
+    {
+      "path": "shared/content/missionArchetypeRegistry.ts",
+      "bytes": 2467,
+      "sha256": "9ad51d2cba6a2d55128606b963e7d5bb318a7f271dc9d49df4d2440ced2c6df5"
+    },
+    {
+      "path": "shared/content/progressionRegistry.ts",
+      "bytes": 8549,
+      "sha256": "79ad386bed4d0ffab8a6520b96a10c047c722a76bd8af5ea4368420c5f386d51"
+    },
+    {
+      "path": "shared/content/skillTreeRegistry.ts",
+      "bytes": 6855,
+      "sha256": "2b4b3bec207c22124a1907e21640b815bf184616dbbf4448cc0476935fc9153e"
+    },
+    {
+      "path": "shared/content/storyScript.ts",
+      "bytes": 8528,
+      "sha256": "848438503a492d4b588c9ec7ea315841972caf9b993f5e286eb52f5d025d7fe9"
+    },
+    {
+      "path": "shared/content/tier4WorldGeometry.ts",
+      "bytes": 5428,
+      "sha256": "392ad90f9880524fe9966c4718cf7c0d2df454a4a2deff4e8c3b939683009639"
+    },
+    {
+      "path": "shared/content/worldLore.ts",
+      "bytes": 13362,
+      "sha256": "17e1d8748317bef1f5fde7b9d10fcd3362ae425d3ad913a882c59016a0c3a37c"
+    },
+    {
+      "path": "shared/content/worldSystemsRegistry.ts",
+      "bytes": 7736,
+      "sha256": "3cc2253d4f571c6a6ca158089b90b87aaaaff5a548640f3e484e845457b8b695"
+    },
+    {
+      "path": "shared/diagnostics/events.ts",
+      "bytes": 9301,
+      "sha256": "d9d5b24743341f60424cbdfede38b84984de41b48e6dd592bae7510c2bf38fb8"
+    },
+    {
+      "path": "shared/diagnostics/reportSessions.ts",
+      "bytes": 2427,
+      "sha256": "333f256f691c2d75d5c559e5e8ac1235e2f94316c1e6ceeabc567b0d8176931f"
+    },
+    {
+      "path": "shared/narrative/storyBible.ts",
+      "bytes": 2395,
+      "sha256": "da5d9e52ac688ff0b1d23cedc9e3b92160831fcc25af0bdb144bb1df8a243050"
+    },
+    {
+      "path": "shared/physics/airspaceController.ts",
+      "bytes": 10769,
+      "sha256": "1204d4aa6901da4c2668111e390a16f336e43f8183e132f2bc8f70cff072d21f"
+    },
+    {
+      "path": "shared/physics/characterController.ts",
+      "bytes": 50087,
+      "sha256": "dacb8c9474f60c2a72f3d53dbcc894bd2149f47d96847ea001ca180d5d089bb5"
+    },
+    {
+      "path": "shared/physics/vehicleAndPropSystem.ts",
+      "bytes": 58413,
+      "sha256": "2fc54e20d415a82175e13a99293e7be6677c4bf91a96174b748944522a8dec14"
+    },
+    {
+      "path": "shared/progression/skillTreeSystem.ts",
+      "bytes": 23182,
+      "sha256": "0d112dd3ceec8f4ddc375c7f496ae300c85a8816b2409e6f7b2025178b8577fc"
+    },
+    {
+      "path": "shared/progression/tier3System.ts",
+      "bytes": 44284,
+      "sha256": "5f1c090cc76e4a459101c36b5727c54d7fb621f2c22d5107f7c182ed6661a995"
+    },
+    {
+      "path": "shared/protocol/binaryProtocol.ts",
+      "bytes": 46892,
+      "sha256": "68889d0311f19a7831850d5d2e7a3ddc1d621fea17a89583548f363238ba184e"
+    },
+    {
+      "path": "shared/protocol/presentationProtocol.ts",
+      "bytes": 4200,
+      "sha256": "d977d0ab664d6196ffa15b0e8ff8316d9fa1f28c1849f18055993ffe45654986"
+    },
+    {
+      "path": "shared/protocol/relayProtocol.ts",
+      "bytes": 3332,
+      "sha256": "c8a51b74961dad8b89a61a12cc158b06cb209afc7205dcffaca6acbba372a9ca"
+    },
+    {
+      "path": "shared/protocol/tier2Protocol.ts",
+      "bytes": 6831,
+      "sha256": "22808f7b2f0ca0f2495b2d3152d77c6b333357519020316d4439a8cd50c5ff03"
+    },
+    {
+      "path": "shared/protocol/vehicleDamageProtocol.ts",
+      "bytes": 6199,
+      "sha256": "c68d22559dc457054731625b5c8248664c176817109a4beb1621e5a101ca674e"
+    },
+    {
+      "path": "shared/vehicles/vehicleDefinition.ts",
+      "bytes": 2413,
+      "sha256": "3b9b5843ebde3d12dbe80919f480b4a966de90e10f7bacbb47f9f774c3083cea"
+    },
+    {
+      "path": "shared/world/architecture.ts",
+      "bytes": 7464,
+      "sha256": "a0bb06253626e6a12bb1e038c822980a2d90c45ecf1a30ea4c25478148304200"
+    },
+    {
+      "path": "shared/world/bayVista.ts",
+      "bytes": 4065,
+      "sha256": "2c4ffdc7b3eb14bc3910c3a5ad1ce43b9486ef836ec9ef184c86c0a6e4a61684"
+    },
+    {
+      "path": "shared/world/cyberPetArena.ts",
+      "bytes": 48107,
+      "sha256": "ffde0d5bae2c2697c2592efa3beba3c538765c15d4eb09c3d16955923b196dd5"
+    },
+    {
+      "path": "shared/world/dreadnoughtBoss.ts",
+      "bytes": 16209,
+      "sha256": "79b756fce30be13fa612aaba5607bf23f2e0684f07424342fb9016edb0e29da0"
+    },
+    {
+      "path": "shared/world/missionArchetypeControllers.ts",
+      "bytes": 2491,
+      "sha256": "0e0546dff34d891d41c07daac8f86e32da7b11885c852046fa8fe28f742d76b2"
+    },
+    {
+      "path": "shared/world/neoVeridiaBlock.ts",
+      "bytes": 29254,
+      "sha256": "01b786eef03ee73854c63556e5f9867304ada746bd55d86d8f05f777bc6c1ab7"
+    },
+    {
+      "path": "shared/world/orbSystem.ts",
+      "bytes": 12368,
+      "sha256": "5c26e22fcf96318e8f5bb082efecf991095f400e9d9d98e001a3df0322ec8476"
+    },
+    {
+      "path": "shared/world/phase5Systems.ts",
+      "bytes": 26432,
+      "sha256": "f4264c2c41592bf64269ebff249e234c908bc4476a274069cb6fa2dddc9f170f"
+    },
+    {
+      "path": "shared/world/relayDefinition.ts",
+      "bytes": 5034,
+      "sha256": "ce8664ca35ed27daa42829b14b04e1df0eb6b94f95a655e12526b6027a2d6758"
+    },
+    {
+      "path": "shared/world/relaySystem.ts",
+      "bytes": 7389,
+      "sha256": "170eeb0fce0e4e88e3c9abbe859478623da58f73332988c54c3fe085bb28a4ce"
+    },
+    {
+      "path": "shared/world/resonanceSpire.ts",
+      "bytes": 1336,
+      "sha256": "cbce188adecbd2907815420cbc3622d38f34666a8820231d8b77c4adf9319d1d"
+    },
+    {
+      "path": "shared/world/roamingHunterDirector.ts",
+      "bytes": 2550,
+      "sha256": "02856d0c18d0f063343485356f51c535081b5289aec7787bf962798261a0fd63"
+    },
+    {
+      "path": "shared/world/skirmishSystem.ts",
+      "bytes": 13925,
+      "sha256": "8779244aa708af82dedeec499a774acdd2cad46573e752754de42198270d37a0"
+    },
+    {
+      "path": "shared/world/spatialOctree.ts",
+      "bytes": 5696,
+      "sha256": "942f179748a5e98d0b0241173b25c7ff884618be37803510ea35717a9cee0d2a"
+    },
+    {
+      "path": "shared/world/tier2World.ts",
+      "bytes": 18567,
+      "sha256": "ca40c40180bd19663dae03606e85a58c68ebc1a1e1d704ed5dc2e052be81f20d"
+    },
+    {
+      "path": "shared/world/tier4World.ts",
+      "bytes": 44753,
+      "sha256": "852ea9079bfe1c3cb70781a894ed0febb4a3b100094c4d15b5fa5ea73af42bf7"
+    },
+    {
+      "path": "tests/audit-living-city-browser.mjs",
+      "bytes": 6141,
+      "sha256": "cc3cb97939b70faf4c370993b88fb9e65951ff96761ca719341695333bef374c"
+    },
+    {
+      "path": "tests/audit-living-city-recovery.mjs",
+      "bytes": 4755,
+      "sha256": "75d3d0526d21375327113788de123ff759fd838590586ab6fcfb87ad3b12b2f0"
+    },
+    {
+      "path": "tests/audit-living-city-storage.ts",
+      "bytes": 8673,
+      "sha256": "e4641239dfee34f2437b8ec9480d72f2d673e3847fbc2c063eec63a67142d2f0"
+    },
+    {
+      "path": "tests/audit-product-baseline.ts",
+      "bytes": 13053,
+      "sha256": "b123cac34441e7fc80940c17a20b2279eff3d1fc205e6a35d47eb882d64fdd77"
+    },
+    {
+      "path": "tests/critic_multiplayer_test.js",
+      "bytes": 14012,
+      "sha256": "83bdee954b61538889773890ea525f8387f7653de5733ab191e633dfa94fce0f"
+    },
+    {
+      "path": "tests/fixtures/stage3a-legacy.json",
+      "bytes": 19469,
+      "sha256": "7af569a074ad694946760904ff8e53d56a008eefcdb96340304edd02c4644ec6"
+    },
+    {
+      "path": "tests/helpers/baselineRelayMesh.ts",
+      "bytes": 1481,
+      "sha256": "b35e5ebf4f989a1745d74195d97aed961289de1a339f50d6ef43cc036cbdf134"
+    },
+    {
+      "path": "tests/helpers/baselineVehicleMesh.ts",
+      "bytes": 2897,
+      "sha256": "a7514eee515c59db12435fe9209797beafdf4148d6e7b66080335eebac6c5e94"
+    },
+    {
+      "path": "tests/tier2-integration.ts",
+      "bytes": 3552,
+      "sha256": "9ad356ba5dada9af9c9cf74ee934ecb50c5a909bdb107b30c5f34bbda1ba048e"
+    },
+    {
+      "path": "tests/tier2-objectives.ts",
+      "bytes": 8056,
+      "sha256": "d6f7c51a26bac1e86c7020e060018abcdde59b438988f197a572117dd1f0c422"
+    },
+    {
+      "path": "tests/tier4-activities-integration.ts",
+      "bytes": 5697,
+      "sha256": "bbdccb172ba3420ad7818d56e7fecc934d8bf6a8caafa98a9d140aa9e6b2ed30"
+    },
+    {
+      "path": "tests/tier4-combat-integration.ts",
+      "bytes": 2726,
+      "sha256": "983cfafe2019cc6858e8fe39a7b39a5ee0c4280757a03e7db0c8cafda7471557"
+    },
+    {
+      "path": "tests/tier4-network-integration.ts",
+      "bytes": 5092,
+      "sha256": "22a0d473e1232b7ae21d47822923f2587d0bd571cae0cadb2e6e8f62c3859c0e"
+    },
+    {
+      "path": "tests/verify-alpha.ts",
+      "bytes": 13603,
+      "sha256": "30d39c22f5c70285c5499b03a54129db83aa9961e011a1175811d141206506a7"
+    },
+    {
+      "path": "tests/verify-art-browser.ts",
+      "bytes": 5146,
+      "sha256": "3c9e181d36fb5e936849b6639944b05c90df251a0be21cadbb8a8433249149d3"
+    },
+    {
+      "path": "tests/verify-campaign.ts",
+      "bytes": 16715,
+      "sha256": "d1ad251d791620e744f677e4d8becfba107daefebde0556b7493b0ed92bec4c4"
+    },
+    {
+      "path": "tests/verify-controller-browser.mjs",
+      "bytes": 7867,
+      "sha256": "3d14888bcc3bc919c8947666a21a50145d65498eef32f55e2438aa5883e740e8"
+    },
+    {
+      "path": "tests/verify-controller.ts",
+      "bytes": 4461,
+      "sha256": "67a15ffb0d1e7bc65deb7d1902b66071a1b2582d6829a376b617c1fec28b827c"
+    },
+    {
+      "path": "tests/verify-diagnostic-journal.ts",
+      "bytes": 15893,
+      "sha256": "ad594329db1dcf5c43b8b45cb703ae45e7ba6c956624748069265f3a839b1be0"
+    },
+    {
+      "path": "tests/verify-diagnostics-browser.mjs",
+      "bytes": 3995,
+      "sha256": "ce2498ba21a5dbf7a4c6cc7a8f1965e3a2ccebafdf89aff5742c9905db76d28e"
+    },
+    {
+      "path": "tests/verify-diagnostics-trace.mjs",
+      "bytes": 3790,
+      "sha256": "4e2c8a5cfe43e2a2a313cab7207ea081a6b3365ff86677fe9e701687e9f0247e"
+    },
+    {
+      "path": "tests/verify-diagnostics.ts",
+      "bytes": 9832,
+      "sha256": "179f1ec38477fb09e328b64261332ecd1ec15e1021c6a1c51b1f78d0fb0733e2"
+    },
+    {
+      "path": "tests/verify-journal-browser.mjs",
+      "bytes": 4760,
+      "sha256": "2904a85ba2751d51203f25f7ff20d120bd093030c45dcbf0546cbbf6788bf287"
+    },
+    {
+      "path": "tests/verify-journal-evidence.ts",
+      "bytes": 3401,
+      "sha256": "20049fdfaa1d64271de183bc8d8cb34a409ffacc9455885a39d46476c392f929"
+    },
+    {
+      "path": "tests/verify-map-browser.mjs",
+      "bytes": 9644,
+      "sha256": "484582adfca566aeb17cdc551734835ae9515e3ccb151fd91a802583abc36ad4"
+    },
+    {
+      "path": "tests/verify-map.ts",
+      "bytes": 6049,
+      "sha256": "3f1ddf3bd061dbe6f5e9fae3b1543f9c2e16495edb479e9c6aba737905c59c4b"
+    },
+    {
+      "path": "tests/verify-phase1.ts",
+      "bytes": 21708,
+      "sha256": "6945367f61c29e34af09e9205d6a0d9f5567f0d086fffc61f1f9def23f366cb7"
+    },
+    {
+      "path": "tests/verify-phase2.ts",
+      "bytes": 20044,
+      "sha256": "a6de32ca4f82e1a97c271ce650372f6881f7c80ef750264767d82c7f9c658f31"
+    },
+    {
+      "path": "tests/verify-phase3.ts",
+      "bytes": 27202,
+      "sha256": "8f221d7209b2f847a94d311f48a62e9dc99bcc1e6b43dc5f451d98adafa4c13a"
+    },
+    {
+      "path": "tests/verify-phase4.ts",
+      "bytes": 26759,
+      "sha256": "e3c4d00f7df3ebdfdc755ff90e82aacb73307bcdfe47745e35e39adfb4e59929"
+    },
+    {
+      "path": "tests/verify-phase5.ts",
+      "bytes": 19061,
+      "sha256": "3bf5f5173be7794ec5e8d3c1917033d8231c2c90dc0f4debe3c5bcd3283d5841"
+    },
+    {
+      "path": "tests/verify-phase6.ts",
+      "bytes": 23621,
+      "sha256": "c2cd90233ae19a6cc3b2671263b8d9ef97bb7c1ad2a333fb731604997abdcc5e"
+    },
+    {
+      "path": "tests/verify-quality-browser.mjs",
+      "bytes": 7666,
+      "sha256": "c1b1e9b821f59f850fc93afb306a60ca41c6adffa81ceb4aa247b8cb65cebcca"
+    },
+    {
+      "path": "tests/verify-quality.ts",
+      "bytes": 3749,
+      "sha256": "866cd95681857b7a9981437f7bbae982c5a0266f4dfe411cbbc3e8c926fa91a7"
+    },
+    {
+      "path": "tests/verify-report-browser.mjs",
+      "bytes": 11581,
+      "sha256": "ddef07711d9c3ef35ebd5a4b4b94ec54ca9dd20d4e73a6513812955f387f0f26"
+    },
+    {
+      "path": "tests/verify-report-export.ts",
+      "bytes": 7929,
+      "sha256": "aec6e9e95586f6c48502e9bcf6949ba7c56fceb23377cbef074a6e5e96106ff3"
+    },
+    {
+      "path": "tests/verify-report-restart-browser.mjs",
+      "bytes": 4603,
+      "sha256": "9a2c91b6ac6d9e7c45d5f33b5e3c26707502577814e2e8b98c149b99a99e549b"
+    },
+    {
+      "path": "tests/verify-solo.ts",
+      "bytes": 22649,
+      "sha256": "f6d28c82a8b6c3a1a953a9e5e29b49285e777c45a7803ccedc7b38c6030a9e5a"
+    },
+    {
+      "path": "tests/verify-stage1.ts",
+      "bytes": 3423,
+      "sha256": "78c925269802a584feb5c0ea22cd1923f7267a0e22f0d59a1b5ba983c1588c00"
+    },
+    {
+      "path": "tests/verify-stage2-network.ts",
+      "bytes": 3537,
+      "sha256": "8b405ca28b236b0cdbe2943006e6a004477940b75812fb7b2fb0c72c0136a807"
+    },
+    {
+      "path": "tests/verify-stage2.ts",
+      "bytes": 10527,
+      "sha256": "3ce44c0943b5e04c5d68ba17e7404305051df143ebe9170a336eaad5558174d9"
+    },
+    {
+      "path": "tests/verify-stage3a-browser.ts",
+      "bytes": 8271,
+      "sha256": "407cb95cb11c0806ddee211829ae35bd040baa53e9cce79755e0365002a2a46a"
+    },
+    {
+      "path": "tests/verify-stage3a.ts",
+      "bytes": 11008,
+      "sha256": "180ef60d79b6582010f99239e2e4607ece39622dbb2689c42f18dd6d94084317"
+    },
+    {
+      "path": "tests/verify-stage3b-browser.ts",
+      "bytes": 8343,
+      "sha256": "c1bb4f9be1f68a2f616b9b87b3fa88fb80f89671430e57c31197aa13ff991627"
+    },
+    {
+      "path": "tests/verify-stage3b-network.ts",
+      "bytes": 5179,
+      "sha256": "dd377a6f516d4b1bca09e135ff7b602a54df8ecabebea24a2bcbe86cc85354ee"
+    },
+    {
+      "path": "tests/verify-stage3b.ts",
+      "bytes": 14606,
+      "sha256": "f0e728b3921eeb4c6b96732ca1317d942d9fad479eb5359eb30b844f287c96f5"
+    },
+    {
+      "path": "tests/verify-stage3c-browser.ts",
+      "bytes": 9971,
+      "sha256": "6b0badf347984a7643d6cc577d183f3f76850f3bf8e6f9c82c876f9ae61a92ff"
+    },
+    {
+      "path": "tests/verify-stage3c-network.ts",
+      "bytes": 5634,
+      "sha256": "0c717cec4905d63bf935efdf818bc870b9ea6bbcb09c98ed8f3dbe2488f52f84"
+    },
+    {
+      "path": "tests/verify-stage3c.ts",
+      "bytes": 12389,
+      "sha256": "616faf9149d01b5d84b4d8a49766c54d27a2fcffdb304f6e8c13f3ac83a3dd7e"
+    },
+    {
+      "path": "tests/verify-stage3d-browser.ts",
+      "bytes": 16803,
+      "sha256": "7ab3e741d5b829e3b97cd67547bd5361f2fb6b4b3811108a47f79bd0c000e11a"
+    },
+    {
+      "path": "tests/verify-stage3d.ts",
+      "bytes": 10118,
+      "sha256": "4ec54c3f9b2646b47b2b601cba1ae220e058366224c3cb5adde7453c4716149d"
+    },
+    {
+      "path": "tests/verify-stage4-browser.ts",
+      "bytes": 8191,
+      "sha256": "5058aa36a71003b2dc5fa03559fca08b7cffe18538f88a61004a02ba67d7b770"
+    },
+    {
+      "path": "tests/verify-stage4.ts",
+      "bytes": 6076,
+      "sha256": "0c1a6a0c040aaecdd3a7d00e98286b45782b826781fa036da3b22251f3359bd1"
+    },
+    {
+      "path": "tests/verify-stage5-browser.ts",
+      "bytes": 14451,
+      "sha256": "d6076c24779e145ce7c42959071ac467b5373efe14998fb395f92653e7db20aa"
+    },
+    {
+      "path": "tests/verify-stage5-network.ts",
+      "bytes": 6596,
+      "sha256": "38e1f760bfae4d826740055fac2ca42ee5244fc2e0d5c77e32b47549f7582d0c"
+    },
+    {
+      "path": "tests/verify-stage5.ts",
+      "bytes": 7891,
+      "sha256": "fd1ce34b92d04dc43693b08dfd6836cc05bbbf67cf934a48dce96c7a5164faab"
+    },
+    {
+      "path": "tests/verify-stage6-browser.ts",
+      "bytes": 9450,
+      "sha256": "9bdea8dd569e21db3f8f0c54f64b2335671389bdc563e911ed14072117b30ddb"
+    },
+    {
+      "path": "tests/verify-stage6-network.ts",
+      "bytes": 6143,
+      "sha256": "1035aad1f49d9acaa9fbe85e8256bb9c71d9ba6b3926bcace6b03150fbbe2e67"
+    },
+    {
+      "path": "tests/verify-stage6.ts",
+      "bytes": 8720,
+      "sha256": "f91f1183235e7de4b5be2e5627719dfe924d52afc2e6f08d6dddb023523cc56b"
+    },
+    {
+      "path": "tests/verify-tier1-browser.ts",
+      "bytes": 5109,
+      "sha256": "2aaedb1ac76e6f9176087fad4e246558d7a1608e9a1efc9fb0bcda0f99be35a4"
+    },
+    {
+      "path": "tests/verify-tier1-lore.ts",
+      "bytes": 20964,
+      "sha256": "58817c8aeaeb412c73530891acafcee7da8433639c5a87f1a4c05b265547e3fb"
+    },
+    {
+      "path": "tests/verify-tier2-browser.ts",
+      "bytes": 6906,
+      "sha256": "b2cbf4a94ba78bfe43bbc89f7f3973ca6e98af081bee1ab5c175dc9dcdc81dcc"
+    },
+    {
+      "path": "tests/verify-tier2-world.ts",
+      "bytes": 20911,
+      "sha256": "94bb33f2b681327b7b8ced8852dc0a52a690471f2a70d5f67e9e97e2ed676e18"
+    },
+    {
+      "path": "tests/verify-tier3-progression.ts",
+      "bytes": 23612,
+      "sha256": "8d10d495ef13d7ba98a05ba9757f7e8a12fc4eab26b7f75f464cf790f1379d75"
+    },
+    {
+      "path": "tests/verify-tier4-combat-missions.ts",
+      "bytes": 15008,
+      "sha256": "cea3f817d4d26f0dfa1f4b3f0f2fb927cb96747095e720c2b0a2e1591cd46c9f"
+    },
+    {
+      "path": "tsconfig.json",
+      "bytes": 576,
+      "sha256": "22491bfe581b9de53846fca65546e5adb433133822574635dccc8df77005ec40"
+    }
+  ]
+}

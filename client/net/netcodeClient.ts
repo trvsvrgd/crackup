@@ -1,3 +1,10 @@
+import type { Tier4Snapshot } from '../../shared/world/tier4World.js';
+import type { PerformanceSampler } from '../../shared/diagnostics/performance.js';
+import type { Tier3State, TraversalMode } from '../../shared/progression/tier3System.js';
+import type { PersistedPetStats } from '../../shared/world/cyberPetArena.js';
+import type { MunicipalGridStability, CampaignEnding } from '../../shared/content/campaignGraph.js';
+import type { NeuralDriftRatios } from '../../shared/world/phase5Systems.js';
+import type { SpireCollectionPresentation } from '../../shared/world/resonanceSpire.js';
 import { parseCampaignPresentation, type CampaignPresentation } from '../../shared/campaign/presentation.js';
 import { decodeEffects, type EffectPacket } from '../../shared/protocol/presentationProtocol.js';
 /**
@@ -8,6 +15,8 @@ import { decodeEffects, type EffectPacket } from '../../shared/protocol/presenta
 
 import { decodeCombatPresentation, type CombatPresentation, type DroppedWeaponState } from '../../shared/combat/combatPresentation.js';
 import { decodeVehicleDamage, type VehicleDamagePacket } from '../../shared/protocol/vehicleDamageProtocol.js';
+import { decodeTier2, type Tier2Snapshot } from '../../shared/protocol/tier2Protocol.js';
+import { SAFE_HOUSE_REGISTRY } from '../../shared/content/worldSystemsRegistry.js';
 import { decodeRelays, type RelayPacket } from '../../shared/protocol/relayProtocol.js';
 import {
   AgentAnimState,
@@ -45,6 +54,8 @@ import {
   WorldSnapshotPacket,
 } from '../../shared/protocol/binaryProtocol.js';
 import { generateNeoVeridiaOrbs, WorldOrbInstance } from '../../shared/world/orbSystem.js';
+import { DiagnosticRecorder, diagnosticCloseCode, safeDiagnosticContext, type DiagnosticContext } from '../../shared/diagnostics/events.js';
+import { BrowserJournal } from '../diagnostics/browserJournal.js';
 import { Phase5EventNotification } from '../../shared/world/phase5Systems.js';
 
 export interface PredictionRingSlot {
@@ -58,6 +69,14 @@ export interface PredictionRingSlot {
 }
 
 export interface PlayerStatus {
+  tier4?: Tier4Snapshot;
+  tier3?: Tier3State;
+  tier3Projectiles?: { position: Vec3; weaponId: string }[];
+  tier3Aircraft?: { id: number; hp: number; maxHp: number }[];
+  tier3Peers?: { id: number; mode: TraversalMode; combatLayer: Tier3State['combatLayer']; weaponId: string }[];
+  shapedCharges?: number;
+  canSwapChassis?: boolean;
+  lore?: { municipalGridStability: MunicipalGridStability; gestaltResonance: number; ending: CampaignEnding; pet: PersistedPetStats | null; neuralDriftRatios: NeuralDriftRatios };
   hp: number; maxHp: number; fuel: number; maxFuel: number; protectionSec: number;
   attributes: AgentAttributes; xp: AgentAttributeXP; skillPoints: number;
   unlockedSkills: string[]; unlockedRelics: string[]; respawnIn: number;
@@ -71,6 +90,7 @@ export interface RemoteBufferedSnapshot {
 }
 
 export interface InterpolatedRemoteEntity {
+  grounded: boolean;
   entityId: number;
   callsign: string;
   position: Vec3;
@@ -99,7 +119,7 @@ export class PredictionAndInterpolationManager {
   public omegaBountySnapshot: OmegaBountyBinaryState | null = null;
   public districtLoopSnapshots: DistrictLoopBinaryState[] = [];
   public auditorAirshipSnapshots: AuditorAirshipBinaryState[] = [];
-  public onOrbCollectedCallback: ((orbId: number, orbType: OrbType) => void) | null = null;
+  public onOrbCollectedCallback: ((orbId: number, orbType: OrbType, resonance?: SpireCollectionPresentation) => void) | null = null;
   public onEffects: ((packet: EffectPacket) => void) | null = null;
   public onPresentationReset: (() => void) | null = null;
   public onCombatEventCallback: ((event: CombatEventResult) => void) | null = null;
@@ -123,15 +143,31 @@ export class PredictionAndInterpolationManager {
   public onSoloState: (() => void) | null = null;
   public playerStatus: PlayerStatus | null = null;
   public phase6Snapshot: Phase6SnapshotPacket | null = null;
+  public tier2Snapshot: Tier2Snapshot | null = null;
   public onConnectionChanged: ((state: string, message: string) => void) | null = null;
   public onNotice: ((message: string) => void) | null = null;
   private reconnectAttempts = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(private readonly physicsWorld: SharedPhysicsWorld) {
+  private diagnosticContext: DiagnosticContext = {};
+  private lastDiagnosticSaveAttempt: string | undefined;
+  private receivedBytes = 0;
+  private receivedMessages = 0;
+  public diagnosticResources() {
+    const result = { bufferedBytes: this.ws?.bufferedAmount ?? 0, predictionInputs: this.ringBuffer.filter(Boolean).length,
+      remoteEntities: this.remoteBuffers.size, snapshotEntries: [...this.remoteBuffers.values()].reduce((n,b)=>n+b.length,0),
+      bytes: this.receivedBytes, messages: this.receivedMessages,
+      ...(this.soloState ? {saveAgeMs: Math.max(0, Date.now()-this.soloState.savedAt)} : {}) };
+    this.receivedBytes = this.receivedMessages = 0; return result;
+  }
+  constructor(private readonly physicsWorld: SharedPhysicsWorld, private readonly diagnostics?: DiagnosticRecorder, private readonly journal?: BrowserJournal, private readonly performanceSampler?: PerformanceSampler) {
     this.physicsWorld.effects.enabled = false;
     this.physicsWorld.vehiclePropManager.authoritativeDamage = false;
     this.physicsWorld.relaySystem.authoritative = false;
+    this.physicsWorld.tier2.authoritative = false;
+    this.physicsWorld.tier4.authoritative = false;
+    this.physicsWorld.tier2.airspace.authoritative = false;
+    this.physicsWorld.tier2.skirmishSystem.authoritative = false;
     for (const o of this.orbs) {
       this.orbsById.set(o.orbId, o);
     }
@@ -147,6 +183,11 @@ export class PredictionAndInterpolationManager {
   ): void {
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     if (!retry) this.reconnectAttempts = 0;
+    this.diagnosticContext = {};
+    this.journal?.setTransport(null);
+    this.diagnostics?.setContext({});
+    this.lastDiagnosticSaveAttempt = undefined;
+    this.diagnostics?.record('connection.attempt', { retry, attempt: this.reconnectAttempts });
     if (this.ws) {
       this.ws.close();
     }
@@ -168,6 +209,8 @@ export class PredictionAndInterpolationManager {
       socket.send(
         JSON.stringify({
           type: 'AUTH',
+          diagnostics: { clientRunId: this.diagnostics?.runId,
+            clientBuild: this.diagnostics?.snapshot().events.find(event => event.context.clientBuild)?.context.clientBuild },
           ...this.campaignJoin,
           callsign,
           pin,
@@ -177,7 +220,17 @@ export class PredictionAndInterpolationManager {
 
     socket.onmessage = (event) => {
       if (this.ws !== socket) return;
+      const decodeStarted = performance.now();
+      if (this.diagnostics?.enabled) { this.receivedMessages++; this.receivedBytes += typeof event.data === 'string' ? new TextEncoder().encode(event.data).length : event.data.byteLength ?? 0; }
+      try {
       if (event.data instanceof ArrayBuffer) {
+        const tier2 = decodeTier2(event.data);
+        if (tier2) {
+          if (!this.tier2Snapshot || tier2.serverTick >= this.tier2Snapshot.serverTick) {
+            this.tier2Snapshot = tier2; this.physicsWorld.tier2.applySnapshot(tier2, this.physicsWorld.agents);
+          }
+          return;
+        }
         const effects = decodeEffects(event.data);
         if (effects) { this.onEffects?.(effects); return; }
         const snapshot = decodeWorldSnapshot(event.data);
@@ -223,7 +276,7 @@ export class PredictionAndInterpolationManager {
           }
           for (const eState of enemySnap.enemies) {
             this.enemySnapshots.set(eState.enemyId, eState);
-            const localEnemy = this.physicsWorld.combatManager.enemies.get(eState.enemyId);
+            const localEnemy = this.physicsWorld.combatManager.enemies.get(eState.enemyId) ?? this.physicsWorld.combatManager.spawnEnemy(eState.enemyId, `CONTACT-${eState.enemyId}`, eState.position, eState.isElite, { contentId: this.playerStatus?.tier4?.enemies.find(e => e.id === eState.enemyId)?.archetypeId, maxHp: eState.maxHp, disableAutoRespawn: true });
             if (localEnemy) {
               localEnemy.position = { ...eState.position };
               localEnemy.yaw = eState.yaw;
@@ -241,14 +294,15 @@ export class PredictionAndInterpolationManager {
           this.vehicleSnapshots = vehPropSnap.vehicles;
           this.propSnapshots = vehPropSnap.props;
           for (const state of vehPropSnap.vehicles) {
-            const vehicle = this.physicsWorld.vehiclePropManager.vehicles.get(state.vehicleId);
+            const house = SAFE_HOUSE_REGISTRY.find(h => h.kind === 'STREET_GARAGE' && 900 + h.id === state.vehicleId);
+            const vehicle = this.physicsWorld.vehiclePropManager.vehicles.get(state.vehicleId) ?? (house ? this.physicsWorld.vehiclePropManager.spawnVehicle(state.vehicleId, 'FOB Custom Interceptor', house.spawn, true) : undefined);
             if (!vehicle) continue;
             vehicle.position = { ...state.position }; vehicle.rotation = { ...state.rotation }; vehicle.forwardSpeedMps = state.speedMps; vehicle.driverEntityId = state.driverEntityId;
             vehicle.yaw = Math.atan2(2 * (state.rotation.w * state.rotation.y + state.rotation.x * state.rotation.z), 1 - 2 * (state.rotation.y ** 2 + state.rotation.z ** 2));
             vehicle.rigidBody.setTranslation(vehicle.position, true); vehicle.rigidBody.setNextKinematicTranslation(vehicle.position); vehicle.rigidBody.setRotation(vehicle.rotation, true); vehicle.rigidBody.setNextKinematicRotation(vehicle.rotation);
           }
           const local = this.getLocalAgent(), mounted = vehPropSnap.vehicles.find(v => v.driverEntityId === this.localEntityId);
-          if (local) local.mountedVehicleId = mounted?.vehicleId ?? 0;
+          if (local && !this.physicsWorld.tier2.airspace.aircraft.has(local.mountedVehicleId)) local.mountedVehicleId = mounted?.vehicleId ?? 0;
           return;
         }
         const worldEventsSnap = decodeWorldEventsSnapshot(event.data);
@@ -267,6 +321,15 @@ export class PredictionAndInterpolationManager {
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === 'AUTH_OK') {
+            this.diagnosticContext = safeDiagnosticContext(msg.diagnostics);
+            this.diagnostics?.setContext(this.diagnosticContext);
+            this.diagnostics?.record('connection.authenticated', { mode: msg.mode }, this.diagnosticContext);
+            if (msg.mode === 'solo' && ['127.0.0.1', 'localhost'].includes(new URL(wsUrl).hostname)) {
+              this.journal?.setTransport(batch => {
+                if (this.ws !== socket || socket.readyState !== WebSocket.OPEN || !this.connected) return false;
+                socket.send(JSON.stringify({ type: 'DIAGNOSTICS_BATCH', id: batch.id, events: batch.events })); return true;
+              });
+            }
             this.mode = msg.mode === 'solo' || msg.mode === 'campaign' ? msg.mode : 'shared';
             this.campaignPresentation = this.mode !== 'shared' && msg.presentation ? parseCampaignPresentation(msg.presentation) : null;
             clearTimeout(connectTimeout);
@@ -279,6 +342,7 @@ export class PredictionAndInterpolationManager {
             this.vehicleDamageSnapshot = { serverTick: 0, vehicles: [], debris: [] };
             this.physicsWorld.vehiclePropManager.applyVehicleDamageSnapshot(this.vehicleDamageSnapshot);
             this.currentSeq = this.lastReconciledSeq = 0;
+            this.tier2Snapshot = null;
             this.reconnectAttempts = 0;
             this.localEntityId = msg.entityId;
             this.localCallsign = msg.callsign;
@@ -307,8 +371,21 @@ export class PredictionAndInterpolationManager {
             );
             onAuthenticated(this.localEntityId, this.localCallsign, attributes);
             this.onConnectionChanged?.('connected', 'Connected');
+          } else if (msg.type === 'DIAGNOSTICS_ACK') {
+            this.journal?.acknowledge(msg.id, msg.durable === true);
           } else if ((msg.type === 'SOLO_STATE' && this.mode === 'solo') || (msg.type === 'CAMPAIGN_STATE' && this.mode === 'campaign')) {
             const pauseChanged = this.soloState?.paused !== Boolean(msg.paused);
+            const correlation = safeDiagnosticContext(msg.diagnostics);
+            // A later user request has no transaction ID until the authority assigns it.
+            // Do not attach the previous save's attempt ID to unrelated lifecycle events.
+            const { saveAttemptId: _saveAttemptId, ...sessionCorrelation } = correlation;
+            if (correlation.connectionId) this.diagnosticContext = sessionCorrelation;
+            this.diagnostics?.setContext(this.diagnosticContext);
+            if (correlation.saveAttemptId && correlation.saveAttemptId !== this.lastDiagnosticSaveAttempt) {
+              this.lastDiagnosticSaveAttempt = correlation.saveAttemptId;
+              this.diagnostics?.record(msg.saveError ? 'save.failed' : 'save.committed', { revision: msg.revision, saveError: Boolean(msg.saveError) }, correlation);
+            }
+            if (pauseChanged) this.diagnostics?.record('lifecycle.pause', { paused: Boolean(msg.paused), saveError: Boolean(msg.saveError) }, this.diagnosticContext);
             this.soloState = { owner: msg.owner, role: msg.role, inviteCode: msg.inviteCode, members: msg.members, paused: Boolean(msg.paused), saveError: Boolean(msg.saveError),
               recap: String(msg.recap ?? ''), revision: Number(msg.revision), savedAt: Number(msg.savedAt), checkpoint: String(msg.checkpoint) };
             if (pauseChanged) this.ringBuffer.fill(null);
@@ -326,6 +403,15 @@ export class PredictionAndInterpolationManager {
               agent.unlockedSkills = new Set(msg.unlockedSkills);
               agent.unlockedRelics = new Set(msg.unlockedRelics);
               this.physicsWorld.recomputeAgentBuild(agent);
+              if (msg.tier4) {
+                for (const e of msg.tier4.enemies) {
+                  const old = this.physicsWorld.combatManager.enemies.get(e.id);
+                  if (old && old.contentId !== e.archetypeId) { const fresh = this.physicsWorld.combatManager.spawnEnemy(e.id, old.callsign, old.position, old.isElite, { contentId: e.archetypeId, maxHp: old.maxHp, disableAutoRespawn: true }); fresh.hp = old.hp; fresh.yaw = old.yaw; fresh.combatState = old.combatState; this.physicsWorld.combatManager.syncEnemyBoneColliders(fresh); }
+                }
+                this.physicsWorld.tier4.applySnapshot(msg.tier4);
+              }
+              if (msg.tier3) agent.tier3 = msg.tier3;
+              for (const [id, variant] of msg.vehicleVariants ?? []) { this.physicsWorld.tier3.vehicleVariants.set(id, variant); const v = this.physicsWorld.vehiclePropManager.vehicles.get(id); if (v) v.variantId = variant; const aircraft = this.physicsWorld.tier2.airspace.aircraft.get(id); if (aircraft) aircraft.variantId = variant; }
               agent.hp = msg.hp;
               agent.spawnProtectionSec = msg.protectionSec;
             }
@@ -366,13 +452,21 @@ export class PredictionAndInterpolationManager {
           } else if (msg.type === 'ORB_COLLECTED') {
             const orbId = Number(msg.orbId);
             const orbType = Number(msg.orbType) as OrbType;
+            if (this.collectedOrbIds.has(orbId)) return;
             this.collectedOrbIds.add(orbId);
             const localAgent = this.getLocalAgent();
             if (localAgent && msg.attributes) {
               localAgent.attributes = { ...msg.attributes };
             }
+            if (localAgent && msg.traversal) {
+              this.physicsWorld.recomputeAgentBuild(localAgent);
+              localAgent.velocity.y = msg.traversal.velocityY;
+              localAgent.grounded = false;
+              localAgent.jetpackFuelSec = msg.traversal.fuel;
+              localAgent.airDashesRemaining = msg.traversal.dashes;
+            }
             if (this.onOrbCollectedCallback) {
-              this.onOrbCollectedCallback(orbId, orbType);
+              this.onOrbCollectedCallback(orbId, orbType, msg.resonance);
             }
           } else if (msg.type === 'RELIC_COLLECTED') {
             const localAgent = this.getLocalAgent();
@@ -404,6 +498,7 @@ export class PredictionAndInterpolationManager {
               this.onCombatEventCallback(msg.event as CombatEventResult);
             }
           } else if (msg.type === 'AUTH_ERROR') {
+            this.diagnostics?.record('connection.rejected', { code: 'AUTH_REJECTED' }, this.diagnosticContext);
             authFailed = true;
             clearTimeout(connectTimeout);
             onAuthError(String(msg.error || 'Authentication failed'));
@@ -427,6 +522,7 @@ export class PredictionAndInterpolationManager {
           // Ignore malformed JSON control frames
         }
       }
+      } finally { this.performanceSampler?.sample('network.decode', performance.now()-decodeStarted, this.soloState?.paused ? 'paused' : 'active'); }
     };
 
     socket.onerror = () => { this.onConnectionChanged?.('connecting', 'Unable to reach the server. Retrying…'); };
@@ -435,12 +531,16 @@ export class PredictionAndInterpolationManager {
       clearTimeout(connectTimeout);
       if (this.ws !== socket) return;
       this.connected = false;
+      this.journal?.setTransport(null);
+      this.diagnostics?.record('connection.closed', { closeCode: event.code, code: diagnosticCloseCode(event.reason) }, this.diagnosticContext);
       if (authFailed) return; // Preserve the specific PIN/callsign error and allow resubmission.
       if (event.code === 4001 || event.code === 4008 || this.reconnectAttempts >= 5) {
+        this.diagnostics?.record('connection.exhausted', { closeCode: event.code, attempt: this.reconnectAttempts }, this.diagnosticContext);
         this.onConnectionChanged?.('offline', event.code === 4001 ? 'This agent signed in elsewhere. Reload to sign in.' : 'Connection closed. Reload to try again.');
         return;
       }
       const delay = Math.min(10_000, 1000 * 2 ** this.reconnectAttempts++);
+      this.diagnostics?.record('connection.retry', { delayMs: delay, attempt: this.reconnectAttempts }, this.diagnosticContext);
       this.onConnectionChanged?.('reconnecting', `Connection lost. Reconnecting in ${delay / 1000}s…`);
       this.reconnectTimer = setTimeout(() => this.connect(wsUrl, callsign, pin, onAuthenticated, onAuthError, true), delay);
     };
@@ -452,6 +552,7 @@ export class PredictionAndInterpolationManager {
 
   public sendControl(type: string, fields: Record<string, unknown> = {}): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+    if (['SOLO_SAVE', 'CAMPAIGN_SAVE', 'SOLO_LEAVE', 'CAMPAIGN_LEAVE'].includes(type)) this.diagnostics?.record('save.requested', { mode: this.mode }, this.diagnosticContext);
     this.ws.send(JSON.stringify({ ...fields, type }));
   }
 
@@ -637,6 +738,7 @@ export class PredictionAndInterpolationManager {
           position: { ...s.position },
           rotation: { ...s.rotation },
           velocity: { ...s.velocity },
+          grounded: s.grounded,
           animState: s.animState,
           mantleProgress: s.mantleProgress,
           agilityLevel: s.agilityLevel,
@@ -654,6 +756,7 @@ export class PredictionAndInterpolationManager {
           position: { ...s.position },
           rotation: { ...s.rotation },
           velocity: { ...s.velocity },
+          grounded: s.grounded,
           animState: s.animState,
           mantleProgress: s.mantleProgress,
           agilityLevel: s.agilityLevel,
@@ -697,6 +800,7 @@ export class PredictionAndInterpolationManager {
         position: pos,
         rotation: rot,
         velocity: vel,
+        grounded: snapB.state.grounded,
         animState: alpha < 0.5 ? snapA.state.animState : snapB.state.animState,
         mantleProgress:
           snapA.state.mantleProgress +

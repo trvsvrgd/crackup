@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "project": "CRACKUP: Protocol Eclipse",
-  "updatedAt": "2026-11-13T19:18:27.109948Z",
+  "updatedAt": "2026-11-19T11:37:31Z",
   "delivery": {
     "branch": "feat/section6-progress-checkpoint",
     "base": "main",
@@ -106,8 +106,9 @@
     }
   ],
   "resume": {
-    "summary": "Begin release qualification. Stage 1-6 implementation gates pass; the game remains a playable alpha pending hardware, multiplayer, uncoached playthrough and final art/audio qualification.",
+    "summary": "Tier 4's six deliverables are implemented and required tests pass, with one literal requirement exception: the preserved existing humanoid rig has 19 joints rather than 15. Read artifacts/tier4-combat-missions-checkpoint.md for the audit; use artifacts/product-delivery-status.md for the separate full-game roadmap and remaining release qualification.",
     "steps": [
+      "Read artifacts/tier3-progression-checkpoint.md for Tier 3 controls, balance defaults, compatibility and verified scope. All five numbered implementation deliverables are closed; retain broader release gates below.",
       "Preserve the completed mechanics, Capoeira retargeting, authoritative snapshots, bounded effects/audio, cinematics and saved evidence. Do not rewrite Phase 1-5 gameplay.",
       "Run the opening district with five unfamiliar players and record time-to-understanding, deaths, navigation errors and required coaching.",
       "Run an eight-player 30-minute session on realistic network conditions with declared minimum hardware; measure frame times, reconnects, progression/persistence and combat readability.",
@@ -129,18 +130,30 @@
     {
       "title": "Asset provisioning",
       "summary": "HDR, four 2K PBR sets, Soldier/Xbot and the 39-clip Capoeira Y Bot GLB are installed with hashes/provenance. 18 manifest files validate; Armada drives the visible armor rig; other motion states retain procedural fallbacks."
+    },
+    {
+      "title": "Tier 1 narrative, lore and world mechanics",
+      "summary": "World bible, frozen content registries, 24 authored mission records, four ending resolver, authoritative Resonance Spire collection, 30 voiced memories, pet provenance and atomic WAL micro-action ledger. Existing campaign mechanics and legacy IDs remain compatible. See artifacts/tier1-lore-checkpoint.md."
+    },
+    {
+      "title": "Tier 3 progression and field combat",
+      "summary": "Seven attribute curves, five chassis, 42 nodes, 28 weapons, 15 vehicles, four relics and four pet abilities integrated with authority, persistence, physics, equipment UI and ten animation states. See artifacts/tier3-progression-checkpoint.md."
+    },
+    {
+      "title": "Tier 4 combat ecology and missions",
+      "summary": "Tier 4 six-deliverable upgrade implemented: 15 enemies, five bosses, all 24 missions, 64 collectibles, five landmark quests, four citizen interventions and ten sandbox activities; authoritative runtime, SQLite WAL, shared rigs and HUD verified. Literal requirement exception: the existing shared rig has 19 joints rather than 15. See artifacts/tier4-combat-missions-checkpoint.md."
     }
   ],
   "verification": [
     {
       "command": "npm run build",
-      "result": "Passed November 13 UTC",
-      "evidence": "Strict TypeScript compile and regenerated public/game.js with camera director, scene tracks, live skip/restoration and startup loading gate."
+      "result": "Passed after final Tier 4 changes",
+      "evidence": "artifacts/evidence/tier4-build.log"
     },
     {
       "command": "npm run verify",
-      "result": "Passed November 13 UTC",
-      "evidence": "Complete Phases 1-6, alpha and Stages 1-6 including real WebSocket checks; saved stage6-regression.log."
+      "result": "Passed full existing regression chain after final Tier 4 changes",
+      "evidence": "artifacts/evidence/tier4-regression.log"
     },
     {
       "command": "npm run assets:verify",
@@ -221,6 +234,56 @@
       "command": "Live game Stage 6 browser",
       "result": "Passed; native tab/minimize qualification pending",
       "evidence": "Natural completion; Escape/Space and movement skip; damage/death/page-hide; preference storage; forced disconnect/relogin without replay; mouse capture restores and field menu stays closed. Automation did not produce native hidden-tab state."
+    },
+    {
+      "command": "npm run build; npm run verify:lore; npm run verify",
+      "result": "Passed November 15, 2026 UTC",
+      "evidence": "artifacts/evidence/tier1-verification.json and tier1-regression.log; deterministic registry/physics/migration/ending tests plus live spire collection, provenance discovery and relay consequence persistence."
+    },
+    {
+      "command": "node scripts/verify-tier1-browser.mjs + Playwright browser checks",
+      "result": "Passed; zero browser warnings/errors",
+      "evidence": "30 decoded two-second speech assets, reversed chord, 12 ballistic shards, 44.9 ms measured hit-stop; artifacts/evidence/tier1-browser.json and tier1-spires.png."
+    },
+    {
+      "command": "npm run build; npm run verify:tier2; npm run verify",
+      "result": "Passed November 17, 2026",
+      "evidence": "22 Tier 2 groups and the complete existing regression chain passed. Final original-prompt audit additionally verifies normal-input services at all eight facilities, gunfire at all four rooftop radar nodes and a real Strength Lv 3 cargo throw breach. See artifacts/tier2-world-checkpoint.md."
+    },
+    {
+      "command": "node scripts/verify-tier2-browser.mjs + Playwright",
+      "result": "Passed; zero browser warnings/errors",
+      "evidence": "10 browser checks passed: real breach/drop bodies, eight facility states, five distinct objective meshes, stable geometry allocation; zero console warnings/errors. Reports and facility/VTOL/robbery/clinic screenshots in artifacts/evidence."
+    },
+    {
+      "command": "npm run build (Tier 3)",
+      "result": "PASS",
+      "evidence": "tier3-build.log; client-fdb381f553238a1b"
+    },
+    {
+      "command": "npm run verify:tier3",
+      "result": "PASS - 20 groups",
+      "evidence": "tier3-verification.json; numeric boundaries, real physics/input, persistence and WebSocket authority"
+    },
+    {
+      "command": "npm run verify (Tier 3)",
+      "result": "PASS - full existing chain",
+      "evidence": "tier3-regression.log"
+    },
+    {
+      "command": "npm run verify:tier2 (Tier 3)",
+      "result": "PASS - 22 groups",
+      "evidence": "tier3-tier2-regression.log; refreshed tier2-verification.json hash"
+    },
+    {
+      "command": "Tier 3 browser flow and reauthentication",
+      "result": "PASS - seeded profile",
+      "evidence": "tier3-browser.json; reviewed menu screenshot and clean final console"
+    },
+    {
+      "command": "npm run verify:tier4",
+      "result": "Passed 19 content, physics, normal-input, co-op, persistence and live-network groups",
+      "evidence": "artifacts/evidence/tier4-verification.json"
     }
   ],
   "decisions": [
@@ -243,7 +306,8 @@
     "Cinematics own only presentation and never pause multiplayer, add immunity or award progression. The 11.5-second opening starts only while more than 11.5 seconds of existing deployment protection remain.",
     "Boss introductions require authoritative mission-stage and living entity snapshots. Camera tracks follow current actor facing/position; seen/skip/interruption history is per callsign and local to this browser.",
     "Camera/HUD/input restore on every exit; prior pointer capture is requested again only when gameplay/focus permit, with safe fallback to clicking the city. Reduced motion uses stationary shots.",
-    "The three-act route is a scripted integration check using QA teleport/damage acceleration. Uncoached playability, minimum-hardware FPS, native background behavior and eight-player reliability remain separate release gates."
+    "The three-act route is a scripted integration check using QA teleport/damage acceleration. Uncoached playability, minimum-hardware FPS, native background behavior and eight-player reliability remain separate release gates.",
+    "Tier 3 implements all five numbered deliverables in the supplied prompt. Its introduction mentions six without defining a sixth. Missing intermediate values, XP payouts, thresholds and active tuning are documented balance defaults; legacy saves remain compatible. Human balance, unique final art and hardware/multiplayer release qualification remain separate."
   ],
   "releaseGates": [
     "Qualify the completed Stage 1-6 implementation on declared minimum hardware; preserve controlled resource budgets and regression coverage.",
@@ -306,6 +370,34 @@
     {
       "at": "2026-11-13T19:18:27.109948Z",
       "summary": "Completed Stage 6 in-engine opening and authoritative boss intros; verified skip, camera/HUD/input/pointer restoration, profile history, damage/death/page-hide/disconnect recovery, three-client continuity and scripted three-act route. Build, complete regression, 18 assets and browser checks pass. Release qualification remains open. Work is local and uncommitted."
+    },
+    {
+      "at": "2026-11-15T20:22:32.113Z",
+      "summary": "Quality maintenance: local reviewed bug-report download, startup/graphics/render failure recovery, typing-safe shortcuts, continuous gait/reused pose scratch objects and stale held-input release. Build, full verify, solo/campaign and 19 browser checks passed. See quality-hardening-checkpoint.md; product and release gates remain open."
+    },
+    {
+      "at": "2026-11-15T22:59:54.455363Z",
+      "summary": "Completed the five Tier 1 lore deliverables; saved build, full regression, WAL migration/live event and browser evidence. Preserved legacy objective hash by mapping canonical display names through registry aliases."
+    },
+    {
+      "at": "2026-11-17T14:07:00.649Z",
+      "summary": "Completed Tier 2 geography documentation, deterministic registry, piloted VTOL/SAM/turbulence, tactical destruction/regeneration, facilities and ambient tasks. Build, focused suite, full regression and browser checks passed. Product acceptance and human play qualification remain open."
+    },
+    {
+      "at": "2026-11-17T19:35:03.676Z",
+      "summary": "Closed Tier 2 follow-up audit gaps: server-enforced cleared-facility chassis swaps, registry-driven unbounded SAM half-spaces, and five distinct physical skirmish objectives with replicated health/stages/outcomes. Build, 19 focused groups, complete regression and 10 browser checks passed. Refreshed hashed evidence; human play and reference-hardware qualification remain open."
+    },
+    {
+      "at": "2026-11-17T19:50:46.134Z",
+      "summary": "Final original-prompt audit found all five deliverables implemented. Added three full-world normal-input integration groups for eight facility services, four rooftop radar nodes and a real thrown cargo breach. Build, 22 focused groups and complete regression passed. Broader playtesting/hardware gates are outside this prompt."
+    },
+    {
+      "at": "2026-11-18T18:43:15.312883+00:00",
+      "summary": "Closed Tier 3 implementation and audit: all registries, authoritative execution, save migration, UI and ten-state animation. Added real missile steering, winch cargo, Fox vent/door traversal, flak deflection and turret override. Build, 20 focused groups, full verify, 22 Tier 2 groups and browser install/equip/re-authentication passed. Changes remain local; no product release acceptance advanced."
+    },
+    {
+      "at": "2026-11-19T02:36:35.528078+00:00",
+      "summary": "Tier 4 six-deliverable upgrade complete: 15 enemies, five bosses, all 24 missions, 64 collectibles, five landmark quests, four citizen interventions and ten sandbox activities; authoritative runtime, SQLite WAL, shared rigs and HUD verified. See artifacts/tier4-combat-missions-checkpoint.md. Build, full verify, Tier 1-3 regressions and controlled browser QA pass. Re-runs refreshed Tier 1-3 evidence hashes; product acceptance and release gates were not advanced."
     }
   ],
   "evidence": [
@@ -733,6 +825,191 @@
       "path": "artifacts/evidence/stage6-live-restored.png",
       "kind": "live opening completion and resumed Sera briefing",
       "sha256": "36e996bfcca9dfa3ca472b0de76ee8f61cc477d56be44eaa12796e1b2c11472f"
+    },
+    {
+      "path": "artifacts/evidence/quality-browser.json",
+      "kind": "19 browser quality and fault-recovery assertions",
+      "sha256": "05091d0eb0409857711f5b310006e03c6068fcb86ed0716b5947af4bb0a1ee1d"
+    },
+    {
+      "path": "artifacts/evidence/quality-regression.log",
+      "kind": "full Phase/Stage/alpha/quality regression output",
+      "sha256": "4026ea1e6d860f3d1fbd2f4eba17726e30db9d820372806d358ab213df21b765"
+    },
+    {
+      "path": "artifacts/evidence/quality-report.png",
+      "kind": "reviewable local bug report",
+      "sha256": "989572f524da87d998510781e49026b3cb32abede83a2b07b7554c183e5fd002"
+    },
+    {
+      "path": "artifacts/evidence/quality-recovery.png",
+      "kind": "actual graphics context loss recovery controls",
+      "sha256": "d36b97be0ae979744cfcd29c8a37e943728024a2a105b856d8ddd31794bc66e1"
+    },
+    {
+      "path": "artifacts/evidence/quality-startup-failure.png",
+      "kind": "reporting after injected startup failure",
+      "sha256": "ec9fa721fd7d4e287be4025dae08ad328ff047c3860c081af256b2836c1bc65c"
+    },
+    {
+      "path": "artifacts/evidence/quality-runtime-failure.png",
+      "kind": "reporting after injected render failure",
+      "sha256": "de121dd34faceb05c02439e65a2e2f7c53e54a96d650e841cffb8a047419ac10"
+    },
+    {
+      "path": "artifacts/evidence/quality-solo-verification.json",
+      "kind": "solo save and pause regression",
+      "sha256": "764fe1c8b1486ddef1a20b8dbed02d6e77d833975a18941721067aadaf40daaf"
+    },
+    {
+      "path": "artifacts/evidence/quality-campaign-verification.json",
+      "kind": "owned campaign regression",
+      "sha256": "f67f5aff204fd3df54a7e0ba497a5c72e295baae33a9b0c02ccdb0d4dcd0e544"
+    },
+    {
+      "path": "artifacts/evidence/tier1-verification.json",
+      "kind": "Tier 1 source hashes and verification results",
+      "sha256": "0b197811145e7e480e8ac9b585fce0525c9ae2e6fa6f5116d40d0acb46377258"
+    },
+    {
+      "path": "artifacts/evidence/tier1-regression.log",
+      "kind": "Tier 1 full regression output",
+      "sha256": "756d599a9fb8b8b7f3537fc113d6397d093a14839f83f6bc797cf98bfa562074"
+    },
+    {
+      "path": "artifacts/evidence/tier1-browser.json",
+      "kind": "Tier 1 browser audio and hit-stop verification",
+      "sha256": "c9637fac6863c54f9b55af579ed81ecd0dfcc9b279190b37e2aa5906697d73fa"
+    },
+    {
+      "path": "artifacts/evidence/tier1-spires.png",
+      "kind": "Tier 1 rendered multipart spires",
+      "sha256": "0b6d4e4f0ab924d1c365c8e3d0114ffffa36d20b8ffc8b21c492cd9e0da104a7"
+    },
+    {
+      "path": "artifacts/evidence/tier2-verification.json",
+      "kind": "22 Tier 2 groups revalidated on November 20, 2026",
+      "sha256": "a2098ed5b3423d1ec291ae38eaa65801f8cb697581ab110b8dd8b6590a2392c4"
+    },
+    {
+      "path": "artifacts/evidence/tier2-regression.log",
+      "kind": "Complete existing regression suite after Tier 2 integration",
+      "sha256": "4c40e499c372a58e1e042d666b5e031a2b4a245dac9da890e4d2c642edcca9eb"
+    },
+    {
+      "path": "artifacts/evidence/tier2-browser.json",
+      "kind": "Tier 2 browser component verification",
+      "sha256": "3e39f880823539ac75093b27c4e46335bb47c809042a52ecf9b57d20b315bb08"
+    },
+    {
+      "path": "artifacts/evidence/tier2-facility.png",
+      "kind": "Tier 2 authored facility and physical destructible placements",
+      "sha256": "b057e0aa24b0cb9f345bffed4291115fd575d229e85e159ee443049e229b1d59"
+    },
+    {
+      "path": "artifacts/evidence/tier2-vtol.png",
+      "kind": "Piloted VTOL and live radar lock warning",
+      "sha256": "aa764192c00cf62c60950f577d6cb649f918268d614e6f157fab5d9d4bcf8afa"
+    },
+    {
+      "path": "artifacts/evidence/tier2-robbery.png",
+      "kind": "Tier 2 moving armored van and objective HUD",
+      "sha256": "5c42d20e1efd2c412df55807db96b16a5b011d5d278a26c354a29e7d3e8209d4"
+    },
+    {
+      "path": "artifacts/evidence/tier2-clinic.png",
+      "kind": "Tier 2 destructible clinic and siege objective HUD",
+      "sha256": "e8e714f2c77067fcf1b3c1219898801debacdd3da5a6e403cffdfe49c33b5a0e"
+    },
+    {
+      "path": "artifacts/evidence/tier3-build.log",
+      "kind": "Final Tier 3 server and client build output",
+      "sha256": "54461514b0dac63855f631f9253912dd7648da4f1c9e5a99e0b04de453e98216"
+    },
+    {
+      "path": "artifacts/evidence/tier3-verification.json",
+      "kind": "20 Tier 3 registry, physics, input, persistence and authority verification groups rerun on November 20, 2026",
+      "sha256": "4f03ae81f1ff881e129d990177f2019ffcd5db787ca9ef8254eaa1c08f8d1030"
+    },
+    {
+      "path": "artifacts/evidence/tier3-regression.log",
+      "kind": "Complete existing regression chain after final Tier 3 changes",
+      "sha256": "4b42163b884ef3041eb26a37b8fb2386bb79014e4712ba0ab6ca63e767bba2ef"
+    },
+    {
+      "path": "artifacts/evidence/tier3-tier2-regression.log",
+      "kind": "22 Tier 2 integration groups after Tier 3 changes",
+      "sha256": "bf234880f19b8ed1c510ce52835e70e300aafba788c0b541bf0976c8c47c71af"
+    },
+    {
+      "path": "artifacts/evidence/tier3-browser.json",
+      "kind": "Seeded browser install, equip and reauthentication results",
+      "sha256": "0fd40dc078c4f0c157af76be3974165aba8d3d3a09be56264134e792590c6df7"
+    },
+    {
+      "path": "artifacts/evidence/tier3-browser-console.log",
+      "kind": "Clean browser console captured before QA shutdown",
+      "sha256": "9751ce7090c63059f5e5f2eac7b37ee592bbf2102e6949ae3dd5e407a81195f3"
+    },
+    {
+      "path": "artifacts/evidence/tier3-menu.png",
+      "kind": "Visually reviewed 42-node menu and equipment controls",
+      "sha256": "ae1151f1315e397c597d6b42ace65789a7b40808935c4c7ac9969a4b01fd2ae0"
+    },
+    {
+      "path": "artifacts/evidence/tier4-verification.json",
+      "kind": "Tier 4 final verification rerun on November 20, 2026",
+      "sha256": "fa84c6a345c76c5530e9b59a88c7561e88ee8b8414464b0cd33a0336609ffd54"
+    },
+    {
+      "path": "artifacts/evidence/tier4-focused.log",
+      "kind": "Tier 4 final verification and reviewed browser evidence",
+      "sha256": "11ad1ebcb6fcff0c5e1f0f06dd2e10437f918e80fadd34b841eb367adf53e397"
+    },
+    {
+      "path": "artifacts/evidence/tier4-build.log",
+      "kind": "Tier 4 final verification and reviewed browser evidence",
+      "sha256": "87da02f8bd3afcd37818b861a3f2d7a2f5c4b676474ae70133c2b1791b4de887"
+    },
+    {
+      "path": "artifacts/evidence/tier4-regression.log",
+      "kind": "Tier 4 final verification and reviewed browser evidence",
+      "sha256": "4b42163b884ef3041eb26a37b8fb2386bb79014e4712ba0ab6ca63e767bba2ef"
+    },
+    {
+      "path": "artifacts/evidence/tier4-lore-regression.log",
+      "kind": "Tier 4 final verification and reviewed browser evidence",
+      "sha256": "83b52fe2e8e199485eb1178e0f738be1adf4866820cb0ba83ee7fa54ba9daf7c"
+    },
+    {
+      "path": "artifacts/evidence/tier4-tier2-regression.log",
+      "kind": "Tier 4 final verification and reviewed browser evidence",
+      "sha256": "bf234880f19b8ed1c510ce52835e70e300aafba788c0b541bf0976c8c47c71af"
+    },
+    {
+      "path": "artifacts/evidence/tier4-tier3-regression.log",
+      "kind": "Tier 4 final verification and reviewed browser evidence",
+      "sha256": "3b32a4ed0e812a2741043d0d3d74bf1481c1c90e0da9e55e318ea1f97b0eca12"
+    },
+    {
+      "path": "artifacts/evidence/tier4-browser.json",
+      "kind": "Tier 4 final verification and reviewed browser evidence",
+      "sha256": "c7060270a1eab50e084b919925fb9913d74f2114cb99acc89e052c81e7f0e75d"
+    },
+    {
+      "path": "artifacts/evidence/tier4-journal.png",
+      "kind": "Tier 4 final verification and reviewed browser evidence",
+      "sha256": "c4b3ac3166ab18d4569ec6f47c2f7292bd8331e8949cb09c9298cd31fc323d5a"
+    },
+    {
+      "path": "artifacts/evidence/tier4-factions.png",
+      "kind": "Tier 4 final verification and reviewed browser evidence",
+      "sha256": "4be77af6653897b767f523cf24d1729dc3ab92efda0f74ba0f3b25e8a6269689"
+    },
+    {
+      "path": "artifacts/evidence/tier4-hunter.png",
+      "kind": "Tier 4 final verification and reviewed browser evidence",
+      "sha256": "5ac79fc392a34ac7a53a7b1730673f552adbc89ece0a7decb865d01df55cdd0a"
     }
   ]
 }

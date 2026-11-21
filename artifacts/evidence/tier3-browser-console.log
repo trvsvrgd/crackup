@@ -1,0 +1,3 @@
+[    1336ms] [INFO] [Production assets] {materials: 4, characters: Array(3)} @ http://127.0.0.1:3225/game.js:45988
+[   64430ms] [INFO] [Production assets] {materials: 4, characters: Array(3)} @ http://127.0.0.1:3225/game.js:45998
+[  192310ms] [INFO] [Production assets] {materials: 4, characters: Array(3)} @ http://127.0.0.1:3225/game.js:45998

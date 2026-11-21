@@ -12,6 +12,7 @@
  */
 
 import RAPIER from '@dimforge/rapier3d-compat';
+import { PET_PROVENANCE_REGISTRY, provenanceForCitizen, RESONANCE_MEMORY_FRAGMENTS, RESONANCE_SPIRE_RULES, type PetProvenance } from '../content/worldLore.js';
 import {
   CyberPetSpecies,
   FIXED_TIMESTEP,
@@ -299,7 +300,12 @@ export function buildSkyboxPetArenaStructures(): WorldBoxStructure[] {
 // Runtime entities
 // ---------------------------------------------------------------------------
 
-export interface CyberPetEntity {
+export interface CyberPetEntity extends PetProvenance {
+  provenanceDiscovered: boolean;
+  provenanceApproaching: boolean;
+  steeringTarget?: Vec3;
+  fieldAnchor?: Vec3;
+  fieldPhaseSec?: number;
   petId: number;
   ownerEntityId: number;
   species: CyberPetSpecies;
@@ -332,6 +338,7 @@ export interface CyberPetEntity {
 export interface Phase6EventNotification {
   type:
     | 'PET_ADOPTED'
+    | 'PET_PROVENANCE_DISCOVERED'
     | 'PET_DERBY_COUNTDOWN'
     | 'PET_DERBY_STARTED'
     | 'PET_DERBY_FINISHED'
@@ -344,6 +351,7 @@ export interface Phase6EventNotification {
     | 'DREADNOUGHT_DEFEATED'
     | 'AGENT_DOWNED';
   message: string;
+  provenance?: PetProvenance;
   ownerEntityId?: number;
   winnerEntityId?: number;
   participantEntityIds?: number[];
@@ -361,7 +369,8 @@ interface ArenaRuntime {
   finishOrder: number[];
 }
 
-export interface PersistedPetStats {
+export interface PersistedPetStats extends Partial<PetProvenance> {
+  provenanceDiscovered?: boolean;
   species: CyberPetSpecies;
   name: string;
   derbyWins: number;
@@ -419,6 +428,9 @@ export class CyberPetArenaManager {
 
     const phase = (owner.entityId * 1.7) % (Math.PI * 2);
     const pet: CyberPetEntity = {
+      ...(provenanceForCitizen(stats?.originCitizenId ?? '') ?? PET_PROVENANCE_REGISTRY.generate(`${owner.callsign}:${species}`)),
+      provenanceDiscovered: stats?.provenanceDiscovered === true,
+      provenanceApproaching: false,
       petId,
       ownerEntityId: owner.entityId,
       species,
@@ -465,7 +477,9 @@ export class CyberPetArenaManager {
   public getPersistedStats(ownerEntityId: number): PersistedPetStats | null {
     const pet = this.getPetForOwner(ownerEntityId);
     if (!pet) return null;
-    return { species: pet.species, name: pet.name, derbyWins: pet.derbyWins, clashWins: pet.clashWins };
+    return { species: pet.species, name: pet.name, derbyWins: pet.derbyWins, clashWins: pet.clashWins,
+      originCitizenId: pet.originCitizenId, formerOccupation: pet.formerOccupation, districtOfOrigin: pet.districtOfOrigin,
+      dormantMemoryTriggerCoords: { ...pet.dormantMemoryTriggerCoords }, provenanceDiscovered: pet.provenanceDiscovered };
   }
 
   public removePetForOwner(ownerEntityId: number): void {
@@ -692,6 +706,7 @@ export class CyberPetArenaManager {
   // -------------------------------------------------------------------------
 
   private stepFollowPet(pet: CyberPetEntity, owner: AgentPhysicsBody, followPets: CyberPetEntity[], dt: number): void {
+    if ((pet.fieldPhaseSec ?? 0) > 0) return;
     const spec = CYBER_PET_SPECIES_SPECS[pet.species];
     pet.orbitPhase = (pet.orbitPhase + dt * 0.9) % (Math.PI * 2);
     pet.hp = Math.min(pet.maxHp, pet.hp + 6 * dt);
@@ -708,9 +723,26 @@ export class CyberPetArenaManager {
       owner.position.z - pet.position.z
     );
     if (ownerDist > PET_TELEPORT_LEASH_M || Math.abs(owner.position.y - pet.position.y) > 12.0) {
+      pet.provenanceApproaching = false;
       this.warpPetToOwner(pet, owner);
       return;
     }
+
+    const door = pet.dormantMemoryTriggerCoords;
+    const doorDistance = Math.hypot(pet.position.x - door.x, pet.position.y - door.y, pet.position.z - door.z);
+    if (doorDistance <= RESONANCE_SPIRE_RULES.discoveryRadiusM) {
+      pet.provenanceApproaching = true;
+      if (!pet.provenanceDiscovered) {
+        pet.provenanceDiscovered = true;
+        const citizen = RESONANCE_MEMORY_FRAGMENTS.find(c => c.citizenId === pet.originCitizenId)!;
+        this.notifications.push({ type: 'PET_PROVENANCE_DISCOVERED', ownerEntityId: owner.entityId,
+          provenance: provenanceForCitizen(pet.originCitizenId),
+          message: `${RESONANCE_SPIRE_RULES.provenanceTitle}: ${citizen.name} — ${citizen.formerOccupation}. ${citizen.transcript}` });
+      }
+    } else if (doorDistance > RESONANCE_SPIRE_RULES.discoveryRadiusM + 2) pet.provenanceApproaching = false;
+    if (pet.provenanceApproaching) Object.assign(slot, door);
+    if (pet.fieldAnchor && owner.tier3.petAnchorSec > 0) Object.assign(slot, pet.fieldAnchor);
+    pet.steeringTarget = { ...slot };
 
     const ownerHSpeed = horizontalLength(owner.velocity);
     const maxSpeed = Math.max(spec.maxSpeedMps, ownerHSpeed * 1.15);
@@ -721,9 +753,9 @@ export class CyberPetArenaManager {
     const td = Math.hypot(tx, tz);
     const arrivalSpeed = Math.min(maxSpeed, (td / 3.0) * spec.maxSpeedMps);
     const desired = {
-      x: owner.velocity.x + (td > 1e-4 ? (tx / td) * arrivalSpeed : 0),
+      x: (pet.provenanceApproaching ? 0 : owner.velocity.x) + (td > 1e-4 ? (tx / td) * arrivalSpeed : 0),
       y: 0,
-      z: owner.velocity.z + (td > 1e-4 ? (tz / td) * arrivalSpeed : 0),
+      z: (pet.provenanceApproaching ? 0 : owner.velocity.z) + (td > 1e-4 ? (tz / td) * arrivalSpeed : 0),
     };
     const steer: Vec3 = { x: desired.x - pet.velocity.x, y: 0, z: desired.z - pet.velocity.z };
 

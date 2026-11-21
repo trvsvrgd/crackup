@@ -44,6 +44,13 @@ export class SpringArmCameraController {
     this.camera.updateProjectionMatrix();
   }
 
+  public onControllerLook(x: number, y: number, dt: number, sensitivity = 1, invertY = false): void {
+    const speed = 2.6 * sensitivity * (this.isAiming ? 0.45 : 1) * Math.min(0.05, Math.max(0, dt));
+    this.yaw -= x * speed;
+    this.pitch = Math.max(CAMERA_PITCH_MIN_RAD, Math.min(CAMERA_PITCH_MAX_RAD,
+      this.pitch - y * speed * (invertY ? -1 : 1)));
+  }
+
   /**
    * Updates the 3D Spring-Arm Camera every frame with wall-occlusion whisker raycast + spherecast
    */

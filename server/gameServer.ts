@@ -1,3 +1,9 @@
+import { CHASSIS_REGISTRY, TIER3_SKILL_BY_ID } from '../shared/content/skillTreeRegistry.js';
+import { awardActionXP, ATTRIBUTE_NAMES, COLLECTIBLE_XP } from '../shared/content/progressionRegistry.js';
+import { createTier3State } from '../shared/progression/tier3System.js';
+import { RELIC_REGISTRY, WEAPON_BY_ID, meetsRequirements } from '../shared/content/arsenalAndVehicleRegistry.js';
+import { resolveCampaignEnding, normalizeGrid, DEFAULT_MICRO_TELEMETRY, type MicroActionKind } from '../shared/content/campaignGraph.js';
+import { applySpireTraversal, resolveSpireMemory } from '../shared/world/resonanceSpire.js';
 import crypto from 'node:crypto';
 import { parseCampaignPresentation, campaignRecap, type CampaignPresentation } from '../shared/campaign/presentation.js';
 import { encodeEffects } from '../shared/protocol/presentationProtocol.js';
@@ -15,9 +21,12 @@ import path from 'node:path';
 import { WebSocket, WebSocketServer } from 'ws';
 import { encodeCombatPresentation } from '../shared/combat/combatPresentation.js';
 import { encodeVehicleDamage } from '../shared/protocol/vehicleDamageProtocol.js';
+import { encodeTier2 } from '../shared/protocol/tier2Protocol.js';
 import { encodeRelays } from '../shared/protocol/relayProtocol.js';
 import {
   AgentAttributes,
+  DistrictId,
+  getDistrictForPosition,
   AugmentChassisId,
   computeAttributeLevelFromXP,
   FIXED_TIMESTEP,
@@ -64,8 +73,14 @@ import {
 import { computeNeuralDriftRatios } from '../shared/world/phase5Systems.js';
 import { AgentDatabase, PersistentAgentRecord } from './db.js';
 import { isValidPetSpecies } from '../shared/world/cyberPetArena.js';
+import { DiagnosticRecorder, diagnosticErrorCode, diagnosticCloseCode, isDiagnosticId, sanitizeDiagnosticEvent, type DiagnosticContext } from '../shared/diagnostics/events.js';
+import { DiagnosticJournal } from './diagnosticJournal.js';
+import { DiagnosticReports } from './diagnosticReports.js';
+import { diagnosticIdentity, diagnosticRef, serverDiagnostics } from './diagnostics.js';
+import { PerformanceSampler, PerformanceClock, type ActivityState } from '../shared/diagnostics/performance.js';
 
 interface ConnectedClientSession {
+  diagnosticContext: DiagnosticContext;
   ws: WebSocket;
   visit?: CampaignPresentation;
   entityId: number;
@@ -81,6 +96,8 @@ interface ConnectedClientSession {
 }
 
 export interface ServerConfig {
+  diagnosticJournal?: DiagnosticJournal;
+  diagnostics?: DiagnosticRecorder;
   port?: number;
   dbPath?: string;
   publicDir?: string;
@@ -105,6 +122,17 @@ const MIME_TYPES: Record<string, string> = {
 };
 
 export class CrackupAuthoritativeServer {
+  public readonly diagnostics: DiagnosticRecorder;
+  public readonly performance: PerformanceSampler;
+  private performanceClock: PerformanceClock | null = null;
+  private readonly traffic = new WeakMap<WebSocket, {bytes: number; messages: number; since: number}>();
+  public readonly diagnosticJournal: DiagnosticJournal;
+  private readonly ownsDiagnosticJournal: boolean;
+  private diagnosticReads = 0;
+  private diagnosticReadWindow = 0;
+  private diagnosticReadCount = 0;
+  private readonly diagnosticBuilds = diagnosticIdentity();
+  private lastSaveAttemptId: string | undefined;
   public readonly mode: 'shared' | 'solo' | 'campaign';
   public soloPaused = false;
   public soloSaveError = false;
@@ -133,11 +161,18 @@ export class CrackupAuthoritativeServer {
   private campaignInvite = '';
 
   constructor(config: ServerConfig = {}) {
+    this.ownsDiagnosticJournal = !config.diagnosticJournal;
+    this.diagnosticJournal = config.diagnosticJournal ?? new DiagnosticJournal(config.dbPath ? path.dirname(path.resolve(config.dbPath)) : process.env.DATA_DIR || path.resolve('data'));
+    this.diagnostics = config.diagnostics ?? serverDiagnostics('server', this.diagnosticJournal.runId, this.diagnosticJournal);
+    this.performance = new PerformanceSampler(this.diagnostics);
+    if (config.diagnostics) this.diagnostics.subscribe(event => this.diagnosticJournal.enqueue(event));
     this.mode = config.mode ?? 'shared';
+    this.diagnostics.record('server.start', { mode: this.mode });
     this.bindAddress = this.mode === 'solo' ? '127.0.0.1' : config.bindAddress ?? (this.mode === 'campaign' ? '127.0.0.1' : '0.0.0.0');
     this.port = config.port ?? Number(process.env.PORT || 3000);
-    this.db = new AgentDatabase(config.dbPath);
-    this.campaignStore = this.mode !== 'shared' ? new CampaignStore(this.db) : null;
+    try { this.db = new AgentDatabase(config.dbPath); }
+    catch (error) { this.diagnostics.record('server.failed', { code: diagnosticErrorCode(error) }); throw error; }
+    this.campaignStore = this.mode !== 'shared' ? new CampaignStore(this.db, this.performance) : null;
     this.publicDir = config.publicDir || path.resolve(process.cwd(), 'public');
     this.orbs = generateNeoVeridiaOrbs();
   }
@@ -191,6 +226,8 @@ export class CrackupAuthoritativeServer {
     let accumulatedMs = 0;
     this.physicsInterval = setInterval(() => {
       const now = performance.now();
+      const dropped = Math.max(0, accumulatedMs + now - previousTime - FIXED_TIMESTEP_MS * 4);
+      if (dropped >= 100) this.diagnostics.record('performance.stall', { metric: 'simulation.interval', state: this.activityState(), durationMs: now-previousTime, catchupDroppedMs: dropped });
       accumulatedMs = Math.min(accumulatedMs + now - previousTime, FIXED_TIMESTEP_MS * 4);
       previousTime = now;
       while (accumulatedMs >= FIXED_TIMESTEP_MS) {
@@ -204,7 +241,33 @@ export class CrackupAuthoritativeServer {
       this.persistAllConnectedAgents();
     }, 5000);
 
+    this.diagnostics.record('server.ready', { mode: this.mode, port: this.port });
+    this.performanceClock = new PerformanceClock(this.diagnostics, this.performance, () => this.activityState(), () => this.recordResources());
+    this.performanceClock.start();
     return this.port;
+  }
+
+  private activityState(): ActivityState {
+    if (!this.clientsByEntityId.size) return 'menu';
+    return this.soloPaused || this.soloSaveError || this.partySuspended ? 'paused' : 'active';
+  }
+  private recordResources(): void {
+    const memory = process.memoryUsage(), journal = this.diagnosticJournal.status();
+    let bufferedBytes = 0, inputQueue = 0;
+    for (const s of this.clientsByEntityId.values()) {
+      bufferedBytes = Math.max(bufferedBytes, s.ws.bufferedAmount); inputQueue = Math.max(inputQueue, s.inputQueue.length);
+      const traffic = this.traffic.get(s.ws);
+      if (traffic) {
+        this.diagnostics.record('network.traffic', { bytes: traffic.bytes, messages: traffic.messages, durationMs: performance.now()-traffic.since,
+          bufferedBytes: s.ws.bufferedAmount, inputQueue: s.inputQueue.length, state: this.activityState() }, s.diagnosticContext);
+        traffic.bytes = traffic.messages = 0; traffic.since = performance.now();
+      }
+    }
+    this.diagnostics.record('performance.resources', { state: this.activityState(), activeAgents: this.clientsByEntityId.size,
+      serverTick: this.physicsWorld.tickCount, rssBytes: memory.rss, heapBytes: memory.heapUsed, externalBytes: memory.external,
+      bodies: this.physicsWorld.world.bodies.len(), colliders: this.physicsWorld.world.colliders.len(),
+      bufferedBytes, inputQueue, journalQueue: journal.queued,
+      ...(this.soloCampaign ? { saveAgeMs: Math.max(0, Date.now()-this.soloCampaign.savedAt) } : {}) });
   }
 
   public getPort(): number {
@@ -218,6 +281,7 @@ export class CrackupAuthoritativeServer {
   public async stop(): Promise<void> {
     if (this.mode !== 'shared' && !this.persistAllConnectedAgents()) throw new Error('Solo save failed; shutdown cancelled to preserve the active campaign.');
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+    this.performanceClock?.stop();
     if (this.physicsInterval) {
       clearInterval(this.physicsInterval);
       this.physicsInterval = null;
@@ -248,6 +312,8 @@ export class CrackupAuthoritativeServer {
       await new Promise<void>((resolve) => this.httpServer.close(() => resolve()));
     }
     this.db.close();
+    this.diagnostics.record('server.stop', { mode: this.mode });
+    if (this.ownsDiagnosticJournal) await this.diagnosticJournal.close();
   }
 
   private handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse): void {
@@ -274,6 +340,7 @@ export class CrackupAuthoritativeServer {
       const payload = {
         status: 'ok',
         product: 'crackup-protocol-eclipse',
+        diagnostics: { serverRunId: this.diagnostics.runId, captureEnabled: this.diagnostics.enabled, ...this.diagnosticBuilds, journal: this.diagnosticJournal.status() },
         mode: this.mode,
         soloPaused: this.mode === 'solo' && (this.soloPaused || this.soloSaveError || this.clientsByEntityId.size === 0),
         version: '2.0.0',
@@ -288,6 +355,32 @@ export class CrackupAuthoritativeServer {
       };
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify(payload));
+      return;
+    }
+
+    if (pathname.startsWith('/api/diagnostics/')) {
+      // Local operator diagnostics are available before login for startup/re-entry failures.
+      // Hosted/shared logs and paths must never be exposed through this endpoint.
+      if (this.mode !== 'solo' || !['127.0.0.1', '::ffff:127.0.0.1', '::1'].includes(req.socket.remoteAddress ?? '') || req.headers['sec-fetch-site'] === 'cross-site') {
+        res.writeHead(404); res.end(); return;
+      }
+      if (req.method !== 'GET') { res.writeHead(405, { Allow: 'GET' }); res.end(); return; }
+      if (Date.now() - this.diagnosticReadWindow > 60000) { this.diagnosticReadWindow = Date.now(); this.diagnosticReadCount = 0; }
+      if (this.diagnosticReads >= 2 || ++this.diagnosticReadCount > 30) { res.writeHead(429, { 'Retry-After': '5' }); res.end(); return; }
+      const match = pathname.match(/^\/api\/diagnostics\/session\/([a-f0-9-]{36})$/i);
+      if (pathname !== '/api/diagnostics/sessions' && (!match || !isDiagnosticId(match[1]))) { res.writeHead(404); res.end(); return; }
+      this.diagnosticReads++;
+      const reports = new DiagnosticReports(this.diagnosticJournal.directory, this.diagnosticJournal.runId);
+      void (async () => {
+        try {
+          const data = match ? await reports.detail(match[1]) : await reports.catalogue();
+          if (res.destroyed) return;
+          res.writeHead(data ? 200 : 404, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+          res.end(JSON.stringify(data ?? { error: 'session-unavailable' }));
+        } catch {
+          if (!res.destroyed) { res.writeHead(503, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify({ error: 'diagnostics-unavailable' })); }
+        } finally { this.diagnosticReads--; }
+      })();
       return;
     }
 
@@ -439,7 +532,19 @@ export class CrackupAuthoritativeServer {
   }
 
   private handleSocketConnection(ws: WebSocket, ip: string): void {
+    if (this.diagnostics.enabled) {
+      const traffic = { bytes: 0, messages: 0, since: performance.now() }; this.traffic.set(ws, traffic);
+      const send = ws.send;
+      ws.send = (data: any, ...args: any[]) => {
+        traffic.messages++;
+        traffic.bytes += typeof data === 'string' ? Buffer.byteLength(data) : data.byteLength ?? data.length ?? 0;
+        return Reflect.apply(send, ws, [data, ...args]);
+      };
+    }
+    const correlation: DiagnosticContext = { connectionId: crypto.randomUUID(), serverRunId: this.diagnostics.runId };
+    this.diagnostics.record('connection.open', { mode: this.mode }, correlation);
     let activeSession: ConnectedClientSession | null = null;
+    let lastDiagnosticBatch = 0, diagnosticBatchPending = false;
     let windowStart = Date.now(), inputs = 0, controls = 0, lastSeq = -1;
     this.liveSockets.add(ws);
     ws.on('pong', () => this.liveSockets.add(ws));
@@ -485,6 +590,9 @@ export class CrackupAuthoritativeServer {
 
         if (msg.type === 'AUTH') {
           if (activeSession) return;
+          if (isDiagnosticId(msg.diagnostics?.clientRunId)) correlation.clientRunId = msg.diagnostics.clientRunId;
+          if (typeof msg.diagnostics?.clientBuild === 'string' && /^client-[a-f0-9]{16}$/.test(msg.diagnostics.clientBuild)) correlation.clientBuild = msg.diagnostics.clientBuild;
+          this.diagnostics.record('connection.attempt', { mode: this.mode }, correlation);
           if (this.mode === 'solo' && [...this.clientsByCallsign.keys()].some(name => name !== String(msg.callsign || '').trim().toUpperCase())) {
             ws.send(JSON.stringify({ type: 'AUTH_ERROR', error: 'Another local profile is playing. Save and return to profiles first.' }));
             return;
@@ -513,9 +621,11 @@ export class CrackupAuthoritativeServer {
           );
 
           if (!authRes.ok) {
+            this.diagnostics.record('connection.rejected', { code: 'AUTH_REJECTED' }, correlation);
             ws.send(JSON.stringify({ type: 'AUTH_ERROR', error: authRes.error }));
             return;
           }
+          correlation.agentRef = diagnosticRef(authRes.record.callsign);
 
           if (this.mode === 'campaign') {
             const host = msg.campaignRole === 'host';
@@ -556,11 +666,15 @@ export class CrackupAuthoritativeServer {
               this.physicsWorld.world.free();
               this.physicsWorld = restored;
               this.soloCampaign = campaign;
+              this.lastSaveAttemptId = undefined;
               this.pendingPresentation = null;
               if (this.mode === 'campaign') this.campaignInvite = crypto.randomBytes(9).toString('base64url');
               this.soloPaused = false; this.soloSaveError = false;
+              correlation.campaignRef = diagnosticRef(campaign.id);
+              this.diagnostics.record('campaign.loaded', { revision: campaign.revision }, correlation);
               authRes.record.position = { ...SOLO_RESUME_POSITION };
-            } catch {
+            } catch (error) {
+              this.diagnostics.record('campaign.load-failed', { code: diagnosticErrorCode(error) }, correlation);
               ws.send(JSON.stringify({ type: 'AUTH_ERROR', error: 'This solo campaign could not be loaded. The save has been kept unchanged; check the local save folder before retrying.' }));
               return;
             }
@@ -571,7 +685,10 @@ export class CrackupAuthoritativeServer {
             if (authRes.record.callsign === this.soloCampaign!.owner) this.campaignOwnerRecord = authRes.record;
             else {
               try { visit = this.campaignStore!.loadVisit(this.soloCampaign!, authRes.record.callsign); }
-              catch { ws.send(JSON.stringify({ type: 'AUTH_ERROR', error: 'Your campaign visit could not be loaded. The save was kept unchanged.' })); return; }
+              catch (error) {
+                this.diagnostics.record('campaign.load-failed', { code: diagnosticErrorCode(error) }, correlation);
+                ws.send(JSON.stringify({ type: 'AUTH_ERROR', error: 'Your campaign visit could not be loaded. The save was kept unchanged.' })); return;
+              }
             }
             authRes.record.position = { ...SOLO_RESUME_POSITION };
           }
@@ -599,9 +716,13 @@ export class CrackupAuthoritativeServer {
             agentBody.unlockedDistrictRewards = new Set(authRes.record.unlockedDistrictRewards);
             this.physicsWorld.recomputeAgentBuild(agentBody);
           }
+          this.physicsWorld.tier4.restore(agentBody, { collectedLore: authRes.record.collectedLore, completedQuests: authRes.record.completedQuests, unlocks: authRes.record.tier4Unlocks });
+          if (authRes.record.tier3WeaponId && meetsRequirements(agentBody.attributes, WEAPON_BY_ID.get(authRes.record.tier3WeaponId)?.requires ?? { shooting: 99 })) agentBody.tier3 = createTier3State(authRes.record.tier3WeaponId);
           if (typeof authRes.record.hp === 'number') agentBody.hp = Math.min(agentBody.maxHp, authRes.record.hp);
 
           activeSession = {
+            diagnosticContext: { ...correlation, agentRef: diagnosticRef(authRes.record.callsign),
+              campaignRef: this.soloCampaign ? diagnosticRef(this.soloCampaign.id) : undefined },
             ws, visit,
             entityId,
             callsign: authRes.record.callsign,
@@ -631,9 +752,11 @@ export class CrackupAuthoritativeServer {
             this.physicsWorld.cyberPetArenaManager.adoptPet(agentBody, authRes.record.pet.species, authRes.record.pet);
           }
 
+          this.diagnostics.record('connection.authenticated', { mode: this.mode, isNew: authRes.isNew }, activeSession.diagnosticContext);
           ws.send(
             JSON.stringify({
               type: 'AUTH_OK',
+              diagnostics: { ...activeSession.diagnosticContext, ...this.diagnosticBuilds },
               entityId,
               callsign: activeSession.callsign,
               isNew: authRes.isNew,
@@ -652,6 +775,27 @@ export class CrackupAuthoritativeServer {
         }
 
         if (activeSession && this.clientsByEntityId.get(activeSession.entityId) !== activeSession) return;
+        if (msg.type === 'DIAGNOSTICS_BATCH') {
+          if (this.mode !== 'solo' || !activeSession || diagnosticBatchPending || Date.now() - lastDiagnosticBatch < 2000 ||
+              !isDiagnosticId(msg.id) || !Array.isArray(msg.events) || msg.events.length < 1 || msg.events.length > 16 || JSON.stringify(msg.events).length > 12000) return;
+          const events = msg.events.map(sanitizeDiagnosticEvent) as ReturnType<typeof sanitizeDiagnosticEvent>[];
+          if (events.some(e => !e || e.component !== 'client' || e.context.runId !== activeSession!.diagnosticContext.clientRunId)) return;
+          lastDiagnosticBatch = Date.now(); diagnosticBatchPending = true;
+          const before = this.diagnosticJournal.status();
+          for (const event of events) {
+            if (!event) continue;
+            // An authenticated local page cannot impersonate another server/Agent/campaign in its upload.
+            event.context = { ...activeSession.diagnosticContext, runId: event.context.runId, clientBuild: activeSession.diagnosticContext.clientBuild,
+              saveAttemptId: event.context.saveAttemptId };
+            this.diagnosticJournal.enqueue(event);
+          }
+          void this.diagnosticJournal.flush().then(flushed => {
+            const after = this.diagnosticJournal.status();
+            if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'DIAGNOSTICS_ACK', id: msg.id,
+              durable: flushed && before.dropped === after.dropped && before.writeFailures === after.writeFailures }));
+          }).catch(() => { /* Diagnostic delivery cannot interrupt gameplay. */ }).finally(() => { diagnosticBatchPending = false; });
+          return;
+        }
         if (activeSession && this.mode === 'campaign') {
           if (msg.type === 'CAMPAIGN_PRESENTATION') {
             try {
@@ -750,6 +894,8 @@ export class CrackupAuthoritativeServer {
           session.agent = this.physicsWorld.createAgent(session.entityId, session.callsign,
             this.computeDefaultSpawn(0), { x: 0, y: 0, z: 0, w: 1 }, old.attributes, old.telemetry,
             old.augmentChassis, [...old.unlockedSkills], [...old.unlockedRelics], [...old.unlockedDistrictRewards], [...old.activeNeuralDrifts]);
+          session.agent.tier3 = createTier3State(old.tier3.weaponId);
+          this.physicsWorld.tier4.restore(session.agent, { collectedLore: session.record.collectedLore, completedQuests: session.record.completedQuests, unlocks: session.record.tier4Unlocks });
           session.agent.spawnProtectionSec = 15;
           session.inputQueue.length = 0;
           session.lastInput = { ...session.lastInput, buttons: 0, moveX: 0, moveZ: 0 };
@@ -761,13 +907,34 @@ export class CrackupAuthoritativeServer {
           return;
         }
 
+        if (activeSession && ['TIER3_EQUIP', 'TIER3_SKILL', 'TIER3_ATTRIBUTE', 'TIER3_PET', 'TIER3_VEHICLE', 'TIER3_RELOAD'].includes(msg.type)) {
+          const agent = activeSession.agent, system = this.physicsWorld.tier3;
+          if (this.soloPaused || agent.hp <= 0 || this.physicsWorld.combatManager.isPaired(agent)) return;
+          const id = typeof msg.id === 'string' && msg.id.length <= 64 ? msg.id : '';
+          let error: string | null = null;
+          if (['GN_10', 'ML_09', 'ML_10', 'VH_G05'].includes(id) && !this.physicsWorld.tier4.profile(agent).unlocks.has(id)) error = 'Recover this equipment through its landmark quest or Chimera log set.';
+          else if (msg.type === 'TIER3_EQUIP') error = system.equip(agent, id);
+          else if (msg.type === 'TIER3_SKILL') error = system.activateSkill(agent, id);
+          else if (msg.type === 'TIER3_ATTRIBUTE') error = system.activateAttribute(agent, id);
+          else if (msg.type === 'TIER3_PET') error = system.petAbility(agent);
+          else if (msg.type === 'TIER3_VEHICLE') error = system.spawnVehicle(agent, id);
+          else { const w = WEAPON_BY_ID.get(agent.tier3.weaponId); if (w && !agent.tier3.reloadSec) agent.tier3.reloadSec = w.reloadSec; }
+          if (error) ws.send(JSON.stringify({ type: 'CONTROL_ERROR', error }));
+          else { this.persistSession(activeSession); this.sendPlayerState(activeSession); }
+          return;
+        }
+
         if (['SELECT_CHASSIS', 'UNLOCK_SKILL'].includes(msg.type) && activeSession) {
           if (activeSession.agent.hp <= 0) return;
           if (msg.type === 'SELECT_CHASSIS') {
+            msg.augmentChassis = CHASSIS_REGISTRY.find(c => c.id === msg.augmentChassis)?.legacyId ?? msg.augmentChassis;
             if (!Object.hasOwn(AUGMENT_CHASSIS_CATALOG, msg.augmentChassis)) return;
-            activeSession.agent.augmentChassis = msg.augmentChassis as AugmentChassisId;
+            if (!this.physicsWorld.tier2.swapChassis(activeSession.agent, msg.augmentChassis as AugmentChassisId)) {
+              ws.send(JSON.stringify({ type: 'CONTROL_ERROR', error: 'Enter a cleared Forward Operating Safe House to swap Augment Chassis.' }));
+              return;
+            }
           } else {
-            const error = skillUnlockError(String(msg.skillId), activeSession.record.xp, activeSession.agent.unlockedSkills);
+            const error = TIER3_SKILL_BY_ID.has(String(msg.skillId)) ? skillUnlockError(String(msg.skillId), activeSession.record.xp, activeSession.agent.unlockedSkills) : 'This legacy upgrade is retained for saved builds but cannot be newly installed.';
             if (error) {
               ws.send(JSON.stringify({ type: 'CONTROL_ERROR', error }));
               return;
@@ -798,7 +965,8 @@ export class CrackupAuthoritativeServer {
       }
     });
 
-    ws.on('close', () => {
+    ws.on('close', (closeCode, reason) => {
+      this.diagnostics.record('connection.closed', { closeCode, code: diagnosticCloseCode(reason.toString()) }, activeSession?.diagnosticContext ?? correlation);
       clearTimeout(authTimeout);
       this.liveSockets.delete(ws);
       if (activeSession) {
@@ -820,9 +988,18 @@ export class CrackupAuthoritativeServer {
     if (session.ws.readyState !== WebSocket.OPEN) return;
     const a = session.agent;
     session.ws.send(JSON.stringify({ type: 'PLAYER_STATE', hp: a.hp, maxHp: a.maxHp,
+      shapedCharges: this.physicsWorld.tier2.charges.get(a.entityId) ?? 3,
+      tier4: this.physicsWorld.tier4.snapshot(a),
+      tier3: a.tier3, tier3Projectiles: this.physicsWorld.tier3.projectiles.map(p => ({ position: p.body.translation(), weaponId: p.weaponId })), tier3Peers: [...this.physicsWorld.agents.values()].map(p => ({ id: p.entityId, mode: p.tier3.mode, combatLayer: p.tier3.combatLayer, weaponId: p.tier3.weaponId })),
+      vehicleVariants: [...this.physicsWorld.tier3.vehicleVariants],
+      tier3Aircraft: [...this.physicsWorld.tier2.airspace.aircraft.values()].filter(v => v.hp !== undefined).map(v => ({ id: v.state.id, hp: v.hp, maxHp: v.maxHp })),
+      canSwapChassis: this.physicsWorld.tier2.canSwapChassis(a),
       fuel: a.jetpackFuelSec, maxFuel: a.maxJetpackFuelSec, protectionSec: a.spawnProtectionSec,
       attributes: a.attributes, xp: session.record.xp, skillPoints: availableSkillPoints(session.record.xp, a.unlockedSkills),
       unlockedSkills: [...a.unlockedSkills], unlockedRelics: [...a.unlockedRelics],
+      lore: { municipalGridStability: normalizeGrid(session.record.municipalGridStability), gestaltResonance: session.record.gestaltResonance ?? 0,
+        ending: resolveCampaignEnding(session.record.microActionTelemetry ?? DEFAULT_MICRO_TELEMETRY, normalizeGrid(session.record.municipalGridStability), session.record.gestaltResonance ?? 0),
+        pet: this.physicsWorld.cyberPetArenaManager.getPersistedStats(a.entityId), neuralDriftRatios: computeNeuralDriftRatios(a.telemetry) },
       narrativeProgress: { whisperOrbs: a.telemetry.whisperOrbsCollected ?? 0, nonLethalBounties: a.telemetry.nonLethalBountiesCompleted ?? 0 },
       respawnIn: a.hp <= 0 ? Math.max(0, 3 - (Date.now() - session.downedAt) / 1000) : 0 }));
   }
@@ -847,7 +1024,19 @@ export class CrackupAuthoritativeServer {
     }
   }
 
+  private queueLoreAction(session: ConnectedClientSession, id: string, kind: MicroActionKind, district: DistrictId): void {
+    session.record.pendingLoreActions ??= [];
+    if (!session.record.pendingLoreActions.some(a => a.id === id)) session.record.pendingLoreActions.push({ id, kind, district });
+  }
+
   private syncRecord(session: ConnectedClientSession): void {
+    const spared = session.agent.telemetry.nonLethalBountiesCompleted ?? 0;
+    for (let i = (session.record.telemetry.nonLethalBountiesCompleted ?? 0) + 1; i <= spared; i++) {
+      this.queueLoreAction(session, `nonlethal-bounty:${i}`, 'SPARE_CITIZEN', getDistrictForPosition(session.agent.position.x, session.agent.position.z));
+    }
+    const tier4Progress = this.physicsWorld.tier4.progress(session.agent);
+    session.record.collectedLore = tier4Progress.collectedLore; session.record.completedQuests = tier4Progress.completedQuests; session.record.tier4Unlocks = tier4Progress.unlocks;
+    session.record.tier3WeaponId = session.agent.tier3.weaponId;
     session.record.hp = session.agent.hp;
     session.record.position = { ...(this.physicsWorld.cyberPetArenaManager.agentReturnPositions.get(session.entityId) ?? session.agent.position) };
     session.record.pet = this.physicsWorld.cyberPetArenaManager.getPersistedStats(session.entityId);
@@ -868,18 +1057,36 @@ export class CrackupAuthoritativeServer {
     if (this.mode === 'campaign') return this.persistParty();
     this.syncRecord(session);
     if (this.campaignStore && this.soloCampaign) {
+      const started = performance.now();
+      this.lastSaveAttemptId = crypto.randomUUID();
+      const correlation = { ...session.diagnosticContext, saveAttemptId: this.lastSaveAttemptId };
+      this.diagnostics.record('save.requested', { revision: this.soloCampaign.revision, serverTick: this.physicsWorld.tickCount }, correlation);
       try {
         this.soloCampaign = this.campaignStore.commit(this.soloCampaign, session.record, captureSoloWorld(this.physicsWorld, this.pendingPresentation ?? this.soloCampaign.state.presentation));
         this.pendingPresentation = null;
         this.soloSaveError = false;
+        this.diagnostics.record('save.committed', { revision: this.soloCampaign.revision, durationMs: performance.now() - started }, correlation);
         this.sendSoloState(session);
-      } catch {
+      } catch (error) {
+        this.diagnostics.record('save.failed', { code: diagnosticErrorCode(error), revision: this.soloCampaign.revision, durationMs: performance.now() - started }, correlation);
         this.soloSaveError = true;
         this.soloPaused = true;
         this.sendSoloState(session);
         return false;
       }
-    } else this.db.saveAgent(session.record);
+    } else {
+      const started = performance.now();
+      const correlation = { ...session.diagnosticContext, saveAttemptId: crypto.randomUUID() };
+      this.diagnostics.record('save.requested', { mode: this.mode, serverTick: this.physicsWorld.tickCount }, correlation);
+      try {
+        this.db.saveAgent(session.record);
+        this.diagnostics.record('save.committed', { mode: this.mode, durationMs: performance.now() - started }, correlation);
+      } catch (error) {
+        this.diagnostics.record('save.failed', { code: diagnosticErrorCode(error), durationMs: performance.now() - started }, correlation);
+        throw error;
+      }
+    }
+    session.record.pendingTier4Awards = [];
     return true;
   }
 
@@ -895,6 +1102,7 @@ export class CrackupAuthoritativeServer {
   private sendSoloState(session: ConnectedClientSession): void {
     if (session.ws.readyState !== WebSocket.OPEN || !this.soloCampaign) return;
     session.ws.send(JSON.stringify({ type: 'SOLO_STATE', paused: this.soloPaused || this.soloSaveError,
+      diagnostics: { ...session.diagnosticContext, ...this.diagnosticBuilds, saveAttemptId: this.lastSaveAttemptId },
       saveError: this.soloSaveError, savedAt: this.soloCampaign.savedAt,
       checkpoint: soloCheckpointLabel(this.soloCampaign.state), revision: this.soloCampaign.revision,
       recap: this.soloCampaign.state.presentation ? campaignRecap(this.soloCampaign.state.presentation) : '' }));
@@ -917,6 +1125,7 @@ export class CrackupAuthoritativeServer {
     this.clearPartyInput();
     if (this.clientsByEntityId.size === 0) {
       this.soloCampaign = null; this.campaignOwnerRecord = null;
+      this.lastSaveAttemptId = undefined;
       this.pendingPresentation = null; this.campaignInvite = ''; this.soloSaveError = false;
     }
   }
@@ -929,16 +1138,23 @@ export class CrackupAuthoritativeServer {
     const owner = this.clientsByCallsign.get(this.soloCampaign.owner);
     if (owner) this.campaignOwnerRecord = owner.record;
     else records.push(this.campaignOwnerRecord);
+    const started = performance.now();
+    this.lastSaveAttemptId = crypto.randomUUID();
+    const correlation = { ...owner?.diagnosticContext, campaignRef: diagnosticRef(this.soloCampaign.id), saveAttemptId: this.lastSaveAttemptId };
+    this.diagnostics.record('save.requested', { revision: this.soloCampaign.revision, serverTick: this.physicsWorld.tickCount }, correlation);
     try {
       this.soloCampaign = this.campaignStore.commitParty(this.soloCampaign, records,
         captureSoloWorld(this.physicsWorld, this.pendingPresentation ?? this.soloCampaign.state.presentation),
         sessions.filter(s => s.visit).map(s => ({ guest: s.callsign, presentation: s.visit! })));
       this.pendingPresentation = null; this.soloSaveError = false;
+      this.diagnostics.record('save.committed', { revision: this.soloCampaign.revision, durationMs: performance.now() - started }, correlation);
+      for (const record of records) record.pendingTier4Awards = [];
       // A failed write keeps disconnected agents in memory for retry. Once durable, release them.
       const departed = sessions.filter(s => s.ws.readyState !== WebSocket.OPEN);
       departed.forEach(s => this.removeSession(s));
       if (departed.length) this.releaseEmptyParty();
-    } catch {
+    } catch (error) {
+      this.diagnostics.record('save.failed', { code: diagnosticErrorCode(error), durationMs: performance.now() - started }, correlation);
       this.soloSaveError = true; this.clearPartyInput();
     }
     this.broadcastPartyState();
@@ -952,6 +1168,7 @@ export class CrackupAuthoritativeServer {
       const host = member.callsign === this.soloCampaign.owner;
       const presentation = member.visit ?? this.soloCampaign.state.presentation;
       member.ws.send(JSON.stringify({ type: 'CAMPAIGN_STATE', owner: this.soloCampaign.owner,
+        diagnostics: { ...member.diagnosticContext, ...this.diagnosticBuilds, saveAttemptId: this.lastSaveAttemptId },
         role: host ? 'host' : 'guest', inviteCode: host ? this.campaignInvite : undefined,
         members: [...this.clientsByCallsign.keys()], paused: this.partySuspended,
         saveError: this.soloSaveError, savedAt: this.soloCampaign.savedAt, revision: this.soloCampaign.revision,
@@ -980,8 +1197,30 @@ export class CrackupAuthoritativeServer {
    * Executes one authoritative 60Hz Rapier3D physics tick, Renegade Orb steering, Orb/Relic collection, Phase 5 Director, and 30Hz binary snapshots
    */
   public tickAuthoritativeSimulation(): void {
+    return this.performance.measure('simulation.work', () => this.tickSimulationWork(), this.activityState());
+  }
+  private tickSimulationWork(): void {
     if ((this.mode === 'solo' && (this.soloPaused || this.soloSaveError || this.clientsByEntityId.size === 0)) || this.partySuspended) return;
+    this.physicsWorld.tier4.onAward = (agent, award) => {
+      const session = this.clientsByEntityId.get(agent.entityId); if (!session) return;
+      session.record.xp.vigilante += award.reward.xp;
+      session.record.pendingTier4Awards ??= []; session.record.pendingTier4Awards.push(award);
+      agent.attributes.vigilante = Math.max(agent.attributes.vigilante, computeAttributeLevelFromXP(session.record.xp.vigilante));
+      this.physicsWorld.recomputeAgentBuild(agent); this.persistSession(session);
+    };
+    this.physicsWorld.tier3.onXP = (agent, action) => {
+      const session = this.clientsByEntityId.get(agent.entityId); if (!session) return;
+      awardActionXP(session.record.xp, action);
+      let changed = false;
+      for (const stat of ATTRIBUTE_NAMES) { const level = computeAttributeLevelFromXP(session.record.xp[stat]); if (level > agent.attributes[stat]) { agent.attributes[stat] = level; changed = true; } }
+      if (changed) this.physicsWorld.recomputeAgentBuild(agent);
+    };
     const agentPositions: Vec3[] = [];
+    const stabilityRecords = this.campaignOwnerRecord ? [this.campaignOwnerRecord] : [...this.clientsByEntityId.values()].map(s => s.record);
+    if (stabilityRecords.length) {
+      const grids = stabilityRecords.map(r => normalizeGrid(r.municipalGridStability));
+      for (const district of Object.keys(this.physicsWorld.tier2.stability) as DistrictId[]) this.physicsWorld.tier2.stability[district] = grids.reduce((sum, g) => sum + g[district], 0) / grids.length;
+    }
 
     for (const session of this.clientsByEntityId.values()) {
       if (session.inputQueue.length > 0) {
@@ -990,12 +1229,13 @@ export class CrackupAuthoritativeServer {
           this.physicsWorld.applyAgentInput(session.agent, input);
         }
       } else {
+        const inputFresh = Date.now() - session.lastInputAt < 250;
         const idleContinue: ClientInputPacket = {
           ...session.lastInput,
-          moveX: Date.now() - session.lastInputAt < 250 ? session.lastInput.moveX : 0,
-          moveZ: Date.now() - session.lastInputAt < 250 ? session.lastInput.moveZ : 0,
+          moveX: inputFresh ? session.lastInput.moveX : 0,
+          moveZ: inputFresh ? session.lastInput.moveZ : 0,
           buttons:
-            session.lastInput.buttons &
+            (inputFresh ? session.lastInput.buttons : 0) &
             ~(
               (1 << 0) |
               (1 << 1) |
@@ -1056,6 +1296,7 @@ export class CrackupAuthoritativeServer {
   }
 
   private evaluateRelicCollectionForSession(session: ConnectedClientSession): void {
+    if (session.agent.hp <= 0) return;
     const agentPos = session.agent.position;
     for (const relic of PROTOTYPE_RELIC_SPECS) {
       if (session.agent.unlockedRelics.has(relic.id)) continue;
@@ -1064,13 +1305,7 @@ export class CrackupAuthoritativeServer {
       session.agent.unlockedRelics.add(relic.id);
       session.agent.telemetry.relicsCollected =
         (session.agent.telemetry.relicsCollected || 0) + 1;
-      session.record.xp.agility += 150;
-      session.record.xp.strength += 150;
-      session.record.xp.driving += 150;
-      session.record.xp.shooting += 150;
-      session.record.xp.explosives += 150;
-      session.record.xp.flying += 150;
-      session.record.xp.vigilante += 150;
+      awardActionXP(session.record.xp, 'relic');
 
       for (const key of Object.keys(session.agent.attributes) as (keyof AgentAttributes)[]) {
         session.agent.attributes[key] = Math.max(session.agent.attributes[key], computeAttributeLevelFromXP(session.record.xp[key]));
@@ -1083,7 +1318,7 @@ export class CrackupAuthoritativeServer {
           JSON.stringify({
             type: 'RELIC_COLLECTED',
             relicId: relic.id,
-            name: relic.name,
+            name: RELIC_REGISTRY.find(r => r.legacyId === relic.id)?.name ?? relic.name,
             unlockedRelics: Array.from(session.agent.unlockedRelics),
           })
         );
@@ -1103,23 +1338,15 @@ export class CrackupAuthoritativeServer {
 
       // Award attribute XP based on Orb type
       if (orb.type === OrbType.AGILITY) {
-        session.record.xp.agility += 50;
+        awardActionXP(session.record.xp, 'agility_orb');
         session.agent.telemetry.agilityOrbsCollected =
           (session.agent.telemetry.agilityOrbsCollected || 0) + 1;
       } else if (orb.type === OrbType.RENEGADE) {
-        session.record.xp.agility += 150;
-        session.record.xp.strength += 75;
-        session.record.xp.driving += 75;
-        session.record.xp.shooting += 75;
-        session.record.xp.explosives += 75;
-        session.record.xp.flying += 75;
-        session.record.xp.vigilante += 75;
+        for (const [stat, amount] of Object.entries(COLLECTIBLE_XP.renegade)) session.record.xp[stat as keyof AgentAttributes] += amount;
         session.agent.telemetry.renegadeOrbsCollected =
           (session.agent.telemetry.renegadeOrbsCollected || 0) + 1;
       } else if (orb.type === OrbType.WHISPER) {
-        session.record.xp.vigilante += 120;
-        session.record.xp.flying += 100;
-        session.record.xp.shooting += 100;
+        for (const [stat, amount] of Object.entries(COLLECTIBLE_XP.whisper)) session.record.xp[stat as keyof AgentAttributes] += amount;
         session.agent.telemetry.whisperOrbsCollected =
           (session.agent.telemetry.whisperOrbsCollected || 0) + 1;
       }
@@ -1142,12 +1369,19 @@ export class CrackupAuthoritativeServer {
         }
       }
 
+      this.physicsWorld.recomputeAgentBuild(session.agent);
+      applySpireTraversal(session.agent);
+      this.physicsWorld.tier3.onSpire(session.agent);
+      const resonance = resolveSpireMemory(orb.orbId, session.agent.telemetry.whisperOrbsCollected ?? 0);
+      if (!resonance.filtered) this.queueLoreAction(session, `memory:${resonance.memoryId}`, 'RECOVER_MEMORY', orb.district);
       this.persistSession(session);
 
       if (session.ws.readyState === WebSocket.OPEN) {
         session.ws.send(
           JSON.stringify({
             type: 'ORB_COLLECTED',
+            resonance,
+            traversal: { velocityY: session.agent.velocity.y, fuel: session.agent.jetpackFuelSec, dashes: session.agent.airDashesRemaining },
             orbId: orb.orbId,
             orbType: orb.type,
             district: orb.district,
@@ -1174,13 +1408,22 @@ export class CrackupAuthoritativeServer {
       this.physicsWorld.effects.fromCombat(ev);
       const session = this.clientsByEntityId.get(ev.attackerEntityId);
       if (session) {
-        if (ev.type === 'WEAPON_HIT') {
-          session.record.xp.shooting += ev.isCrit || ev.limbCrippled ? 50 : 30;
+        if (ev.type === 'RELAY_VENT_HIT' && ev.damageDealt > 0 && ev.ventHp === 0 && ev.targetRelayId) {
+          const relay = this.physicsWorld.relaySystem.states.get(ev.targetRelayId);
+          const plan = this.physicsWorld.relaySystem.plans.find(p => p.relayId === ev.targetRelayId);
+          if (relay && plan && relay.ventHp.every(hp => hp === 0)) {
+            const district = Object.values(DistrictId)[plan.districtIndex]!;
+            this.queueLoreAction(session, `relay-purge:${relay.relayId}:${relay.generation}`, 'PURGE_RELAY', district);
+          }
+        }
+        if (ev.progressionAction) {
+          awardActionXP(session.record.xp, ev.progressionAction);
+        } else if (ev.type === 'WEAPON_HIT') {
+          awardActionXP(session.record.xp, session.agent.mountedVehicleId >= 1000 ? 'vtol_strafe' : ev.isCrit || ev.limbCrippled ? 'weakpoint_hit' : 'weapon_hit');
         } else if (ev.type === 'MELEE_HIT') {
-          session.record.xp.strength += 40;
+          awardActionXP(session.record.xp, 'melee_hit');
         } else if (ev.type === 'PARRY_TAKEDOWN') {
-          session.record.xp.strength += 75;
-          session.record.xp.vigilante += 75;
+          awardActionXP(session.record.xp, 'parry');
         }
 
         const statKeys: (keyof AgentAttributes)[] = [
@@ -1223,6 +1466,18 @@ export class CrackupAuthoritativeServer {
     const notifications = this.physicsWorld.phase5Director.pendingNotifications.splice(0);
     if (notifications.length === 0) return;
 
+    for (const note of notifications) {
+      if (note.type === 'DISTRICT_STAGE_ADVANCED' && note.stage === 2 && note.district) {
+        const index = Object.values(DistrictId).indexOf(note.district);
+        const relays = this.physicsWorld.relaySystem.plans.filter(p => p.districtIndex === index);
+        if (relays.every(p => this.physicsWorld.relaySystem.states.get(p.relayId)?.ventHp.every(hp => hp > 0))) {
+          for (const session of this.clientsByEntityId.values()) {
+            if (getDistrictForPosition(session.agent.position.x, session.agent.position.z) === note.district)
+              this.queueLoreAction(session, `grid-preserved:${note.district}`, 'PRESERVE_INFRASTRUCTURE', note.district);
+          }
+        }
+      }
+    }
     this.persistAllConnectedAgents();
     this.broadcastRoster();
 
@@ -1242,6 +1497,12 @@ export class CrackupAuthoritativeServer {
   private processPendingPhase6Events(): void {
     const notifications = this.physicsWorld.pendingPhase6Events.splice(0);
     if (notifications.length === 0) return;
+    for (const note of notifications) {
+      if (note.type === 'PET_PROVENANCE_DISCOVERED' && note.ownerEntityId && note.provenance) {
+        const owner = this.clientsByEntityId.get(note.ownerEntityId);
+        if (owner) this.queueLoreAction(owner, `provenance:${note.provenance.originCitizenId}`, 'DISCOVER_PROVENANCE', note.provenance.districtOfOrigin);
+      }
+    }
     this.persistAllConnectedAgents();
     for (const notification of notifications) {
       const payload = JSON.stringify({ type: 'PHASE6_EVENT', notification });
@@ -1252,6 +1513,7 @@ export class CrackupAuthoritativeServer {
   }
 
   private broadcastBinaryWorldSnapshots(): void {
+    const encodeStarted = performance.now();
     const entities: EntitySnapshotState[] = [];
     for (const session of this.clientsByEntityId.values()) {
       entities.push(this.physicsWorld.toEntitySnapshot(session.agent));
@@ -1279,6 +1541,7 @@ export class CrackupAuthoritativeServer {
     const vehiclePropBuffer = encodeVehiclePropSnapshot(serverTick, vehicleStates, propStates);
     const vehicleDamageBuffer = encodeVehicleDamage(this.physicsWorld.vehiclePropManager.toVehicleDamagePacket(serverTick));
     const relayBuffer = encodeRelays(this.physicsWorld.relaySystem.snapshot(serverTick));
+    const tier2Buffer = encodeTier2(this.physicsWorld.tier2.snapshot(serverTick));
     const worldEventsBuffer = encodeWorldEventsSnapshot(
       serverTick,
       this.physicsWorld.phase5Director.toBinaryOmegaBountySnapshot(),
@@ -1288,10 +1551,15 @@ export class CrackupAuthoritativeServer {
     const pets = this.physicsWorld.cyberPetArenaManager;
     const phase6Buffer = encodePhase6Snapshot(serverTick, pets.toBinaryPetStates(), pets.toBinaryArenaHeader(),
       pets.toBinaryDerbyRacers(), pets.toBinaryClashFighters(), this.physicsWorld.dreadnoughtDirector.toBinarySnapshot());
+    this.performance.sample('network.encode', performance.now()-encodeStarted, this.activityState());
 
     for (const session of this.clientsByEntityId.values()) {
       if (session.ws.readyState !== WebSocket.OPEN) continue;
-      if (session.ws.bufferedAmount > 1024 * 1024) { session.ws.close(4008, 'Connection too slow'); continue; }
+      if (session.ws.bufferedAmount > 1024 * 1024) {
+        this.diagnostics.record('network.pressure', { bufferedBytes: session.ws.bufferedAmount, inputQueue: session.inputQueue.length,
+          serverTick, closeCode: 4008, code: 'CONNECTION_TOO_SLOW' }, session.diagnosticContext);
+        session.ws.close(4008, 'Connection too slow'); continue;
+      }
 
       const snapshotBuffer = encodeWorldSnapshot({
         recipientEntityId: session.entityId,
@@ -1310,6 +1578,7 @@ export class CrackupAuthoritativeServer {
       session.ws.send(relayBuffer, { binary: true });
       session.ws.send(worldEventsBuffer, { binary: true });
       session.ws.send(phase6Buffer, { binary: true });
+      session.ws.send(tier2Buffer, { binary: true });
     }
   }
 }

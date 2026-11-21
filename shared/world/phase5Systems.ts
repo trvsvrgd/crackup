@@ -1,3 +1,6 @@
+import { characterNameForCallsign } from '../content/characterRegistry.js';
+import { DISTRICT_LOOP_SPECS } from '../content/districtEncounters.js';
+export { DISTRICT_LOOP_SPECS } from '../content/districtEncounters.js';
 /**
  * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
  * Phase 5 Shared World Systems:
@@ -102,85 +105,6 @@ export interface Phase5EventNotification {
   agentCallsign?: string;
   message: string;
 }
-
-export const DISTRICT_LOOP_SPECS: DistrictLoopSpec[] = [
-  {
-    district: DistrictId.NEON_DOCKS,
-    districtIndex: 0,
-    name: 'Neon Docks Smuggler Grid',
-    faction: FactionId.NEON_SYNDICATE,
-    rewardId: DistrictLoopRewardId.UNLOCK_GRAPPLE_OVERDRIVE,
-    rewardName: '3D Grapple-Hook Overdrive (+20m Range & +35% Winch Speed)',
-    stage1Terminals: [
-      { x: -24.0, y: 0.0, z: 20.0 },
-      { x: -34.0, y: 0.0, z: 26.0 },
-    ],
-    lieutenantEnemyId: 501,
-    lieutenantCallsign: 'SYNDICATE-LT-VEX',
-    lieutenantSpawnPos: { x: -30.0, y: 0.0, z: 24.0 },
-    kingpinEnemyId: 511,
-    kingpinCallsign: 'KINGPIN-KRAKEN',
-    kingpinSpawnPos: { x: -38.0, y: 0.0, z: 32.0 },
-    coreOverridePos: { x: -38.0, y: 0.0, z: 32.0 },
-  },
-  {
-    district: DistrictId.FOUNDRY_SLUMS,
-    districtIndex: 1,
-    name: 'Foundry Slums Thermobaric Core',
-    faction: FactionId.FOUNDRY_IRONCLAD,
-    rewardId: DistrictLoopRewardId.UNLOCK_PLASMA_RAILGUN,
-    rewardName: 'Hyperion Plasma Railgun (1.65x Weapon DMG & +50% Armor Strip)',
-    stage1Terminals: [
-      { x: 24.0, y: 0.0, z: 20.0 },
-      { x: 34.0, y: 0.0, z: 26.0 },
-    ],
-    lieutenantEnemyId: 502,
-    lieutenantCallsign: 'IRONCLAD-LT-VULCAN',
-    lieutenantSpawnPos: { x: 30.0, y: 0.0, z: 24.0 },
-    kingpinEnemyId: 512,
-    kingpinCallsign: 'KINGPIN-SLAG',
-    kingpinSpawnPos: { x: 38.0, y: 0.0, z: 32.0 },
-    coreOverridePos: { x: 38.0, y: 0.0, z: 32.0 },
-  },
-  {
-    district: DistrictId.HELIOS_SPIRE,
-    districtIndex: 2,
-    name: 'Helios Spire Orbital Telemetry',
-    faction: FactionId.HELIOS_EXECUTIVE_GUARD,
-    rewardId: DistrictLoopRewardId.UNLOCK_GRAV_FLIGHT_OVERDRIVE,
-    rewardName: 'Grav-Flight Overdrive (+6s Jetpack Fuel & +40% Vector Thrust)',
-    stage1Terminals: [
-      { x: 24.0, y: 0.0, z: -20.0 },
-      { x: 34.0, y: 0.0, z: -26.0 },
-    ],
-    lieutenantEnemyId: 503,
-    lieutenantCallsign: 'HELIOS-LT-SOLARIS',
-    lieutenantSpawnPos: { x: 30.0, y: 0.0, z: -24.0 },
-    kingpinEnemyId: 513,
-    kingpinCallsign: 'KINGPIN-HELIO',
-    kingpinSpawnPos: { x: 38.0, y: 0.0, z: -32.0 },
-    coreOverridePos: { x: 38.0, y: 0.0, z: -32.0 },
-  },
-  {
-    district: DistrictId.AEGIS_CITADEL,
-    districtIndex: 3,
-    name: 'Aegis Citadel Eclipse Bastion',
-    faction: FactionId.AEGIS_DIRECTORATE,
-    rewardId: DistrictLoopRewardId.UNLOCK_PROTOCOL_ECLIPSE_OVERRIDE,
-    rewardName: 'Protocol Eclipse Override (+30% Max HP, +15m Vigilante Sphere & Shield Pierce)',
-    stage1Terminals: [
-      { x: -24.0, y: 0.0, z: -20.0 },
-      { x: -34.0, y: 0.0, z: -26.0 },
-    ],
-    lieutenantEnemyId: 504,
-    lieutenantCallsign: 'AEGIS-LT-PRAETOR',
-    lieutenantSpawnPos: { x: -30.0, y: 0.0, z: -24.0 },
-    kingpinEnemyId: 514,
-    kingpinCallsign: 'COMMANDER-KRONOS',
-    kingpinSpawnPos: { x: -38.0, y: 0.0, z: -32.0 },
-    coreOverridePos: { x: -38.0, y: 0.0, z: -32.0 },
-  },
-];
 
 export const OMEGA_EXTRACTION_WAYPOINTS: Vec3[] = [
   { x: -16.0, y: 0.0, z: 22.0 },
@@ -420,7 +344,7 @@ export class Phase5WorldDirector {
       type: 'DISTRICT_STAGE_ADVANCED',
       district: spec.district,
       stage: 2,
-      message: `[${spec.district}] STAGE 2: Faction Lieutenant ${spec.lieutenantCallsign} deployed!`,
+      message: `[${spec.district}] STAGE 2: Faction Lieutenant ${characterNameForCallsign(spec.lieutenantCallsign)} deployed!`,
     });
   }
 
@@ -449,7 +373,7 @@ export class Phase5WorldDirector {
       type: 'DISTRICT_STAGE_ADVANCED',
       district: spec.district,
       stage: 3,
-      message: `[${spec.district}] STAGE 3: District Kingpin ${spec.kingpinCallsign} & Core Override exposed!`,
+      message: `[${spec.district}] STAGE 3: District Kingpin ${characterNameForCallsign(spec.kingpinCallsign)} & Core Override exposed!`,
     });
   }
 

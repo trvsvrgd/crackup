@@ -1,0 +1,165 @@
+{
+  "result": "measured",
+  "trials": [
+    {
+      "trial": 1,
+      "mode": "on",
+      "start": 1795224559052,
+      "end": 1795224571203,
+      "clientBuild": "client-b13871e56ddebf38",
+      "serverBuild": "server-1eca2c2ffbfe226a",
+      "enrollmentPartialMs": -12.19999995231592,
+      "frame": {
+        "count": 247,
+        "meanMs": 48.8076923076923,
+        "p95Ms": 50.20000000000073,
+        "maxMs": 66.80000000000291
+      },
+      "tickWork": {
+        "count": 729,
+        "meanMs": 3.4092009602194326,
+        "p95Ms": 4.765500000001339,
+        "maxMs": 6.5429000000003725
+      }
+    },
+    {
+      "trial": 2,
+      "mode": "off",
+      "start": 1795224586277,
+      "end": 1795224598420,
+      "clientBuild": "client-b3287e3270bac5cd",
+      "serverBuild": "server-1eca2c2ffbfe226a",
+      "enrollmentPartialMs": -6.699999928474426,
+      "frame": {
+        "count": 237,
+        "meanMs": 50.79620253164556,
+        "p95Ms": 66.70000000000073,
+        "maxMs": 66.80000000000109
+      },
+      "tickWork": {
+        "count": 729,
+        "meanMs": 3.632945541837996,
+        "p95Ms": 4.9953999999997905,
+        "maxMs": 9.442599999994854
+      }
+    },
+    {
+      "trial": 3,
+      "mode": "off",
+      "start": 1795224612927,
+      "end": 1795224625005,
+      "clientBuild": "client-b3287e3270bac5cd",
+      "serverBuild": "server-1eca2c2ffbfe226a",
+      "enrollmentPartialMs": -7.099999952316466,
+      "frame": {
+        "count": 244,
+        "meanMs": 49.270901639344245,
+        "p95Ms": 66.69999999999891,
+        "maxMs": 83.29999999999927
+      },
+      "tickWork": {
+        "count": 725,
+        "meanMs": 3.392427724138071,
+        "p95Ms": 4.7515000000130385,
+        "maxMs": 7.263000000006286
+      }
+    },
+    {
+      "trial": 4,
+      "mode": "on",
+      "start": 1795224639742,
+      "end": 1795224651861,
+      "clientBuild": "client-b13871e56ddebf38",
+      "serverBuild": "server-1eca2c2ffbfe226a",
+      "enrollmentPartialMs": -17.399999952316648,
+      "frame": {
+        "count": 233,
+        "meanMs": 51.739914163090134,
+        "p95Ms": 66.70000000000073,
+        "maxMs": 83.39999999999782
+      },
+      "tickWork": {
+        "count": 728,
+        "meanMs": 3.410374999999496,
+        "p95Ms": 4.711800000019139,
+        "maxMs": 8.647299999996903
+      }
+    },
+    {
+      "trial": 5,
+      "mode": "on",
+      "start": 1795224667112,
+      "end": 1795224679189,
+      "clientBuild": "client-b13871e56ddebf38",
+      "serverBuild": "server-1eca2c2ffbfe226a",
+      "enrollmentPartialMs": -16.599999952316466,
+      "frame": {
+        "count": 232,
+        "meanMs": 51.81853448275861,
+        "p95Ms": 66.70000000000073,
+        "maxMs": 66.80000000000291
+      },
+      "tickWork": {
+        "count": 725,
+        "meanMs": 3.4570775172414243,
+        "p95Ms": 4.694900000002235,
+        "maxMs": 7.057499999995343
+      }
+    },
+    {
+      "trial": 6,
+      "mode": "off",
+      "start": 1795224694177,
+      "end": 1795224706266,
+      "clientBuild": "client-b3287e3270bac5cd",
+      "serverBuild": "server-1eca2c2ffbfe226a",
+      "enrollmentPartialMs": -14.000000071525392,
+      "frame": {
+        "count": 234,
+        "meanMs": 51.37606837606837,
+        "p95Ms": 66.70000000000073,
+        "maxMs": 83.29999999999927
+      },
+      "tickWork": {
+        "count": 725,
+        "meanMs": 3.4866932413796894,
+        "p95Ms": 4.723599999997532,
+        "maxMs": 6.208099999988917
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "on": 1,
+      "off": 2,
+      "framePercent": -3.9146828401482203,
+      "tickPercent": -6.158765085847273
+    },
+    {
+      "on": 4,
+      "off": 3,
+      "framePercent": 5.011096695202966,
+      "tickPercent": 0.5290392993113846
+    },
+    {
+      "on": 5,
+      "off": 6,
+      "framePercent": 0.8612299864042328,
+      "tickPercent": -0.8493928799582662
+    }
+  ],
+  "means": {
+    "on": {
+      "frameMs": 50.78871365118035,
+      "tickMs": 3.4255511591534513
+    },
+    "off": {
+      "frameMs": 50.481057515686054,
+      "tickMs": 3.5040221691185853
+    }
+  },
+  "framePercent": 0.6094486736905269,
+  "tickPercent": -2.239455293882253,
+  "method": "Three runs each, balanced order on/off/off/on/on/off; same 3 s warmup and 12 s standing opening-scene route and external observers. Independent actual solo stores and capture-specific build IDs. All raw frame intervals retained.",
+  "qualification": "Short local diagnostic baseline only. Not a 1% confidence bound, human playtest, sustained-load benchmark or RTX 4070/16 GB qualification. Tick work excludes asynchronous journal flush but RAF/event-loop capture includes scheduling impact. Capture-off skips recorder/journal/clock work; common instrumentation call sites and external observers remain in both modes."
+}

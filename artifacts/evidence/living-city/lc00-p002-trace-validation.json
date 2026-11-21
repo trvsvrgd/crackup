@@ -1,0 +1,12 @@
+{
+  "result": "passed",
+  "checkedAt": "2026-11-20T03:52:37.968Z",
+  "method": "Join actual BAT launch, browser authentication, save revision/attempt and disconnect; also join earlier failed journey.",
+  "events": 63,
+  "clientBuild": "client-bb06f71e9dbc115e",
+  "serverBuild": "server-10c93b12133c370e",
+  "contentBuild": "content-3278076a2d790a71",
+  "successfulJourney": "passed",
+  "earlierJourney": "failed: disconnect prevented Save and leave; see correlated close category",
+  "knownOpenDefect": "LC-BUG-007: slow-connection close 4008 prevents Save and leave; root queue growth unprofiled."
+}

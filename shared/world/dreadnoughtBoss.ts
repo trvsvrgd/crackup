@@ -1,6 +1,7 @@
 import { EffectKind, effectSpec, type EffectSpec } from '../protocol/presentationProtocol.js';
 /** Narrative Act III: Director Vance's Apex Eclipse Dreadnought. */
 import RAPIER from '@dimforge/rapier3d-compat';
+import { ATTRIBUTE_UNLOCKS } from '../content/progressionRegistry.js';
 import {
   DREADNOUGHT_BASE_ALTITUDE_M, DREADNOUGHT_ORBIT_CENTER, DREADNOUGHT_ORBIT_RADIUS_M,
   DREADNOUGHT_RESPAWN_SEC, DREADNOUGHT_WEAPON_RANGE_M, DreadnoughtPartId,
@@ -35,6 +36,8 @@ const TURRET_IDS = [DreadnoughtPartId.FLAK_TURRET_PORT, DreadnoughtPartId.FLAK_T
 export class ApexDreadnoughtDirector {
   /** Local campaigns retain their ending; shared raid servers keep the existing respawn loop. */
   public allowRespawn = true;
+  /** Authored Crown encounter reuses the raid around its command deck. */
+  public arenaOrbit: { center: Vec3; radiusM: number } | null = null;
   public onEffect: ((event: EffectSpec) => void) | null = null;
   public phase = DreadnoughtPhase.DORMANT;
   public position: Vec3 = {
@@ -54,6 +57,14 @@ export class ApexDreadnoughtDirector {
   private lanceCooldown = 2;
   private readonly participants = new Map<number, AgentPhysicsBody>();
   private readonly colliderParts = new Map<number, DreadnoughtPartId>();
+  public readonly turretOverrides = new Map<DreadnoughtPartId, { owner: AgentPhysicsBody; remaining: number }>();
+  public overrideTurrets(agent: AgentPhysicsBody, radius: number, duration: number): void {
+    if (!this.active || agent.hp <= 0) return;
+    for (const id of TURRET_IDS) {
+      const p = this.getPartWorldPosition(id);
+      if (this.parts.get(id)!.hp > 0 && Math.hypot(p.x - agent.position.x, p.y - agent.position.y, p.z - agent.position.z) <= radius) this.turretOverrides.set(id, { owner: agent, remaining: duration });
+    }
+  }
 
   constructor(
     private readonly world: RAPIER.World,
@@ -171,9 +182,9 @@ export class ApexDreadnoughtDirector {
 
   private updateOrbit(dt: number): void {
     this.orbitAngle = (this.orbitAngle + dt * (this.phase === DreadnoughtPhase.PHASE_3_ENRAGED ? 0.2 : 0.12)) % (Math.PI * 2);
-    this.position.x = DREADNOUGHT_ORBIT_CENTER.x + Math.cos(this.orbitAngle) * DREADNOUGHT_ORBIT_RADIUS_M;
-    this.position.z = DREADNOUGHT_ORBIT_CENTER.z + Math.sin(this.orbitAngle) * DREADNOUGHT_ORBIT_RADIUS_M;
-    const altitude = this.shielded ? DREADNOUGHT_BASE_ALTITUDE_M : 110;
+    this.position.x = (this.arenaOrbit?.center.x ?? DREADNOUGHT_ORBIT_CENTER.x) + Math.cos(this.orbitAngle) * (this.arenaOrbit?.radiusM ?? DREADNOUGHT_ORBIT_RADIUS_M);
+    this.position.z = (this.arenaOrbit?.center.z ?? DREADNOUGHT_ORBIT_CENTER.z) + Math.sin(this.orbitAngle) * (this.arenaOrbit?.radiusM ?? DREADNOUGHT_ORBIT_RADIUS_M);
+    const altitude = this.arenaOrbit ? this.arenaOrbit.center.y + (this.shielded ? 25 : 12) : this.shielded ? DREADNOUGHT_BASE_ALTITUDE_M : 110;
     this.position.y += Math.max(-12 * dt, Math.min(12 * dt, altitude - this.position.y));
     this.yaw = -this.orbitAngle + Math.PI;
     this.syncTransform();
@@ -198,6 +209,7 @@ export class ApexDreadnoughtDirector {
   }
 
   public step(agents: Map<number, AgentPhysicsBody>, dt = FIXED_TIMESTEP, actIIIUnlocked = false): void {
+    for (const [id, hack] of this.turretOverrides) { hack.remaining -= dt; if (hack.remaining <= 0 || hack.owner.hp <= 0 || !agents.has(hack.owner.entityId)) this.turretOverrides.delete(id); }
     if (this.phase === DreadnoughtPhase.DEFEATED) {
       if (!this.allowRespawn) { this.respawnTimerSec = 0; return; }
       this.respawnTimerSec = Math.max(0, this.respawnTimerSec - dt);
@@ -217,9 +229,18 @@ export class ApexDreadnoughtDirector {
     if (this.flakTimer <= 0) {
       if (this.flakShotsRemaining === 0) this.flakShotsRemaining = 3;
       for (const id of TURRET_IDS) {
+        const hack = this.turretOverrides.get(id);
+        if (hack && this.parts.get(id)!.hp > 0) {
+          const engine = ENGINE_IDS.find(part => this.parts.get(part)!.hp > 0);
+          this.damagePart(hack.owner, engine ?? DreadnoughtPartId.CORE_REACTOR, ATTRIBUTE_UNLOCKS.bullet_deflect.parameters.damage);
+          continue;
+        }
         const origin = this.getPartWorldPosition(id);
         const target = targets.find((a) => this.hasLineOfSight(origin, a.position));
-        if (this.parts.get(id)!.hp > 0 && target) this.damageAgent(target, 12);
+        if (this.parts.get(id)!.hp > 0 && target) {
+          if ((target.tier3.abilityCooldowns.bullet_deflect ?? 0) > 0) this.damagePart(target, id, ATTRIBUTE_UNLOCKS.bullet_deflect.parameters.damage);
+          else this.damageAgent(target, 12);
+        }
       }
       this.flakShotsRemaining--;
       this.flakTimer = this.flakShotsRemaining > 0 ? 0.2 : (this.phase === DreadnoughtPhase.PHASE_3_ENRAGED ? 2 : 3);

@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import type { PerformanceSampler } from '../shared/diagnostics/performance.js';
 import type { AgentDatabase, PersistentAgentRecord } from './db.js';
 import { newSoloCampaign, parseSoloCampaign, type SoloCampaignState } from '../shared/campaign/soloCampaign.js';
 import { DISTRICT_LOOP_SPECS } from '../shared/world/phase5Systems.js';
@@ -14,7 +15,7 @@ export interface OwnedSoloCampaign {
 interface Row { campaign_id: string; owner: string; revision: number; saved_at: number; state_json: string }
 
 export class CampaignStore {
-  constructor(private readonly agents: AgentDatabase) {
+  constructor(private readonly agents: AgentDatabase, private readonly performance?: PerformanceSampler) {
     agents.db.exec(`
       CREATE TABLE IF NOT EXISTS solo_campaigns (
         campaign_id TEXT PRIMARY KEY, owner TEXT NOT NULL UNIQUE REFERENCES agents(callsign),
@@ -75,10 +76,11 @@ export class CampaignStore {
     const state = parseSoloCampaign(input), savedAt = Date.now();
     const rewards = state.districts.filter(d => d.stage === 4).map(d => DISTRICT_LOOP_SPECS.find(s => s.district === d.district)!.rewardId);
     if (rewards.some(reward => !record.unlockedDistrictRewards.includes(reward))) throw new Error('Campaign completion and reward disagree');
-    this.agents.db.transaction(() => {
+    const commitStarted = performance.now();
+    try { this.agents.db.transaction(() => {
       for (const member of records) this.agents.saveAgent(member);
       const updated = this.agents.db.prepare(`UPDATE solo_campaigns SET revision = revision + 1, saved_at = ?, state_json = ?
-        WHERE campaign_id = ? AND owner = ? AND revision = ?`).run(savedAt, JSON.stringify(state), campaign.id, campaign.owner, campaign.revision);
+        WHERE campaign_id = ? AND owner = ? AND revision = ?`).run(savedAt, this.serialize(state), campaign.id, campaign.owner, campaign.revision);
       if (updated.changes !== 1) throw new Error('Campaign changed in another session. Reload before continuing.');
       const insert = this.agents.db.prepare('INSERT OR IGNORE INTO solo_reward_receipts VALUES (?, ?, ?)');
       for (const reward of rewards) insert.run(campaign.id, reward, savedAt);
@@ -86,8 +88,11 @@ export class CampaignStore {
       const reward = this.agents.db.prepare('INSERT OR IGNORE INTO character_reward_receipts VALUES (?, ?, ?)');
       for (const member of records) for (const id of member.unlockedDistrictRewards) reward.run(member.callsign, id, savedAt);
       const visit = this.agents.db.prepare('INSERT INTO campaign_guest_visits VALUES (?, ?, ?) ON CONFLICT(campaign_id, guest) DO UPDATE SET presentation_json = excluded.presentation_json');
-      for (const v of validatedVisits) visit.run(campaign.id, v.guest, JSON.stringify(v.presentation));
-    })();
+      for (const v of validatedVisits) visit.run(campaign.id, v.guest, this.serialize(v.presentation));
+    })(); } finally { this.performance?.sample('save.commit', performance.now()-commitStarted); }
     return { ...campaign, state, revision: campaign.revision + 1, savedAt };
+  }
+  private serialize(value: unknown): string {
+    return this.performance ? this.performance.measure('save.serialize', () => JSON.stringify(value)) : JSON.stringify(value);
   }
 }

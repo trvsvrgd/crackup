@@ -1,4 +1,10 @@
+import { TIER3_SKILL_NODES } from '../shared/content/skillTreeRegistry.js';
+import { WEAPON_REGISTRY, VEHICLE_REGISTRY, RELIC_REGISTRY, meetsRequirements } from '../shared/content/arsenalAndVehicleRegistry.js';
+import { characterNameForCallsign } from '../shared/content/characterRegistry.js';
+import { RESONANCE_MEMORY_FRAGMENTS, RESONANCE_SPIRE_RULES } from '../shared/content/worldLore.js';
 import type { PresentationStorage } from './narrative/campaignStorage.js';
+import type { TacticalMap } from './map/tacticalMap.js';
+import { districtObjective, navigationTo } from './map/mapModel.js';
 import * as THREE from "three";
 import {
   EnemyCombatState,
@@ -34,12 +40,16 @@ const titleCase = (value: string) =>
 
 /** Player presentation stays separate from simulation and never awards progress. */
 export class PlayerHUD {
+  public controllerActive = false;
   public menuOpen = false;
   public downed = false;
   public onMenuChanged: (() => void) | null = null;
   public onDamage: (() => void) | null = null;
   public onDefeat: (() => void) | null = null;
+  public isOverlayBlocking: (() => boolean) | null = null;
+  public map: TacticalMap | null = null;
   private noticeUntil = 0;
+  private provenanceNode: HTMLDetailsElement | null = null;
   private previousHp: number | null = null;
   private previousPoints = 0;
   private startPos: Vec3 | null = null;
@@ -113,7 +123,7 @@ export class PlayerHUD {
     };
     // A local-only heading/progress preference is safe to lose if browser storage is blocked.
     document.addEventListener("keydown", (event) => {
-      if (!this.menuOpen || event.key !== "Tab") return;
+      if (!this.menuOpen || this.isOverlayBlocking?.() || event.key !== "Tab") return;
       const focusable = [
         ...el("field-menu").querySelectorAll<HTMLElement>(
           "button:not(:disabled),select,input",
@@ -134,7 +144,7 @@ export class PlayerHUD {
 
   public get blocksInput(): boolean {
     return (
-      this.menuOpen || this.downed || !this.net.connected || document.hidden || Boolean(this.net.soloState?.paused)
+      this.menuOpen || this.downed || !this.net.connected || document.hidden || Boolean(this.net.soloState?.paused) || Boolean(this.isOverlayBlocking?.())
     );
   }
 
@@ -161,12 +171,13 @@ export class PlayerHUD {
       document.exitPointerLock?.();
       this.selectPanel(panel);
       el("resume-button").focus();
-    } else {
+    } else if (!this.controllerActive) {
       this.renderer.domElement.requestPointerLock?.()?.catch(() => {});
     }
   }
 
   public handleKey(code: string): boolean {
+    if (code === 'KeyN') { this.map?.open(); return true; }
     if (code === "Escape") {
       this.setMenu(!this.menuOpen);
       return true;
@@ -280,10 +291,29 @@ export class PlayerHUD {
     text(
       "player-build",
       agent.mountedVehicleId
-        ? `VEHICLE · ${Math.ceil(this.net.vehicleDamageSnapshot.vehicles.find(v => v.vehicleId === agent.mountedVehicleId)?.hp ?? 0)} HP`
+        ? `VEHICLE · ${Math.ceil(this.net.vehicleDamageSnapshot.vehicles.find(v => v.vehicleId === agent.mountedVehicleId)?.hp ?? status.tier3Aircraft?.find(v => v.id === agent.mountedVehicleId)?.hp ?? 0)} HP`
         : AUGMENT_CHASSIS_CATALOG[agent.augmentChassis].branchName,
     );
     text("player-orbs", `${this.net.collectedOrbIds.size} ORBS`);
+    const provenance = this.net.playerStatus?.lore?.pet;
+    if (provenance?.provenanceDiscovered && provenance.originCitizenId) {
+      const citizen = RESONANCE_MEMORY_FRAGMENTS.find(c => c.citizenId === provenance.originCitizenId);
+      if (citizen) {
+        if (!this.provenanceNode) {
+          this.provenanceNode = document.createElement('details');
+          this.provenanceNode.id = 'citizen-provenance';
+          el('panel-companion').append(this.provenanceNode);
+        }
+        if (this.provenanceNode.dataset.citizen !== citizen.citizenId) {
+          this.provenanceNode.replaceChildren();
+          const title = document.createElement('summary'); title.textContent = RESONANCE_SPIRE_RULES.provenanceTitle;
+          const record = document.createElement('p');
+          record.textContent = `${citizen.citizenId} ? ${citizen.name} ? ${citizen.formerOccupation} ? ${citizen.districtOfOrigin}. ${citizen.transcript}`;
+          this.provenanceNode.append(title, record); this.provenanceNode.dataset.citizen = citizen.citizenId;
+        }
+        this.provenanceNode.hidden = false;
+      }
+    } else if (this.provenanceNode) this.provenanceNode.hidden = true;
     text("player-dashes", `Dash · ${agent.airDashesRemaining}`);
     text("player-fuel", `Fuel · ${agent.jetpackFuelSec.toFixed(1)}s`);
     text(
@@ -292,6 +322,14 @@ export class PlayerHUD {
         ? "Rewind ready"
         : "Relic locked",
     );
+    if (agent.tier3.scanSec > 0 && agent.tier3.trackedRelicIds.length) {
+      const tracked = RELIC_REGISTRY.filter(r => agent.tier3.trackedRelicIds.includes(r.id)).sort((a, b) => Math.hypot(a.position.x - agent.position.x, a.position.y - agent.position.y, a.position.z - agent.position.z) - Math.hypot(b.position.x - agent.position.x, b.position.y - agent.position.y, b.position.z - agent.position.z))[0];
+      if (tracked) {
+        const dx = tracked.position.x - agent.position.x, dz = tracked.position.z - agent.position.z;
+        const bearing = (Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360;
+        text('player-rewind', `${tracked.name} / ${Math.round(Math.hypot(dx, tracked.position.y - agent.position.y, dz))}m / ${Math.round(bearing)} degrees`);
+      }
+    }
     text(
       "upgrade-badge",
       status.skillPoints > 0 ? `+${status.skillPoints}` : "",
@@ -307,6 +345,7 @@ export class PlayerHUD {
     if (performance.now() > this.noticeUntil)
       el("combat-notice").classList.remove("visible");
     this.updateMission(agent);
+    this.updateWaypoint(agent);
     this.updateTarget(agent);
     this.updateGuidance(agent);
     if (this.menuOpen) this.updateUpgrades(agent);
@@ -349,8 +388,22 @@ export class PlayerHUD {
       el("objective-marker").hidden = el("interaction-prompt").hidden = true;
       return;
     }
+    const field = this.net.playerStatus?.tier4;
+    const tracked = document.getElementById('tier4-field-journal')?.dataset.track;
+    const fieldObjective = field?.objectives.find(o => o.id === tracked) ?? field?.markers.find(o => o.id === tracked) ?? field?.objectives[0];
+    if (fieldObjective) {
+      const distance = Math.hypot(fieldObjective.position.x - agent.position.x, fieldObjective.position.y - agent.position.y, fieldObjective.position.z - agent.position.z);
+      text('mission-title', 'Field operation'); text('mission-detail', fieldObjective.label);
+      text('mission-stage', `${field!.completedQuests.filter(id => /^MISSION_D[1-4]_0[1-6]$/.test(id)).length} / 24`);
+      text('mission-distance', `${Math.round(distance)}m / altitude ${Math.round(fieldObjective.position.y)}m`);
+      text('mission-reward', 'PROGRESS SAVES AUTOMATICALLY');
+      el('interaction-prompt').hidden = distance > 3.5 || this.menuOpen || this.downed;
+      text('interaction-prompt', this.controllerActive ? '[X] Interact / hold to work' : '[H] Interact / hold to work');
+      this.projectObjective(fieldObjective.position, `${fieldObjective.label} / ${Math.round(distance)}m`);
+      return;
+    }
     const loops = this.net.districtLoopSnapshots;
-    const spec = DISTRICT_LOOP_SPECS.find(
+    const spec = DISTRICT_LOOP_SPECS.find(s => s.districtIndex === this.map?.trackedDistrictIndex) ?? DISTRICT_LOOP_SPECS.find(
       (s) =>
         (loops.find((l) => l.districtIndex === s.districtIndex)?.currentStage ??
           1) < 4,
@@ -369,24 +422,14 @@ export class PlayerHUD {
     }
     const loop = loops.find((l) => l.districtIndex === spec.districtIndex);
     const stage = loop?.currentStage ?? 1;
-    const enemyId = stage === 2 ? spec.lieutenantEnemyId : spec.kingpinEnemyId;
-    const enemy = this.net.enemySnapshots.get(enemyId);
-    let position = loop?.activeObjectivePos ?? spec.stage1Terminals[0];
-    if (stage >= 2 && enemy && enemy.combatState !== EnemyCombatState.DEAD)
-      position = enemy.position;
+    const objective = districtObjective(spec, loop, this.net.enemySnapshots);
+    const position = objective.position;
     const distance = Math.hypot(
       position.x - agent.position.x,
       position.y - agent.position.y,
       position.z - agent.position.z,
     );
-    const label =
-      stage === 1
-        ? "RELAY"
-        : stage === 2
-          ? "LIEUTENANT"
-          : enemy && enemy.hp > 0
-            ? "KINGPIN"
-            : "CORE OVERRIDE";
+    const label = objective.label.split(' · ').at(-1)!;
     text("mission-stage", `0${stage} / 03`);
     text(
       "mission-title",
@@ -399,7 +442,7 @@ export class PlayerHUD {
       stage === 1
         ? `Sabotage the relay network (${loop?.terminalsHacked ?? 0}/${loop?.totalTerminals ?? 2}). Press H near each relay.`
         : stage === 2
-          ? `Defeat ${spec.lieutenantCallsign}. Aim for exposed limbs and counter amber attacks.`
+          ? `Defeat ${characterNameForCallsign(spec.lieutenantCallsign)}. Aim for exposed limbs and counter amber attacks.`
           : "Defeat the kingpin, then press H at the core to liberate the district.",
     );
     text("mission-distance", `${Math.round(distance)}m · ${titleCase(label)}`);
@@ -418,15 +461,29 @@ export class PlayerHUD {
     text(
       "interaction-prompt",
       stage === 1
-        ? "[H] Sabotage relay"
-        : "[H] Override core · Liberate district",
+        ? `[${this.controllerActive ? 'X' : 'H'}] Sabotage relay`
+        : `[${this.controllerActive ? 'X' : 'H'}] Override core · Liberate district`,
     );
     this.projectObjective(position, `${label} · ${Math.round(distance)}m`);
   }
 
-  private projectObjective(position: Vec3, label: string): void {
-    const marker = el("objective-marker");
-    marker.hidden = this.menuOpen || this.downed;
+  private updateWaypoint(agent: AgentPhysicsBody): void {
+    const target = this.map?.navigation;
+    const hidden = !target || this.menuOpen || this.downed || Boolean(this.isOverlayBlocking?.());
+    el('waypoint-guidance').hidden = hidden;
+    el('waypoint-marker').hidden = hidden;
+    if (!target || hidden) return;
+    const navigation = navigationTo(agent.position, target.position);
+    const elevation = navigation.elevation === null || Math.abs(navigation.elevation) < 5 ? '' : ` · ${Math.round(Math.abs(navigation.elevation))}m ${navigation.elevation > 0 ? 'above' : 'below'}`;
+    text('waypoint-guidance-text', `${navigation.arrived ? 'ARRIVED · ' : ''}${target.label} · ${Math.round(navigation.distance)}m${elevation}`);
+    el('waypoint-arrow').style.transform = `rotate(${navigation.bearing + this.camera.yaw * 180 / Math.PI}deg)`;
+    if (target.marker?.kind === 'objective') { el('waypoint-marker').hidden = true; return; }
+    this.projectObjective({ ...target.position, y: target.position.y ?? agent.position.y }, `${target.label} · ${Math.round(navigation.distance)}m${elevation}`, 'waypoint-marker', 'waypoint-label');
+  }
+
+  private projectObjective(position: Vec3, label: string, markerId = 'objective-marker', labelId = 'objective-label'): void {
+    const marker = el(markerId);
+    marker.hidden = this.menuOpen || this.downed || Boolean(this.isOverlayBlocking?.());
     this.projected.set(position.x, position.y + 2.8, position.z);
     const delta = this.projected.clone().sub(this.camera.camera.position);
     this.camera.camera.getWorldDirection(this.forward);
@@ -442,7 +499,7 @@ export class PlayerHUD {
     const edge = Math.max(1, Math.abs(x) / 0.82, Math.abs(y) / 0.58);
     marker.style.left = `${((x / edge) * 0.5 + 0.5) * 100}%`;
     marker.style.top = `${((-y / edge) * 0.5 + 0.5) * 100}%`;
-    text("objective-label", `${behind ? "TURN · " : ""}${label}`);
+    text(labelId, `${behind ? "TURN · " : ""}${label}`);
   }
 
   private updateTarget(agent: AgentPhysicsBody): void {
@@ -500,7 +557,9 @@ export class PlayerHUD {
           : this.camera.isAiming
             ? "LMB fire · Tab change limb"
             : "RMB aim · V melee";
-    text("target-hint", hint);
+    text("target-hint", this.controllerActive ? hint.replace('Q TO COUNTER', 'RB TO COUNTER')
+      .replace('LMB fire · Tab change limb', 'RT fire · D-pad left/right change limb')
+      .replace('RMB aim · V melee', 'LT aim · Right stick click melee') : hint);
   }
 
   private updateGuidance(agent: AgentPhysicsBody): void {
@@ -515,7 +574,7 @@ export class PlayerHUD {
       (s) => s.districtIndex === 0,
     );
     const textValue =
-      !document.pointerLockElement && !this.menuOpen
+      !document.pointerLockElement && !this.menuOpen && !this.controllerActive
         ? "Click the city to look around. Press Esc to open your field kit."
         : agent.mountedVehicleId
           ? "W/S drive · A/D steer · E exit. Space: wall thrusters at Driving 4."
@@ -530,12 +589,18 @@ export class PlayerHUD {
                 : stage?.currentStage === 2
                   ? "RMB to aim, LMB to fire. Counter an amber attack with Q."
                   : "Defeat the kingpin, then override the core with H. Your squad shares the reward.";
-    text("onboarding-text", textValue);
+    const controllerText = this.controllerActive ? textValue
+      .replace('W/S drive · A/D steer · E exit. Space:', 'Left stick drive / steer · LB + Y exit. A:')
+      .replace('WASD to move. Hold Shift', 'Left stick to move. Hold left stick click')
+      .replace('Space to jump. Ctrl to dash in the air. Hold J', 'A to jump. B to dash in the air. Hold LB + LT')
+      .replace('Press H', 'Press X').replace('with H', 'with X')
+      .replace('RMB to aim, LMB to fire. Counter an amber attack with Q.', 'LT to aim, RT to fire. Counter an amber attack with RB.') : textValue;
+    text("onboarding-text", controllerText);
     text(
       "onboarding-next",
       stage?.currentStage === 4
         ? "Neon Docks liberated. Your next operation is tracked above."
-        : "Esc · Full controls and mission briefing",
+        : this.controllerActive ? "Menu · Full controls and mission briefing" : "Esc · Full controls and mission briefing",
     );
     el("onboarding").hidden =
       this.menuOpen ||
@@ -556,7 +621,7 @@ export class PlayerHUD {
       "skill-points",
       `${status.skillPoints} upgrade point${status.skillPoints === 1 ? "" : "s"}`,
     );
-    const signature = `${agent.augmentChassis}|${status.skillPoints}|${[...agent.unlockedSkills].join(",")}`;
+    const signature = `${agent.augmentChassis}|${status.canSwapChassis}|${status.skillPoints}|${JSON.stringify(agent.attributes)}|${agent.tier3.weaponId}|${[...agent.unlockedSkills].join(",")}`;
     if (signature === this.upgradeSignature) return;
     this.upgradeSignature = signature;
     const chassisRoot = el("chassis-options"),
@@ -566,7 +631,8 @@ export class PlayerHUD {
     for (const spec of Object.values(AUGMENT_CHASSIS_CATALOG)) {
       const button = document.createElement("button");
       button.textContent = spec.branchName;
-      button.title = spec.description;
+      button.disabled = !status.canSwapChassis;
+      button.title = status.canSwapChassis ? spec.description : 'Enter a cleared Forward Operating Safe House to swap Augment Chassis.';
       button.classList.toggle("selected", agent.augmentChassis === spec.id);
       button.setAttribute(
         "aria-pressed",
@@ -576,28 +642,42 @@ export class PlayerHUD {
         this.net.sendControl("SELECT_CHASSIS", { augmentChassis: spec.id });
       chassisRoot.append(button);
     }
-    for (const skill of SKILL_TREE_NODES.filter(
-      (s) => s.branch === agent.augmentChassis,
-    )) {
+    for (const skill of TIER3_SKILL_NODES) {
       const card = document.createElement("article");
       card.className = "skill-card";
       const tier = document.createElement("small");
-      tier.textContent = `TIER 0${skill.tier}`;
+      tier.textContent = `${skill.path.toUpperCase()} / TIER ${skill.tier}`;
       const heading = document.createElement("h4");
       heading.textContent = skill.name;
       const description = document.createElement("p");
-      description.textContent = skill.description;
+      const bonuses = Object.entries(skill.modifiers).map(([key, value]) => {
+        const percent = /Multiplier|Reduction/.test(key), amount = percent ? Math.round(value * 100) : value;
+        const label = key.replace(/Multiplier|Bonus|Pct|Flat/g, '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+        return `${label} ${amount > 0 ? '+' : ''}${amount}${percent || key.endsWith('Pct') ? '%' : ''}`;
+      }).join(', ');
+      description.textContent = Object.entries(skill.requires).map(([stat, level]) => `${stat} Lv ${level}`).join(' + ') + ` / ${bonuses}` + (skill.active ? ` / ${skill.active.kind}: ${skill.active.rangeM}m, ${skill.active.durationSec}s, ${skill.active.cooldownSec}s cooldown` : '');
       const button = document.createElement("button");
       const installed = agent.unlockedSkills.has(skill.id);
       const error = skillUnlockError(skill.id, status.xp, agent.unlockedSkills);
-      button.textContent = installed ? "Installed ✓" : "Install · 1 point";
+      button.textContent = installed ? "Installed ✓" : `Install · ${skill.cost} point${skill.cost === 1 ? '' : 's'}`;
       button.disabled = Boolean(error);
       button.title = error ?? "Install this upgrade";
       button.onclick = () =>
         this.net.sendControl("UNLOCK_SKILL", { skillId: skill.id });
       card.append(tier, heading, description, button);
+      if (installed && skill.active) { const use = document.createElement('button'); use.textContent = 'Activate'; use.onclick = () => this.net.sendControl('TIER3_SKILL', { id: skill.id }); card.append(use); }
       skillsRoot.append(card);
     }
+    const equipment = document.createElement('article'); equipment.className = 'skill-card';
+    const heading = document.createElement('h4'); heading.textContent = 'Field equipment'; equipment.append(heading);
+    for (const [label, registry, type] of [['Weapon', WEAPON_REGISTRY, 'TIER3_EQUIP'], ['Vehicle service', VEHICLE_REGISTRY, 'TIER3_VEHICLE']] as const) {
+      const select = document.createElement('select'); select.setAttribute('aria-label', label);
+      for (const item of registry) { const option = document.createElement('option'); option.value = item.id; option.textContent = `${item.name} (${Object.entries(item.requires).map(([s, lv]) => `${s} ${lv}`).join(', ')})`; option.disabled = !meetsRequirements(agent.attributes, item.requires); select.append(option); }
+      if (type === 'TIER3_EQUIP' && agent.tier3.weaponId) select.value = agent.tier3.weaponId;
+      const button = document.createElement('button'); button.textContent = label === 'Weapon' ? 'Equip weapon' : 'Request vehicle'; button.onclick = () => this.net.sendControl(type, { id: select.value }); equipment.append(select, button);
+    }
+    const help = document.createElement('p'); help.textContent = 'T: companion ability; Z: wingsuit; U: hover aim; J: jetpack; X: jet-dash; O: threat scan; I: weakpoint scan; L: airborne focus; K: reload; R: Chrono-Shift; Q: counter/deflect; Shift near wall: wall-run; Space: wall-kick. Fire equipped weapons with mouse; V uses equipped melee or an airborne crater. In vehicles: Q missiles; F winch attach/release or EMP harpoon; Ctrl flares. Vehicle services require a cleared garage or landing pad.'; equipment.append(help);
+    skillsRoot.prepend(equipment);
   }
 
   private updateArena(): void {

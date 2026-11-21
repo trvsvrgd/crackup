@@ -7,7 +7,7 @@ export function captureSoloWorld(world: SharedPhysicsWorld, presentation: SoloCa
     districts: [...world.phase5Director.districtLoops.values()].map(loop => ({ district: loop.spec.district,
       stage: loop.currentStage, terminal1Hacked: loop.terminal1Hacked, terminal2Hacked: loop.terminal2Hacked,
       kingpinDefeated: loop.kingpinDefeated })),
-    dreadnoughtDefeated: world.dreadnoughtDirector.phase === DreadnoughtPhase.DEFEATED });
+    dreadnoughtDefeated: world.dreadnoughtDirector.phase === DreadnoughtPhase.DEFEATED && [...world.phase5Director.districtLoops.values()].every(loop => loop.currentStage === 4) });
 }
 
 /** Restore onto a fresh world. Encounters restart; completed objectives never award again. */
