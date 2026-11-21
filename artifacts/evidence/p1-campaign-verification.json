@@ -1,6 +1,6 @@
 {
-  "startedAt": "2026-11-14T21:04:54.654Z",
-  "finishedAt": "2026-11-14T21:05:03.046Z",
+  "startedAt": "2026-11-21T01:47:58.774Z",
+  "finishedAt": "2026-11-21T01:48:09.177Z",
   "result": "passed",
   "checks": [
     "Explicit host/guest admission, private invite, single owner and unequal-progress join isolation",
@@ -18,7 +18,7 @@
     "No real WAN, latency/loss, UI, target-hardware, matchmaking or identity-provider qualification."
   ],
   "finalState": {
-    "tick": 9,
+    "tick": 10,
     "world": {
       "version": 2,
       "districts": [
@@ -64,7 +64,7 @@
       },
       {
         "owner": "HOST",
-        "revision": 21,
+        "revision": 22,
         "state_json": "{\"version\":2,\"districts\":[{\"district\":\"NEON_DOCKS\",\"stage\":4,\"terminal1Hacked\":true,\"terminal2Hacked\":true,\"kingpinDefeated\":true},{\"district\":\"FOUNDRY_SLUMS\",\"stage\":1,\"terminal1Hacked\":false,\"terminal2Hacked\":false,\"kingpinDefeated\":false},{\"district\":\"HELIOS_SPIRE\",\"stage\":1,\"terminal1Hacked\":false,\"terminal2Hacked\":false,\"kingpinDefeated\":false},{\"district\":\"AEGIS_CITADEL\",\"stage\":1,\"terminal1Hacked\":false,\"terminal2Hacked\":false,\"kingpinDefeated\":false}],\"dreadnoughtDefeated\":false,\"presentation\":{\"story\":{\"completed\":[],\"active\":{\"beat\":\"deployment\",\"node\":\"dispatch\"},\"choices\":[],\"heard\":[]},\"cinematics\":{},\"settings\":{\"sensitivity\":4,\"quality\":\"standard\",\"bloom\":true,\"cinematicIntros\":true,\"audioMuted\":false,\"commsMuted\":false}}}"
       }
     ],
@@ -102,24 +102,24 @@
       {
         "callsign": "GUEST",
         "reward_id": "UNLOCK_GRAPPLE_OVERDRIVE",
-        "granted_at": 1794690296958
+        "granted_at": 1795225680769
       },
       {
         "callsign": "HOST",
         "reward_id": "UNLOCK_GRAPPLE_OVERDRIVE",
-        "granted_at": 1794690296958
+        "granted_at": 1795225680769
       }
     ],
     "worldReceipts": [
       {
-        "campaign_id": "14dd04f9-805b-4f1f-ad02-204810b303dd",
+        "campaign_id": "2f2746a5-8b4b-4719-8e52-edc06b135aa1",
         "reward_id": "UNLOCK_GRAPPLE_OVERDRIVE",
-        "granted_at": 1794690296958
+        "granted_at": 1795225680769
       },
       {
-        "campaign_id": "de8b6984-c6ca-41b8-a2f0-0b46213e67b7",
+        "campaign_id": "9c214daa-997d-4471-828e-32ba36d29c97",
         "reward_id": "UNLOCK_GRAPPLE_OVERDRIVE",
-        "granted_at": 1794690301999
+        "granted_at": 1795225688291
       }
     ],
     "profiles": [

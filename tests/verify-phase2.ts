@@ -348,8 +348,8 @@ async function runPhase2Verification(): Promise<void> {
     z: -32.0,
   });
   assert.ok(authSeed.ok);
-  // Give ORB-HUNTER 60 initial Agility XP so collecting Orb #1 (+50 Agility XP -> 110 XP) crosses the 100 XP threshold for Agility Level 2!
-  authSeed.record.xp.agility = 60;
+  // Give ORB-HUNTER 60 initial Agility XP so collecting Orb #1 (+50 Agility XP -> 110 XP) crosses the 1000 XP threshold for Agility Level 2!
+  authSeed.record.xp.agility = 960;
   server.db.saveAgent(authSeed.record);
 
   let orbCollectedMsg: {
@@ -440,11 +440,11 @@ async function runPhase2Verification(): Promise<void> {
     collectedCount: number;
   };
   assert.equal(collected.orbId, 1, 'Must collect Central Spire Agility Orb #1');
-  assert.equal(collected.xp.agility, 110, 'Agility XP must increase from 60 to 110 (+50 XP)');
+  assert.equal(collected.xp.agility, 1010, 'Agility XP must increase from 960 to 1010 (+50 XP)');
   assert.equal(
     collected.attributes.agility,
     2,
-    'Crossing 100 XP threshold must automatically level up Agility from Lv 1 to Lv 2'
+    'Crossing 1000 XP threshold must automatically level up Agility from Lv 1 to Lv 2'
   );
 
   // Verify SQLite WAL persistence after disconnect
@@ -454,12 +454,12 @@ async function runPhase2Verification(): Promise<void> {
     persistedHunter.collectedOrbs.includes(1),
     'Collected Orb #1 must be persisted in SQLite WAL collected_orbs_json'
   );
-  assert.equal(persistedHunter.xp.agility, 110);
+  assert.equal(persistedHunter.xp.agility, 1010);
   assert.equal(persistedHunter.attributes.agility, 2);
   assert.equal(persistedHunter.telemetry.agilityOrbsCollected, 1);
 
   console.log(
-    `  ✓ Live Orb #1 Collection -> XP (60->110) -> Auto Level-Up (Agility Lv 2) & SQLite WAL Persistence verified.\n`
+    `  ✓ Live Orb #1 Collection -> XP (960->1010) -> Auto Level-Up (Agility Lv 2) & SQLite WAL Persistence verified.\n`
   );
 
   await server.stop();

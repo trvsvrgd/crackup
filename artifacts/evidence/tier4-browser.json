@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "date": "2026-11-18 America/Chicago",
+  "checks": [
+    "Normal login to isolated in-memory profile",
+    "Normal H input starts Wake Debt with physical node objectives",
+    "Journal selection tracks Sunken Ferry Clocktower in primary HUD",
+    "Fifteen registered faction units spawned as explicit visual fixtures",
+    "Hunter fixture deploys VTOL and escorts; final primary HUD prioritizes Valkyrie warning",
+    "Screenshots visually inspected; HUD overlap and encoding issues corrected"
+  ],
+  "consoleErrors": 0,
+  "consoleWarnings": 0,
+  "screenshots": [
+    "tier4-journal.png",
+    "tier4-factions.png",
+    "tier4-hunter.png"
+  ],
+  "limits": "Controlled browser fixtures and automated integration checks, not an uncoached playthrough or reference-hardware performance certification."
+}

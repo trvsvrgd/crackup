@@ -1,0 +1,60 @@
+{
+  "startedAt": "2026-11-20T13:55:55.160Z",
+  "finishedAt": "2026-11-20T13:56:00.953Z",
+  "result": "passed",
+  "checks": [
+    "Dialogue branch/node round-trip, spoiler-limited recap, bounded schema and one-time browser import with storage loss/profile isolation",
+    "Existing-profile migration, transaction rollback, owner guard and unknown-version preservation",
+    "Loopback-only listener, blocked cross-origin API and concurrent profile isolation",
+    "Authoritative pause freezes ticks and rejects queued gameplay input",
+    "Authenticated presentation persists; injected world fields rejected without changing saved data",
+    "Story, choices, settings and cinematic history survive an abrupt process death alongside the relay",
+    "Partial relay checkpoint survives abrupt process death and real client reauthentication",
+    "Both relay flags and active lieutenant checkpoint survive process restart",
+    "Defeated kingpin resumes into usable override; completed district and reward receipt survive without replay",
+    "Sequential local profile switching keeps campaign ownership and rewards separate",
+    "Save failure pauses play and prevents leaving; retry succeeds after storage recovery",
+    "Final campaign outcome persists without redeploying the shared-server raid"
+  ],
+  "finalState": {
+    "version": 2,
+    "districts": [
+      {
+        "district": "NEON_DOCKS",
+        "stage": 4,
+        "terminal1Hacked": true,
+        "terminal2Hacked": true,
+        "kingpinDefeated": true
+      },
+      {
+        "district": "FOUNDRY_SLUMS",
+        "stage": 4,
+        "terminal1Hacked": true,
+        "terminal2Hacked": true,
+        "kingpinDefeated": true
+      },
+      {
+        "district": "HELIOS_SPIRE",
+        "stage": 4,
+        "terminal1Hacked": true,
+        "terminal2Hacked": true,
+        "kingpinDefeated": true
+      },
+      {
+        "district": "AEGIS_CITADEL",
+        "stage": 4,
+        "terminal1Hacked": true,
+        "terminal2Hacked": true,
+        "kingpinDefeated": true
+      }
+    ],
+    "dreadnoughtDefeated": true,
+    "presentation": null
+  },
+  "method": "Real child server processes, SQLite transaction fault injection, actual WebSocket authentication/control/input and packet-aware objective snapshots. Positions and boss states are explicit test fixtures.",
+  "limits": [
+    "Existing district campaign only; no claim of the future 24 authored missions.",
+    "No human playtest, hardware qualification or full storage fault matrix.",
+    "Portable launcher/browser verification recorded separately."
+  ]
+}

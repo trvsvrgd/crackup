@@ -1,0 +1,434 @@
+{
+  "startedAt": "2026-11-20T03:50:39.003Z",
+  "finishedAt": "2026-11-20T03:50:44.711Z",
+  "result": "diagnostic_capture_passed",
+  "method": "Headed Chromium normal deploy/menu/save/report/download/save-and-leave controls; read-only socket observation.",
+  "report": {
+    "schemaVersion": 2,
+    "product": "CRACKUP",
+    "build": "client-bb06f71e9dbc115e",
+    "createdAt": "2026-11-20T03:50:42.044Z",
+    "diagnostics": {
+      "schemaVersion": 1,
+      "runId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+      "suppressed": 0,
+      "sinkFailures": 0,
+      "events": [
+        {
+          "schemaVersion": 1,
+          "sequence": 1,
+          "at": "2026-11-20T03:49:38.822Z",
+          "elapsedMs": 0.3,
+          "component": "client",
+          "name": "client.start",
+          "severity": "info",
+          "context": {
+            "runId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "clientBuild": "client-bb06f71e9dbc115e"
+          },
+          "payload": {},
+          "suppressedBefore": 0
+        },
+        {
+          "schemaVersion": 1,
+          "sequence": 2,
+          "at": "2026-11-20T03:49:39.661Z",
+          "elapsedMs": 839.7,
+          "component": "client",
+          "name": "client.ready",
+          "severity": "info",
+          "context": {
+            "runId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "clientBuild": "client-bb06f71e9dbc115e"
+          },
+          "payload": {},
+          "suppressedBefore": 0
+        },
+        {
+          "schemaVersion": 1,
+          "sequence": 3,
+          "at": "2026-11-20T03:50:39.604Z",
+          "elapsedMs": 60782.6,
+          "component": "client",
+          "name": "connection.attempt",
+          "severity": "info",
+          "context": {
+            "runId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "clientBuild": "client-bb06f71e9dbc115e"
+          },
+          "payload": {
+            "attempt": 0,
+            "retry": false
+          },
+          "suppressedBefore": 0
+        },
+        {
+          "schemaVersion": 1,
+          "sequence": 4,
+          "at": "2026-11-20T03:50:39.819Z",
+          "elapsedMs": 60997.4,
+          "component": "client",
+          "name": "connection.authenticated",
+          "severity": "info",
+          "context": {
+            "runId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+            "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+            "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+            "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+            "clientBuild": "client-bb06f71e9dbc115e",
+            "serverBuild": "server-10c93b12133c370e",
+            "contentBuild": "content-3278076a2d790a71"
+          },
+          "payload": {
+            "mode": "solo"
+          },
+          "suppressedBefore": 0
+        },
+        {
+          "schemaVersion": 1,
+          "sequence": 5,
+          "at": "2026-11-20T03:50:39.827Z",
+          "elapsedMs": 61006,
+          "component": "client",
+          "name": "lifecycle.pause",
+          "severity": "info",
+          "context": {
+            "runId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+            "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+            "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+            "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+            "clientBuild": "client-bb06f71e9dbc115e",
+            "serverBuild": "server-10c93b12133c370e",
+            "contentBuild": "content-3278076a2d790a71"
+          },
+          "payload": {
+            "paused": false,
+            "saveError": false
+          },
+          "suppressedBefore": 0
+        },
+        {
+          "schemaVersion": 1,
+          "sequence": 6,
+          "at": "2026-11-20T03:50:40.163Z",
+          "elapsedMs": 61341.2,
+          "component": "client",
+          "name": "save.committed",
+          "severity": "info",
+          "context": {
+            "runId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+            "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+            "saveAttemptId": "35acfcb3-7832-4f95-82ba-fd9976f89b36",
+            "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+            "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+            "clientBuild": "client-bb06f71e9dbc115e",
+            "serverBuild": "server-10c93b12133c370e",
+            "contentBuild": "content-3278076a2d790a71"
+          },
+          "payload": {
+            "revision": 10,
+            "saveError": false
+          },
+          "suppressedBefore": 0
+        },
+        {
+          "schemaVersion": 1,
+          "sequence": 7,
+          "at": "2026-11-20T03:50:40.521Z",
+          "elapsedMs": 61699.9,
+          "component": "client",
+          "name": "save.committed",
+          "severity": "info",
+          "context": {
+            "runId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+            "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+            "saveAttemptId": "e793206e-dd71-4eb4-a363-5eb44510783c",
+            "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+            "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+            "clientBuild": "client-bb06f71e9dbc115e",
+            "serverBuild": "server-10c93b12133c370e",
+            "contentBuild": "content-3278076a2d790a71"
+          },
+          "payload": {
+            "revision": 11,
+            "saveError": false
+          },
+          "suppressedBefore": 0
+        },
+        {
+          "schemaVersion": 1,
+          "sequence": 8,
+          "at": "2026-11-20T03:50:40.521Z",
+          "elapsedMs": 61700,
+          "component": "client",
+          "name": "lifecycle.pause",
+          "severity": "info",
+          "context": {
+            "runId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+            "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+            "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+            "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+            "clientBuild": "client-bb06f71e9dbc115e",
+            "serverBuild": "server-10c93b12133c370e",
+            "contentBuild": "content-3278076a2d790a71"
+          },
+          "payload": {
+            "paused": true,
+            "saveError": false
+          },
+          "suppressedBefore": 0
+        },
+        {
+          "schemaVersion": 1,
+          "sequence": 9,
+          "at": "2026-11-20T03:50:40.984Z",
+          "elapsedMs": 62163,
+          "component": "client",
+          "name": "save.requested",
+          "severity": "info",
+          "context": {
+            "runId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+            "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+            "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+            "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+            "clientBuild": "client-bb06f71e9dbc115e",
+            "serverBuild": "server-10c93b12133c370e",
+            "contentBuild": "content-3278076a2d790a71"
+          },
+          "payload": {
+            "mode": "solo"
+          },
+          "suppressedBefore": 0
+        },
+        {
+          "schemaVersion": 1,
+          "sequence": 10,
+          "at": "2026-11-20T03:50:41.025Z",
+          "elapsedMs": 62203.7,
+          "component": "client",
+          "name": "save.committed",
+          "severity": "info",
+          "context": {
+            "runId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+            "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+            "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+            "saveAttemptId": "b77efeb9-517e-412b-861d-e6c232f36f11",
+            "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+            "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+            "clientBuild": "client-bb06f71e9dbc115e",
+            "serverBuild": "server-10c93b12133c370e",
+            "contentBuild": "content-3278076a2d790a71"
+          },
+          "payload": {
+            "revision": 12,
+            "saveError": false
+          },
+          "suppressedBefore": 0
+        }
+      ]
+    },
+    "notes": "",
+    "session": {
+      "mode": "solo",
+      "connected": true,
+      "paused": true,
+      "saveError": false,
+      "saveRevision": 12,
+      "serverTick": 38,
+      "district": "NEON_DOCKS",
+      "position": {
+        "x": -14,
+        "y": 0,
+        "z": 13
+      }
+    },
+    "rendering": {
+      "drawCalls": 4183,
+      "triangles": 585716,
+      "frameSamples": 120,
+      "medianFrameMs": 33.2,
+      "p95FrameMs": 50.2
+    },
+    "events": []
+  },
+  "received": [
+    {
+      "type": "AUTH_OK",
+      "diagnostics": {
+        "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+        "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+        "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+        "clientBuild": "client-bb06f71e9dbc115e",
+        "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+        "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+        "serverBuild": "server-10c93b12133c370e",
+        "contentBuild": "content-3278076a2d790a71"
+      }
+    },
+    {
+      "type": "SOLO_STATE",
+      "revision": 9,
+      "diagnostics": {
+        "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+        "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+        "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+        "clientBuild": "client-bb06f71e9dbc115e",
+        "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+        "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+        "serverBuild": "server-10c93b12133c370e",
+        "contentBuild": "content-3278076a2d790a71"
+      }
+    },
+    {
+      "type": "SOLO_STATE",
+      "revision": 10,
+      "diagnostics": {
+        "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+        "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+        "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+        "clientBuild": "client-bb06f71e9dbc115e",
+        "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+        "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+        "serverBuild": "server-10c93b12133c370e",
+        "contentBuild": "content-3278076a2d790a71",
+        "saveAttemptId": "35acfcb3-7832-4f95-82ba-fd9976f89b36"
+      }
+    },
+    {
+      "type": "SOLO_STATE",
+      "revision": 10,
+      "diagnostics": {
+        "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+        "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+        "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+        "clientBuild": "client-bb06f71e9dbc115e",
+        "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+        "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+        "serverBuild": "server-10c93b12133c370e",
+        "contentBuild": "content-3278076a2d790a71",
+        "saveAttemptId": "35acfcb3-7832-4f95-82ba-fd9976f89b36"
+      }
+    },
+    {
+      "type": "SOLO_STATE",
+      "revision": 11,
+      "diagnostics": {
+        "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+        "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+        "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+        "clientBuild": "client-bb06f71e9dbc115e",
+        "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+        "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+        "serverBuild": "server-10c93b12133c370e",
+        "contentBuild": "content-3278076a2d790a71",
+        "saveAttemptId": "e793206e-dd71-4eb4-a363-5eb44510783c"
+      }
+    },
+    {
+      "type": "SOLO_STATE",
+      "revision": 11,
+      "diagnostics": {
+        "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+        "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+        "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+        "clientBuild": "client-bb06f71e9dbc115e",
+        "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+        "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+        "serverBuild": "server-10c93b12133c370e",
+        "contentBuild": "content-3278076a2d790a71",
+        "saveAttemptId": "e793206e-dd71-4eb4-a363-5eb44510783c"
+      }
+    },
+    {
+      "type": "SOLO_STATE",
+      "revision": 12,
+      "diagnostics": {
+        "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+        "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+        "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+        "clientBuild": "client-bb06f71e9dbc115e",
+        "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+        "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+        "serverBuild": "server-10c93b12133c370e",
+        "contentBuild": "content-3278076a2d790a71",
+        "saveAttemptId": "b77efeb9-517e-412b-861d-e6c232f36f11"
+      }
+    },
+    {
+      "type": "SOLO_STATE",
+      "revision": 12,
+      "diagnostics": {
+        "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+        "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+        "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+        "clientBuild": "client-bb06f71e9dbc115e",
+        "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+        "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+        "serverBuild": "server-10c93b12133c370e",
+        "contentBuild": "content-3278076a2d790a71",
+        "saveAttemptId": "b77efeb9-517e-412b-861d-e6c232f36f11"
+      }
+    },
+    {
+      "type": "SOLO_STATE",
+      "revision": 13,
+      "diagnostics": {
+        "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+        "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+        "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+        "clientBuild": "client-bb06f71e9dbc115e",
+        "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+        "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+        "serverBuild": "server-10c93b12133c370e",
+        "contentBuild": "content-3278076a2d790a71",
+        "saveAttemptId": "a2f59991-0edd-45ff-b7b5-9389cbd901f4"
+      }
+    },
+    {
+      "type": "SOLO_STATE",
+      "revision": 13,
+      "diagnostics": {
+        "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+        "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+        "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+        "clientBuild": "client-bb06f71e9dbc115e",
+        "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+        "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+        "serverBuild": "server-10c93b12133c370e",
+        "contentBuild": "content-3278076a2d790a71",
+        "saveAttemptId": "a2f59991-0edd-45ff-b7b5-9389cbd901f4"
+      }
+    },
+    {
+      "type": "SOLO_STATE",
+      "revision": 14,
+      "diagnostics": {
+        "connectionId": "942228a3-5b69-4f93-8664-4e320e9f6bb2",
+        "serverRunId": "5c54ceff-a16e-4e7c-a5ec-4ea3e3d65d64",
+        "clientRunId": "05956aaf-9cc8-4751-87c4-ef59835e8d08",
+        "clientBuild": "client-bb06f71e9dbc115e",
+        "agentRef": "98df9f4313c26c4c4b15b559516dbed5",
+        "campaignRef": "c8a5861fe96faf2d2c5a649122be6ffb",
+        "serverBuild": "server-10c93b12133c370e",
+        "contentBuild": "content-3278076a2d790a71",
+        "saveAttemptId": "75b8f768-8d4e-4d36-a54c-2c63f43a2ffc"
+      }
+    }
+  ],
+  "errors": [],
+  "returnedToProfileSelection": true,
+  "gameplayJourney": "passed"
+}

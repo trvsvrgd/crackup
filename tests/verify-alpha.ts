@@ -16,6 +16,10 @@ import {
   FIXED_TIMESTEP,
   INPUT_FLAG_RELIC_REWIND,
   INPUT_FLAG_FIRE,
+  INPUT_FLAG_AIM,
+  INPUT_FLAG_SPRINT,
+  INPUT_FLAG_GRAPPLE,
+  INPUT_FLAG_OBJECTIVE_JETPACK,
 } from "../shared/constants.js";
 import { encodeClientInput } from "../shared/protocol/binaryProtocol.js";
 import { DISTRICT_LOOP_SPECS } from "../shared/world/phase5Systems.js";
@@ -216,7 +220,7 @@ async function main(): Promise<void> {
       z: 100,
     });
     assert.ok(seeded.ok);
-    seeded.record.xp.agility = 100;
+    seeded.record.xp.agility = 1000; // Tier 3 level-two threshold; still exactly one earned point.
     server.db.saveAgent(seeded.record);
     const client = await connect("EARNED");
     const agent = server.physicsWorld.agents.get(client.auth.entityId)!;
@@ -239,18 +243,18 @@ async function main(): Promise<void> {
     assert.equal(agent.unlockedRelics.size, 0);
     await client.control(
       "UNLOCK_SKILL",
-      { skillId: "titan_2_hydraulic_grip" },
+      { skillId: "strength_2" },
       "CONTROL_ERROR",
     );
     await client.control(
       "UNLOCK_SKILL",
-      { skillId: "titan_1_kinetic_plating" },
+      { skillId: "strength_1" },
       "BUILD_UPDATED",
     );
     assert.equal(agent.unlockedSkills.size, 1);
     await client.control(
       "UNLOCK_SKILL",
-      { skillId: "phantom_1_neural_stabilizer" },
+      { skillId: "shooting_1" },
       "CONTROL_ERROR",
     );
     assert.equal(
@@ -334,6 +338,13 @@ async function main(): Promise<void> {
         0.1,
       "Replayed packets must not extend movement",
     );
+    const heldButtons = INPUT_FLAG_AIM | INPUT_FLAG_SPRINT | INPUT_FLAG_GRAPPLE | INPUT_FLAG_OBJECTIVE_JETPACK;
+    reconnect.ws.send(encodeClientInput({ seq: 2, moveX: 0, moveZ: 0, yaw: 0, pitch: 0, buttons: heldButtons, dt: FIXED_TIMESTEP }));
+    await until(() => mover.lastProcessedInputSeq === 2, 'held input arrives');
+    assert.equal(mover.prevButtons & heldButtons, heldButtons, 'Fresh held controls reach the simulation');
+    await delay(350);
+    assert.equal(mover.prevButtons & heldButtons, 0, 'Stale aim, sprint, grapple and jetpack release after client freeze');
+    assert.equal(mover.grappleActive, false);
 
     console.log("[6/6] Cross-origin upgrades and oversized frames rejected");
     const blocked = new WebSocket(`ws://127.0.0.1:${port}/ws`, {

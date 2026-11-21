@@ -1,0 +1,34 @@
+{
+  "result": "passed",
+  "startedAt": "2026-11-21T01:26:40.005Z",
+  "finishedAt": "2026-11-21T01:26:49.851Z",
+  "builds": {
+    "serverBuild": "server-1eca2c2ffbfe226a",
+    "contentBuild": "content-3278076a2d790a71"
+  },
+  "defaults": {
+    "totalBytes": 98000000,
+    "fileBytes": 10000000,
+    "retentionMs": 604800000,
+    "reserveBytes": 268435456,
+    "queueBytes": 1000000,
+    "queueEvents": 512,
+    "maxFiles": 128
+  },
+  "checks": [
+    "Actual JSONL rotation, total budget, bounded backlog, reserved latest error, retention and untouched saves/exports",
+    "Streaming reader bounds malformed lines and preserves complete events around a torn tail",
+    "Actual child process kill/restart from unrelated cwd preserves configured-root events, unclean marker and dead writer recovery",
+    "Injected EACCES/ENOSPC and free-space exhaustion plus actual blocked log path fail safely with sanitized status",
+    "Actual authenticated SQLite save commits while journal disk writes fail; client receives no false durable receipt",
+    "Concurrent writer cannot steal live ownership or corrupt the combined retention budget",
+    "Stalled filesystem call cannot create an unbounded shutdown wait or in-memory backlog",
+    "Real upload boundary rejects unauthenticated/other-lifetime/oversized/flood batches and overwrites forged identity",
+    "Browser event/byte limits, eight reloads, previous unclean session, allowlisting and quota/unavailable/malformed fallback"
+  ],
+  "fixtures": "output/solo/lc00-p003-TK4LOH",
+  "limitations": [
+    "EACCES/ENOSPC are deterministic filesystem-boundary injections, not an exhausted host disk or real ACL change.",
+    "Browser storage unit adapters supplement the separate real Chromium reload/offline verification."
+  ]
+}

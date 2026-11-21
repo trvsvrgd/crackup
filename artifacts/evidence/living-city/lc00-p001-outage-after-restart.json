@@ -1,0 +1,21 @@
+﻿{
+  "at": "2026-11-19T20:44:07.620Z",
+  "serverHealth": {
+    "status": "ok",
+    "product": "crackup-protocol-eclipse",
+    "mode": "solo",
+    "soloPaused": true,
+    "version": "2.0.0",
+    "architecture": "True-3D-Rapier3D-BinaryNetcode",
+    "journalMode": "wal",
+    "activeAgents": 0,
+    "maxPlayers": 1,
+    "tickCount": 0,
+    "serverTimeSec": 11.191,
+    "registeredAccounts": 1,
+    "totalOrbs": 182
+  },
+  "banner": "Connection closed. Reload to try again.",
+  "bannerVisible": true,
+  "authVisible": false
+}

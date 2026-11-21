@@ -1,8 +1,8 @@
 # CRACKUP project progress ledger
 
-Updated: 2026-11-13T19:18:27.109948Z. This is a checkpoint log, not a production-release certificate.
+Updated: 2026-11-19T11:37:31Z. This is a checkpoint log, not a production-release certificate.
 
-**Resume here:** Begin release qualification. Stage 1-6 implementation gates pass; the game remains a playable alpha pending hardware, multiplayer, uncoached playthrough and final art/audio qualification.
+**Resume here:** Tier 4's six deliverables are implemented and required tests pass, with one literal requirement exception: the preserved existing humanoid rig has 19 joints rather than 15. Read artifacts/tier4-combat-missions-checkpoint.md for the audit; use artifacts/product-delivery-status.md for the separate full-game roadmap and remaining release qualification.
 
 Branch: feat/section6-progress-checkpoint · Base: main
 PR: [Open pull request](https://github.com/trvsvrgd/crackup/pull/1)
@@ -27,26 +27,30 @@ The Phase 1-6 gameplay roadmap and Section 6 art stages use different numbering.
 
 ## Resume checklist
 
-1. Preserve the completed mechanics, Capoeira retargeting, authoritative snapshots, bounded effects/audio, cinematics and saved evidence. Do not rewrite Phase 1-5 gameplay.
-2. Run the opening district with five unfamiliar players and record time-to-understanding, deaths, navigation errors and required coaching.
-3. Run an eight-player 30-minute session on realistic network conditions with declared minimum hardware; measure frame times, reconnects, progression/persistence and combat readability.
-4. Check native tab/minimize visibility, focus, pointer capture, reduced motion, sound preference and cinematic interruptions in target browsers.
-5. Perform an uncoached full three-act playthrough. The passing scripted route uses QA teleports/direct damage and does not establish balance or playability.
-6. Prioritize missing genuine Mixamo locomotion/reaction clips and final hero/boss art/audio over more kick variants. The seven-clip agent_cyber starter remains pending; existing Capoeira has 39 real clips.
-7. Validate hosted TLS, persistent volumes, backups, monitoring and rollback. Review local changes before any separately requested commit/push/deployment.
+1. Read artifacts/tier3-progression-checkpoint.md for Tier 3 controls, balance defaults, compatibility and verified scope. All five numbered implementation deliverables are closed; retain broader release gates below.
+2. Preserve the completed mechanics, Capoeira retargeting, authoritative snapshots, bounded effects/audio, cinematics and saved evidence. Do not rewrite Phase 1-5 gameplay.
+3. Run the opening district with five unfamiliar players and record time-to-understanding, deaths, navigation errors and required coaching.
+4. Run an eight-player 30-minute session on realistic network conditions with declared minimum hardware; measure frame times, reconnects, progression/persistence and combat readability.
+5. Check native tab/minimize visibility, focus, pointer capture, reduced motion, sound preference and cinematic interruptions in target browsers.
+6. Perform an uncoached full three-act playthrough. The passing scripted route uses QA teleports/direct damage and does not establish balance or playability.
+7. Prioritize missing genuine Mixamo locomotion/reaction clips and final hero/boss art/audio over more kick variants. The seven-clip agent_cyber starter remains pending; existing Capoeira has 39 real clips.
+8. Validate hosted TLS, persistent volumes, backups, monitoring and rollback. Review local changes before any separately requested commit/push/deployment.
 
 ## Project foundation
 
 - **Gameplay Phases 1-6:** Shared physics, progression, district loops, pet arenas, Dreadnought, binary packets and SQLite persistence have passing automated suites.
 - **Playable alpha:** HUD, earned upgrades, health/recovery, companion controls, reconnect/input/socket hardening and compiled deployment configuration are included.
 - **Asset provisioning:** HDR, four 2K PBR sets, Soldier/Xbot and the 39-clip Capoeira Y Bot GLB are installed with hashes/provenance. 18 manifest files validate; Armada drives the visible armor rig; other motion states retain procedural fallbacks.
+- **Tier 1 narrative, lore and world mechanics:** World bible, frozen content registries, 24 authored mission records, four ending resolver, authoritative Resonance Spire collection, 30 voiced memories, pet provenance and atomic WAL micro-action ledger. Existing campaign mechanics and legacy IDs remain compatible. See artifacts/tier1-lore-checkpoint.md.
+- **Tier 3 progression and field combat:** Seven attribute curves, five chassis, 42 nodes, 28 weapons, 15 vehicles, four relics and four pet abilities integrated with authority, persistence, physics, equipment UI and ten animation states. See artifacts/tier3-progression-checkpoint.md.
+- **Tier 4 combat ecology and missions:** Tier 4 six-deliverable upgrade implemented: 15 enemies, five bosses, all 24 missions, 64 collectibles, five landmark quests, four citizen interventions and ten sandbox activities; authoritative runtime, SQLite WAL, shared rigs and HUD verified. Literal requirement exception: the existing shared rig has 19 joints rather than 15. See artifacts/tier4-combat-missions-checkpoint.md.
 
 ## Verification at this checkpoint
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| npm run build | Passed November 13 UTC | Strict TypeScript compile and regenerated public/game.js with camera director, scene tracks, live skip/restoration and startup loading gate. |
-| npm run verify | Passed November 13 UTC | Complete Phases 1-6, alpha and Stages 1-6 including real WebSocket checks; saved stage6-regression.log. |
+| npm run build | Passed after final Tier 4 changes | artifacts/evidence/tier4-build.log |
+| npm run verify | Passed full existing regression chain after final Tier 4 changes | artifacts/evidence/tier4-regression.log |
 | npm run assets:verify | Passed: 18 files | Full image/HDR decode, hashes, GLB validation; zero errors and eight non-fatal upstream warnings. |
 | npm run verify:stage3d:browser | Passed | 39 clips, retargeted armor, two-draw weapons, shared normal/shadow buffers, invisible-effect/quality fallback, GPU geometry cleanup and combined city budgets. |
 | Production loader + live game browser | Passed | Every GLB clip, independent skins, PBR/environment, login/render/downed recovery; zero loader/render warnings or errors. |
@@ -63,6 +67,16 @@ The Phase 1-6 gameplay roadmap and Section 6 art stages use different numbering.
 | npm run verify:stage6 | Passed November 13 UTC | Seven restoration reasons, bounded profile history, reduced motion and a scripted four-district/three-act route with eight boss intros and Dreadnought finale. Three real peers keep moving/receiving snapshots during playback. |
 | npm run verify:stage6:browser | Passed; zero warnings/errors | Seven rendered views, skip at every shot, FOV restoration, fifty overlay disposals and stable warmed GPU geometry counts. |
 | Live game Stage 6 browser | Passed; native tab/minimize qualification pending | Natural completion; Escape/Space and movement skip; damage/death/page-hide; preference storage; forced disconnect/relogin without replay; mouse capture restores and field menu stays closed. Automation did not produce native hidden-tab state. |
+| npm run build; npm run verify:lore; npm run verify | Passed November 15, 2026 UTC | artifacts/evidence/tier1-verification.json and tier1-regression.log; deterministic registry/physics/migration/ending tests plus live spire collection, provenance discovery and relay consequence persistence. |
+| node scripts/verify-tier1-browser.mjs + Playwright browser checks | Passed; zero browser warnings/errors | 30 decoded two-second speech assets, reversed chord, 12 ballistic shards, 44.9 ms measured hit-stop; artifacts/evidence/tier1-browser.json and tier1-spires.png. |
+| npm run build; npm run verify:tier2; npm run verify | Passed November 17, 2026 | 22 Tier 2 groups and the complete existing regression chain passed. Final original-prompt audit additionally verifies normal-input services at all eight facilities, gunfire at all four rooftop radar nodes and a real Strength Lv 3 cargo throw breach. See artifacts/tier2-world-checkpoint.md. |
+| node scripts/verify-tier2-browser.mjs + Playwright | Passed; zero browser warnings/errors | 10 browser checks passed: real breach/drop bodies, eight facility states, five distinct objective meshes, stable geometry allocation; zero console warnings/errors. Reports and facility/VTOL/robbery/clinic screenshots in artifacts/evidence. |
+| npm run build (Tier 3) | PASS | tier3-build.log; client-fdb381f553238a1b |
+| npm run verify:tier3 | PASS - 20 groups | tier3-verification.json; numeric boundaries, real physics/input, persistence and WebSocket authority |
+| npm run verify (Tier 3) | PASS - full existing chain | tier3-regression.log |
+| npm run verify:tier2 (Tier 3) | PASS - 22 groups | tier3-tier2-regression.log; refreshed tier2-verification.json hash |
+| Tier 3 browser flow and reauthentication | PASS - seeded profile | tier3-browser.json; reviewed menu screenshot and clean final console |
+| npm run verify:tier4 | Passed 19 content, physics, normal-input, co-op, persistence and live-network groups | artifacts/evidence/tier4-verification.json |
 
 Browser reports below were produced during the implementation runs. Build, regression and asset validation were rerun for this saving checkpoint.
 
@@ -88,6 +102,7 @@ Browser reports below were produced during the implementation runs. Build, regre
 - Boss introductions require authoritative mission-stage and living entity snapshots. Camera tracks follow current actor facing/position; seen/skip/interruption history is per callsign and local to this browser.
 - Camera/HUD/input restore on every exit; prior pointer capture is requested again only when gameplay/focus permit, with safe fallback to clicking the city. Reduced motion uses stationary shots.
 - The three-act route is a scripted integration check using QA teleport/damage acceleration. Uncoached playability, minimum-hardware FPS, native background behavior and eight-player reliability remain separate release gates.
+- Tier 3 implements all five numbered deliverables in the supplied prompt. Its introduction mentions six without defining a sixth. Missing intermediate values, XP payouts, thresholds and active tuning are documented balance defaults; legacy saves remain compatible. Human balance, unique final art and hardware/multiplayer release qualification remain separate.
 
 ## Remaining release work
 
@@ -116,6 +131,13 @@ Browser reports below were produced during the implementation runs. Build, regre
 | 2026-11-13T03:49:47.023177Z | Stage 4 completed and verified: triplanar/fallback/external PBR, real codecs, Gerstner bay, two physical bridges, headlands, height fog and dusk/night. Build, full regression, 18 assets, six-view browser budgets and live game pass. Stage 5 is next; work remains local and uncommitted. |
 | 2026-11-13T13:48:10.375217Z | Completed Stage 5 authoritative combat effects and bounded HRTF sound. Build, complete regression, 18 real assets, three-client replication and empty-session no-replay, two-minute simulated pools, actual WebAudio and live game settings/recovery pass. Stage 6 is next. All new work remains local and uncommitted; hardware FPS and sustained eight-player qualification remain open. |
 | 2026-11-13T19:18:27.109948Z | Completed Stage 6 in-engine opening and authoritative boss intros; verified skip, camera/HUD/input/pointer restoration, profile history, damage/death/page-hide/disconnect recovery, three-client continuity and scripted three-act route. Build, complete regression, 18 assets and browser checks pass. Release qualification remains open. Work is local and uncommitted. |
+| 2026-11-15T20:22:32.113Z | Quality maintenance: local reviewed bug-report download, startup/graphics/render failure recovery, typing-safe shortcuts, continuous gait/reused pose scratch objects and stale held-input release. Build, full verify, solo/campaign and 19 browser checks passed. See quality-hardening-checkpoint.md; product and release gates remain open. |
+| 2026-11-15T22:59:54.455363Z | Completed the five Tier 1 lore deliverables; saved build, full regression, WAL migration/live event and browser evidence. Preserved legacy objective hash by mapping canonical display names through registry aliases. |
+| 2026-11-17T14:07:00.649Z | Completed Tier 2 geography documentation, deterministic registry, piloted VTOL/SAM/turbulence, tactical destruction/regeneration, facilities and ambient tasks. Build, focused suite, full regression and browser checks passed. Product acceptance and human play qualification remain open. |
+| 2026-11-17T19:35:03.676Z | Closed Tier 2 follow-up audit gaps: server-enforced cleared-facility chassis swaps, registry-driven unbounded SAM half-spaces, and five distinct physical skirmish objectives with replicated health/stages/outcomes. Build, 19 focused groups, complete regression and 10 browser checks passed. Refreshed hashed evidence; human play and reference-hardware qualification remain open. |
+| 2026-11-17T19:50:46.134Z | Final original-prompt audit found all five deliverables implemented. Added three full-world normal-input integration groups for eight facility services, four rooftop radar nodes and a real thrown cargo breach. Build, 22 focused groups and complete regression passed. Broader playtesting/hardware gates are outside this prompt. |
+| 2026-11-18T18:43:15.312883+00:00 | Closed Tier 3 implementation and audit: all registries, authoritative execution, save migration, UI and ten-state animation. Added real missile steering, winch cargo, Fox vent/door traversal, flak deflection and turret override. Build, 20 focused groups, full verify, 22 Tier 2 groups and browser install/equip/re-authentication passed. Changes remain local; no product release acceptance advanced. |
+| 2026-11-19T02:36:35.528078+00:00 | Tier 4 six-deliverable upgrade complete: 15 enemies, five bosses, all 24 missions, 64 collectibles, five landmark quests, four citizen interventions and ten sandbox activities; authoritative runtime, SQLite WAL, shared rigs and HUD verified. See artifacts/tier4-combat-missions-checkpoint.md. Build, full verify, Tier 1-3 regressions and controlled browser QA pass. Re-runs refreshed Tier 1-3 evidence hashes; product acceptance and release gates were not advanced. |
 
 ## Saved evidence
 
@@ -206,6 +228,43 @@ Files are copied from local QA output; SHA-256 hashes in the JSON ledger bind th
 - [stage6-live-city.png](./evidence/stage6-live-city.png) — live opening city view
 - [stage6-live-vehicle.png](./evidence/stage6-live-vehicle.png) — live opening vehicle view
 - [stage6-live-restored.png](./evidence/stage6-live-restored.png) — live opening completion and resumed Sera briefing
+- [quality-browser.json](./evidence/quality-browser.json) — 19 browser quality and fault-recovery assertions
+- [quality-regression.log](./evidence/quality-regression.log) — full Phase/Stage/alpha/quality regression output
+- [quality-report.png](./evidence/quality-report.png) — reviewable local bug report
+- [quality-recovery.png](./evidence/quality-recovery.png) — actual graphics context loss recovery controls
+- [quality-startup-failure.png](./evidence/quality-startup-failure.png) — reporting after injected startup failure
+- [quality-runtime-failure.png](./evidence/quality-runtime-failure.png) — reporting after injected render failure
+- [quality-solo-verification.json](./evidence/quality-solo-verification.json) — solo save and pause regression
+- [quality-campaign-verification.json](./evidence/quality-campaign-verification.json) — owned campaign regression
+- [tier1-verification.json](./evidence/tier1-verification.json) — Tier 1 source hashes and verification results
+- [tier1-regression.log](./evidence/tier1-regression.log) — Tier 1 full regression output
+- [tier1-browser.json](./evidence/tier1-browser.json) — Tier 1 browser audio and hit-stop verification
+- [tier1-spires.png](./evidence/tier1-spires.png) — Tier 1 rendered multipart spires
+- [tier2-verification.json](./evidence/tier2-verification.json) — 22 Tier 2 groups revalidated on November 20, 2026
+- [tier2-regression.log](./evidence/tier2-regression.log) — Complete existing regression suite after Tier 2 integration
+- [tier2-browser.json](./evidence/tier2-browser.json) — Tier 2 browser component verification
+- [tier2-facility.png](./evidence/tier2-facility.png) — Tier 2 authored facility and physical destructible placements
+- [tier2-vtol.png](./evidence/tier2-vtol.png) — Piloted VTOL and live radar lock warning
+- [tier2-robbery.png](./evidence/tier2-robbery.png) — Tier 2 moving armored van and objective HUD
+- [tier2-clinic.png](./evidence/tier2-clinic.png) — Tier 2 destructible clinic and siege objective HUD
+- [tier3-build.log](./evidence/tier3-build.log) — Final Tier 3 server and client build output
+- [tier3-verification.json](./evidence/tier3-verification.json) — 20 Tier 3 registry, physics, input, persistence and authority verification groups rerun on November 20, 2026
+- [tier3-regression.log](./evidence/tier3-regression.log) — Complete existing regression chain after final Tier 3 changes
+- [tier3-tier2-regression.log](./evidence/tier3-tier2-regression.log) — 22 Tier 2 integration groups after Tier 3 changes
+- [tier3-browser.json](./evidence/tier3-browser.json) — Seeded browser install, equip and reauthentication results
+- [tier3-browser-console.log](./evidence/tier3-browser-console.log) — Clean browser console captured before QA shutdown
+- [tier3-menu.png](./evidence/tier3-menu.png) — Visually reviewed 42-node menu and equipment controls
+- [tier4-verification.json](./evidence/tier4-verification.json) — Tier 4 final verification rerun on November 20, 2026
+- [tier4-focused.log](./evidence/tier4-focused.log) — Tier 4 final verification and reviewed browser evidence
+- [tier4-build.log](./evidence/tier4-build.log) — Tier 4 final verification and reviewed browser evidence
+- [tier4-regression.log](./evidence/tier4-regression.log) — Tier 4 final verification and reviewed browser evidence
+- [tier4-lore-regression.log](./evidence/tier4-lore-regression.log) — Tier 4 final verification and reviewed browser evidence
+- [tier4-tier2-regression.log](./evidence/tier4-tier2-regression.log) — Tier 4 final verification and reviewed browser evidence
+- [tier4-tier3-regression.log](./evidence/tier4-tier3-regression.log) — Tier 4 final verification and reviewed browser evidence
+- [tier4-browser.json](./evidence/tier4-browser.json) — Tier 4 final verification and reviewed browser evidence
+- [tier4-journal.png](./evidence/tier4-journal.png) — Tier 4 final verification and reviewed browser evidence
+- [tier4-factions.png](./evidence/tier4-factions.png) — Tier 4 final verification and reviewed browser evidence
+- [tier4-hunter.png](./evidence/tier4-hunter.png) — Tier 4 final verification and reviewed browser evidence
 
 ## Maintaining this artifact
 

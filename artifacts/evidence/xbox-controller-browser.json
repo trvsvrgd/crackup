@@ -1,0 +1,33 @@
+﻿{
+    "status":  "passed",
+    "checks":  [
+                   "Controller gameplay does not require mouse pointer lock",
+                   "Analog movement reaches production WebSocket inputs",
+                   "Authoritative server moves player from controller input",
+                   "Deadzone stops idle drift",
+                   "Keyboard movement still works with controller connected",
+                   "Right stick changes actual camera yaw",
+                   "LT + RT send aim and fire through real input packets",
+                   "A sends jump",
+                   "LB + RT sends grapple without firing",
+                   "Holding Y requests reload once",
+                   "Menu opens field menu",
+                   "Field menu suppresses gameplay",
+                   "D-pad adjusts controller settings",
+                   "A toggles focused checkbox",
+                   "B closes field menu",
+                   "View opens tactical map",
+                   "RB zooms tactical map",
+                   "A places a waypoint on focused map",
+                   "B closes map",
+                   "Disconnect opens field menu",
+                   "Reconnected controller works after release",
+                   "Closing menu with held RT cannot fire until released",
+                   "Right stick scrolls the controls guide",
+                   "No browser runtime errors"
+               ],
+    "errors":  [
+
+               ],
+    "evidence":  "Simulated standard Xbox API; production client and authoritative solo server."
+}

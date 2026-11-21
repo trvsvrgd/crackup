@@ -1,3 +1,4 @@
+import { characterNameForCallsign } from '../../shared/content/characterRegistry.js';
 import { DreadnoughtPhase, EnemyCombatState } from "../../shared/constants.js";
 import type {
   Vec3,
@@ -190,8 +191,8 @@ export function encounterTracks(source: EncounterSource): CinematicTrack[] {
       id: `enemy-${id}`,
       targetEnemyId: id,
       title: (lieutenant
-        ? spec.lieutenantCallsign
-        : spec.kingpinCallsign
+        ? characterNameForCallsign(spec.lieutenantCallsign)
+        : characterNameForCallsign(spec.kingpinCallsign)
       ).replaceAll("-", " "),
       eyebrow: `${spec.district.replaceAll("_", " ")} / ${lieutenant ? "LIEUTENANT" : "KINGPIN"}`,
       duration: 3.6,

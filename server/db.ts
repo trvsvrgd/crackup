@@ -1,3 +1,9 @@
+import type { Tier4Award } from '../shared/world/tier4World.js';
+import { ATTRIBUTE_NAMES, PROGRESSION_XP_THRESHOLDS } from '../shared/content/progressionRegistry.js';
+import { DistrictId } from '../shared/constants.js';
+import { PET_PROVENANCE_REGISTRY, provenanceForCitizen } from '../shared/content/worldLore.js';
+import { applyMicroAction, DEFAULT_MICRO_TELEMETRY, normalizeGrid, normalizeResonance, type MunicipalGridStability, type MicroActionTelemetry, type MicroActionKind, type LoreProgress } from '../shared/content/campaignGraph.js';
+export interface PendingLoreAction { id: string; kind: MicroActionKind; district: DistrictId }
 /**
  * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
  * Persistent Relational Database Layer — SQLite3 (better-sqlite3) in WAL Mode
@@ -22,6 +28,15 @@ import { computeNeuralDriftRatios, NeuralDriftRatios } from '../shared/world/pha
 import { isValidPetSpecies, type PersistedPetStats } from '../shared/world/cyberPetArena.js';
 
 export interface PersistentAgentRecord {
+  municipalGridStability?: MunicipalGridStability;
+  gestaltResonance?: number;
+  microActionTelemetry?: MicroActionTelemetry;
+  pendingLoreActions?: PendingLoreAction[];
+  tier3WeaponId?: string;
+  collectedLore?: string[];
+  completedQuests?: string[];
+  tier4Unlocks?: string[];
+  pendingTier4Awards?: Tier4Award[];
   hp?: number;
   callsign: string;
   position: Vec3;
@@ -42,6 +57,13 @@ export interface PersistentAgentRecord {
 }
 
 interface RawAgentRow {
+  tier3_weapon_id?: string;
+  collected_lore_json?: string;
+  completed_quests_json?: string;
+  tier4_unlocks_json?: string;
+  municipal_grid_json?: string;
+  gestalt_resonance?: number;
+  micro_action_json?: string;
   hp?: number | null;
   callsign: string;
   pin_hash: string;
@@ -126,6 +148,8 @@ export class AgentDatabase {
     this.db.pragma('busy_timeout = 5000');
 
     this.initializeSchema();
+    this.migrateLore();
+    this.migrateTier3();
 
     this.stmtGetAgent = this.db.prepare<[string], RawAgentRow>(
       `SELECT * FROM agents WHERE callsign = ?`
@@ -157,6 +181,9 @@ export class AgentDatabase {
 
     this.stmtUpdateState = this.db.prepare(`
       UPDATE agents SET
+        municipal_grid_json = @municipal_grid_json,
+        gestalt_resonance = @gestalt_resonance,
+        micro_action_json = @micro_action_json,
         hp = @hp,
         pos_x = @pos_x,
         pos_y = @pos_y,
@@ -251,6 +278,57 @@ export class AgentDatabase {
     }
   }
 
+  private migrateTier3(): void {
+    const columns = this.db.pragma('table_info(agents)') as Array<{ name: string }>;
+    this.db.transaction(() => {
+      if (!columns.some(c => c.name === 'tier3_weapon_id')) this.db.exec("ALTER TABLE agents ADD COLUMN tier3_weapon_id TEXT NOT NULL DEFAULT ''");
+      if (columns.some(c => c.name === 'progression_version')) return;
+      this.db.exec('ALTER TABLE agents ADD COLUMN progression_version INTEGER NOT NULL DEFAULT 3');
+      const rows = this.db.prepare('SELECT * FROM agents').all() as RawAgentRow[];
+      const update = this.db.prepare('UPDATE agents SET xp_json = ? WHERE callsign = ?');
+      const oldThresholds = [0, 100, 250, 500, 900];
+      for (const row of rows) {
+        let xp: AgentAttributeXP;
+        try { xp = { ...DEFAULT_ATTRIBUTE_XP, ...JSON.parse(row.xp_json) }; } catch { continue; }
+        for (const stat of ATTRIBUTE_NAMES) {
+          const value = Number.isFinite(xp[stat]) ? Math.max(0, xp[stat]) : 0;
+          const level = Math.max(clampAttributeLevel(row[`${stat}_level` as keyof RawAgentRow] as number), 1 + oldThresholds.slice(1).filter(t => value >= t).length);
+          const lo = oldThresholds[level - 1], hi = oldThresholds[level] ?? lo + 900;
+          const next = PROGRESSION_XP_THRESHOLDS[level] ?? 36000;
+          xp[stat] = Math.round(PROGRESSION_XP_THRESHOLDS[level - 1] + Math.max(0, value - lo) / (hi - lo) * (next - PROGRESSION_XP_THRESHOLDS[level - 1]));
+        }
+        update.run(JSON.stringify(xp), row.callsign);
+      }
+    })();
+  }
+
+  private migrateLore(): void {
+    const columns = this.db.pragma('table_info(agents)') as Array<{ name: string }>;
+    this.db.transaction(() => {
+      for (const column of ['collected_lore_json', 'completed_quests_json', 'tier4_unlocks_json']) if (!columns.some(c => c.name === column)) this.db.exec(`ALTER TABLE agents ADD COLUMN ${column} TEXT NOT NULL DEFAULT '[]'`);
+      this.db.exec('CREATE TABLE IF NOT EXISTS tier4_awards (callsign TEXT NOT NULL REFERENCES agents(callsign) ON DELETE CASCADE, award_id TEXT NOT NULL, PRIMARY KEY(callsign, award_id))');
+      if (!columns.some(c => c.name === 'municipal_grid_json')) this.db.exec("ALTER TABLE agents ADD COLUMN municipal_grid_json TEXT NOT NULL DEFAULT '{}'");
+      if (!columns.some(c => c.name === 'gestalt_resonance')) this.db.exec('ALTER TABLE agents ADD COLUMN gestalt_resonance REAL NOT NULL DEFAULT 0');
+      if (!columns.some(c => c.name === 'micro_action_json')) this.db.exec("ALTER TABLE agents ADD COLUMN micro_action_json TEXT NOT NULL DEFAULT '{}'");
+      this.db.exec(`CREATE TABLE IF NOT EXISTS lore_micro_actions (
+        callsign TEXT NOT NULL REFERENCES agents(callsign) ON DELETE CASCADE,
+        action_id TEXT NOT NULL, kind TEXT NOT NULL, district TEXT NOT NULL,
+        created_at INTEGER NOT NULL, PRIMARY KEY (callsign, action_id)
+      )`);
+      const rows = this.db.prepare('SELECT callsign, pet_json FROM agents').all() as Array<{ callsign: string; pet_json: string }>;
+      const update = this.db.prepare('UPDATE agents SET pet_json = ? WHERE callsign = ?');
+      for (const row of rows) {
+        try {
+          const pet = JSON.parse(row.pet_json);
+          if (!pet || !isValidPetSpecies(pet.species) || typeof pet.name !== 'string') continue;
+          const canonical = provenanceForCitizen(pet.originCitizenId) ?? PET_PROVENANCE_REGISTRY.generate(`${row.callsign}:${pet.species}`);
+          const next = JSON.stringify({ ...pet, ...canonical, provenanceDiscovered: pet.provenanceDiscovered === true });
+          if (next !== row.pet_json) update.run(next, row.callsign);
+        } catch { /* Preserve damaged legacy JSON for the existing safe read fallback. */ }
+      }
+    })();
+  }
+
   public getJournalMode(): string {
     return String(this.db.pragma('journal_mode', { simple: true })).toLowerCase();
   }
@@ -301,6 +379,7 @@ export class AgentDatabase {
     const initialRatios = computeNeuralDriftRatios(initialTelemetry);
     const newRecord: PersistentAgentRecord = {
       callsign,
+      municipalGridStability: normalizeGrid(), gestaltResonance: 0, microActionTelemetry: { ...DEFAULT_MICRO_TELEMETRY },
       position: { ...defaultSpawnPos },
       rotation: { x: 0, y: 0, z: 0, w: 1 },
       attributes: { ...DEFAULT_ATTRIBUTES },
@@ -362,6 +441,26 @@ export class AgentDatabase {
   }
 
   public saveAgent(record: PersistentAgentRecord): void {
+    this.db.transaction(() => this.saveAgentTransaction(record))();
+  }
+
+  private saveAgentTransaction(record: PersistentAgentRecord): void {
+    const stored = this.stmtGetAgent.get(record.callsign.trim().toUpperCase());
+    if (!stored) throw new Error('Cannot save an unregistered Agent');
+    const base = record.pendingLoreActions?.length || record.pendingTier4Awards?.length ? this.rowToRecord(stored) : record;
+    const lore: LoreProgress = { municipalGridStability: normalizeGrid(base.municipalGridStability), gestaltResonance: normalizeResonance(base.gestaltResonance), microActionTelemetry: { ...DEFAULT_MICRO_TELEMETRY, ...base.microActionTelemetry } };
+    const insert = this.db.prepare('INSERT OR IGNORE INTO lore_micro_actions (callsign, action_id, kind, district, created_at) VALUES (?, ?, ?, ?, ?)');
+    for (const action of record.pendingLoreActions ?? []) {
+      if (!action.id || !Object.values(DistrictId).includes(action.district)) throw new Error('Invalid lore action');
+      if (insert.run(stored.callsign, action.id, action.kind, action.district, Date.now()).changes) applyMicroAction(lore, action.kind, action.district);
+    }
+    for (const award of record.pendingTier4Awards ?? []) {
+      if (this.db.prepare('INSERT OR IGNORE INTO tier4_awards (callsign, award_id) VALUES (?, ?)').run(stored.callsign, award.id).changes) {
+        lore.municipalGridStability[award.district] = Math.max(0, Math.min(100, lore.municipalGridStability[award.district] + award.reward.stability));
+        lore.gestaltResonance = normalizeResonance(lore.gestaltResonance + award.reward.resonance);
+        if (award.id.startsWith('TAG_')) lore.microActionTelemetry.memoriesRecovered++;
+      }
+    }
     const normQ = normalizeQuat(record.rotation);
     const safePos = {
       x: Number.isFinite(record.position.x) ? record.position.x : 0,
@@ -371,6 +470,9 @@ export class AgentDatabase {
     const computedRatios = record.neuralDriftRatios || computeNeuralDriftRatios(record.telemetry);
 
     this.stmtUpdateState.run({
+      municipal_grid_json: JSON.stringify(lore.municipalGridStability),
+      gestalt_resonance: lore.gestaltResonance,
+      micro_action_json: JSON.stringify(lore.microActionTelemetry),
       hp: Number.isFinite(record.hp) ? Math.max(0, record.hp!) : null,
       callsign: record.callsign.trim().toUpperCase(),
       pos_x: safePos.x,
@@ -389,7 +491,7 @@ export class AgentDatabase {
       vigilante_level: clampAttributeLevel(record.attributes.vigilante),
       xp_json: JSON.stringify(record.xp),
       telemetry_json: JSON.stringify(record.telemetry),
-      pet_json: JSON.stringify(record.pet ?? null),
+      pet_json: JSON.stringify(record.pet ? { ...record.pet, ...(provenanceForCitizen(record.pet.originCitizenId ?? '') ?? PET_PROVENANCE_REGISTRY.generate(`${stored.callsign}:${record.pet.species}`)), provenanceDiscovered: record.pet.provenanceDiscovered === true } : null),
       collected_orbs_json: JSON.stringify(record.collectedOrbs || []),
       augment_chassis: record.augmentChassis || AugmentChassisId.TITAN_JUGGERNAUT,
       unlocked_skills_json: JSON.stringify(record.unlockedSkills || []),
@@ -401,6 +503,9 @@ export class AgentDatabase {
       }),
       updated_at: Date.now(),
     });
+    this.db.prepare('UPDATE agents SET tier3_weapon_id = ? WHERE callsign = ?').run(record.tier3WeaponId ?? stored.tier3_weapon_id ?? '', stored.callsign);
+    this.db.prepare('UPDATE agents SET collected_lore_json = ?, completed_quests_json = ?, tier4_unlocks_json = ? WHERE callsign = ?').run(JSON.stringify(record.collectedLore ?? JSON.parse(stored.collected_lore_json ?? '[]')), JSON.stringify(record.completedQuests ?? JSON.parse(stored.completed_quests_json ?? '[]')), JSON.stringify(record.tier4Unlocks ?? JSON.parse(stored.tier4_unlocks_json ?? '[]')), stored.callsign);
+    Object.assign(record, lore);
   }
 
   private rowToRecord(row: RawAgentRow): PersistentAgentRecord {
@@ -494,14 +599,25 @@ export class AgentDatabase {
       if (parsed && isValidPetSpecies(parsed.species) && typeof parsed.name === 'string') {
         const wins = (value: unknown) => typeof value === 'number' && Number.isFinite(value)
           ? Math.max(0, Math.floor(value)) : 0;
-        pet = { species: parsed.species, name: parsed.name.slice(0, 32),
+        pet = { ...(provenanceForCitizen(parsed.originCitizenId) ?? PET_PROVENANCE_REGISTRY.generate(`${row.callsign}:${parsed.species}`)), provenanceDiscovered: parsed.provenanceDiscovered === true,
+          species: parsed.species, name: parsed.name.slice(0, 32),
           derbyWins: wins(parsed.derbyWins), clashWins: wins(parsed.clashWins) };
       }
     } catch {
       // Legacy or damaged pet data leaves the Agent unbonded.
     }
 
+    let municipalGridStability = normalizeGrid();
+    let microActionTelemetry = { ...DEFAULT_MICRO_TELEMETRY };
+    try { municipalGridStability = normalizeGrid(JSON.parse(row.municipal_grid_json ?? '{}')); } catch {}
+    try {
+      const raw = JSON.parse(row.micro_action_json ?? '{}');
+      for (const key of Object.keys(microActionTelemetry) as Array<keyof MicroActionTelemetry>) {
+        if (Number.isFinite(raw?.[key])) microActionTelemetry[key] = Math.max(0, Math.floor(raw[key]));
+      }
+    } catch {}
     return {
+      municipalGridStability, gestaltResonance: normalizeResonance(row.gestalt_resonance), microActionTelemetry,
       callsign: row.callsign,
       hp: typeof row.hp === 'number' && Number.isFinite(row.hp) ? Math.max(0, row.hp) : undefined,
       position: {
@@ -525,6 +641,10 @@ export class AgentDatabase {
         vigilante: clampAttributeLevel(row.vigilante_level),
       },
       xp,
+      tier3WeaponId: row.tier3_weapon_id ?? '',
+      collectedLore: JSON.parse(row.collected_lore_json ?? '[]'),
+      completedQuests: JSON.parse(row.completed_quests_json ?? '[]'),
+      tier4Unlocks: JSON.parse(row.tier4_unlocks_json ?? '[]'),
       telemetry,
       collectedOrbs,
       augmentChassis,

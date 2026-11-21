@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "durationSec": 7.900050499999999,
+  "checks": [
+    "Immutable content counts, unique IDs, finite coordinates, all faction roles, provenance and arsenal/reward links",
+    "Five mission controllers complete, stop after completion and fail on lost objective",
+    "All 15 archetypes instantiate the shared six-collider rig with the registered presentation",
+    "Normal H starts a mission; normal gunfire and held H both complete physical sabotage nodes once",
+    "All 24 authored missions execute with a level-one build, ordered prerequisites and exact one-time rewards; Thorne requires the real Dreadnought defeat",
+    "64 physical collections, closed-wall dossier rejection, citizen XP/resonance and full fourteen-log GN_10 unlock without duplicate awards",
+    "All five multi-stage landmark quests execute interactions, Unit 00 combat, interior drop, seven hairpins and rooftop defense with exact rewards",
+    "High heat dynamically deploys Valkyrie VTOL plus two Cyber-Cycles and pursues the target across district geometry until defeat",
+    "District 3 Mission 2 independently triggers the hunter; its HUD alert takes priority and defeated escorts/vehicles are cleaned up",
+    "Public lift moves a low-level player through ordinary H input; gunfire removes Graves plate-glass collision",
+    "All four interventions spawn, resolve actual threats/transport/delivery/evacuation and award registered civic deltas",
+    "Citizen deadline expiry applies failure deltas and enters cooldown instead of paying success",
+    "Four street races and four aerial ring courses enforce ordered physical crossings, vehicle mode and fuel/dash refills",
+    "Both Crucibles execute ten escalating physical enemy waves and grant completion to two surviving co-op participants",
+    "Faction shields resist frontal torso fire while exposing flanks; normal prop throws and driven-vehicle impacts damage mission infrastructure",
+    "SQLite WAL migration and close/reopen preserve all collections, quest completions, unlocks and award deltas",
+    "Live WebSocket authority rejects forged collection/reward/equipment and persists actual proximity collection only for its collector",
+    "Normal binary H input starts an operation; another peer receives all three physical nodes and reconstructs matching colliders",
+    "Reconnect restores collection and prevents a second XP award while the other peer remains connected"
+  ]
+}

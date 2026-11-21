@@ -1,3 +1,4 @@
+import { ENEMY_ARCHETYPE_BY_ID } from '../../shared/content/enemyAndBossRegistry.js';
 import * as THREE from 'three';
 import { EnemyCombatState, EnemyLimbId, LIMB_COLLIDER_SPECS, PARRY_SHOCKWAVE_RADIUS_M, AgentAnimState } from '../../shared/constants.js';
 import { computeBoneWorldPosition, type VatsLimbEvaluation } from '../../shared/combat/enemyRigSystem.js';
@@ -18,6 +19,23 @@ export class ArticulatedEnemyRigMesh {
   private lastPosition: Vec3 | null = null;
   private lastSplat = false;
   private speed = 0;
+  private contentId = '';
+  public applyContent(id: string): void {
+    if (this.contentId === id) return;
+    const spec = ENEMY_ARCHETYPE_BY_ID.get(id); if (!spec) return; this.contentId = id;
+    const preset = spec.armorPreset;
+    this.humanoid.materials.armor.color.setHex(preset.primary); this.humanoid.materials.trim.color.setHex(preset.accent); this.humanoid.materials.trim.emissive.setHex(preset.accent);
+    const plate = (bone: keyof typeof this.humanoid.bones, name: string, w: number, h: number, d: number, x: number, y: number, z: number) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), this.humanoid.materials.armor); mesh.name = name; mesh.position.set(x,y,z); mesh.castShadow = true; this.humanoid.bones[bone].add(mesh);
+    };
+    plate('Chest', preset.id, .46, .25, preset.chestDepth, 0, 0, -.035);
+    for (const side of ['Left','Right'] as const) plate(`${side}Clavicle`, `${spec.faction} shoulder`, preset.shoulderWidth, .18, .27, 0, .02, 0);
+    for (let i = 0; i < preset.dorsalRails; i++) plate('Chest', 'Faction dorsal rail', .045, .55 + .08 * i, .08, (i-(preset.dorsalRails-1)/2)*.13, .02, .23);
+    if (preset.shield) plate('LeftForearm', 'Faction ballistic shield', .58, .95, .13, 0, -.16, -.24);
+    if (spec.role === 'HEAVY') plate('Chest', 'Support ammunition pack', .4, .5, .25, 0, -.1, .28);
+    if (spec.weaponIds[0].startsWith('ML')) { this.humanoid.weapon.visible = false; plate('RightHand', spec.weaponIds[0], .075, .8, .06, 0, -.35, -.15); }
+    else this.humanoid.weapon.scale.setScalar(spec.role === 'HEAVY' || spec.role === 'ELITE_EXOSUIT' ? 1.25 : .9);
+  }
   constructor(public readonly enemyId: number, public readonly isElite: boolean, archetype = isElite ? EnemyArchetype.CYBER_RONIN : EnemyArchetype.STREET_ENFORCER) {
     this.root.name = `EnemyRig_${enemyId}`; this.humanoid = new HumanoidRig(archetype, true); this.animator = new SkeletalAnimator(this.humanoid); this.root.add(this.humanoid.root);
     for (const limb of [0, 1, 2, 3, 4, 5] as EnemyLimbId[]) {

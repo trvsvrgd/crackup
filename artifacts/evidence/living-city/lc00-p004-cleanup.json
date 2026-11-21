@@ -1,0 +1,8 @@
+﻿{
+    "checkedAt":  "2026-11-20T19:58:06.0387478+00:00",
+    "pid":  11600,
+    "runId":  "c99aab14-43b8-467d-b452-2d0a6548fc86",
+    "activeAgents":  0,
+    "browser":  "Owned CLI session closed",
+    "action":  "Stopped only verified isolated test runtime; fixture data retained"
+}

@@ -1,0 +1,1833 @@
+{
+  "startedAt": "2026-11-20T13:55:47.723Z",
+  "finishedAt": "2026-11-20T13:55:51.530Z",
+  "result": "passed",
+  "method": "Automated real SQLite/WebSocket/launcher boundaries with isolated synthetic profiles; not a human playtest.",
+  "builds": {
+    "serverBuild": "server-59704028ad9cb8b3",
+    "contentBuild": "content-3278076a2d790a71"
+  },
+  "checks": [
+    "Credential-bearing errors retain only category and shipped bundle offsets",
+    "Flood suppression, rollover counts, 256-event bound and throwing/mutating sink isolation",
+    "solo: actual socket auth/save/disconnect/reconnect correlation, transaction failure and retry",
+    "campaign: actual socket auth/save/disconnect/reconnect correlation, transaction failure and retry",
+    "shared: actual socket auth/save/disconnect/reconnect correlation",
+    "Actual launcher catches corrupt-database constructor failure, preserves bytes and writes sanitized correlated event"
+  ],
+  "traces": [
+    {
+      "schemaVersion": 1,
+      "sequence": 1,
+      "at": "2026-11-20T13:55:49.852Z",
+      "elapsedMs": 0.66,
+      "component": "server",
+      "name": "server.start",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 2,
+      "at": "2026-11-20T13:55:50.002Z",
+      "elapsedMs": 150.44,
+      "component": "server",
+      "name": "server.ready",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "port": 64060,
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3,
+      "at": "2026-11-20T13:55:50.046Z",
+      "elapsedMs": 194.66,
+      "component": "server",
+      "name": "connection.open",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 4,
+      "at": "2026-11-20T13:55:50.049Z",
+      "elapsedMs": 197.98,
+      "component": "server",
+      "name": "connection.attempt",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 5,
+      "at": "2026-11-20T13:55:50.127Z",
+      "elapsedMs": 276.03,
+      "component": "server",
+      "name": "campaign.loaded",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 0
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 6,
+      "at": "2026-11-20T13:55:50.129Z",
+      "elapsedMs": 277.86,
+      "component": "server",
+      "name": "connection.authenticated",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "isNew": true,
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 7,
+      "at": "2026-11-20T13:55:50.149Z",
+      "elapsedMs": 297.8,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "saveAttemptId": "1366532a-a21b-4447-b0a8-b6fd3a2ed359",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 0,
+        "serverTick": 1
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 8,
+      "at": "2026-11-20T13:55:50.150Z",
+      "elapsedMs": 298.98,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "saveAttemptId": "1366532a-a21b-4447-b0a8-b6fd3a2ed359",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 1,
+        "durationMs": 1.2
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 9,
+      "at": "2026-11-20T13:55:50.204Z",
+      "elapsedMs": 352.56,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "saveAttemptId": "023acce9-3727-402d-8e1a-112521f5679f",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 1,
+        "serverTick": 8
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 10,
+      "at": "2026-11-20T13:55:50.205Z",
+      "elapsedMs": 353.15,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "saveAttemptId": "023acce9-3727-402d-8e1a-112521f5679f",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 2,
+        "durationMs": 0.61
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 11,
+      "at": "2026-11-20T13:55:50.228Z",
+      "elapsedMs": 376.83,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "saveAttemptId": "de84420f-bf16-4b79-8eda-2892299c6d4d",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 2,
+        "serverTick": 9
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 12,
+      "at": "2026-11-20T13:55:50.229Z",
+      "elapsedMs": 377.39,
+      "component": "server",
+      "name": "save.failed",
+      "severity": "error",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "saveAttemptId": "de84420f-bf16-4b79-8eda-2892299c6d4d",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 2,
+        "durationMs": 0.57,
+        "code": "UNKNOWN"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 13,
+      "at": "2026-11-20T13:55:50.250Z",
+      "elapsedMs": 398.63,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "saveAttemptId": "784430d1-4fb3-4270-bb3b-cbde769b01ab",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 2,
+        "serverTick": 9
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 14,
+      "at": "2026-11-20T13:55:50.251Z",
+      "elapsedMs": 399.21,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "saveAttemptId": "784430d1-4fb3-4270-bb3b-cbde769b01ab",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 3,
+        "durationMs": 0.59
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 15,
+      "at": "2026-11-20T13:55:50.283Z",
+      "elapsedMs": 431.38,
+      "component": "server",
+      "name": "connection.closed",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "closeCode": 1000,
+        "code": "UNKNOWN"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 16,
+      "at": "2026-11-20T13:55:50.283Z",
+      "elapsedMs": 431.54,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "saveAttemptId": "0b5a2e22-5ccd-41d5-87eb-040b49e2925d",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 3,
+        "serverTick": 9
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 17,
+      "at": "2026-11-20T13:55:50.283Z",
+      "elapsedMs": 431.96,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "1653da90-4ba0-41af-840b-6ddb0d564a07",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "saveAttemptId": "0b5a2e22-5ccd-41d5-87eb-040b49e2925d",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 4,
+        "durationMs": 0.42
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 18,
+      "at": "2026-11-20T13:55:50.313Z",
+      "elapsedMs": 461.25,
+      "component": "server",
+      "name": "connection.open",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "a9d48402-228d-4abe-b8fd-e1b414a157d1",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 19,
+      "at": "2026-11-20T13:55:50.313Z",
+      "elapsedMs": 461.72,
+      "component": "server",
+      "name": "connection.attempt",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "a9d48402-228d-4abe-b8fd-e1b414a157d1",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 20,
+      "at": "2026-11-20T13:55:50.389Z",
+      "elapsedMs": 538.03,
+      "component": "server",
+      "name": "campaign.loaded",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "a9d48402-228d-4abe-b8fd-e1b414a157d1",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 4
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 21,
+      "at": "2026-11-20T13:55:50.390Z",
+      "elapsedMs": 538.38,
+      "component": "server",
+      "name": "connection.authenticated",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "a9d48402-228d-4abe-b8fd-e1b414a157d1",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "isNew": false,
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 22,
+      "at": "2026-11-20T13:55:50.434Z",
+      "elapsedMs": 582.67,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "a9d48402-228d-4abe-b8fd-e1b414a157d1",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "saveAttemptId": "7248be85-729d-4940-b6d7-d9b9b44ead08",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 4,
+        "serverTick": 6
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 23,
+      "at": "2026-11-20T13:55:50.435Z",
+      "elapsedMs": 583.28,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "a9d48402-228d-4abe-b8fd-e1b414a157d1",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "saveAttemptId": "7248be85-729d-4940-b6d7-d9b9b44ead08",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 5,
+        "durationMs": 0.63
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 24,
+      "at": "2026-11-20T13:55:50.435Z",
+      "elapsedMs": 584,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "a9d48402-228d-4abe-b8fd-e1b414a157d1",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "saveAttemptId": "2207a686-e0bf-4647-bce2-c76d1337d8d7",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 5,
+        "serverTick": 6
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 25,
+      "at": "2026-11-20T13:55:50.436Z",
+      "elapsedMs": 584.35,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "a9d48402-228d-4abe-b8fd-e1b414a157d1",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "saveAttemptId": "2207a686-e0bf-4647-bce2-c76d1337d8d7",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 6,
+        "durationMs": 0.36
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 26,
+      "at": "2026-11-20T13:55:50.437Z",
+      "elapsedMs": 585.2,
+      "component": "server",
+      "name": "connection.closed",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "connectionId": "a9d48402-228d-4abe-b8fd-e1b414a157d1",
+        "clientRunId": "0dccb069-4428-4a7b-872a-30f9eb301e49",
+        "serverRunId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "26ae1864a9fe8aa9f2b910ace9fcd7ee",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "closeCode": 1006,
+        "code": "UNKNOWN"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 27,
+      "at": "2026-11-20T13:55:50.440Z",
+      "elapsedMs": 589.04,
+      "component": "server",
+      "name": "server.stop",
+      "severity": "info",
+      "context": {
+        "runId": "99b3c2bf-a355-436b-b0e8-a075fc5da4e4",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1,
+      "at": "2026-11-20T13:55:50.451Z",
+      "elapsedMs": 0.2,
+      "component": "server",
+      "name": "server.start",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "campaign"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 2,
+      "at": "2026-11-20T13:55:50.480Z",
+      "elapsedMs": 29.66,
+      "component": "server",
+      "name": "server.ready",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "port": 64065,
+        "mode": "campaign"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3,
+      "at": "2026-11-20T13:55:50.483Z",
+      "elapsedMs": 32.31,
+      "component": "server",
+      "name": "connection.open",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "campaign"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 4,
+      "at": "2026-11-20T13:55:50.483Z",
+      "elapsedMs": 32.82,
+      "component": "server",
+      "name": "connection.attempt",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "campaign"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 5,
+      "at": "2026-11-20T13:55:50.553Z",
+      "elapsedMs": 103.11,
+      "component": "server",
+      "name": "campaign.loaded",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 0
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 6,
+      "at": "2026-11-20T13:55:50.554Z",
+      "elapsedMs": 103.43,
+      "component": "server",
+      "name": "connection.authenticated",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "isNew": true,
+        "mode": "campaign"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 7,
+      "at": "2026-11-20T13:55:50.555Z",
+      "elapsedMs": 104.22,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "d8ab929f-5078-41e7-93f4-378beb4971cf",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 0,
+        "serverTick": 0
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 8,
+      "at": "2026-11-20T13:55:50.555Z",
+      "elapsedMs": 104.81,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "d8ab929f-5078-41e7-93f4-378beb4971cf",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 1,
+        "durationMs": 0.61
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 9,
+      "at": "2026-11-20T13:55:50.602Z",
+      "elapsedMs": 151.54,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "38958b63-7bcf-440d-805e-5717d809cf00",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 1,
+        "serverTick": 6
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 10,
+      "at": "2026-11-20T13:55:50.602Z",
+      "elapsedMs": 152.1,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "38958b63-7bcf-440d-805e-5717d809cf00",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 2,
+        "durationMs": 0.6
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 11,
+      "at": "2026-11-20T13:55:50.624Z",
+      "elapsedMs": 173.92,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "14666242-964c-43de-95a3-f618b7d31c96",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 2,
+        "serverTick": 7
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 12,
+      "at": "2026-11-20T13:55:50.625Z",
+      "elapsedMs": 174.46,
+      "component": "server",
+      "name": "save.failed",
+      "severity": "error",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "14666242-964c-43de-95a3-f618b7d31c96",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 0.58,
+        "code": "UNKNOWN"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 13,
+      "at": "2026-11-20T13:55:50.648Z",
+      "elapsedMs": 198.11,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "9d3a89be-9589-4067-92a1-24877422780a",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 2,
+        "serverTick": 7
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 14,
+      "at": "2026-11-20T13:55:50.649Z",
+      "elapsedMs": 198.59,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "9d3a89be-9589-4067-92a1-24877422780a",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 3,
+        "durationMs": 0.52
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 15,
+      "at": "2026-11-20T13:55:50.679Z",
+      "elapsedMs": 228.99,
+      "component": "server",
+      "name": "connection.closed",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "closeCode": 1000,
+        "code": "UNKNOWN"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 16,
+      "at": "2026-11-20T13:55:50.680Z",
+      "elapsedMs": 229.13,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "ada2b1c3-d118-49b3-9f5a-e65bbcc6b664",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 3,
+        "serverTick": 9
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 17,
+      "at": "2026-11-20T13:55:50.680Z",
+      "elapsedMs": 229.51,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "907294dd-092d-46c4-b254-9ce87416600f",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "ada2b1c3-d118-49b3-9f5a-e65bbcc6b664",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 4,
+        "durationMs": 0.42
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 18,
+      "at": "2026-11-20T13:55:50.706Z",
+      "elapsedMs": 255.19,
+      "component": "server",
+      "name": "connection.open",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "047b0c09-c033-47e0-b253-5a882f2e1f99",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "campaign"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 19,
+      "at": "2026-11-20T13:55:50.706Z",
+      "elapsedMs": 255.79,
+      "component": "server",
+      "name": "connection.attempt",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "047b0c09-c033-47e0-b253-5a882f2e1f99",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "campaign"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 20,
+      "at": "2026-11-20T13:55:50.775Z",
+      "elapsedMs": 324.45,
+      "component": "server",
+      "name": "campaign.loaded",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "047b0c09-c033-47e0-b253-5a882f2e1f99",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 4
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 21,
+      "at": "2026-11-20T13:55:50.775Z",
+      "elapsedMs": 324.71,
+      "component": "server",
+      "name": "connection.authenticated",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "047b0c09-c033-47e0-b253-5a882f2e1f99",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "isNew": false,
+        "mode": "campaign"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 22,
+      "at": "2026-11-20T13:55:50.776Z",
+      "elapsedMs": 325.22,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "047b0c09-c033-47e0-b253-5a882f2e1f99",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "925308a5-7591-45c6-9de3-ee15b6ec241a",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 4,
+        "serverTick": 0
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 23,
+      "at": "2026-11-20T13:55:50.776Z",
+      "elapsedMs": 325.62,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "047b0c09-c033-47e0-b253-5a882f2e1f99",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "925308a5-7591-45c6-9de3-ee15b6ec241a",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 5,
+        "durationMs": 0.42
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 24,
+      "at": "2026-11-20T13:55:50.820Z",
+      "elapsedMs": 369.56,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "047b0c09-c033-47e0-b253-5a882f2e1f99",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "434df9bc-97f6-4ae5-aaf2-9aa3e81c0ebc",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 5,
+        "serverTick": 6
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 25,
+      "at": "2026-11-20T13:55:50.820Z",
+      "elapsedMs": 370,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "047b0c09-c033-47e0-b253-5a882f2e1f99",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "434df9bc-97f6-4ae5-aaf2-9aa3e81c0ebc",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 6,
+        "durationMs": 0.48
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 26,
+      "at": "2026-11-20T13:55:50.821Z",
+      "elapsedMs": 370.28,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "047b0c09-c033-47e0-b253-5a882f2e1f99",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "a4a6b4cb-ff9b-4b3b-9800-00cd72cb4729",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 6,
+        "serverTick": 6
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 27,
+      "at": "2026-11-20T13:55:50.821Z",
+      "elapsedMs": 370.59,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "047b0c09-c033-47e0-b253-5a882f2e1f99",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "saveAttemptId": "a4a6b4cb-ff9b-4b3b-9800-00cd72cb4729",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "revision": 7,
+        "durationMs": 0.34
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 28,
+      "at": "2026-11-20T13:55:50.822Z",
+      "elapsedMs": 371.17,
+      "component": "server",
+      "name": "connection.closed",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "connectionId": "047b0c09-c033-47e0-b253-5a882f2e1f99",
+        "clientRunId": "d9a24fb0-2cdc-494f-9ae0-7c4daf06a690",
+        "serverRunId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "campaignRef": "c26a8ef6af86478ef266fc0eed0206e7",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "closeCode": 1006,
+        "code": "UNKNOWN"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 29,
+      "at": "2026-11-20T13:55:50.824Z",
+      "elapsedMs": 373.94,
+      "component": "server",
+      "name": "server.stop",
+      "severity": "info",
+      "context": {
+        "runId": "bd17b0cf-f9e1-48c0-800b-4a19fb01fd0a",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "campaign"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1,
+      "at": "2026-11-20T13:55:50.832Z",
+      "elapsedMs": 0.29,
+      "component": "server",
+      "name": "server.start",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 2,
+      "at": "2026-11-20T13:55:50.858Z",
+      "elapsedMs": 26.39,
+      "component": "server",
+      "name": "server.ready",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "port": 64069,
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3,
+      "at": "2026-11-20T13:55:50.861Z",
+      "elapsedMs": 28.93,
+      "component": "server",
+      "name": "connection.open",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "connectionId": "9667fa39-0eb2-462c-ac78-952517cb3d19",
+        "serverRunId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 4,
+      "at": "2026-11-20T13:55:50.861Z",
+      "elapsedMs": 29.35,
+      "component": "server",
+      "name": "connection.attempt",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "connectionId": "9667fa39-0eb2-462c-ac78-952517cb3d19",
+        "clientRunId": "7d07a230-a76f-48b6-a8b5-e3f0ef64ab81",
+        "serverRunId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 5,
+      "at": "2026-11-20T13:55:50.909Z",
+      "elapsedMs": 76.87,
+      "component": "server",
+      "name": "connection.authenticated",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "connectionId": "9667fa39-0eb2-462c-ac78-952517cb3d19",
+        "clientRunId": "7d07a230-a76f-48b6-a8b5-e3f0ef64ab81",
+        "serverRunId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "isNew": true,
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 6,
+      "at": "2026-11-20T13:55:50.912Z",
+      "elapsedMs": 79.57,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "connectionId": "9667fa39-0eb2-462c-ac78-952517cb3d19",
+        "clientRunId": "7d07a230-a76f-48b6-a8b5-e3f0ef64ab81",
+        "serverRunId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "saveAttemptId": "3a6081bd-75eb-4c2a-a290-b42e7def30e2",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "serverTick": 1,
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 7,
+      "at": "2026-11-20T13:55:50.912Z",
+      "elapsedMs": 79.91,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "connectionId": "9667fa39-0eb2-462c-ac78-952517cb3d19",
+        "clientRunId": "7d07a230-a76f-48b6-a8b5-e3f0ef64ab81",
+        "serverRunId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "saveAttemptId": "3a6081bd-75eb-4c2a-a290-b42e7def30e2",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 0.35,
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 8,
+      "at": "2026-11-20T13:55:50.939Z",
+      "elapsedMs": 106.65,
+      "component": "server",
+      "name": "connection.closed",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "connectionId": "9667fa39-0eb2-462c-ac78-952517cb3d19",
+        "clientRunId": "7d07a230-a76f-48b6-a8b5-e3f0ef64ab81",
+        "serverRunId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "closeCode": 1000,
+        "code": "UNKNOWN"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 9,
+      "at": "2026-11-20T13:55:50.939Z",
+      "elapsedMs": 106.76,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "connectionId": "9667fa39-0eb2-462c-ac78-952517cb3d19",
+        "clientRunId": "7d07a230-a76f-48b6-a8b5-e3f0ef64ab81",
+        "serverRunId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "saveAttemptId": "ee01c01e-7ba8-480e-abf9-bf209bf1191d",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "serverTick": 4,
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 10,
+      "at": "2026-11-20T13:55:50.939Z",
+      "elapsedMs": 107.03,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "connectionId": "9667fa39-0eb2-462c-ac78-952517cb3d19",
+        "clientRunId": "7d07a230-a76f-48b6-a8b5-e3f0ef64ab81",
+        "serverRunId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "saveAttemptId": "ee01c01e-7ba8-480e-abf9-bf209bf1191d",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 0.27,
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 11,
+      "at": "2026-11-20T13:55:50.970Z",
+      "elapsedMs": 138.5,
+      "component": "server",
+      "name": "connection.open",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "connectionId": "da0bf563-ff7e-4e4f-b147-78e0cccbb869",
+        "serverRunId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 12,
+      "at": "2026-11-20T13:55:50.971Z",
+      "elapsedMs": 138.93,
+      "component": "server",
+      "name": "connection.attempt",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "connectionId": "da0bf563-ff7e-4e4f-b147-78e0cccbb869",
+        "clientRunId": "7d07a230-a76f-48b6-a8b5-e3f0ef64ab81",
+        "serverRunId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 13,
+      "at": "2026-11-20T13:55:51.021Z",
+      "elapsedMs": 189.06,
+      "component": "server",
+      "name": "connection.authenticated",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "connectionId": "da0bf563-ff7e-4e4f-b147-78e0cccbb869",
+        "clientRunId": "7d07a230-a76f-48b6-a8b5-e3f0ef64ab81",
+        "serverRunId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "isNew": false,
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 14,
+      "at": "2026-11-20T13:55:51.061Z",
+      "elapsedMs": 229.08,
+      "component": "server",
+      "name": "save.requested",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "connectionId": "da0bf563-ff7e-4e4f-b147-78e0cccbb869",
+        "clientRunId": "7d07a230-a76f-48b6-a8b5-e3f0ef64ab81",
+        "serverRunId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "saveAttemptId": "ff8049cd-d648-4402-9c88-c47b8eb9fefb",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "serverTick": 11,
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 15,
+      "at": "2026-11-20T13:55:51.061Z",
+      "elapsedMs": 229.38,
+      "component": "server",
+      "name": "save.committed",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "connectionId": "da0bf563-ff7e-4e4f-b147-78e0cccbb869",
+        "clientRunId": "7d07a230-a76f-48b6-a8b5-e3f0ef64ab81",
+        "serverRunId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "saveAttemptId": "ff8049cd-d648-4402-9c88-c47b8eb9fefb",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "durationMs": 0.32,
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 16,
+      "at": "2026-11-20T13:55:51.062Z",
+      "elapsedMs": 229.73,
+      "component": "server",
+      "name": "connection.closed",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "connectionId": "da0bf563-ff7e-4e4f-b147-78e0cccbb869",
+        "clientRunId": "7d07a230-a76f-48b6-a8b5-e3f0ef64ab81",
+        "serverRunId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "agentRef": "c77238fda67507fdebd78c301fae14a1",
+        "clientBuild": "client-0123456789abcdef",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "closeCode": 1006,
+        "code": "UNKNOWN"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 17,
+      "at": "2026-11-20T13:55:51.066Z",
+      "elapsedMs": 233.55,
+      "component": "server",
+      "name": "server.stop",
+      "severity": "info",
+      "context": {
+        "runId": "4df4f90f-0005-40cd-80e2-07ea9ffd46c6",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "shared"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1,
+      "at": "2026-11-20T13:55:51.501Z",
+      "elapsedMs": 0.07,
+      "component": "launcher",
+      "name": "launcher.start",
+      "severity": "info",
+      "context": {
+        "runId": "413a84b5-270e-4073-8cc2-eb3b09dceb5f",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "port": 0,
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1,
+      "at": "2026-11-20T13:55:51.502Z",
+      "elapsedMs": 0.02,
+      "component": "server",
+      "name": "server.start",
+      "severity": "info",
+      "context": {
+        "runId": "413a84b5-270e-4073-8cc2-eb3b09dceb5f",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "mode": "solo"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 2,
+      "at": "2026-11-20T13:55:51.508Z",
+      "elapsedMs": 6.38,
+      "component": "server",
+      "name": "server.failed",
+      "severity": "error",
+      "context": {
+        "runId": "413a84b5-270e-4073-8cc2-eb3b09dceb5f",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "code": "SQLITE_NOTADB"
+      },
+      "suppressedBefore": 0
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 2,
+      "at": "2026-11-20T13:55:51.508Z",
+      "elapsedMs": 7.71,
+      "component": "launcher",
+      "name": "launcher.failed",
+      "severity": "error",
+      "context": {
+        "runId": "413a84b5-270e-4073-8cc2-eb3b09dceb5f",
+        "serverBuild": "server-59704028ad9cb8b3",
+        "contentBuild": "content-3278076a2d790a71"
+      },
+      "payload": {
+        "code": "SQLITE_NOTADB"
+      },
+      "suppressedBefore": 0
+    }
+  ]
+}

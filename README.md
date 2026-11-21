@@ -4,11 +4,15 @@ A browser-based, third-person co-op city sandbox for up to eight players. **Play
 
 Next product program: [complete-game requirements v3](docs/PRODUCT_REQUIREMENTS_V3.md), [phased delivery plan and solo-development budget guidance](docs/PRODUCTION_DELIVERY_PLAN.md), and [new product delivery status](artifacts/product-delivery-status.md). The target is a focused premium PC game with a complete solo campaign, a dense authored world and optional co-op. The new P0–P8 quality/content milestones are separate from the completed engineering stages below.
 
+November 19 program: [reliable saves, crash diagnostics, a living city, animation, and 1,000 orbs](docs/PRD_ADDENDUM_RELIABILITY_AND_LIVING_CITY.md), with [72 phased coding prompts](docs/RELIABILITY_LIVING_CITY_PROMPTS.md) and a [dedicated execution ledger](artifacts/reliability-living-city-status.md). Implementation has begun; resume from the ledger and durable checkpoint rather than restarting P001. The full program remains unfinished.
+
 Development checkpoint: Section 6 Stages 1-6 and the controlled Stage 3 integration gate are verified. Start with [the saved progress ledger](artifacts/project-progress.md) for the remaining stages, resume checklist, decisions and browser evidence. Release qualification is next: minimum-hardware performance, unfamiliar-player onboarding and an eight-player playtest remain open.
 
 ## Run locally
 
 ### Offline solo
+
+On Windows, double-click **Start CRACKUP.bat** in the project root. It builds the current game and opens offline solo in your default browser. Keep its window open while playing; save and close the game tab to quit. Node.js 20 or newer is required. If development dependencies are missing, the launcher installs them first (internet access required for that setup).
 
 Run `npm run build` then `npm run solo` for local development. The offline server binds only to `127.0.0.1:3219`, opens your browser and stores each local profile's campaign in `%LOCALAPPDATA%\CRACKUP\solo\campaigns.db`. It uses a separate database from hosted accounts. Override `SOLO_DATA_DIR` and `SOLO_PORT` for isolated testing.
 
@@ -90,6 +94,14 @@ Green rooftop orbs improve agility. Combat, other orb types and relic discoverie
 The field menu includes mouse sensitivity, visual quality, neon glow, controls, upgrades and companion adoption/arena entry. The online world continues running while menus are open. Downed agents can be revived with H or recover at the agency drop point after three seconds. Recovery preserves earned progress. The 15-second drop shield gives agents time to orient themselves.
 
 Companions and the Dreadnought have procedural client visuals driven by authoritative snapshots. Pet arenas require two participants. The Dreadnought deploys after all four district operations are completed in the current city session. District operations and live arena/raid state reset when the server restarts; individual rewards and companion records persist.
+
+## Xbox controllers on Windows
+
+Xbox controllers on Windows are supported through the browser Gamepad API. Connect with USB, or pair in Windows Bluetooth settings (for Bluetooth-capable models), open the game in Edge or Chrome, click the page once, then press a controller button. Localhost and HTTPS are supported; plain HTTP on a LAN address may prevent the browser from exposing controllers. Callsign/PIN and other text entry still use a keyboard.
+
+Left stick moves, right stick looks, LT aims, RT fires, A jumps, B dashes, X interacts, Y reloads, RB counters, left stick click sprints, and right stick click melees. View opens the map; Menu opens the field menu. D-pad/left stick navigates menus, A selects, and B returns. Full LB modifier bindings, sensitivity, and invert-Y are in **Field menu → Briefing & controls → Xbox controller controls**. Release sticks/buttons after reconnecting, alt-tab or closing overlays. No keyboard-emulation software is required.
+
+Run `npm run verify:controller` for controller input regressions. See [controller implementation and verification](artifacts/xbox-controller-checkpoint.md) for coverage and physical-device checks.
 
 ## Verify
 

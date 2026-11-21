@@ -1,0 +1,2 @@
+- All land-based geography must be 'populated' as in it serves a purpose consistent with its relative surroundings (e.g.-streets have sidewalks, street lights, lanes, buildings). Beaches look like beaches. Bridges look like bridges. 
+-

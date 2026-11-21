@@ -115,6 +115,10 @@ synthesized HRTF cues; prioritize a coherent final sound set and the missing
 locomotion/reaction clips over additional scenery packs. Preview current cues
 with `npm run effects:preview` before acquiring replacements.
 
+### Required traversal pack follow-up
+
+For the November 19 living-city program, use the [traversal animation pack specification](TRAVERSAL_ANIMATION_PACK_SPEC.md). It defines the required jump anticipation/arm motion, ledge reach/catch/hang/mantle, landing compression and fall-damage recovery, with 20 runtime coverage rows and free-tier source verification. The old seven-file Mixamo merger and installed Capoeira library do not by themselves establish this coverage. Current no-spending constraints govern this work; older optional paid suggestions in this guide are not authorization to purchase anything.
+
 ### One character can use many animations
 
 “Keep the same character selected” means **one consistent source body/skeleton

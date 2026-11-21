@@ -1,3 +1,7 @@
+import { buildTier4Structures } from '../../shared/content/tier4WorldGeometry.js';
+import { createResonanceSpire, animateResonanceSpire } from '../entities/resonanceSpire.js';
+import { buildTier2Structures } from '../../shared/content/worldSystemsRegistry.js';
+import { buildCitizenDoorways } from '../entities/citizenDoorways.js';
 import { BayVista } from './bayVista.js';
 import { heightFog, triplanarPBR } from '../shaders/worldSurface.js';
 import { VISTA_FAR } from '../../shared/world/bayVista.js';
@@ -128,7 +132,7 @@ export class NeoVeridiaSceneEnvironment {
     });
 
     // 3. Build 3D Neo-Veridia 4-District Metropolis Structures (1:1 with SharedPhysicsWorld)
-    const structures = buildNeoVeridiaSector01();
+    const structures = [...buildNeoVeridiaSector01(), ...buildTier2Structures(), ...buildTier4Structures()];
     this.vista.root.traverse(o => { if (o instanceof THREE.Mesh) for (const m of Array.isArray(o.material) ? o.material : [o.material]) this.setupArchitectureMaterial(m); });
     this.buildCityMeshes(structures);
     this.applyProductionMaterials();
@@ -346,8 +350,7 @@ export class NeoVeridiaSceneEnvironment {
    * Builds rotating 3D Icosahedron Energy Cores + Outer Gyroscope Rings for all 182 Orbs
    */
   public buildOrbMeshes(orbs: WorldOrbInstance[]): void {
-    const coreGeo = new THREE.IcosahedronGeometry(0.52, 1);
-    const ringGeo = new THREE.TorusGeometry(0.78, 0.04, 8, 24);
+    this.scene.add(buildCitizenDoorways());
 
     const agilityMat = new THREE.MeshStandardMaterial({
       color: 0x00ffaa,
@@ -376,9 +379,6 @@ export class NeoVeridiaSceneEnvironment {
     orbsGroup.name = 'NeoVeridia_Orbs_182';
 
     for (const orb of orbs) {
-      const group = new THREE.Group();
-      group.position.set(orb.position.x, orb.position.y, orb.position.z);
-
       const mat =
         orb.type === OrbType.RENEGADE
           ? renegadeMat
@@ -386,9 +386,8 @@ export class NeoVeridiaSceneEnvironment {
             ? whisperMat
             : agilityMat;
 
-      const coreMesh = new THREE.Mesh(coreGeo, mat);
-      const ringMesh = new THREE.Mesh(ringGeo, mat);
-      group.add(coreMesh, ringMesh);
+      const group = createResonanceSpire(mat);
+      group.position.set(orb.position.x, orb.position.y, orb.position.z);
 
       // Attach point light to Renegade, Whisper, and hub Agility orbs for glowing ledge reflections
       if (orb.type !== OrbType.AGILITY || orb.orbId <= 12) {
@@ -432,12 +431,7 @@ export class NeoVeridiaSceneEnvironment {
       const bobOffset = Math.sin(this.animClock * 3.0 + orb.orbId * 0.7) * 0.18;
       group.position.set(orb.position.x, orb.position.y + bobOffset, orb.position.z);
 
-      const spinSpeed = orb.isFleeing ? 6.5 : 2.2;
-      group.rotation.y += dt * spinSpeed;
-      const ring = group.children[1];
-      if (ring) {
-        ring.rotation.x += dt * spinSpeed * 1.4;
-      }
+      animateResonanceSpire(group, this.animClock, dt);
     }
 
     for (const ring of this.updraftRings) {

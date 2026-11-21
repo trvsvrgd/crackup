@@ -1,0 +1,13 @@
+﻿{
+    "result":  "passed",
+    "completedAt":  "2026-11-20T19:59:21.1263667+00:00",
+    "checks":  [
+                   "43 local document links resolved",
+                   "Four final evidence JSON records parse and report passed",
+                   "Credential-bearing test sentinels absent",
+                   "P005 cursor contains no pending operations or owned processes",
+                   "No listener remains on isolated port 33522",
+                   "Scoped git diff --check passed"
+               ],
+    "sourceManifest":  "artifacts/evidence/living-city/lc00-p004-baseline.json"
+}

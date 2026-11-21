@@ -203,7 +203,7 @@ async function main() {
     assert.equal((await server.rpc('state')).world.districts[1].stage, 2);
     pass('Owned campaign remains readable by offline solo on the same explicitly supplied database');
     await stop(server);
-    fs.writeFileSync('artifacts/evidence/p1-campaign-verification.json', JSON.stringify({ startedAt, finishedAt: new Date().toISOString(), result: 'passed', checks,
+    fs.writeFileSync(process.env.CAMPAIGN_REPORT ?? 'artifacts/evidence/p1-campaign-verification.json', JSON.stringify({ startedAt, finishedAt: new Date().toISOString(), result: 'passed', checks,
       method: 'Real child processes and authenticated WebSocket clients (2/4/8 players), actual H input at a fixture-prepared core, SQLite guest-write fault injection, abrupt process death and restart.',
       limits: ['Combat prerequisites are explicit fixtures, not human mission completion.', 'No real WAN, latency/loss, UI, target-hardware, matchmaking or identity-provider qualification.'], finalState: state }, null, 2) + '\n');
   } finally {

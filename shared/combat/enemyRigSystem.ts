@@ -1,3 +1,6 @@
+import { ENEMY_ARCHETYPE_BY_ID } from '../content/enemyAndBossRegistry.js';
+import type { XPEvent } from '../content/progressionRegistry.js';
+import { ownsRelic, RELIC_REGISTRY, WEAPON_BY_ID } from '../content/arsenalAndVehicleRegistry.js';
 import { EffectKind, effectSpec, type EffectSpec } from '../protocol/presentationProtocol.js';
 /**
  * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
@@ -20,6 +23,7 @@ import {
   MELEE_WARP_SPEED_MPS,
   PARRY_SHOCKWAVE_RADIUS_M,
   WEAPON_BASE_DAMAGE,
+  WORLD_GRAVITY,
 } from '../constants.js';
 import { AgentPhysicsBody, RAPIER } from '../physics/characterController.js';
 import { EnemyBinarySnapshotState, quatFromYaw, Vec3 } from '../protocol/binaryProtocol.js';
@@ -45,6 +49,12 @@ export interface EnemyLagHistoryEntry {
 export type EnemyRank = 'GRUNT' | 'ELITE' | 'LIEUTENANT' | 'KINGPIN' | 'OMEGA_HVT' | 'AUDITOR';
 
 export interface EnemyPhysicsEntity {
+  contentId?: string;
+  externalDrive?: boolean;
+  weaponIds?: readonly string[];
+  rangedCooldown?: number;
+  tier3GravityScale?: number;
+  tier3SlowMultiplier?: number;
   enemyId: number;
   callsign: string;
   isElite: boolean;
@@ -99,6 +109,7 @@ export interface VatsLimbEvaluation {
 }
 
 export interface CombatEventResult {
+  progressionAction?: XPEvent;
   shotOrigin?: Vec3; impactNormal?: Vec3; surfaceHit?: boolean;
   type:
     | 'WEAPON_HIT'
@@ -209,6 +220,7 @@ export function computeBoneWorldPosition(
  */
 export class EnemyCombatManager {
   public onEffect: ((event: EffectSpec) => void) | null = null;
+  public afterLimbDamage: ((agent: AgentPhysicsBody, event: CombatEventResult, overkill: number) => void) | null = null;
   public readonly weaponObstacleProbes = new Map<string, (agent: AgentPhysicsBody, origin: Vec3, direction: Vec3, maxDistance: number) => { distance: number; resolve: () => CombatEventResult } | null>();
   public weaponObstacleResolver: ((agent: AgentPhysicsBody, origin: Vec3, direction: Vec3, maxDistance: number) => CombatEventResult | null) | null = null;
   public extraSolidCollider: ((collider: RAPIER.Collider) => boolean) | null = null;
@@ -285,8 +297,14 @@ export class EnemyCombatManager {
       r.reaction = HitReaction.KNOCKBACK; r.timer = 0.35;
       r.impulse = { x: r.direction.x * 14, y: 0, z: r.direction.z * 14 };
     }
-    if (r.timer <= 0) { r.reaction = HitReaction.NONE; r.impulse = { x: 0, y: 0, z: 0 }; return false; }
+    if (r.timer <= 0) { enemy.tier3GravityScale = undefined; r.reaction = HitReaction.NONE; r.impulse = { x: 0, y: 0, z: 0 }; return false; }
     r.timer = Math.max(0, r.timer - dt);
+    if (enemy.tier3GravityScale !== undefined) {
+      const dy = r.impulse.y * dt;
+      const hit = this.world.castRay(new RAPIER.Ray({ x: enemy.position.x, y: enemy.position.y + (dy > 0 ? 1.9 : .05), z: enemy.position.z }, { x: 0, y: Math.sign(dy) || 1, z: 0 }), Math.abs(dy), true, RAPIER.QueryFilterFlags.ONLY_FIXED | RAPIER.QueryFilterFlags.EXCLUDE_SENSORS);
+      if (!hit) enemy.position.y = Math.max(0, enemy.position.y + dy);
+      r.impulse.y += WORLD_GRAVITY.y * enemy.tier3GravityScale * dt;
+    }
     const speed = Math.hypot(r.impulse.x, r.impulse.z);
     if (speed > 0.1) {
       const direction = { x: r.impulse.x / speed, y: 0, z: r.impulse.z / speed };
@@ -464,6 +482,7 @@ export class EnemyCombatManager {
     spawnPos: Vec3,
     isElite: boolean,
     options?: {
+      contentId?: string;
       faction?: FactionId;
       rank?: EnemyRank;
       maxHp?: number;
@@ -491,7 +510,7 @@ export class EnemyCombatManager {
     const rank: EnemyRank = options?.rank ?? (isElite ? 'ELITE' : 'GRUNT');
     const maxHp = options?.maxHp ?? (isElite ? 420 : 240);
     const maxArmor = options?.maxArmor ?? (isElite ? 160 : 80);
-    const archetype = rank === 'KINGPIN' ? EnemyArchetype.SECTOR_WARDEN : faction === FactionId.AEGIS_DIRECTORATE || faction === FactionId.HELIOS_EXECUTIVE_GUARD ? EnemyArchetype.AEGIS_SHOCK_TROOPER : isElite ? EnemyArchetype.CYBER_RONIN : EnemyArchetype.STREET_ENFORCER;
+    const archetype = (options?.contentId ? ENEMY_ARCHETYPE_BY_ID.get(options.contentId)?.rig : undefined) ?? (rank === 'KINGPIN' ? EnemyArchetype.SECTOR_WARDEN : faction === FactionId.AEGIS_DIRECTORATE || faction === FactionId.HELIOS_EXECUTIVE_GUARD ? EnemyArchetype.AEGIS_SHOCK_TROOPER : isElite ? EnemyArchetype.CYBER_RONIN : EnemyArchetype.STREET_ENFORCER);
     const presentation = createCombatPresentation(enemyId, archetype);
     const rigScale = archetype === EnemyArchetype.SECTOR_WARDEN ? WARDEN_RIG_SCALE : 1;
     const limbs = {} as Record<EnemyLimbId, LimbRuntimeState>;
@@ -540,6 +559,7 @@ export class EnemyCombatManager {
 
     const entity: EnemyPhysicsEntity = {
       enemyId,
+      contentId: options?.contentId,
       callsign,
       isElite,
       faction,
@@ -626,7 +646,9 @@ export class EnemyCombatManager {
       drop.life -= dt; if (drop.life <= 0) { this.world.removeRigidBody(drop.body); this.drops.delete(id); }
     }
 
+    const baseDt = dt;
     for (const enemy of this.enemies.values()) {
+      dt = baseDt * (agentList.some(a => a.hp > 0 && a.tier3.focusSec > 0 && Math.hypot(a.position.x - enemy.position.x, a.position.y - enemy.position.y, a.position.z - enemy.position.z) < 40) ? .4 : 1);
       enemy.animPhase += dt;
       const reacting = this.stepPhysicalReaction(enemy, dt, agentList);
 
@@ -656,7 +678,7 @@ export class EnemyCombatManager {
       if (enemy.legsCrippledTimer > 0) {
         enemy.legsCrippledTimer = Math.max(0, enemy.legsCrippledTimer - dt);
         // Ground airborne targets when legs are crippled (PRD 4.2)
-        if (enemy.position.y > enemy.spawnPosition.y) {
+        if (enemy.position.y > enemy.spawnPosition.y && enemy.tier3GravityScale === undefined) {
           enemy.position.y = enemy.spawnPosition.y;
           enemy.velocity.y = 0;
         }
@@ -664,7 +686,7 @@ export class EnemyCombatManager {
 
       if (reacting) { this.syncEnemyBoneColliders(enemy); continue; }
       // Omega Bounty HVT movement is driven by the 90s 3D extraction path in Phase5WorldDirector
-      if (enemy.rank === 'OMEGA_HVT') {
+      if (enemy.externalDrive || enemy.rank === 'OMEGA_HVT') {
         this.syncEnemyBoneColliders(enemy);
         enemy.history.push({
           timestampMs: nowMs,
@@ -741,8 +763,8 @@ export class EnemyCombatManager {
             enemy.velocity = { x: 0, y: 0, z: 0 };
           } else {
             // Chase steering velocity (reduced by 70% when legs are crippled per PRD 4.2!)
-            const baseSpeed = enemy.rank === 'KINGPIN' ? 6.8 : enemy.isElite ? 6.2 : 5.4;
-            const moveSpeed = enemy.legsCrippledTimer > 0 ? baseSpeed * 0.30 : baseSpeed;
+            const baseSpeed = (enemy.contentId && ENEMY_ARCHETYPE_BY_ID.get(enemy.contentId)?.speed) || (enemy.rank === 'KINGPIN' ? 6.8 : enemy.isElite ? 6.2 : 5.4);
+            const moveSpeed = enemy.legsCrippledTimer > 0 ? baseSpeed * (enemy.tier3SlowMultiplier ?? .30) : baseSpeed;
             const horizLen = Math.hypot(dx, dz) || 1;
             let steerX = dx / horizLen;
             let steerZ = dz / horizLen;
@@ -821,7 +843,10 @@ export class EnemyCombatManager {
               const rawDmg = enemy.isElite ? 40 : 26;
               const effectiveDmg = enemy.armsCrippledTimer > 0 ? rawDmg * 0.5 : rawDmg;
               const damage = effectiveDmg * (1 - nearestAgent.buildModifiers.incomingDamageReduction);
-              nearestAgent.hp = Math.max(0, nearestAgent.hp - damage);
+              const shieldHit = Math.min(nearestAgent.tier3.shield, damage);
+              nearestAgent.tier3.shield -= shieldHit;
+              const petShield = nearestAgent.tier3.petShieldSec > 0 && Math.hypot(enemy.position.x - nearestAgent.position.x, enemy.position.z - nearestAgent.position.z) <= 3 && ((enemy.position.x - nearestAgent.position.x) * -Math.sin(nearestAgent.facingYaw) + (enemy.position.z - nearestAgent.position.z) * -Math.cos(nearestAgent.facingYaw)) > 0;
+              nearestAgent.hp = Math.max(0, nearestAgent.hp - (petShield ? 0 : damage - shieldHit));
               this.onEffect?.(effectSpec(EffectKind.HIT, { ...nearestAgent.position, y: nearestAgent.position.y + 1 }, { actor: enemy.enemyId, target: nearestAgent.entityId }));
               if (nearestAgent.hp === 0) {
                 nearestAgent.telemetry.agentDowns = (nearestAgent.telemetry.agentDowns || 0) + 1;
@@ -886,7 +911,7 @@ export class EnemyCombatManager {
     enemy: EnemyPhysicsEntity,
     ignoreAgentCollider?: RAPIER.Collider
   ): VatsLimbEvaluation[] {
-    const { lockOnRangeMeters, spreadConeDeg } = getShootingParams(shootingLevel);
+    const { lockOnRangeMeters, spreadConeDeg, vatsHitProbBonusPct } = getShootingParams(shootingLevel);
     const results: VatsLimbEvaluation[] = [];
 
     for (const limbId of ALL_LIMB_IDS) {
@@ -936,7 +961,7 @@ export class EnemyCombatManager {
         const beamRadiusAtDist = Math.max(0.04, Math.tan(spreadRad) * dist);
         const effectiveTargetRadius = spec.radius + (spec.halfHeight > 0 ? spec.halfHeight * 0.45 : 0.04);
         const rawProb = Math.min(0.99, (effectiveTargetRadius / (beamRadiusAtDist + effectiveTargetRadius * 0.65)) * 0.96);
-        hitProbabilityPct = Math.max(12, Math.min(99, Math.round(rawProb * 100)));
+        hitProbabilityPct = Math.max(12, Math.min(99, Math.round(rawProb * 100 + vatsHitProbBonusPct)));
       }
 
       results.push({
@@ -963,7 +988,8 @@ export class EnemyCombatManager {
     aimYaw: number,
     aimPitch: number,
     targetedLimbId: EnemyLimbId = EnemyLimbId.TORSO,
-    vatsLockedEnemyId?: number
+    vatsLockedEnemyId?: number,
+    baseDamage = WEAPON_BASE_DAMAGE
   ): CombatEventResult | null {
     const shooterOrigin: Vec3 = {
       x: agent.position.x,
@@ -1097,8 +1123,10 @@ export class EnemyCombatManager {
     }
 
     const resolvedEnemy = hitEnemy as EnemyPhysicsEntity;
-    const weaponDmg = WEAPON_BASE_DAMAGE * (agent.buildModifiers?.weaponDamageMultiplier ?? 1.0);
+    const weaponDmg = baseDamage * (agent.buildModifiers?.weaponDamageMultiplier ?? 1.0);
+    const previousLimbHp = resolvedEnemy.limbs[hitLimbId].hp;
     const event = this.applyLimbDamage(agent, resolvedEnemy, hitLimbId, weaponDmg);
+    this.afterLimbDamage?.(agent, event, Math.max(0, event.damageDealt - previousLimbHp));
     event.impactPoint = { x: shooterOrigin.x + rayDir.x * impactToi, y: shooterOrigin.y + rayDir.y * impactToi, z: shooterOrigin.z + rayDir.z * impactToi };
     return decorate(event);
   }
@@ -1127,6 +1155,12 @@ export class EnemyCombatManager {
         ? (mods?.limbDamageMultiplier ?? 1.0)
         : 1.0;
 
+    const content = enemy.contentId ? ENEMY_ARCHETYPE_BY_ID.get(enemy.contentId) : undefined;
+    if (content?.role === 'SHIELDED' && enemy.armor > 0 && enemy.armsCrippledTimer <= 0 && !isBlastOrPropDamage &&
+        limbId === EnemyLimbId.TORSO) {
+      const dx = agent.position.x - enemy.position.x, dz = agent.position.z - enemy.position.z;
+      if (dx * -Math.sin(enemy.yaw) + dz * -Math.cos(enemy.yaw) > 0) baseDamage *= .4;
+    }
     const totalDamage = baseDamage * (spec.damageMultiplier + critBonus) * limbMult;
     agent.telemetry.totalDamageDealt = (agent.telemetry.totalDamageDealt || 0) + totalDamage;
     if (isBlastOrPropDamage) {
@@ -1237,7 +1271,7 @@ export class EnemyCombatManager {
     const combo = this.combos.get(agent.entityId);
     if (combo && this.elapsed < combo.ready) return null;
     const engageRange =
-      MELEE_ENGAGE_RANGE_M + (agent.buildModifiers?.meleeEngageRangeBonusM ?? 0);
+      getStrengthParams(agent.attributes.strength).meleeWarpRangeM + (agent.buildModifiers?.meleeEngageRangeBonusM ?? 0);
     let target: EnemyPhysicsEntity | null = null;
     let minDist = Infinity;
 
@@ -1379,7 +1413,7 @@ export class EnemyCombatManager {
       // Check current state or lag-compensated history within vigilante counterWindowMs
       const isCurrentlyParryable =
         enemy.combatState === EnemyCombatState.WINDUP ||
-        enemy.combatState === EnemyCombatState.ACTIVE_SWEEP;
+        enemy.combatState === EnemyCombatState.ACTIVE_SWEEP || agent.attributes.vigilante >= 4 && enemy.combatState === EnemyCombatState.COUNTER_STANCE;
 
       const wasParryableInHistory = enemy.history.some(
         (h) =>

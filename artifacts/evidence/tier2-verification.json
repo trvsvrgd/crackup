@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "durationSec": 20.3758349,
+  "checks": [
+    "immutable district registry, exact 3D entry impulses, wingsuit gate, louver cycle and altitude exclusion",
+    "all four SAM ceilings: 3-second warning, 2.5-second physical lift stall, grounded radar destruction, liberation and Lv 4 flares",
+    "Registry-driven Rapier SAM queries agree at all ceiling/footprint/district boundaries and above 2,000m",
+    "Rapier canyon overlap applies deterministic torque and drift scaled by 1 / Flying level",
+    "real attack rays and swept thrown props: Lv 1 rejection, Lv 3 charged melee/shaped charges, ammo, delayed 180s regeneration",
+    "gunfire releases a 1,200kg body; actual contact applies exactly one 450HP / 5m crush; regeneration reuses bodies",
+    "physical local clear checks unlock facilities; stability boundaries activate real skirmish actors and bounded task lifetimes",
+    "ordinary shared player input mounts, climbs and exits a colliding VTOL; pilot capsule restored",
+    "versioned binary snapshot, strict malformed-packet rejection, replica collider/radar/facility reconciliation",
+    "Safe-house chassis service rejects locked, out-of-volume, mounted and downed Agents",
+    "Escort stops without nearby accompaniment, respects swept obstacles and completes at its destination",
+    "Repair requires held interaction and clear 3D reach; restored equipment succeeds, destroyed equipment fails",
+    "Robbery moves an armored van, requires disabling it and recovering cargo, and fails on extraction",
+    "Clinic siege has health, occluded hostile fire, timed reinforcements, defense victory and destruction failure",
+    "Ambush waits for 3D trigger entry, tracks its live target, sends a flanking wave and fails on target loss",
+    "Repeated event cycles clean up all spawned actors without growing the Rapier body count",
+    "Normal H input resupplies and spawns the correct vehicle at all eight physically supported facilities",
+    "Normal on-foot gunfire destroys all four rooftop radar nodes from their actual landing platforms",
+    "Normal pickup/throw input breaches a 250 HP wall with an actual Strength Lv 3 cargo projectile",
+    "two authenticated WebSocket peers receive authoritative destruction and airspace state",
+    "Live chassis commands reject forged location/unlock claims and locked/outside sites; cleared-site swap persists",
+    "Two peers receive versioned objective health/stage/outcome; forged event completion is ignored"
+  ]
+}

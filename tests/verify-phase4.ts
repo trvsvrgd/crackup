@@ -84,10 +84,10 @@ async function runPhase4Verification(): Promise<void> {
   );
   assert(
     !drvLv1.unlockWallThrusterHop &&
-      !drvLv3.unlockWallThrusterHop &&
+      drvLv3.unlockWallThrusterHop &&
       drvLv4.unlockWallThrusterHop &&
       drvLv5.unlockWallThrusterHop,
-    'Expected Agency Interceptor vertical Wall-Thruster Hop to unlock at Driving Lv 4+'
+    'Expected Agency Interceptor vertical Wall-Thruster Hop to unlock at Driving Lv 3+ (Tier 3)'
   );
 
   const physicsWorld = new SharedPhysicsWorld();

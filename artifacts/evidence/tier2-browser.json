@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "checks": [
+    "Breach removes real wall collider",
+    "Suspended body reaches physical impact",
+    "All eight sites reconcile cleared defenders",
+    "Production geometry renders through WebGL",
+    "Distinct objective 0 renders from live simulation state",
+    "Distinct objective 1 renders from live simulation state",
+    "Distinct objective 2 renders from live simulation state",
+    "Distinct objective 3 renders from live simulation state",
+    "Distinct objective 4 renders from live simulation state",
+    "Snapshot updates reuse geometry"
+  ],
+  "geometries": 116,
+  "triangles": 1470
+}

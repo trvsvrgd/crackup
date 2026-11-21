@@ -1,3 +1,5 @@
+import { ATTRIBUTE_UNLOCKS } from '../content/progressionRegistry.js';
+import { VEHICLE_BY_ID, meetsRequirements } from '../content/arsenalAndVehicleRegistry.js';
 import { EffectKind, effectSpec, type EffectSpec } from '../protocol/presentationProtocol.js';
 /**
  * CRACKUP: Protocol Eclipse (v2.0 True 3D AAA Architecture)
@@ -44,6 +46,8 @@ export interface WheelSuspensionState {
 }
 
 export interface VehiclePhysicsEntity {
+  variantId?: string;
+  hurledSec?: number;
   hp: number;
   maxHp: number;
   generation: number;
@@ -184,6 +188,7 @@ export class VehicleAndPropManager {
   public readonly colliderHandleToPropId: Map<number, number> = new Map();
   public readonly colliderHandleToVehicleId: Map<number, number> = new Map();
   public readonly extraExplosionHandlers: ((attacker: AgentPhysicsBody, origin: Vec3, yieldScale: number) => CombatEventResult[])[] = [];
+  public thrownArchitectureHit: ((agent: AgentPhysicsBody, origin: Vec3, delta: Vec3, halfExtents: Vec3, damage: number) => boolean) | null = null;
 
   constructor(
     private readonly world: RAPIER.World,
@@ -464,6 +469,7 @@ export class VehicleAndPropManager {
           z: currentVeh.position.z + 1.9 * sinY,
         };
         agent.velocity = { ...currentVeh.velocity };
+        if (currentVeh.variantId && agent.attributes.driving >= 5) { agent.velocity.y = Math.sqrt(2 * Math.abs(WORLD_GRAVITY.y) * 25); agent.grounded = false; }
         return currentVeh;
       }
       return null;
@@ -473,6 +479,7 @@ export class VehicleAndPropManager {
     let nearest: VehiclePhysicsEntity | null = null;
     let bestDist = Infinity;
     for (const v of this.vehicles.values()) {
+      if (v.variantId && !meetsRequirements(agent.attributes, VEHICLE_BY_ID.get(v.variantId)!.requires)) continue;
       if (v.destroyed) continue;
       if (v.driverEntityId !== 0) continue;
       const d = Math.hypot(
@@ -523,6 +530,7 @@ export class VehicleAndPropManager {
     }
 
     for (const v of this.vehicles.values()) {
+      v.hurledSec = Math.max(0, (v.hurledSec ?? 0) - dt);
       v.collisionDamageCooldown = Math.max(0, v.collisionDamageCooldown - dt);
       if (v.destroyed && this.authoritativeDamage) { v.respawnSec = Math.max(0, v.respawnSec - dt); if (v.respawnSec === 0) this.resetVehicle(v); }
       const driver = v.driverEntityId > 0 ? agents.get(v.driverEntityId) : undefined;
@@ -534,10 +542,11 @@ export class VehicleAndPropManager {
       const drivingLv = driver ? driver.attributes.driving : 1;
       const drivingParams = getDrivingParams(drivingLv);
       const speedMult = driver ? driver.buildModifiers.vehicleTopSpeedMultiplier : 1.0;
-      const topSpeedMps = drivingParams.topSpeedMps * speedMult;
-      v.chassisMassKg = drivingParams.chassisMassKg;
+      const variant = v.variantId ? VEHICLE_BY_ID.get(v.variantId) : undefined;
+      const topSpeedMps = (variant?.speedMps ?? drivingParams.topSpeedMps) * speedMult;
+      v.chassisMassKg = variant?.massKg ?? drivingParams.chassisMassKg;
 
-      const minThrusterLevel = driver ? driver.buildModifiers.wallThrusterMinDrivingLevel : 4;
+      const minThrusterLevel = v.variantId ? 3 : driver ? driver.buildModifiers.wallThrusterMinDrivingLevel : 4;
       const canWallThrusterHop = v.isInterceptor && drivingLv >= minThrusterLevel;
 
       if (v.wallThrusterCooldown > 0) {
@@ -655,7 +664,7 @@ export class VehicleAndPropManager {
         }
 
         // Lateral tire friction cancels sideways slip (scales with drivingParams.lateralTireFriction)
-        const latDecay = Math.exp(-drivingParams.lateralTireFriction * dt);
+        const latDecay = Math.exp(-drivingParams.lateralTireFriction * drivingParams.gripMultiplier * dt);
         const nextLatSpeed = currentLatSpeed * latDecay;
 
         // Steering yaw rate when moving
@@ -678,7 +687,7 @@ export class VehicleAndPropManager {
         if (canWallThrusterHop && jumpPressed && v.wallThrusterCooldown <= 0) {
           v.wallThrusterActive = true;
           v.wallThrusterCooldown = 0.55;
-          v.velocity.y = VEHICLE_WALL_THRUSTER_IMPULSE_Y;
+          v.velocity.y = Math.sqrt(2 * Math.abs(WORLD_GRAVITY.y) * 4.5);
 
           // Check if facing a vertical skyscraper wall within 4.5m -> boost vertical wall-climb!
           const wallRay = new RAPIER.Ray(
@@ -703,8 +712,8 @@ export class VehicleAndPropManager {
           (driver.telemetry.vehiclesDrivenSeconds || 0) + dt;
       } else {
         // Unoccupied vehicle brakes to rest
-        v.velocity.x *= Math.exp(-6.0 * dt);
-        v.velocity.z *= Math.exp(-6.0 * dt);
+        v.velocity.x *= Math.exp(-(v.hurledSec > 0 ? .2 : 6) * dt);
+        v.velocity.z *= Math.exp(-(v.hurledSec > 0 ? .2 : 6) * dt);
         v.forwardSpeedMps = Math.hypot(v.velocity.x, v.velocity.z);
         v.steerAngleRad = 0;
       }
@@ -725,7 +734,11 @@ export class VehicleAndPropManager {
           undefined,
           driver?.collider
         );
-        if (bumperHit && Math.abs(bumperHit.normal.y) < 0.35) {
+        const maxSlope = driver && driver.attributes.driving >= 4 ? Math.max(65, variant?.wallDriveDeg ?? 0) : 0;
+        if (bumperHit && maxSlope && bumperHit.normal.y >= Math.cos(maxSlope * Math.PI / 180) && bumperHit.normal.y < .85) {
+          v.velocity.y = -(v.velocity.x * bumperHit.normal.x + v.velocity.z * bumperHit.normal.z) / bumperHit.normal.y;
+          v.pitch = Math.atan2(v.velocity.y, Math.max(.1, horizSpeed));
+        } else if (bumperHit && Math.abs(bumperHit.normal.y) < 0.35) {
           // Slide/bounce off vertical building wall
           const dot = v.velocity.x * bumperHit.normal.x + v.velocity.z * bumperHit.normal.z;
           if (dot < 0) {
@@ -795,7 +808,7 @@ export class VehicleAndPropManager {
               enemy.position.z - v.position.z
             );
             if (d <= 2.75) {
-              const ramMult = driver.buildModifiers.vehicleRamImpulseMultiplier;
+              const ramMult = driver.buildModifiers.vehicleRamImpulseMultiplier * (driver.attributes.driving >= 2 ? 1.5 : 1);
               const ramDamage = Math.round(
                 (v.chassisMassKg / 1400) * horizSpeed * 4.5 * ramMult
               );
@@ -809,6 +822,7 @@ export class VehicleAndPropManager {
               enemy.position.x += (v.velocity.x / horizSpeed) * 3.5;
               enemy.position.z += (v.velocity.z / horizSpeed) * 3.5;
               this.combatManager.syncEnemyBoneColliders(enemy);
+              ev.progressionAction = 'vehicle_ram';
               outCombatEvents.push(ev);
             }
           }
@@ -890,6 +904,16 @@ export class VehicleAndPropManager {
       }
     }
 
+    if (!nearestLiftable && agent.attributes.strength >= 5) {
+      const limit = ATTRIBUTE_UNLOCKS.titan_hurl.parameters.massKg;
+      const vehicle = [...this.vehicles.values()].filter(v => !v.driverEntityId && !v.destroyed && v.chassisMassKg <= limit && Math.hypot(v.position.x - agent.position.x, v.position.y - agent.position.y, v.position.z - agent.position.z) <= PROP_PICKUP_RANGE_M).sort((a, b) => a.vehicleId - b.vehicleId)[0];
+      if (vehicle) {
+        const speed = ATTRIBUTE_UNLOCKS.titan_hurl.parameters.speedMps;
+        vehicle.velocity = { x: -Math.sin(aimYaw) * Math.cos(aimPitch) * speed, y: Math.max(8, Math.sin(aimPitch) * speed), z: -Math.cos(aimYaw) * Math.cos(aimPitch) * speed };
+        vehicle.hurledSec = 2; agent.telemetry.propsThrown = (agent.telemetry.propsThrown ?? 0) + 1;
+        return { action: 'THROWN' };
+      }
+    }
     if (nearestLiftable) {
       nearestLiftable.holderEntityId = agent.entityId;
       nearestLiftable.throwerEntityId = 0;
@@ -977,6 +1001,9 @@ export class VehicleAndPropManager {
       const nextZ = p.position.z + p.velocity.z * dt;
 
       const thrower = p.throwerEntityId > 0 ? agents.get(p.throwerEntityId) : undefined;
+      if (p.isThrownProjectile && thrower && this.thrownArchitectureHit?.(thrower, p.position,
+        { x: nextX - p.position.x, y: nextY - p.position.y, z: nextZ - p.position.z }, p.halfExtents,
+        Math.round(55 + p.massKg * 0.085 + speed * 1.5))) p.isThrownProjectile = false;
       let hitSolidOrGround = false;
       let hitEnemy: EnemyPhysicsEntity | null = null;
       let hitVehicleId: number | null = null;
@@ -1089,13 +1116,14 @@ export class VehicleAndPropManager {
   public triggerSphericalExplosion(
     attacker: AgentPhysicsBody,
     blastOrigin: Vec3,
-    yieldScale = 1.0
+    yieldScale = 1.0,
+    parameters?: { damage: number; radiusM: number; impulseNs: number }
   ): CombatEventResult[] {
     const expParams = getExplosivesParams(attacker.attributes.explosives);
     const mods = attacker.buildModifiers;
-    const blastRadius = expParams.blastRadiusMeters * mods.blastRadiusMultiplier * yieldScale;
-    const maxImpulseNs = expParams.impulseNs * mods.blastImpulseMultiplier * yieldScale;
-    const baseBlastDamage = (110 + attacker.attributes.explosives * 32) * yieldScale;
+    const blastRadius = parameters?.radiusM ?? expParams.blastRadiusMeters * mods.blastRadiusMultiplier * yieldScale;
+    const maxImpulseNs = parameters?.impulseNs ?? expParams.impulseNs * mods.blastImpulseMultiplier * yieldScale;
+    const baseBlastDamage = parameters?.damage ?? (110 + attacker.attributes.explosives * 32) * yieldScale;
 
     this.onEffect?.(effectSpec(EffectKind.BLAST, blastOrigin, { actor: attacker.entityId, radius: Math.min(100, blastRadius) }));
     const sphereShape = new RAPIER.Ball(blastRadius);
@@ -1151,6 +1179,7 @@ export class VehicleAndPropManager {
         damage,
         true
       );
+      ev.progressionAction = 'explosion_hit';
       ev.shockwaveTriggered = true;
       ev.shockwaveHits = hitEnemyIds.size;
 
@@ -1158,6 +1187,7 @@ export class VehicleAndPropManager {
       const invLen = 1.0 / (dist || 1.0);
       const radialImpulse = (maxImpulseNs / 18.0) * inverseSquareFalloff;
       this.combatManager.reactToHit(enemy, blastOrigin, true);
+      if (parameters) enemy.presentation.impulse = { x: dx * invLen * radialImpulse, y: dy * invLen * radialImpulse, z: dz * invLen * radialImpulse };
       enemy.combatState =
         enemy.hp <= 0 ? EnemyCombatState.DEAD : EnemyCombatState.STAGGER_BLIND;
       enemy.staggerTimer = Math.max(enemy.staggerTimer, 3.0);

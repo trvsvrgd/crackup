@@ -1,0 +1,7 @@
+{
+  "status": "historical-detail-superseded",
+  "originalCompletedAt": "2026-11-20T19:52:22.764Z",
+  "originalCommandLog": "artifacts/evidence/living-city/lc00-p004-export.log",
+  "replacement": "artifacts/evidence/living-city/lc00-p005-reports.json",
+  "note": "The P005 regression ran the old default output path and replaced the original detailed P004 fixture JSON. The original P004 command log and real browser/restart evidence remain intact. The test default is now ignored output/solo/report-export-result.json, with REPORTS_REPORT available for explicit evidence paths. This replacement is not original P004 evidence."
+}

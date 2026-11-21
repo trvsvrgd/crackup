@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "checkedAt": "2026-11-14T21:06:16.614Z",
+  "checkedAt": "2026-11-21T01:49:29.151Z",
   "scope": "Document structure, local links, requirement traceability and authored opening brief only. No gameplay or human acceptance is implied.",
   "result": "passed",
   "requirements": {
@@ -28,7 +28,7 @@
     "p1Packages": 5
   },
   "localLinks": {
-    "checked": 131,
+    "checked": 140,
     "missing": []
   },
   "crossReferences": {
@@ -37,7 +37,7 @@
   "files": [
     {
       "path": "docs/PRODUCT_REQUIREMENTS_V3.md",
-      "sha256": "6560e165469b85de856f6a0c9450b1816c9637134ece94706ba0d7b356288669"
+      "sha256": "978376ca252dbf42ef546ae87d5a61e40905dcedfaa3e4934be1599f69e27fb5"
     },
     {
       "path": "docs/PRODUCTION_DELIVERY_PLAN.md",
@@ -53,7 +53,7 @@
     },
     {
       "path": "artifacts/product-delivery-status.md",
-      "sha256": "845f29b4139bd413c41addb4587082e03a6fb23d905d15cbe971374f0b77bd5c"
+      "sha256": "ad7a8ad28c6555861e1aaf97a8b4e8c0651bdc9b0eef45f66d9af9a9f4b2dfb2"
     },
     {
       "path": "artifacts/product-baseline-audit.md",
@@ -85,7 +85,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "7e1990ef81446c70b6e0c3c437fcd9f51869e1e3cdba114bcf2b41b07cec88bd"
+      "sha256": "869f594d78c0596cc1e31b0503c2d38cd69a16cbbc4cd0559db89f04e4270f6c"
     }
   ],
   "errors": []

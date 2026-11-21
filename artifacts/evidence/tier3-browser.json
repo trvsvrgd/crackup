@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "verifiedAt": "2026-11-18T18:43:15.312883+00:00",
+  "clientBuild": "client-fdb381f553238a1b",
+  "seededQA": true,
+  "server": "isolated in-memory database",
+  "checks": [
+    "42 skill cards plus field equipment",
+    "28 weapon options",
+    "15 vehicle options",
+    "five normal install clicks cost exactly 11 points",
+    "Pile-Bunker equipment change",
+    "five installs, 17 remaining points and ML_04 persist through browser reload and authentication",
+    "screenshot visually reviewed",
+    "no browser console errors during final flow"
+  ],
+  "limits": "Seeded level-5 profile; not organically earned progression, human play or hardware qualification."
+}
